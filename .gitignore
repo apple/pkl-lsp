@@ -1,0 +1,13 @@
+# mac
+.DS_STORE
+
+# gradle
+.gradle/
+build/
+generated
+
+# intellij
+.idea/
+!.idea/codestyles/
+!.idea/inspectionProfiles/
+!.idea/vcs.xml
