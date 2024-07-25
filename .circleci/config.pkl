@@ -1,0 +1,50 @@
+amends "package://pkg.pkl-lang.org/pkl-project-commons/pkl.impl.circleci@1.1.1#/PklCI.pkl"
+
+prb = buildWorkflow
+
+main = buildWorkflow
+
+jobs {
+  ["build"] = (baseJob) {
+    steps {
+      new RunStep {
+        command = """
+          echo "build"
+          """
+      }
+    }
+  }
+  ["do-release"] {
+    docker {
+      new { image = "maniator/gh:v2.40.1" }
+    }
+    steps {
+      new AttachWorkspaceStep {
+        at = "."
+      }
+      new RunStep {
+        name = "gh release"
+        command = """
+          echo "release"
+          """
+      }
+    }
+  }
+}
+
+local baseJob: Job = new {
+  docker {
+    new {
+      image = "cimg/openjdk:17.0"
+    }
+  }
+  steps {
+    "checkout"
+  }
+}
+
+local buildWorkflow = new Workflow {
+  jobs {
+    "build"
+  }
+}
