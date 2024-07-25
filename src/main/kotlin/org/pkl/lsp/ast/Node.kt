@@ -548,7 +548,7 @@ interface PklModuleType : PklType {
 interface PklStringLiteralType : PklType {
   val stringConstant: PklStringConstant
 
-  override fun render(): String = "\"${stringConstant.text}\""
+  override fun render(): String = stringConstant.text
 }
 
 interface PklDeclaredType : PklType {
