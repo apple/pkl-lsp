@@ -584,6 +584,11 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
       }
       return type
     }
+
+    override fun equals(other: Any?): Boolean {
+      val clazz = other as? Class ?: return false
+      return ctx === clazz.ctx
+    }
   }
 
   // from a typing perspective, type aliases are transparent, but from a tooling/abstraction
