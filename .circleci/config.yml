@@ -1,0 +1,42 @@
+# Generated from CircleCI.pkl. DO NOT EDIT.
+version: '2.1'
+orbs:
+  pr-approval: apple/pr-approval@0.1.0
+jobs:
+  build:
+    steps:
+    - checkout
+    - run:
+        command: echo "build"
+    docker:
+    - image: cimg/openjdk:17.0
+  do-release:
+    steps:
+    - attach_workspace:
+        at: '.'
+    - run:
+        command: echo "release"
+        name: gh release
+    docker:
+    - image: maniator/gh:v2.40.1
+workflows:
+  prb:
+    jobs:
+    - hold:
+        type: approval
+    - pr-approval/authenticate:
+        context: pkl-pr-approval
+    - build:
+        requires:
+        - hold
+    when:
+      matches:
+        value: << pipeline.git.branch >>
+        pattern: ^pull/\d+(/head)?$
+  main:
+    jobs:
+    - build
+    when:
+      equal:
+      - main
+      - << pipeline.git.branch >>
