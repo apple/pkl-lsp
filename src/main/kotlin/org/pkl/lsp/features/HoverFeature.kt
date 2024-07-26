@@ -155,15 +155,16 @@ class HoverFeature(override val server: PklLSPServer) : Feature(server) {
           append(identifier?.text ?: "<method>>")
           append(typeParameterList?.render(originalNode) ?: "")
           append(parameterList?.render(originalNode) ?: "()")
-          val returnTypeStr = if (returnType != null) {
-            returnType!!.render(originalNode)
-          } else {
-            val parent = this@render.parent
-            if (parent != null && parent is PklMethod) {
-              val type = parent.body.computeExprType(PklBaseModule.instance, mapOf())
-              type.render()
-            } else "unknown"
-          }
+          val returnTypeStr =
+            if (returnType != null) {
+              returnType!!.render(originalNode)
+            } else {
+              val parent = this@render.parent
+              if (parent != null && parent is PklMethod) {
+                val type = parent.body.computeExprType(PklBaseModule.instance, mapOf())
+                type.render()
+              } else "unknown"
+            }
           append(": ")
           append(returnTypeStr)
         }

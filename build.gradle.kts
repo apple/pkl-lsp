@@ -1,55 +1,60 @@
+/**
+ * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 plugins {
-    application
-    alias(libs.plugins.kotlin)
-    alias(libs.plugins.shadow)
-    alias(libs.plugins.spotless)
+  application
+  alias(libs.plugins.kotlin)
+  alias(libs.plugins.shadow)
+  alias(libs.plugins.spotless)
 }
 
-repositories {
-    mavenCentral()
-}
+repositories { mavenCentral() }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
+  sourceCompatibility = JavaVersion.VERSION_17
+  toolchain { languageVersion = JavaLanguageVersion.of(17) }
 }
 
 dependencies {
-    implementation(libs.antlr)
-    implementation(libs.clikt)
-    implementation(libs.pklCore)
-    implementation(libs.lsp4j)
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation(libs.junit.jupiter)
+  implementation(libs.antlr)
+  implementation(libs.clikt)
+  implementation(libs.pklCore)
+  implementation(libs.lsp4j)
+  testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+  testImplementation(libs.junit.jupiter)
 }
 
-tasks.jar {
-    manifest { attributes += mapOf("Main-Class" to "org.pkl.lsp.cli.Main") }
-}
+tasks.jar { manifest { attributes += mapOf("Main-Class" to "org.pkl.lsp.cli.Main") } }
 
-application {
-    mainClass.set("org.pkl.lsp.cli.Main")
-}
+application { mainClass.set("org.pkl.lsp.cli.Main") }
 
-tasks.named<Test>("test") {
-    useJUnitPlatform()
-}
+tasks.named<Test>("test") { useJUnitPlatform() }
 
-tasks.shadowJar {
-    archiveFileName.set("pkl-lsp")
-}
+tasks.shadowJar { archiveFileName.set("pkl-lsp") }
 
-val javaExecutable by tasks.registering(ExecutableJar::class) {
+val javaExecutable by
+  tasks.registering(ExecutableJar::class) {
     inJar.set(tasks.shadowJar.flatMap { it.archiveFile })
     outJar.set(layout.buildDirectory.file("executable/pkl-lsp"))
 
     // uncomment for debugging
     // jvmArgs.addAll("-ea", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
-}
+  }
 
-private val licenseHeader = """
+private val licenseHeader =
+  """
   /**
    * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
    *
@@ -65,47 +70,54 @@ private val licenseHeader = """
    * See the License for the specific language governing permissions and
    * limitations under the License.
    */
-""".trimIndent()
+"""
+    .trimIndent()
 
 spotless {
-    kotlin {
-        ktfmt(libs.versions.ktfmt.get()).googleStyle()
-        licenseHeader(licenseHeader)
-    }
+  kotlinGradle {
+    ktfmt(libs.versions.ktfmt.get()).googleStyle()
+    targetExclude("**/generated/**", "**/build/**")
+    licenseHeader(licenseHeader, "([a-zA-Z]|@file|//)")
+    target("*.kts", "buildSrc/**/*.kts")
+  }
+  kotlin {
+    ktfmt(libs.versions.ktfmt.get()).googleStyle()
+    licenseHeader(licenseHeader)
+  }
 }
 
 /**
- * Builds a self-contained Pkl LSP CLI Jar that is directly executable on *nix and executable with `java
- * -jar` on Windows.
+ * Builds a self-contained Pkl LSP CLI Jar that is directly executable on *nix and executable with
+ * `java -jar` on Windows.
  *
  * For direct execution, the `java` command must be on the PATH.
  *
  * https://skife.org/java/unix/2011/06/20/really_executable_jars.html
  */
 abstract class ExecutableJar : DefaultTask() {
-    @get:InputFile abstract val inJar: RegularFileProperty
+  @get:InputFile abstract val inJar: RegularFileProperty
 
-    @get:OutputFile abstract val outJar: RegularFileProperty
+  @get:OutputFile abstract val outJar: RegularFileProperty
 
-    @get:Input abstract val jvmArgs: ListProperty<String>
+  @get:Input abstract val jvmArgs: ListProperty<String>
 
-    @TaskAction
-    fun buildJar() {
-        val inFile = inJar.get().asFile
-        val outFile = outJar.get().asFile
-        val escapedJvmArgs = jvmArgs.get().joinToString(separator = " ") { "\"$it\"" }
-        val startScript =
-            """
+  @TaskAction
+  fun buildJar() {
+    val inFile = inJar.get().asFile
+    val outFile = outJar.get().asFile
+    val escapedJvmArgs = jvmArgs.get().joinToString(separator = " ") { "\"$it\"" }
+    val startScript =
+      """
             #!/bin/sh
             exec java $escapedJvmArgs -jar $0 "$@"
             """
-                .trimIndent() + "\n\n\n"
-        outFile.outputStream().use { outStream ->
-            startScript.byteInputStream().use { it.copyTo(outStream) }
-            inFile.inputStream().use { it.copyTo(outStream) }
-        }
-
-        // chmod a+x
-        outFile.setExecutable(true, false)
+        .trimIndent() + "\n\n\n"
+    outFile.outputStream().use { outStream ->
+      startScript.byteInputStream().use { it.copyTo(outStream) }
+      inFile.inputStream().use { it.copyTo(outStream) }
     }
+
+    // chmod a+x
+    outFile.setExecutable(true, false)
+  }
 }
