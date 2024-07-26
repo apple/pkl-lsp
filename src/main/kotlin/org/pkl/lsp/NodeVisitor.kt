@@ -18,9 +18,5 @@ package org.pkl.lsp
 import org.pkl.lsp.ast.Node
 
 abstract class NodeVisitor {
-  companion object {
-    val EMPTY_VISITOR: NodeVisitor = object : NodeVisitor() {}
-  }
-
   fun visitInnerElement(element: Node) {}
 }
