@@ -30,11 +30,6 @@ class ClassMemberCache(
    * A child that overrides a parent without a type annotation is a "leaf property".
    */
   val leafProperties: Map<String, PklClassProperty>,
-
-  // cache invalidation is hard (and I don't know how exactly it works in intellij).
-  // let's play it safe and make a class cache depend on the class' enclosing module and its
-  // superclass cache's dependencies.
-  // this can be revisited if performance issues arise.
   val dependencies: List<Any>,
 ) {
 
