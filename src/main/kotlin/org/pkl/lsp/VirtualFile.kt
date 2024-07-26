@@ -53,11 +53,7 @@ interface VirtualFile {
   companion object {
     fun fromUri(uri: URI, logger: ClientLogger): VirtualFile? {
       return if (uri.scheme.equals("file", ignoreCase = true)) {
-        val file = Paths.get(uri).toFile()
-        if (!file.isFile || file.extension != "pkl") {
-          return null
-        }
-        FsFile(file)
+        FsFile(File(uri))
       } else if (uri.scheme.equals("pkl", ignoreCase = true)) {
         val origin = Origin.fromString(uri.authority.uppercase())
         if (origin == null) {

@@ -25,6 +25,8 @@ import org.pkl.core.util.IoUtils
 import org.pkl.lsp.features.CompletionFeature
 import org.pkl.lsp.features.GoToDefinitionFeature
 import org.pkl.lsp.features.HoverFeature
+import java.io.File
+import java.io.IOException
 
 class PklTextDocumentService(private val server: PklLSPServer) : TextDocumentService {
 
@@ -55,10 +57,11 @@ class PklTextDocumentService(private val server: PklLSPServer) : TextDocumentSer
       server.logger().error("Saved non file URI: $uri")
       return
     }
-    val file = Paths.get(uri).toFile()
-    if (file.isFile && file.extension == "pkl") {
+    try {
       val contents = IoUtils.readString(uri.toURL())
-      server.builder().requestBuild(uri, FsFile(file), contents)
+      server.builder().requestBuild(uri, FsFile(File(uri)), contents)
+    } catch (e: IOException) {
+      server.logger().error("Error reading $uri: ${e.message}")
     }
   }
 
