@@ -208,7 +208,7 @@ private fun PklType?.isRecursive(seen: MutableSet<PklTypeAlias>): Boolean =
   }
 
 val Node.isInPklBaseModule: Boolean
-  get() = enclosingModule?.declaration?.moduleHeader?.qualifiedIdentifier?.fullName == "pkl.base"
+  get() = enclosingModule == Stdlib.baseModule()
 
 interface TypeNameRenderer {
   fun render(name: PklTypeName, appendable: Appendable)
