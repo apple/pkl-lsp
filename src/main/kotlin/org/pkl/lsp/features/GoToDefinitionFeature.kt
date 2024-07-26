@@ -30,15 +30,15 @@ class GoToDefinitionFeature(val server: PklLSPServer) {
 
   fun onGoToDefinition(
     params: DefinitionParams
-  ): CompletableFuture<Either<MutableList<out Location>, MutableList<out LocationLink>>> {
-    fun run(mod: PklModule?): Either<MutableList<out Location>, MutableList<out LocationLink>> {
-      if (mod == null) return Either.forLeft(mutableListOf())
+  ): CompletableFuture<Either<List<Location>, List<LocationLink>>> {
+    fun run(mod: PklModule?): Either<List<Location>, List<LocationLink>> {
+      if (mod == null) return Either.forLeft(listOf())
       val line = params.position.line + 1
       val col = params.position.character + 1
       val location =
         mod.findBySpan(line, col)?.let { resolveDeclaration(it, line, col) }
-          ?: return Either.forLeft(mutableListOf())
-      return Either.forLeft(mutableListOf(location))
+          ?: return Either.forLeft(listOf())
+      return Either.forLeft(listOf(location))
     }
     return server.builder().runningBuild(params.textDocument.uri).thenApply(::run)
   }

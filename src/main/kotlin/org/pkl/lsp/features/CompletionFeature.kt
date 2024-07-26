@@ -28,24 +28,23 @@ import org.pkl.lsp.type.toType
 class CompletionFeature(val server: PklLSPServer) {
   fun onCompletion(
     params: CompletionParams
-  ): CompletableFuture<Either<MutableList<CompletionItem>, CompletionList>> {
-    fun run(mod: PklModule?): Either<MutableList<CompletionItem>, CompletionList> {
+  ): CompletableFuture<Either<List<CompletionItem>, CompletionList>> {
+    fun run(mod: PklModule?): Either<List<CompletionItem>, CompletionList> {
       val pklMod =
         mod
           ?: (server.builder().lastSuccessfulBuild(params.textDocument.uri)
-            ?: return Either.forLeft(mutableListOf()))
+            ?: return Either.forLeft(listOf()))
 
       val line = params.position.line + 1
       val col = params.position.character + 1
       @Suppress("WHEN_ENUM_CAN_BE_NULL_IN_JAVA")
       return when (params.context.triggerKind) {
-        CompletionTriggerKind.Invoked -> Either.forLeft(mutableListOf())
-        CompletionTriggerKind.TriggerForIncompleteCompletions -> Either.forLeft(mutableListOf())
+        CompletionTriggerKind.Invoked -> Either.forLeft(listOf())
+        CompletionTriggerKind.TriggerForIncompleteCompletions -> Either.forLeft(listOf())
         CompletionTriggerKind.TriggerCharacter -> {
           // go two position behind to find the actual node to complete
           val completions =
-            pklMod.findBySpan(line, col - 2)?.resolveCompletion()
-              ?: return Either.forLeft(mutableListOf())
+            pklMod.findBySpan(line, col - 2)?.resolveCompletion() ?: return Either.forLeft(listOf())
           return Either.forLeft(completions)
         }
       }
@@ -53,7 +52,7 @@ class CompletionFeature(val server: PklLSPServer) {
     return server.builder().runningBuild(params.textDocument.uri).thenApply(::run)
   }
 
-  private fun Node.resolveCompletion(): MutableList<CompletionItem>? {
+  private fun Node.resolveCompletion(): List<CompletionItem>? {
     val showTypes = parentOfType<PklNewExpr>() != null
     val module = if (this is PklModule) this else enclosingModule
     return when (this) {
@@ -75,57 +74,48 @@ class CompletionFeature(val server: PklLSPServer) {
     }
   }
 
-  private fun Node.complete(
-    showTypes: Boolean,
-    sourceModule: PklModule?,
-  ): MutableList<CompletionItem> =
+  private fun Node.complete(showTypes: Boolean, sourceModule: PklModule?): List<CompletionItem> =
     when (this) {
       is PklModule -> complete(showTypes, sourceModule)
       is PklClass -> complete()
       is PklClassProperty -> complete()
-      else -> mutableListOf()
+      else -> listOf()
     }
 
   private fun PklModule.complete(
     showTypes: Boolean,
     sourceModule: PklModule?,
-  ): MutableList<CompletionItem> =
+  ): List<CompletionItem> =
     if (showTypes) {
       completeTypes(sourceModule)
     } else {
-      val list = completeProps(sourceModule)
-      list.addAll(completeTypes(sourceModule))
-      list
+      completeProps(sourceModule) + completeTypes(sourceModule)
     }
 
-  private fun PklModule.completeTypes(sourceModule: PklModule?): MutableList<CompletionItem> {
+  private fun PklModule.completeTypes(sourceModule: PklModule?): List<CompletionItem> {
     val sameModule = this == sourceModule
     return buildList {
-        addAll(typeDefs.filter { sameModule || !it.isLocal }.map { it.toCompletionItem() })
-      }
-      .toMutableList()
+      addAll(typeDefs.filter { sameModule || !it.isLocal }.map { it.toCompletionItem() })
+    }
   }
 
-  private fun PklModule.completeProps(sourceModule: PklModule?): MutableList<CompletionItem> {
+  private fun PklModule.completeProps(sourceModule: PklModule?): List<CompletionItem> {
     val sameModule = this == sourceModule
     return buildList {
-        addAll(properties.filter { sameModule || !it.isLocal }.map { it.toCompletionItem() })
-        addAll(methods.filter { sameModule || !it.isLocal }.map { it.toCompletionItem() })
-      }
-      .toMutableList()
+      addAll(properties.filter { sameModule || !it.isLocal }.map { it.toCompletionItem() })
+      addAll(methods.filter { sameModule || !it.isLocal }.map { it.toCompletionItem() })
+    }
   }
 
-  private fun PklClass.complete(): MutableList<CompletionItem> =
-    buildList {
-        addAll(properties.map { it.toCompletionItem() })
-        addAll(methods.map { it.toCompletionItem() })
-      }
-      .toMutableList()
+  private fun PklClass.complete(): List<CompletionItem> = buildList {
+    addAll(properties.map { it.toCompletionItem() })
+    addAll(methods.map { it.toCompletionItem() })
+  }
 
-  private fun PklClassProperty.complete(): MutableList<CompletionItem> {
+  private fun PklClassProperty.complete(): List<CompletionItem> {
     val base = PklBaseModule.instance
     val typ = type?.toType(base, mapOf()) ?: computeResolvedImportType(base, mapOf())
-    val clazz = typ.toClassType(base) ?: return mutableListOf()
+    val clazz = typ.toClassType(base) ?: return listOf()
     return clazz.ctx.complete()
   }
 

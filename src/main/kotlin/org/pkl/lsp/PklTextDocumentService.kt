@@ -68,13 +68,13 @@ class PklTextDocumentService(private val server: PklLSPServer) : TextDocumentSer
 
   override fun definition(
     params: DefinitionParams
-  ): CompletableFuture<Either<MutableList<out Location>, MutableList<out LocationLink>>> {
+  ): CompletableFuture<Either<List<Location>, List<LocationLink>>> {
     return definition.onGoToDefinition(params)
   }
 
   override fun completion(
     params: CompletionParams
-  ): CompletableFuture<Either<MutableList<CompletionItem>, CompletionList>> {
+  ): CompletableFuture<Either<List<CompletionItem>, CompletionList>> {
     return completion.onCompletion(params)
   }
 }
