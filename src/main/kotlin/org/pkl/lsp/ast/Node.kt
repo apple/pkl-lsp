@@ -294,7 +294,7 @@ sealed interface PklObjectBodyOwner : Node {
 }
 
 interface PklObjectBody : Node {
-  val parameterList: List<PklParameter>
+  val parameterList: PklParameterList
 
   val members: List<PklObjectMember>
 

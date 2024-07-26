@@ -40,28 +40,40 @@ class HoverFeature(override val server: PklLSPServer) : Feature(server) {
     return server.builder().runningBuild(params.textDocument.uri).thenApply(::run)
   }
 
-  private fun resolveHover(node: Node, line: Int, col: Int, originalNode: Node? = null): String? {
-    val base = PklBaseModule.instance
+  private fun resolveHover(node: Node, line: Int, col: Int): String? {
     return when (node) {
       is PklUnqualifiedAccessExpr -> {
         val element = resolveUnqualifiedAccess(node) ?: return null
-        if (originalNode != null) element.toMarkdown(originalNode)
-        else resolveHover(element, line, col, node)
+        resolveHover(element, line, col, node)
       }
-      is PklQualifiedAccessExpr -> resolveQualifiedAccess(node)?.toMarkdown(originalNode)
+      is PklQualifiedAccessExpr -> {
+        val element = resolveQualifiedAccess(node) ?: return null
+        resolveHover(element, line, col, node)
+      }
+      is PklProperty -> {
+        when {
+          node.matches(line, col) -> {
+            val element = resolveProperty(node) ?: node
+            resolveHover(element, line, col, node)
+          }
+          else -> null
+        }
+      }
+      else -> resolveHover(node, line, col, node)
+    }
+  }
+
+  private fun resolveHover(node: Node, line: Int, col: Int, originalNode: Node): String? {
+    val base = PklBaseModule.instance
+    return when (node) {
+      is PklUnqualifiedAccessExpr -> node.toMarkdown(originalNode)
+      is PklQualifiedAccessExpr -> node.toMarkdown(originalNode)
       is PklSuperAccessExpr -> {
         if (node.matches(line, col)) {
           resolveSuperAccess(node)?.toMarkdown(originalNode)
         } else null
       }
-      is PklProperty ->
-        when {
-          originalNode != null -> node.toMarkdown(originalNode)
-          node.matches(line, col) -> {
-            resolveProperty(node)?.toMarkdown(node)
-          }
-          else -> null
-        }
+      is PklProperty -> node.toMarkdown(originalNode)
       is PklMethod -> node.toMarkdown(originalNode)
       is PklMethodHeader -> {
         val name = node.identifier
@@ -70,7 +82,7 @@ class HoverFeature(override val server: PklLSPServer) : Feature(server) {
           node.parent?.toMarkdown(originalNode)
         } else null
       }
-      is PklClass -> if (originalNode != null) node.toMarkdown(originalNode) else null
+      is PklClass -> node.toMarkdown(originalNode)
       is PklClassHeader -> {
         val name = node.identifier
         // check if hovering over the class name
@@ -254,7 +266,7 @@ class HoverFeature(override val server: PklLSPServer) : Feature(server) {
           val computedType =
             Resolvers.resolveUnqualifiedAccess(
               originalNode,
-              null,
+              node.computeThisType(PklBaseModule.instance, mapOf()),
               true,
               PklBaseModule.instance,
               mapOf(),

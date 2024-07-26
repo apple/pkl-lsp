@@ -18,6 +18,7 @@ package org.pkl.lsp.ast
 import org.pkl.core.parser.antlr.PklParser.*
 import org.pkl.lsp.LSPUtil.firstInstanceOf
 import org.pkl.lsp.PklVisitor
+import org.pkl.lsp.VirtualFile
 
 class PklClassPropertyImpl(override val parent: Node, override val ctx: ClassPropertyContext) :
   AbstractNode(parent, ctx), PklClassProperty {
@@ -102,10 +103,62 @@ class PklParameterListImpl(override val parent: Node, override val ctx: Paramete
   }
 }
 
+/**
+ * Workaround: The Pkl parser in pkl-core represents an object body's parameters as simply a
+ * sequence of nodes, whereas the logic copied from pkl-intellij assumes that it is a
+ * [PklParameterList].
+ *
+ * This provides the glue from pkl-core's syntax tree to what we want here.
+ */
+class PklParameterListOfObjectBodyImpl(
+  override val parent: Node,
+  private val parameters: List<ParameterContext>,
+) : PklParameterList {
+  override val elements: List<PklParameter> by lazy {
+    parameters.map { PklParameterImpl(this, it) }
+  }
+
+  override val span: Span
+    get() {
+      val start =
+        children.firstOrNull()?.span
+          ?: return Span(
+            parent.span.beginCol,
+            parent.span.endLine,
+            parent.span.beginCol,
+            parent.span.endLine,
+          )
+      val end = children.last().span
+      return if (start == end) start else Span.from(start, end)
+    }
+
+  override val children: List<Node> by lazy { elements }
+
+  override val containingFile: VirtualFile
+    get() = parent.containingFile
+
+  override val enclosingModule: PklModule?
+    get() = parent.enclosingModule
+
+  override val terminals: List<Terminal>
+    get() = emptyList()
+
+  override val text: String
+    get() = parameters.joinToString(", ") { it.text }
+
+  override fun <R> accept(visitor: PklVisitor<R>): R? {
+    return visitor.visitParameterList(this)
+  }
+}
+
 class PklObjectBodyImpl(override val parent: Node, override val ctx: ObjectBodyContext) :
   AbstractNode(parent, ctx), PklObjectBody {
-  override val parameterList: List<PklParameter> by lazy {
-    children.filterIsInstance<PklParameter>()
+  override val parameterList: PklParameterList by lazy {
+    PklParameterListOfObjectBodyImpl(this, ctx.parameter())
+  }
+
+  override val children: List<Node> by lazy {
+    listOf(parameterList) + super.children.filterNot { it is PklParameter }
   }
 
   override val members: List<PklObjectMember> by lazy {

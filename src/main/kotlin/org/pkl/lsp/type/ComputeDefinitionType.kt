@@ -146,17 +146,18 @@ fun Node?.computeResolvedImportType(
                 }
               }
             }
-            is PklParameterList ->
-              when (val parameterListOwner = identifierOwner.parent) {
+            is PklParameter -> {
+              val parameterList = identifierOwner.parent as PklParameterList
+              when (val parameterListOwner = parameterList.parent) {
                 is PklFunctionLiteralExpr -> {
                   val functionType = parameterListOwner.inferExprTypeFromContext(base, bindings)
-                  getFunctionParameterType(this, identifierOwner, functionType, base)
+                  getFunctionParameterType(this, parameterList, functionType, base)
                 }
                 is PklObjectBody ->
                   when (val objectBodyOwner = parameterListOwner.parent) {
                     is PklExpr -> {
                       val functionType = objectBodyOwner.computeExprType(base, bindings)
-                      getFunctionParameterType(this, identifierOwner, functionType, base)
+                      getFunctionParameterType(this, parameterList, functionType, base)
                     }
                     is PklObjectBodyOwner -> {
                       @Suppress("BooleanLiteralArgument")
@@ -168,12 +169,13 @@ fun Node?.computeResolvedImportType(
                           false,
                           cache,
                         )
-                      getFunctionParameterType(this, identifierOwner, functionType, base)
+                      getFunctionParameterType(this, parameterList, functionType, base)
                     }
                     else -> Type.Unknown
                   }
                 else -> Type.Unknown
               }
+            }
             else -> Type.Unknown
           }
         }
