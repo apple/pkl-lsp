@@ -17,7 +17,7 @@ package org.pkl.lsp
 
 import org.pkl.lsp.ast.*
 
-open class PklVisitor<R> : NodeVisitor() {
+open class PklVisitor<R> {
 
   open fun visitAccessExpr(o: PklAccessExpr): R? {
     return visitExpr(o)
@@ -27,7 +27,7 @@ open class PklVisitor<R> : NodeVisitor() {
     return visitExpr(o)
   }
 
-  open fun visitAmendEpxr(o: PklAmendExpr): R? {
+  open fun visitAmendExpr(o: PklAmendExpr): R? {
     return visitExpr(o)
   }
 
@@ -80,7 +80,6 @@ open class PklVisitor<R> : NodeVisitor() {
   }
 
   open fun visitElement(o: Node): R? {
-    visitInnerElement(o)
     return null
   }
 

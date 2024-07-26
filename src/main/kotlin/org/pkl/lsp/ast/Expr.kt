@@ -236,7 +236,7 @@ class PklAmendExprImpl(override val parent: Node, override val ctx: AmendExprCon
   override val objectBody: PklObjectBody by lazy { children.firstInstanceOf<PklObjectBody>()!! }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
-    return visitor.visitAmendEpxr(this)
+    return visitor.visitAmendExpr(this)
   }
 }
 
