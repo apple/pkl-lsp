@@ -21,13 +21,11 @@ import org.pkl.lsp.ast.*
 
 class AnnotationAnalyzer(private val server: PklLSPServer) : Analyzer() {
   override fun doAnalyze(node: Node, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
-    if (node is PklModule || node is PklClass || node is PklModuleDeclaration) return true
-    if (node !is PklAnnotation) return false
-
+    if (node !is PklAnnotation) return true
     val type = node.type
     if (type !is PklDeclaredType) {
       diagnosticsHolder.add(error(type ?: node, ErrorMessages.create("annotationHasNoName")))
     }
-    return false
+    return true
   }
 }
