@@ -26,7 +26,7 @@ import org.pkl.lsp.PklLSPServer
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.type.computeThisType
 
-class GoToDefinitionFeature(override val server: PklLSPServer) : Feature(server) {
+class GoToDefinitionFeature(val server: PklLSPServer) {
 
   fun onGoToDefinition(
     params: DefinitionParams
@@ -45,16 +45,16 @@ class GoToDefinitionFeature(override val server: PklLSPServer) : Feature(server)
 
   private fun resolveDeclaration(node: Node, line: Int, col: Int): Location? {
     return when (node) {
-      is PklUnqualifiedAccessExpr -> resolveUnqualifiedAccess(node)?.toLocation()
-      is PklQualifiedAccessExpr -> resolveQualifiedAccess(node)?.toLocation()
+      is PklUnqualifiedAccessExpr -> node.resolve()?.toLocation()
+      is PklQualifiedAccessExpr -> node.resolve()?.toLocation()
       is PklSuperAccessExpr -> {
         if (node.matches(line, col)) {
-          resolveSuperAccess(node)?.toLocation()
+          node.resolve()?.toLocation()
         } else null
       }
       is PklProperty -> {
         if (node.matches(line, col)) {
-          resolveProperty(node)?.toLocation()
+          node.resolve()?.toLocation()
         } else null
       }
       is PklStringConstant ->

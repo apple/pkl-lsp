@@ -19,6 +19,7 @@ import org.pkl.core.parser.antlr.PklParser.*
 import org.pkl.lsp.*
 import org.pkl.lsp.LSPUtil.firstInstanceOf
 import org.pkl.lsp.resolvers.ResolveVisitor
+import org.pkl.lsp.resolvers.ResolveVisitors
 import org.pkl.lsp.resolvers.Resolvers
 import org.pkl.lsp.type.Type
 import org.pkl.lsp.type.TypeParameterBindings
@@ -148,6 +149,12 @@ class PklUnqualifiedAccessExprImpl(
   }
   override val isNullSafeAccess: Boolean = false
 
+  override fun resolve(): Node? {
+    val base = PklBaseModule.instance
+    val visitor = ResolveVisitors.firstElementNamed(memberNameText, base)
+    return resolve(base, null, mapOf(), visitor)
+  }
+
   override fun <R> resolve(
     base: PklBaseModule,
     receiverType: Type?,
@@ -242,6 +249,12 @@ class PklSuperAccessExprImpl(override val parent: Node, override val ctx: SuperA
     children.firstInstanceOf<PklArgumentList>()
   }
 
+  override fun resolve(): Node? {
+    val base = PklBaseModule.instance
+    val visitor = ResolveVisitors.firstElementNamed(memberNameText, base)
+    return resolve(base, null, mapOf(), visitor)
+  }
+
   override fun <R> resolve(
     base: PklBaseModule,
     receiverType: Type?,
@@ -284,6 +297,13 @@ class PklQualifiedAccessExprImpl(
     children.firstInstanceOf<PklArgumentList>()
   }
   override val receiverExpr: PklExpr by lazy { children.firstInstanceOf<PklExpr>()!! }
+
+  override fun resolve(): Node? {
+    val base = PklBaseModule.instance
+    val visitor = ResolveVisitors.firstElementNamed(memberNameText, base)
+    // TODO: check if receiver is `module`
+    return resolve(base, null, mapOf(), visitor)
+  }
 
   override fun <R> resolve(
     base: PklBaseModule,

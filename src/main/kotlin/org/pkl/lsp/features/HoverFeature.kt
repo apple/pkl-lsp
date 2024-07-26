@@ -26,7 +26,7 @@ import org.pkl.lsp.resolvers.ResolveVisitors
 import org.pkl.lsp.resolvers.Resolvers
 import org.pkl.lsp.type.*
 
-class HoverFeature(override val server: PklLSPServer) : Feature(server) {
+class HoverFeature(val server: PklLSPServer) {
 
   fun onHover(params: HoverParams): CompletableFuture<Hover> {
     fun run(mod: PklModule?): Hover {
@@ -43,17 +43,17 @@ class HoverFeature(override val server: PklLSPServer) : Feature(server) {
   private fun resolveHover(node: Node, line: Int, col: Int): String? {
     return when (node) {
       is PklUnqualifiedAccessExpr -> {
-        val element = resolveUnqualifiedAccess(node) ?: return null
+        val element = node.resolve() ?: return null
         resolveHover(element, line, col, node)
       }
       is PklQualifiedAccessExpr -> {
-        val element = resolveQualifiedAccess(node) ?: return null
+        val element = node.resolve() ?: return null
         resolveHover(element, line, col, node)
       }
       is PklProperty -> {
         when {
           node.matches(line, col) -> {
-            val element = resolveProperty(node) ?: node
+            val element = node.resolve() ?: node
             resolveHover(element, line, col, node)
           }
           else -> null
@@ -70,7 +70,7 @@ class HoverFeature(override val server: PklLSPServer) : Feature(server) {
       is PklQualifiedAccessExpr -> node.toMarkdown(originalNode)
       is PklSuperAccessExpr -> {
         if (node.matches(line, col)) {
-          resolveSuperAccess(node)?.toMarkdown(originalNode)
+          node.resolve()?.toMarkdown(originalNode)
         } else null
       }
       is PklProperty -> node.toMarkdown(originalNode)

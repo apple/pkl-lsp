@@ -17,8 +17,12 @@ package org.pkl.lsp.ast
 
 import org.pkl.core.parser.antlr.PklParser.*
 import org.pkl.lsp.LSPUtil.firstInstanceOf
+import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.PklVisitor
 import org.pkl.lsp.VirtualFile
+import org.pkl.lsp.resolvers.ResolveVisitors
+import org.pkl.lsp.resolvers.Resolvers
+import org.pkl.lsp.type.computeThisType
 
 class PklClassPropertyImpl(override val parent: Node, override val ctx: ClassPropertyContext) :
   AbstractNode(parent, ctx), PklClassProperty {
@@ -50,6 +54,19 @@ class PklClassPropertyImpl(override val parent: Node, override val ctx: ClassPro
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitClassProperty(this)
+  }
+
+  override fun resolve(): Node? {
+    val base = PklBaseModule.instance
+    val visitor = ResolveVisitors.firstElementNamed(name, base)
+    return when {
+      type != null -> this
+      isLocal -> this
+      else -> {
+        val receiverType = computeThisType(base, mapOf())
+        Resolvers.resolveQualifiedAccess(receiverType, true, base, visitor)
+      }
+    }
   }
 }
 
@@ -199,6 +216,19 @@ class PklObjectPropertyImpl(override val parent: Node, override val ctx: ObjectP
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitObjectProperty(this)
+  }
+
+  override fun resolve(): Node? {
+    val base = PklBaseModule.instance
+    val visitor = ResolveVisitors.firstElementNamed(name, base)
+    return when {
+      type != null -> this
+      isLocal -> this
+      else -> {
+        val receiverType = computeThisType(base, mapOf())
+        Resolvers.resolveQualifiedAccess(receiverType, true, base, visitor)
+      }
+    }
   }
 }
 

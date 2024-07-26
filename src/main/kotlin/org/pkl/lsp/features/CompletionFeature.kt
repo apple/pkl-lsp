@@ -25,7 +25,7 @@ import org.pkl.lsp.type.computeResolvedImportType
 import org.pkl.lsp.type.computeThisType
 import org.pkl.lsp.type.toType
 
-class CompletionFeature(override val server: PklLSPServer) : Feature(server) {
+class CompletionFeature(val server: PklLSPServer) {
   fun onCompletion(
     params: CompletionParams
   ): CompletableFuture<Either<MutableList<CompletionItem>, CompletionList>> {
@@ -57,8 +57,8 @@ class CompletionFeature(override val server: PklLSPServer) : Feature(server) {
     val showTypes = parentOfType<PklNewExpr>() != null
     val module = if (this is PklModule) this else enclosingModule
     return when (this) {
-      is PklUnqualifiedAccessExpr -> resolveUnqualifiedAccess(this)?.complete(showTypes, module)
-      is PklQualifiedAccessExpr -> resolveQualifiedAccess(this)?.complete(showTypes, module)
+      is PklUnqualifiedAccessExpr -> resolve()?.complete(showTypes, module)
+      is PklQualifiedAccessExpr -> resolve()?.complete(showTypes, module)
       is PklSingleLineStringLiteral,
       is PklMultiLineStringLiteral -> PklBaseModule.instance.stringType.ctx.complete()
       is PklQualifiedIdentifier ->

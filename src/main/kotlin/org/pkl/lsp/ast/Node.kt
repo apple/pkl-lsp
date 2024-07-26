@@ -55,6 +55,10 @@ interface Node {
   fun checkClosingDelimiter(): String? = null
 }
 
+interface PklReference : Node {
+  fun resolve(): Node?
+}
+
 interface PklQualifiedIdentifier : Node {
   val identifiers: List<Terminal>
   val fullName: String
@@ -225,7 +229,8 @@ interface PklClassHeader : Node, IdentifierOwner, ModifierListOwner {
 
 sealed interface PklClassMember : PklModuleMember, PklDocCommentOwner
 
-sealed interface PklProperty : PklNavigableElement, ModifierListOwner, IdentifierOwner {
+sealed interface PklProperty :
+  PklNavigableElement, PklReference, ModifierListOwner, IdentifierOwner {
   val name: String
   val type: PklType?
   val expr: PklExpr?
@@ -406,7 +411,7 @@ interface PklAmendExpr : PklExpr, PklObjectBodyOwner {
 
 interface PklSuperSubscriptExpr : PklExpr
 
-interface PklAccessExpr : PklExpr, IdentifierOwner {
+interface PklAccessExpr : PklExpr, PklReference, IdentifierOwner {
   val memberNameText: String
   val isNullSafeAccess: Boolean
   val argumentList: PklArgumentList?
