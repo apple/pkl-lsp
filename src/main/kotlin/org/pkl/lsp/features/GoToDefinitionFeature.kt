@@ -53,17 +53,23 @@ class GoToDefinitionFeature(val server: PklLSPServer) {
   }
 
   private fun Node.toLocation(): Location {
-    return Location(toURIString(), spanNoDocs().toRange())
+    return Location(toURIString(), beginningSpan().toRange())
   }
 
-  // returns the span of this node without doc comments
-  private fun Node.spanNoDocs(): Span {
-    return children
-      .find { it !is Terminal || it.type != TokenType.DocComment }
-      ?.let {
-        if (it is PklModuleDeclaration) {
-          it.spanNoDocs()
-        } else Span.from(it.span, span)
-      } ?: span
+  // returns the span of this node, ignoring docs and annotations
+  private fun Node.beginningSpan(): Span = when (this) {
+    is PklModule -> declaration?.beginningSpan() ?: span
+    is PklModuleDeclaration -> moduleHeader?.beginningSpan() ?: span
+    is PklClass -> classHeader.beginningSpan()
+    is PklTypeAlias -> typeAliasHeader.beginningSpan()
+    is PklClassMethod -> methodHeader.beginningSpan()
+    is PklClassProperty -> {
+      val mods = modifiers
+      when {
+        !mods.isNullOrEmpty() -> mods[0].beginningSpan()
+        else -> identifier?.beginningSpan() ?: span
+      }
+    }
+    else -> span
   }
 }
