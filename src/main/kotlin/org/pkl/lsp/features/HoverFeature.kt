@@ -222,7 +222,11 @@ class HoverFeature(val server: PklLSPServer) {
               visitor,
             )
           append(": ")
-          computedType.render(this)
+          if (computedType is Type.Unknown && type != null) {
+            append(type.render())
+          } else {
+            computedType.render(this)
+          }
         }
         type != null -> {
           append(": ")
