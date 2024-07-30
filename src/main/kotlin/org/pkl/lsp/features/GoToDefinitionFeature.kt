@@ -43,51 +43,12 @@ class GoToDefinitionFeature(val server: PklLSPServer) {
     return server.builder().runningBuild(params.textDocument.uri).thenApply(::run)
   }
 
-  private fun resolveDeclaration(node: Node, line: Int, col: Int): Location? {
+  private fun resolveDeclaration(originalNode: Node, line: Int, col: Int): Location? {
+    val node = originalNode.resolveReference(line, col) ?: return null
     return when (node) {
-      is PklUnqualifiedAccessExpr -> node.resolve()?.toLocation()
-      is PklQualifiedAccessExpr -> node.resolve()?.toLocation()
-      is PklSuperAccessExpr -> {
-        if (node.matches(line, col)) {
-          node.resolve()?.toLocation()
-        } else null
-      }
-      is PklProperty -> {
-        if (node.matches(line, col)) {
-          node.resolve()?.toLocation()
-        } else null
-      }
-      is PklStringConstant ->
-        when (val parent = node.parent) {
-          is PklImportBase ->
-            when (val res = parent.resolve()) {
-              is SimpleModuleResolutionResult -> res.resolved?.toLocation()
-              is GlobModuleResolutionResult -> null // TODO: globs
-            }
-          is PklModuleExtendsAmendsClause -> parent.moduleUri?.resolve()?.toLocation()
-          else -> null
-        }
-      is PklImport -> {
-        if (node.matches(line, col)) {
-          when (val res = node.resolve()) {
-            is SimpleModuleResolutionResult -> res.resolved?.toLocation()
-            is GlobModuleResolutionResult -> null // TODO: globs
-          }
-        } else null
-      }
-      is PklQualifiedIdentifier ->
-        when (val par = node.parent) {
-          is PklDeclaredType -> {
-            val mname = par.name.moduleName
-            if (mname != null && mname.span.matches(line, col)) {
-              mname.resolve()?.toLocation()
-            } else par.name.resolve()?.toLocation()
-          }
-          else -> null
-        }
       is PklThisExpr ->
         node.computeThisType(PklBaseModule.instance, mapOf()).getNode()?.toLocation()
-      else -> null
+      else -> if (node !== originalNode) node.toLocation() else null
     }
   }
 

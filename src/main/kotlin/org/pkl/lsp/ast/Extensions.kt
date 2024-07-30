@@ -329,6 +329,47 @@ class GlobModuleResolutionResult(val resolved: List<PklModule>) : ModuleResoluti
   }
 }
 
+// Resolve the reference under the cursor
+fun Node.resolveReference(line: Int, col: Int): Node? {
+  return when (this) {
+    is PklSuperAccessExpr -> if (matches(line, col)) resolve() else null
+    is PklProperty -> if (matches(line, col)) resolve() else null
+    // qualified/unqualified access
+    is PklReference -> resolve()
+    is PklDeclaredType -> name.resolve()
+    is PklImport -> {
+      if (matches(line, col)) {
+        when (val res = resolve()) {
+          is SimpleModuleResolutionResult -> res.resolved
+          is GlobModuleResolutionResult -> null // TODO: globs
+        }
+      } else null
+    }
+    is PklStringConstant ->
+      when (val parent = parent) {
+        is PklImportBase -> {
+          when (val res = parent.resolve()) {
+            is SimpleModuleResolutionResult -> res.resolved
+            is GlobModuleResolutionResult -> null // TODO: globs
+          }
+        }
+        is PklModuleExtendsAmendsClause -> parent.moduleUri?.resolve()
+        else -> null
+      }
+    is PklQualifiedIdentifier ->
+      when (val par = parent) {
+        is PklDeclaredType -> {
+          val mname = par.name.moduleName
+          if (mname != null && mname.span.matches(line, col)) {
+            mname.resolve()
+          } else par.name.resolve()
+        }
+        else -> this
+      }
+    else -> this
+  }
+}
+
 /** Find the deepest node that matches [line] and [col]. */
 fun Node.findBySpan(line: Int, col: Int, includeTerminals: Boolean = false): Node? {
   if (!includeTerminals && this is Terminal) return null

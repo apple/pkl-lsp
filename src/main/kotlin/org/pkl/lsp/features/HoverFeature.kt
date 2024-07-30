@@ -40,39 +40,11 @@ class HoverFeature(val server: PklLSPServer) {
     return server.builder().runningBuild(params.textDocument.uri).thenApply(::run)
   }
 
-  private fun resolveHover(node: Node, line: Int, col: Int): String? {
-    return when (node) {
-      is PklUnqualifiedAccessExpr -> {
-        val element = node.resolve() ?: return null
-        resolveHover(element, line, col, node)
-      }
-      is PklQualifiedAccessExpr -> {
-        val element = node.resolve() ?: return null
-        resolveHover(element, line, col, node)
-      }
-      is PklProperty -> {
-        when {
-          node.matches(line, col) -> {
-            val element = node.resolve() ?: node
-            resolveHover(element, line, col, node)
-          }
-          else -> null
-        }
-      }
-      else -> resolveHover(node, line, col, node)
-    }
-  }
-
-  private fun resolveHover(node: Node, line: Int, col: Int, originalNode: Node): String? {
+  private fun resolveHover(originalNode: Node, line: Int, col: Int): String? {
+    val node = originalNode.resolveReference(line, col) ?: return null
     val base = PklBaseModule.instance
+    if (node !== originalNode) return node.toMarkdown(originalNode)
     return when (node) {
-      is PklUnqualifiedAccessExpr -> node.toMarkdown(originalNode)
-      is PklQualifiedAccessExpr -> node.toMarkdown(originalNode)
-      is PklSuperAccessExpr -> {
-        if (node.matches(line, col)) {
-          node.resolve()?.toMarkdown(originalNode)
-        } else null
-      }
       is PklProperty -> node.toMarkdown(originalNode)
       is PklMethod -> node.toMarkdown(originalNode)
       is PklMethodHeader -> {
@@ -95,34 +67,10 @@ class HoverFeature(val server: PklLSPServer) {
         when (val par = node.parent) {
           // render the module declaration
           is PklModuleHeader -> par.parent?.toMarkdown(originalNode)
-          is PklDeclaredType -> {
-            val mname = par.name.moduleName
-            if (mname != null && mname.span.matches(line, col)) {
-              mname.resolve()?.toMarkdown(originalNode)
-            } else par.name.resolve()?.toMarkdown(originalNode)
-          }
           else -> null
         }
-      is PklDeclaredType -> node.name.resolve()?.toMarkdown(originalNode)
-      is PklStringConstant ->
-        when (val parent = node.parent) {
-          is PklImportBase -> {
-            when (val res = parent.resolve()) {
-              is SimpleModuleResolutionResult -> res.resolved?.toMarkdown(originalNode)
-              is GlobModuleResolutionResult -> null // TODO: globs
-            }
-          }
-          is PklModuleExtendsAmendsClause -> parent.moduleUri?.resolve()?.toMarkdown(originalNode)
-          else -> null
-        }
-      is PklImport -> {
-        if (node.matches(line, col)) {
-          when (val res = node.resolve()) {
-            is SimpleModuleResolutionResult -> res.resolved?.toMarkdown(originalNode)
-            is GlobModuleResolutionResult -> null // TODO: globs
-          }
-        } else null
-      }
+      is PklDeclaredType -> node.toMarkdown(originalNode)
+      is PklModule -> node.toMarkdown(originalNode)
       // render the typealias which contains the doc comments
       is PklTypeAliasHeader -> node.parent?.toMarkdown(originalNode)
       is PklTypedIdentifier -> node.toMarkdown(originalNode)
