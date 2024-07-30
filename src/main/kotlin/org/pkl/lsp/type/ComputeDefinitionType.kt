@@ -106,10 +106,11 @@ fun Node?.computeResolvedImportType(
     }
     is PklTypedIdentifier -> {
       val type = typeAnnotation?.type
+      val parameter = parent as PklParameter
       when {
         type != null -> type.toType(base, bindings, preserveUnboundTypeVars)
         else -> { // try to infer identifier type
-          when (val identifierOwner = parent) {
+          when (val identifierOwner = parameter.parent) {
             is PklLetExpr -> identifierOwner.varExpr.computeExprType(base, bindings)
             is PklForGenerator -> {
               val iterableType = identifierOwner.iterableExpr.computeExprType(base, bindings)
@@ -146,18 +147,17 @@ fun Node?.computeResolvedImportType(
                 }
               }
             }
-            is PklParameter -> {
-              val parameterList = identifierOwner.parent as PklParameterList
-              when (val parameterListOwner = parameterList.parent) {
+            is PklParameterList -> {
+              when (val parameterListOwner = identifierOwner.parent) {
                 is PklFunctionLiteralExpr -> {
                   val functionType = parameterListOwner.inferExprTypeFromContext(base, bindings)
-                  getFunctionParameterType(this, parameterList, functionType, base)
+                  getFunctionParameterType(this, identifierOwner, functionType, base)
                 }
                 is PklObjectBody ->
                   when (val objectBodyOwner = parameterListOwner.parent) {
                     is PklExpr -> {
                       val functionType = objectBodyOwner.computeExprType(base, bindings)
-                      getFunctionParameterType(this, parameterList, functionType, base)
+                      getFunctionParameterType(this, identifierOwner, functionType, base)
                     }
                     is PklObjectBodyOwner -> {
                       @Suppress("BooleanLiteralArgument")
@@ -169,7 +169,7 @@ fun Node?.computeResolvedImportType(
                           false,
                           cache,
                         )
-                      getFunctionParameterType(this, parameterList, functionType, base)
+                      getFunctionParameterType(this, identifierOwner, functionType, base)
                     }
                     else -> Type.Unknown
                   }
