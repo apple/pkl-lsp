@@ -33,7 +33,8 @@ class ModifierAnalyzer(private val server: PklLSPServer) : Analyzer() {
   }
 
   override fun doAnalyze(node: Node, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
-    if (node !is ModifierListOwner || node.modifiers == null) {
+    // removing module and module declaration because this will be checked in PklModuleHeader
+    if (node !is ModifierListOwner || node.modifiers == null || node is PklModule || node is PklModuleDeclaration) {
       return true
     }
 
