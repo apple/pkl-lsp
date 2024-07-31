@@ -15,8 +15,9 @@
  */
 package org.pkl.lsp
 
+import java.io.File
+import java.io.IOException
 import java.net.URI
-import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either
@@ -25,8 +26,6 @@ import org.pkl.core.util.IoUtils
 import org.pkl.lsp.features.CompletionFeature
 import org.pkl.lsp.features.GoToDefinitionFeature
 import org.pkl.lsp.features.HoverFeature
-import java.io.File
-import java.io.IOException
 
 class PklTextDocumentService(private val server: PklLSPServer) : TextDocumentService {
 

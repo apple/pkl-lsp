@@ -38,7 +38,12 @@ class Builder(private val server: PklLSPServer) {
   private val parser = Parser()
 
   private val analyzers: List<Analyzer> =
-    listOf(ModifierAnalyzer(server), AnnotationAnalyzer(server), SyntaxAnalyzer(server))
+    listOf(
+      ModifierAnalyzer(server),
+      AnnotationAnalyzer(server),
+      SyntaxAnalyzer(server),
+      ImportAnalyzer(server),
+    )
 
   fun runningBuild(uri: String): CompletableFuture<PklModule?> =
     runningBuild[uri] ?: CompletableFuture.supplyAsync(::noop)

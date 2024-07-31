@@ -19,7 +19,9 @@ import java.net.URI
 import java.net.URLEncoder
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.io.path.*
+import org.pkl.core.parser.LexParseException
 import org.pkl.lsp.ast.PklModule
 
 /** Manages all Pkl files that are not local to the file system: http(s), packages. */
@@ -28,6 +30,8 @@ object CacheManager {
   val pklCacheDir = pklDir.resolve(".cache")
 
   val lspCacheDir = Files.createTempDirectory("pkl-lsp-cache")
+  private val httpsErrors = ConcurrentHashMap<URI, Any>()
+  private val errObject = Any()
 
   private fun findHttpPath(uri: URI): Path? {
     if (!uri.scheme.equals("https", ignoreCase = true)) return null
@@ -48,8 +52,14 @@ object CacheManager {
   }
 
   fun findHttpModule(uri: URI): PklModule? {
+    if (httpsErrors.contains(uri)) return null
     return findHttpContent(uri)?.let { contents ->
-      Builder.fileToModule(contents, uri, HttpsFile(uri))
+      try {
+        Builder.fileToModule(contents, uri, HttpsFile(uri))
+      } catch (e: LexParseException) {
+        httpsErrors[uri] = errObject
+        return null
+      }
     }
   }
 }

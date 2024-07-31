@@ -18,7 +18,6 @@ package org.pkl.lsp
 import java.io.File
 import java.io.IOException
 import java.net.URI
-import java.nio.file.Paths
 import org.pkl.lsp.ast.PklModule
 
 enum class Origin {
