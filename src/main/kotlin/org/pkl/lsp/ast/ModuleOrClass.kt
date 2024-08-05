@@ -50,7 +50,10 @@ class PklModuleImpl(
     declaration?.moduleExtendsAmendsClause?.moduleUri
   }
 
-  override val supermodule: PklModule? by lazy { extendsAmendsUri?.resolve() }
+  // TODO: cache this and only resolve if the module file has changed
+  //       since the last resolve
+  override val supermodule: PklModule?
+    get() = extendsAmendsUri?.resolve()
 
   override val cache: ModuleMemberCache by lazy { ModuleMemberCache.create(this) }
 
