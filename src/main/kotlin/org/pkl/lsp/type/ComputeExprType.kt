@@ -25,16 +25,17 @@ private val cache: IdentityHashMap<Node, Type> = IdentityHashMap()
 fun Node?.computeExprType(base: PklBaseModule, bindings: TypeParameterBindings): Type {
   return when {
     this == null || this !is PklExpr -> Type.Unknown
-    bindings.isEmpty() -> {
-      val type = cache[this]
-      if (type != null) {
-        type
-      } else {
-        val typ = doComputeExprType(base, bindings)
-        cache[this] = typ
-        typ
-      }
-    }
+    // TODO: properly invalidate the cache
+    //    bindings.isEmpty() -> {
+    //      val type = cache[this]
+    //      if (type != null) {
+    //        type
+    //      } else {
+    //        val typ = doComputeExprType(base, bindings)
+    //        cache[this] = typ
+    //        typ
+    //      }
+    //    }
     else -> doComputeExprType(base, bindings)
   }
 }

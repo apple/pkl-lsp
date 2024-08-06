@@ -87,7 +87,9 @@ class FsFile(private val file: File) : VirtualFile {
   }
 
   override fun toModule(): PklModule? {
-    return Builder.fileToModule(file, this)
+    // get this module from the cache if possible so changes to it are propagated even
+    // if the file was not saved
+    return Builder.findModuleInCache(uri) ?: Builder.fileToModule(file, this)
   }
 }
 

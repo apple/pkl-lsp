@@ -50,8 +50,7 @@ class PklModuleImpl(
     declaration?.moduleExtendsAmendsClause?.moduleUri
   }
 
-  // TODO: cache this and only resolve if the module file has changed
-  //       since the last resolve
+  // This is cached at the VirtualFile level
   override val supermodule: PklModule?
     get() = extendsAmendsUri?.resolve()
 

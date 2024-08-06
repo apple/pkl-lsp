@@ -19,6 +19,7 @@ import java.io.File
 import java.io.IOException
 import java.net.URI
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
 import org.eclipse.lsp4j.PublishDiagnosticsParams
@@ -33,7 +34,6 @@ import org.pkl.lsp.ast.Span
 
 class Builder(private val server: PklLSPServer) {
   private val runningBuild: MutableMap<String, CompletableFuture<PklModule?>> = mutableMapOf()
-  private val successfulBuilds: MutableMap<String, PklModule> = mutableMapOf()
 
   private val parser = Parser()
 
@@ -54,7 +54,7 @@ class Builder(private val server: PklLSPServer) {
     return build
   }
 
-  fun lastSuccessfulBuild(uri: String): PklModule? = successfulBuilds[uri]
+  fun lastSuccessfulBuild(uri: String): PklModule? = buildCache[URI.create(uri)]
 
   private fun build(file: URI, vfile: VirtualFile, change: String): PklModule? {
     return try {
@@ -63,7 +63,7 @@ class Builder(private val server: PklLSPServer) {
       val module = PklModuleImpl(moduleCtx, file, vfile)
       val diagnostics = analyze(module)
       makeDiagnostics(file, diagnostics)
-      successfulBuilds[file.toString()] = module
+      buildCache[file] = module
       return module
     } catch (e: LexParseException) {
       server.logger().error("Parser Error building $file: ${e.message}")
@@ -128,6 +128,10 @@ class Builder(private val server: PklLSPServer) {
       val span = Span(ex.line, ex.column, ex.line, ex.column + ex.length)
       return ParseError(ex.message ?: "Parser error", span)
     }
+
+    private val buildCache: ConcurrentHashMap<URI, PklModule> = ConcurrentHashMap()
+
+    fun findModuleInCache(uri: URI): PklModule? = buildCache[uri]
   }
 }
 
