@@ -36,7 +36,7 @@ class CompletionFeature(val server: PklLSPServer) {
             ?: return Either.forLeft(listOf()))
 
       val line = params.position.line + 1
-      val col = params.position.character + 1
+      val col = params.position.character - 1
       @Suppress("WHEN_ENUM_CAN_BE_NULL_IN_JAVA")
       return when (params.context.triggerKind) {
         CompletionTriggerKind.Invoked -> Either.forLeft(listOf())
@@ -44,7 +44,7 @@ class CompletionFeature(val server: PklLSPServer) {
         CompletionTriggerKind.TriggerCharacter -> {
           // go two position behind to find the actual node to complete
           val completions =
-            pklMod.findBySpan(line, col - 2)?.resolveCompletion() ?: return Either.forLeft(listOf())
+            pklMod.findBySpan(line, col)?.resolveCompletion(line, col) ?: return Either.forLeft(listOf())
           return Either.forLeft(completions)
         }
       }
@@ -52,25 +52,24 @@ class CompletionFeature(val server: PklLSPServer) {
     return server.builder().runningBuild(params.textDocument.uri).thenApply(::run)
   }
 
-  private fun Node.resolveCompletion(): List<CompletionItem>? {
+  private fun Node.resolveCompletion(line: Int, col: Int): List<CompletionItem>? {
+    val node = resolveReference(line, col) ?: return null
     val showTypes = parentOfType<PklNewExpr>() != null
     val module = if (this is PklModule) this else enclosingModule
-    return when (this) {
-      is PklUnqualifiedAccessExpr -> resolve()?.complete(showTypes, module)
-      is PklQualifiedAccessExpr -> resolve()?.complete(showTypes, module)
+    return when (node) {
       is PklSingleLineStringLiteral,
-      is PklMultiLineStringLiteral -> PklBaseModule.instance.stringType.ctx.complete()
-      is PklQualifiedIdentifier ->
-        when (val par = parent) {
-          is PklDeclaredType -> par.name.resolve()?.complete(showTypes, module)
-          else -> null
-        }
-      is PklModule -> complete(showTypes, module)
+      is PklMultiLineStringLiteral,
+      is SingleLineStringPart,
+      is MultiLineStringPart -> PklBaseModule.instance.stringType.ctx.complete()
+      is PklModule -> node.complete(showTypes, module)
+      is PklClass -> node.complete(showTypes, module)
+      is PklClassProperty -> node.complete(showTypes, module)
       is PklThisExpr -> {
         val base = PklBaseModule.instance
-        computeThisType(base, mapOf()).toClassType(base)?.ctx?.complete()
+        node.computeThisType(base, mapOf()).toClassType(base)?.ctx?.complete()
       }
-      else -> null
+      is PklModuleExpr -> module?.complete(showTypes, module)
+      else -> if (this !== node) node.complete(showTypes, module) else null
     }
   }
 
@@ -114,7 +113,15 @@ class CompletionFeature(val server: PklLSPServer) {
 
   private fun PklClassProperty.complete(): List<CompletionItem> {
     val base = PklBaseModule.instance
-    val typ = type?.toType(base, mapOf()) ?: computeResolvedImportType(base, mapOf())
+    val typ = when (val typ = type) {
+      null -> {
+        val res = resolve()
+        if (res is PklClassProperty && res.type != null) {
+          res.type!!.toType(base, mapOf())
+        } else null
+      }
+      else -> typ.toType(base, mapOf())
+    } ?: computeResolvedImportType(base, mapOf())
     val clazz = typ.toClassType(base) ?: return listOf()
     return clazz.ctx.complete()
   }
@@ -122,15 +129,26 @@ class CompletionFeature(val server: PklLSPServer) {
   private fun PklClassProperty.toCompletionItem(): CompletionItem {
     val item = CompletionItem(name)
     item.kind = CompletionItemKind.Field
-    item.detail = type?.text ?: "unknown"
+    item.detail = type?.render() ?: "unknown"
     item.documentation = getDoc(this)
     return item
   }
 
   private fun PklClassMethod.toCompletionItem(): CompletionItem {
     val item = CompletionItem(name)
+    val pars = methodHeader.parameterList?.elements ?: listOf()
+    val strPars = pars.mapIndexed { index, par ->
+      val name = par.typedIdentifier?.identifier?.text ?: "par"
+      "\${${index + 1}:$name}"
+    }.joinToString(", ")
+
+    val parTypes = pars.joinToString(", ") { it.type?.render() ?: "unknown" }
+    val retType = methodHeader.returnType?.render() ?: "unknown"
+
+    item.insertText = "$name($strPars)"
+    item.insertTextFormat = InsertTextFormat.Snippet
     item.kind = CompletionItemKind.Method
-    item.detail = methodHeader.returnType?.text ?: "unknown"
+    item.detail = "($parTypes) -> $retType"
     item.documentation = getDoc(this)
     return item
   }
