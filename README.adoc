@@ -19,4 +19,4 @@ You need to have Java >=17 in your path.
 * [ ] Rename
 * [ ] Find references
 * [ ] Code lens
-* [ ] Formating
+* [ ] Formatting
