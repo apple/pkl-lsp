@@ -44,7 +44,8 @@ class CompletionFeature(val server: PklLSPServer) {
         CompletionTriggerKind.TriggerCharacter -> {
           // go two position behind to find the actual node to complete
           val completions =
-            pklMod.findBySpan(line, col)?.resolveCompletion(line, col) ?: return Either.forLeft(listOf())
+            pklMod.findBySpan(line, col)?.resolveCompletion(line, col)
+              ?: return Either.forLeft(listOf())
           return Either.forLeft(completions)
         }
       }
@@ -113,15 +114,16 @@ class CompletionFeature(val server: PklLSPServer) {
 
   private fun PklClassProperty.complete(): List<CompletionItem> {
     val base = PklBaseModule.instance
-    val typ = when (val typ = type) {
-      null -> {
-        val res = resolve()
-        if (res is PklClassProperty && res.type != null) {
-          res.type!!.toType(base, mapOf())
-        } else null
-      }
-      else -> typ.toType(base, mapOf())
-    } ?: computeResolvedImportType(base, mapOf())
+    val typ =
+      when (val typ = type) {
+        null -> {
+          val res = resolve()
+          if (res is PklClassProperty && res.type != null) {
+            res.type!!.toType(base, mapOf())
+          } else null
+        }
+        else -> typ.toType(base, mapOf())
+      } ?: computeResolvedImportType(base, mapOf())
     val clazz = typ.toClassType(base) ?: return listOf()
     return clazz.ctx.complete()
   }
@@ -137,10 +139,13 @@ class CompletionFeature(val server: PklLSPServer) {
   private fun PklClassMethod.toCompletionItem(): CompletionItem {
     val item = CompletionItem(name)
     val pars = methodHeader.parameterList?.elements ?: listOf()
-    val strPars = pars.mapIndexed { index, par ->
-      val name = par.typedIdentifier?.identifier?.text ?: "par"
-      "\${${index + 1}:$name}"
-    }.joinToString(", ")
+    val strPars =
+      pars
+        .mapIndexed { index, par ->
+          val name = par.typedIdentifier?.identifier?.text ?: "par"
+          "\${${index + 1}:$name}"
+        }
+        .joinToString(", ")
 
     val parTypes = pars.joinToString(", ") { it.type?.render() ?: "unknown" }
     val retType = methodHeader.returnType?.render() ?: "unknown"
