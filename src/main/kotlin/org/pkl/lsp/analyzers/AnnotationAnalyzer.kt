@@ -16,16 +16,33 @@
 package org.pkl.lsp.analyzers
 
 import org.pkl.lsp.ErrorMessages
+import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.PklLSPServer
 import org.pkl.lsp.ast.*
+import org.pkl.lsp.type.computeThisType
 
 class AnnotationAnalyzer(private val server: PklLSPServer) : Analyzer() {
   override fun doAnalyze(node: Node, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
     if (node !is PklAnnotation) return true
-    val type = node.type
+    val type = node.type ?: return true
     if (type !is PklDeclaredType) {
-      diagnosticsHolder.add(error(type ?: node, ErrorMessages.create("annotationHasNoName")))
+      diagnosticsHolder.add(error(type, ErrorMessages.create("annotationHasNoName")))
+      return true
     }
+
+    val resolvedType = type.name.resolve()
+    if (resolvedType == null || resolvedType !is PklClass) {
+      diagnosticsHolder.add(error(type, ErrorMessages.create("cannotFindType")))
+      return true
+    }
+    if (resolvedType.isAbstract) {
+      diagnosticsHolder.add(error(type, ErrorMessages.create("typeIsAbstract")))
+    }
+    val base = PklBaseModule.instance
+    if (!resolvedType.computeThisType(base, mapOf()).isSubtypeOf(base.annotationType, base)) {
+      diagnosticsHolder.add(error(type, ErrorMessages.create("notAnnotation")))
+    }
+
     return true
   }
 }
