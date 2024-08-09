@@ -390,8 +390,25 @@ fun Node.toURIString(): String {
 }
 
 fun Node.toCommandURIString(): String {
-  return if (containingFile !is FsFile) {
-    val params = """["${toURIString()}"]"""
-    "command:pkl.open.file?${URLEncoder.encode(params, Charsets.UTF_8)}"
-  } else containingFile.uri.toString()
+  val sp = beginningSpan()
+  val params = """["${toURIString()}",${sp.beginLine},${sp.beginCol}]"""
+  return "command:pkl.open.file?${URLEncoder.encode(params, Charsets.UTF_8)}"
 }
+
+// returns the span of this node, ignoring docs and annotations
+fun Node.beginningSpan(): Span =
+  when (this) {
+    is PklModule -> declaration?.beginningSpan() ?: span
+    is PklModuleDeclaration -> moduleHeader?.beginningSpan() ?: span
+    is PklClass -> classHeader.beginningSpan()
+    is PklTypeAlias -> typeAliasHeader.beginningSpan()
+    is PklClassMethod -> methodHeader.beginningSpan()
+    is PklClassProperty -> {
+      val mods = modifiers
+      when {
+        !mods.isNullOrEmpty() -> mods[0].beginningSpan()
+        else -> identifier?.beginningSpan() ?: span
+      }
+    }
+    else -> span
+  }
