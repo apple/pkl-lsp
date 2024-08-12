@@ -105,12 +105,12 @@ class HoverFeature(val server: PklLSPServer) {
           append(parameterList?.render(originalNode) ?: "()")
           val returnTypeStr =
             if (returnType != null) {
-              returnType!!.render(originalNode)
+              returnType!!.renderLink()
             } else {
               val parent = this@render.parent
               if (parent != null && parent is PklMethod) {
                 val type = parent.body.computeExprType(PklBaseModule.instance, mapOf())
-                type.render()
+                type.renderMarkdown()
               } else "unknown"
             }
           append(": ")
@@ -184,16 +184,15 @@ class HoverFeature(val server: PklLSPServer) {
           append(identifier?.text)
           typeParameterList?.let { append(it.render(originalNode)) }
         }
-      is PklType -> {
-        val text = render()
-        "[$text](${toCommandURIString()})"
-      }
+      is PklType -> renderLink()
       else -> text
     }
 
   // render modifiers
   private fun List<Terminal>?.render(): String {
-    return this?.let { if (isEmpty()) "" else joinToString(" ", postfix = " ") { "**${it.text}**" } } ?: ""
+    return this?.let {
+      if (isEmpty()) "" else joinToString(" ", postfix = " ") { "**${it.text}**" }
+    } ?: ""
   }
 
   private fun renderTypeAnnotation(
@@ -243,6 +242,34 @@ class HoverFeature(val server: PklLSPServer) {
       }
     }
   }
+
+  private fun PklType.renderLink(): String =
+    when (this) {
+      is PklDeclaredType -> {
+        val rendered = render()
+        val res = name.resolve()
+        if (res != null) {
+          "[$rendered](${res.toCommandURIString()})"
+        } else {
+          rendered
+        }
+      }
+      is PklParenthesizedType -> "(${type.renderLink()})"
+      is PklConstrainedType -> {
+        val link = type?.renderLink()
+        val constraints = exprs.joinToString(", ") { it.text }
+        if (link != null) {
+          "$link($constraints)"
+        } else render()
+      }
+      is PklDefaultUnionType -> "*${type.renderLink()}"
+      is PklUnionType -> "${leftType.renderLink()}|${rightType.renderLink()}"
+      is PklFunctionType -> {
+        val pars = parameterList.joinToString(", ") { it.renderLink() }
+        "($pars) -> ${returnType.renderLink()}"
+      }
+      else -> render()
+    }
 
   private fun Type.renderMarkdown(): String {
     var render = render()
