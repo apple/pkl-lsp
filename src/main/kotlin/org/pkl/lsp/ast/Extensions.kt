@@ -101,6 +101,13 @@ fun Node.isAncestor(of: Node): Boolean {
   return false
 }
 
+fun Node.isInStdlib(): Boolean {
+  return this.enclosingModule?.let { mod ->
+    val uri = mod.uri
+    uri.scheme == "pkl" && uri.authority == "stdlib"
+  } ?: false
+}
+
 fun PklClass.isSubclassOf(other: PklClass): Boolean {
   // optimization
   if (this === other) return true

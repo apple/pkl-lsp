@@ -17,6 +17,7 @@ package org.pkl.lsp.analyzers
 
 import org.eclipse.lsp4j.DiagnosticSeverity
 import org.pkl.lsp.ast.Node
+import org.pkl.lsp.ast.isInStdlib
 
 /**
  * Scans the source tree, and builds [PklDiagnostic]s.
@@ -25,6 +26,7 @@ import org.pkl.lsp.ast.Node
  */
 abstract class Analyzer {
   fun analyze(node: Node, diagnosticsHolder: MutableList<PklDiagnostic>) {
+    if (node.isInStdlib()) return
     if (!doAnalyze(node, diagnosticsHolder)) {
       return
     }
