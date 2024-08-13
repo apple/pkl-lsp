@@ -62,6 +62,10 @@ class CompletionFeature(val server: PklLSPServer) {
       is PklMultiLineStringLiteral,
       is SingleLineStringPart,
       is MultiLineStringPart -> PklBaseModule.instance.stringType.ctx.complete()
+      is PklIntLiteralExpr -> PklBaseModule.instance.intType.ctx.complete()
+      is PklFloatLiteralExpr -> PklBaseModule.instance.floatType.ctx.complete()
+      is PklTrueLiteralExpr,
+      is PklFalseLiteralExpr -> PklBaseModule.instance.booleanType.ctx.complete()
       is PklModule -> node.complete(showTypes, module)
       is PklClass -> node.complete(showTypes, module)
       is PklClassProperty -> node.complete(showTypes, module)
