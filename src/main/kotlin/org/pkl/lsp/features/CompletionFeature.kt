@@ -37,7 +37,7 @@ class CompletionFeature(val server: PklLSPServer) {
             ?: return Either.forLeft(listOf()))
 
       val line = params.position.line + 1
-      val col = params.position.character - 1
+      val col = params.position.character
       @Suppress("WHEN_ENUM_CAN_BE_NULL_IN_JAVA")
       return when (params.context.triggerKind) {
         CompletionTriggerKind.Invoked -> Either.forLeft(listOf())
@@ -67,6 +67,7 @@ class CompletionFeature(val server: PklLSPServer) {
       is PklFloatLiteralExpr -> PklBaseModule.instance.floatType.ctx.complete()
       is PklTrueLiteralExpr,
       is PklFalseLiteralExpr -> PklBaseModule.instance.booleanType.ctx.complete()
+      is PklReadExpr -> PklBaseModule.instance.resourceType.ctx.complete()
       is PklModule -> node.complete(showTypes, module)
       is PklClass -> node.complete(showTypes, module)
       is PklClassProperty -> node.complete(showTypes, module)
