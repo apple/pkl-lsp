@@ -99,18 +99,21 @@ interface ModifierListOwner : Node {
     get() = hasModifier(TokenType.CONST)
 
   val isFixedOrConst: Boolean
-    get() = hasEitherModifier(TokenType.CONST, TokenType.FIXED)
+    get() = hasAnyModifier(TokenType.CONST, TokenType.FIXED)
 
   val isAbstractOrOpen: Boolean
-    get() = hasEitherModifier(TokenType.ABSTRACT, TokenType.OPEN)
+    get() = hasAnyModifier(TokenType.ABSTRACT, TokenType.OPEN)
+
+  val isLocalOrConstOrFixed: Boolean
+    get() = hasAnyModifier(TokenType.LOCAL, TokenType.CONST, TokenType.FIXED)
 
   private fun hasModifier(tokenType: TokenType): Boolean {
     return modifiers?.any { it.type == tokenType } ?: false
   }
 
-  private fun hasEitherModifier(modifier1: TokenType, modifier2: TokenType): Boolean {
+  private fun hasAnyModifier(vararg tokenSet: TokenType): Boolean {
     val modifiers = modifiers ?: return false
-    return modifiers.any { it.type == modifier1 || it.type == modifier2 }
+    return modifiers.any { tokenSet.contains(it.type) }
   }
 }
 

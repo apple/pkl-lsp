@@ -53,7 +53,7 @@ fun Node?.computeResolvedImportType(
         type != null -> type.toType(base, bindings, preserveUnboundTypeVars)
         else ->
           when {
-            canInferExprBody && isLocal -> expr.computeExprType(base, bindings)
+            canInferExprBody && isLocalOrConstOrFixed -> expr.computeExprType(base, bindings)
             isDefinition -> Type.Unknown
             else -> {
               val receiverType = computeThisType(base, bindings)
