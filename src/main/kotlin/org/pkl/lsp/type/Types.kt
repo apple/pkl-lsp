@@ -794,15 +794,14 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
       base: PklBaseModule,
       visitor: ResolveVisitor<*>,
     ): Boolean {
-      //      if (isUnionOfStringLiterals) {
-      //        // visit pkl.base#String once rather than for every string literal
-      //        // (unions of 70+ string literals have been seen in the wild)
-      //        return base.stringType.visitMembers(isProperty, allowClasses, base, visitor)
-      //      }
-      //
-      //      return leftType.visitMembers(isProperty, allowClasses, base, visitor) &&
-      //        rightType.visitMembers(isProperty, allowClasses, base, visitor)
-      return true
+      if (isUnionOfStringLiterals) {
+        // visit pkl.base#String once rather than for every string literal
+        // (unions of 70+ string literals have been seen in the wild)
+        return base.stringType.visitMembers(isProperty, allowClasses, base, visitor)
+      }
+
+      return leftType.visitMembers(isProperty, allowClasses, base, visitor) &&
+        rightType.visitMembers(isProperty, allowClasses, base, visitor)
     }
 
     override fun isSubtypeOf(classType: Class, base: PklBaseModule): Boolean =

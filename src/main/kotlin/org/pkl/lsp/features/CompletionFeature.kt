@@ -21,6 +21,7 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.PklLSPServer
 import org.pkl.lsp.ast.*
+import org.pkl.lsp.type.Type
 import org.pkl.lsp.type.computeResolvedImportType
 import org.pkl.lsp.type.computeThisType
 import org.pkl.lsp.type.toType
@@ -82,7 +83,7 @@ class CompletionFeature(val server: PklLSPServer) {
     when (this) {
       is PklModule -> complete(showTypes, sourceModule)
       is PklClass -> complete()
-      is PklClassProperty -> complete()
+      is PklClassProperty -> complete(showTypes, sourceModule)
       else -> listOf()
     }
 
@@ -116,7 +117,10 @@ class CompletionFeature(val server: PklLSPServer) {
     addAll(methods.map { it.toCompletionItem() })
   }
 
-  private fun PklClassProperty.complete(): List<CompletionItem> {
+  private fun PklClassProperty.complete(
+    showTypes: Boolean,
+    sourceModule: PklModule?,
+  ): List<CompletionItem> {
     val base = PklBaseModule.instance
     val typ =
       when (val typ = type) {
@@ -128,8 +132,21 @@ class CompletionFeature(val server: PklLSPServer) {
         }
         else -> typ.toType(base, mapOf())
       } ?: computeResolvedImportType(base, mapOf())
-    val clazz = typ.toClassType(base) ?: return listOf()
-    return clazz.ctx.complete()
+    return typ.complete(showTypes, sourceModule)
+  }
+
+  private fun Type.complete(showTypes: Boolean, sourceModule: PklModule?): List<CompletionItem> {
+    return when (this) {
+      is Type.Module -> ctx.complete(showTypes, sourceModule)
+      is Type.Class -> ctx.complete()
+      is Type.Union ->
+        buildList {
+          addAll(leftType.complete(showTypes, sourceModule))
+          addAll(rightType.complete(showTypes, sourceModule))
+        }
+      is Type.Alias -> unaliased(PklBaseModule.instance).complete(showTypes, sourceModule)
+      else -> listOf()
+    }
   }
 
   private fun PklClassProperty.toCompletionItem(): CompletionItem {
