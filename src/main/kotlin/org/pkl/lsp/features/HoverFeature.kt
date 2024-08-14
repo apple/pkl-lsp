@@ -75,6 +75,7 @@ class HoverFeature(val server: PklLSPServer) {
       is PklTypeAliasHeader -> node.parent?.toMarkdown(originalNode)
       is PklTypedIdentifier -> node.toMarkdown(originalNode)
       is PklThisExpr -> node.computeThisType(base, mapOf()).toMarkdown()
+      is PklModuleExpr -> node.enclosingModule?.toMarkdown(originalNode)
       else -> null
     }
   }
@@ -205,7 +206,7 @@ class HoverFeature(val server: PklLSPServer) {
     return buildString {
       append(name)
       when {
-        originalNode?.isAncestor(node) == false -> {
+        originalNode !== node && originalNode?.isAncestor(node) == false -> {
           val visitor =
             ResolveVisitors.typeOfFirstElementNamed(
               name,
