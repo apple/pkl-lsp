@@ -100,18 +100,18 @@ class HoverFeature(val server: PklLSPServer) {
       }
       is PklMethodHeader ->
         buildString {
-          append("**function** ")
+          append("function ")
           append(identifier?.text ?: "<method>>")
           append(typeParameterList?.render(originalNode) ?: "")
           append(parameterList?.render(originalNode) ?: "()")
           val returnTypeStr =
             if (returnType != null) {
-              returnType!!.renderLink()
+              returnType!!.render(originalNode)
             } else {
               val parent = this@render.parent
               if (parent != null && parent is PklMethod) {
                 val type = parent.body.computeExprType(PklBaseModule.instance, mapOf())
-                type.renderMarkdown()
+                type.render()
               } else "unknown"
             }
           append(": ")
@@ -140,19 +140,19 @@ class HoverFeature(val server: PklLSPServer) {
       is PklClass ->
         buildString {
           append(modifiers.render())
-          append("**class** ")
+          append("class ")
           append(classHeader.identifier?.text ?: "<class>")
           typeParameterList?.let { append(it.render(originalNode)) }
           supertype?.let {
-            append(" **extends** ")
+            append(" extends ")
             append(it.render(originalNode))
           }
         }
-      is PklModule -> declaration?.render(originalNode) ?: "**module** $moduleName"
+      is PklModule -> declaration?.render(originalNode) ?: "module $moduleName"
       is PklModuleDeclaration ->
         buildString {
           append(modifiers.render())
-          append("**module** ")
+          append("module ")
           // can never be null
           append(moduleHeader!!.render(originalNode))
         }
@@ -160,16 +160,16 @@ class HoverFeature(val server: PklLSPServer) {
         buildString {
           append(moduleName ?: enclosingModule?.moduleName ?: "<module>")
           moduleExtendsAmendsClause?.let {
-            append(if (it.isAmend) " **amends** " else " **extends** ")
+            append(if (it.isAmend) " amends " else " extends ")
             append(it.moduleUri!!.stringConstant.text)
           }
         }
       is PklImport ->
         buildString {
           if (isGlob) {
-            append("__import*__ ")
+            append("import* ")
           } else {
-            append("**import** ")
+            append("import ")
           }
           moduleUri?.stringConstant?.escapedText()?.let { append("\"$it\"") }
           val definitionType =
@@ -181,19 +181,17 @@ class HoverFeature(val server: PklLSPServer) {
       is PklTypeAliasHeader ->
         buildString {
           append(modifiers.render())
-          append("**typealias** ")
+          append("typealias ")
           append(identifier?.text)
           typeParameterList?.let { append(it.render(originalNode)) }
         }
-      is PklType -> renderLink()
+      is PklType -> render()
       else -> text
     }
 
   // render modifiers
   private fun List<Terminal>?.render(): String {
-    return this?.let {
-      if (isEmpty()) "" else joinToString(" ", postfix = " ") { "**${it.text}**" }
-    } ?: ""
+    return this?.let { if (isEmpty()) "" else joinToString(" ", postfix = " ") { it.text } } ?: ""
   }
 
   private fun renderTypeAnnotation(
@@ -226,9 +224,9 @@ class HoverFeature(val server: PklLSPServer) {
             )
           append(": ")
           if (computedType is Type.Unknown && type != null) {
-            append(type.render(originalNode))
+            append(type.render())
           } else {
-            append(computedType.renderMarkdown())
+            computedType.render(this)
           }
         }
         type != null -> {
@@ -238,51 +236,14 @@ class HoverFeature(val server: PklLSPServer) {
         else -> {
           val computedType = node.computeResolvedImportType(PklBaseModule.instance, mapOf())
           append(": ")
-          append(computedType.renderMarkdown())
+          computedType.render(this)
         }
       }
     }
-  }
-
-  private fun PklType.renderLink(): String =
-    when (this) {
-      is PklDeclaredType -> {
-        val rendered = render()
-        val res = name.resolve()
-        if (res != null) {
-          "[$rendered](${res.toCommandURIString()})"
-        } else {
-          rendered
-        }
-      }
-      is PklParenthesizedType -> "(${type.renderLink()})"
-      is PklConstrainedType -> {
-        val link = type?.renderLink()
-        val constraints = exprs.joinToString(", ") { it.text }
-        if (link != null) {
-          "$link($constraints)"
-        } else render()
-      }
-      is PklDefaultUnionType -> "*${type.renderLink()}"
-      is PklUnionType -> "${leftType.renderLink()}|${rightType.renderLink()}"
-      is PklFunctionType -> {
-        val pars = parameterList.joinToString(", ") { it.renderLink() }
-        "($pars) -> ${returnType.renderLink()}"
-      }
-      else -> render()
-    }
-
-  private fun Type.renderMarkdown(): String {
-    var render = render()
-    val ctx = getNode()
-    if (ctx != null) {
-      render = "[$render](${ctx.toCommandURIString()})"
-    }
-    return render
   }
 
   private fun Type.toMarkdown(): String {
-    val markdown = renderMarkdown()
+    val markdown = render()
     val ctx = getNode()
     return when {
       ctx is PklModule && ctx.declaration != null ->
@@ -300,10 +261,11 @@ class HoverFeature(val server: PklLSPServer) {
   }
 
   private fun showDocCommentAndModule(node: Node?, text: String): String {
+    val markdown = "```pkl\n$text\n```"
     val withDoc =
       if (node is PklDocCommentOwner) {
-        node.parsedComment?.let { "$text\n\n---\n\n$it" } ?: text
-      } else text
+        node.parsedComment?.let { "$markdown\n\n---\n\n$it" } ?: markdown
+      } else markdown
     val module = (if (node is PklModule) node else node?.enclosingModule)
     val footer =
       if (module != null) {
