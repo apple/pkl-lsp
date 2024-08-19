@@ -43,6 +43,7 @@ class Builder(private val server: PklLSPServer) {
       AnnotationAnalyzer(server),
       SyntaxAnalyzer(server),
       ImportAnalyzer(server),
+      ModuleMemberAnalyzer(server),
     )
 
   fun runningBuild(uri: String): CompletableFuture<PklModule?> =
