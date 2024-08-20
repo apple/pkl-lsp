@@ -1,0 +1,22 @@
+[versions]
+antlr = "4.+"
+clikt = "4.4.0"
+junit-jupiter = "5.10.2"
+kotlin = "2.0.0"
+ktfmt = "0.51"
+lsp4j = "0.23.1"
+pkl = "0.26.2"
+shadowPlugin = "8.1.1"
+spotless = "6.21.0"
+
+[libraries]
+antlr = { group = "com.tunnelvisionlabs", name = "antlr4", version.ref = "antlr" }
+clikt = { group = "com.github.ajalt.clikt", name = "clikt", version.ref = "clikt" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
+lsp4j = { group = "org.eclipse.lsp4j", name = "org.eclipse.lsp4j", version.ref = "lsp4j" }
+pklCore = { group = "org.pkl-lang", name = "pkl-core", version.ref = "pkl" }
+
+[plugins]
+kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadowPlugin" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
