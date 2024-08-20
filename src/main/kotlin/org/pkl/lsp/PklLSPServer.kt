@@ -67,6 +67,10 @@ class PklLSPServer(private val verbose: Boolean) : LanguageServer, LanguageClien
 
   override fun getWorkspaceService(): WorkspaceService = workspaceService
 
+  override fun setTrace(params: SetTraceParams?) {
+    //noop
+  }
+
   fun builder(): Builder = builder
 
   fun client(): LanguageClient = client
