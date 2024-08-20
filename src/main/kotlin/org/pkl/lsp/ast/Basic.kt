@@ -18,11 +18,13 @@ package org.pkl.lsp.ast
 import org.pkl.core.parser.antlr.PklParser.QualifiedIdentifierContext
 import org.pkl.core.parser.antlr.PklParser.StringConstantContext
 import org.pkl.lsp.PklVisitor
+import org.pkl.lsp.Project
 
 class PklQualifiedIdentifierImpl(
+  override val project: Project,
   override val parent: Node,
   override val ctx: QualifiedIdentifierContext,
-) : AbstractNode(parent, ctx), PklQualifiedIdentifier {
+) : AbstractNode(project, parent, ctx), PklQualifiedIdentifier {
   override val identifiers: List<Terminal> by lazy { terminals }
   override val fullName: String by lazy { text }
 
@@ -31,8 +33,11 @@ class PklQualifiedIdentifierImpl(
   }
 }
 
-class PklStringConstantImpl(override val parent: Node, override val ctx: StringConstantContext) :
-  AbstractNode(parent, ctx), PklStringConstant {
+class PklStringConstantImpl(
+  override val project: Project,
+  override val parent: Node,
+  override val ctx: StringConstantContext,
+) : AbstractNode(project, parent, ctx), PklStringConstant {
   override val value: String by lazy { text }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {

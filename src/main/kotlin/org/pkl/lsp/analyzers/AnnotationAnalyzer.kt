@@ -16,12 +16,11 @@
 package org.pkl.lsp.analyzers
 
 import org.pkl.lsp.ErrorMessages
-import org.pkl.lsp.PklBaseModule
-import org.pkl.lsp.PklLSPServer
+import org.pkl.lsp.Project
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.type.computeThisType
 
-class AnnotationAnalyzer(private val server: PklLSPServer) : Analyzer() {
+class AnnotationAnalyzer(project: Project) : Analyzer(project) {
   override fun doAnalyze(node: Node, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
     if (node !is PklAnnotation) return true
     val type = node.type ?: return true
@@ -38,7 +37,7 @@ class AnnotationAnalyzer(private val server: PklLSPServer) : Analyzer() {
     if (resolvedType.isAbstract) {
       diagnosticsHolder.add(error(type, ErrorMessages.create("typeIsAbstract")))
     }
-    val base = PklBaseModule.instance
+    val base = project.pklBaseModule
     if (!resolvedType.computeThisType(base, mapOf()).isSubtypeOf(base.annotationType, base)) {
       diagnosticsHolder.add(error(type, ErrorMessages.create("notAnnotation")))
     }

@@ -19,7 +19,6 @@ import java.util.*
 import org.pkl.core.Release
 
 object Release {
-
   private val properties: Properties by lazy {
     val properties = Properties()
     Release::class.java.getResourceAsStream("/org/pkl/lsp/Release.properties").use { stream ->

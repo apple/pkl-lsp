@@ -13,13 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.pkl.lsp.analyzers
+package org.pkl.lsp
 
-import org.pkl.lsp.Project
-import org.pkl.lsp.ast.Node
+import kotlin.reflect.KClass
 
-class StringLiteralAnalyzer(project: Project) : Analyzer(project) {
-  override fun doAnalyze(node: Node, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
-    TODO("Not yet implemented")
-  }
+class Project(private val server: PklLSPServer) {
+  val cacheManager: CacheManager by lazy { CacheManager(this) }
+
+  val pklBaseModule: PklBaseModule by lazy { PklBaseModule(this) }
+
+  val stdlib: Stdlib by lazy { Stdlib(this) }
+
+  /**
+   * Creates a logger with the given class as the logger's name.
+   */
+  fun getLogger(clazz: KClass<*>): ClientLogger =
+    ClientLogger(
+      server.client(),
+      server.verbose,
+      clazz.qualifiedName ?: clazz.java.descriptorString(),
+    )
 }

@@ -16,11 +16,11 @@
 package org.pkl.lsp.analyzers
 
 import org.pkl.lsp.ErrorMessages
-import org.pkl.lsp.PklLSPServer
+import org.pkl.lsp.Project
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.ast.TokenType.*
 
-class ModifierAnalyzer(private val server: PklLSPServer) : Analyzer() {
+class ModifierAnalyzer(project: Project) : Analyzer(project) {
   companion object {
     private val MODULE_MODIFIERS = setOf(ABSTRACT, OPEN)
     private val AMENDING_MODULE_MODIFIERS = emptySet<TokenType>()

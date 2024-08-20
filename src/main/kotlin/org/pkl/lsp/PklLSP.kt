@@ -18,7 +18,6 @@ package org.pkl.lsp
 import org.eclipse.lsp4j.launch.LSPLauncher
 
 object PklLSP {
-
   fun run(verbose: Boolean) {
     val server = PklLSPServer(verbose)
     val launcher = LSPLauncher.createServerLauncher(server, System.`in`, System.out)
@@ -26,7 +25,6 @@ object PklLSP {
     val client = launcher.remoteProxy
     server.connect(client)
 
-    server.logger().log("Starting Pkl LSP server")
     val future = launcher.startListening()
     future.get()
   }

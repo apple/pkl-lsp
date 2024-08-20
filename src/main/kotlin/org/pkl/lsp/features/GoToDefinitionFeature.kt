@@ -20,13 +20,15 @@ import org.eclipse.lsp4j.DefinitionParams
 import org.eclipse.lsp4j.Location
 import org.eclipse.lsp4j.LocationLink
 import org.eclipse.lsp4j.jsonrpc.messages.Either
+import org.pkl.lsp.Component
 import org.pkl.lsp.LSPUtil.toRange
-import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.PklLSPServer
+import org.pkl.lsp.Project
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.type.computeThisType
 
-class GoToDefinitionFeature(val server: PklLSPServer) {
+class GoToDefinitionFeature(private val server: PklLSPServer, project: Project) :
+  Component(project) {
 
   fun onGoToDefinition(
     params: DefinitionParams
@@ -47,7 +49,7 @@ class GoToDefinitionFeature(val server: PklLSPServer) {
     val node = originalNode.resolveReference(line, col) ?: return null
     return when (node) {
       is PklThisExpr ->
-        node.computeThisType(PklBaseModule.instance, mapOf()).getNode()?.toLocation()
+        node.computeThisType(project.pklBaseModule, mapOf()).getNode(project)?.toLocation()
       else -> if (node !== originalNode) node.toLocation() else null
     }
   }

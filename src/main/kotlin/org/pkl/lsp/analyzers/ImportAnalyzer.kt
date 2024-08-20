@@ -16,16 +16,12 @@
 package org.pkl.lsp.analyzers
 
 import java.net.URI
-import org.pkl.lsp.CacheManager
-import org.pkl.lsp.ErrorMessages
-import org.pkl.lsp.PklLSPServer
-import org.pkl.lsp.Stdlib
+import org.pkl.lsp.*
 import org.pkl.lsp.ast.Node
 import org.pkl.lsp.ast.PklImportBase
 import org.pkl.lsp.ast.escapedText
 
-class ImportAnalyzer(private val server: PklLSPServer) : Analyzer() {
-
+class ImportAnalyzer(project: Project) : Analyzer(project) {
   override fun doAnalyze(node: Node, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
     if (node !is PklImportBase) {
       return true
@@ -37,7 +33,7 @@ class ImportAnalyzer(private val server: PklLSPServer) : Analyzer() {
       // validate stdlib imports
       uriStr.startsWith("pkl:") -> {
         val name = uriStr.replace("pkl:", "")
-        if (Stdlib.getModule(name) == null) {
+        if (project.stdlib.getModule(name) == null) {
           diagnosticsHolder += error(node, ErrorMessages.create("invalidStdlibImport"))
         }
       }
@@ -46,7 +42,7 @@ class ImportAnalyzer(private val server: PklLSPServer) : Analyzer() {
       uriStr.startsWith("https://") -> {
         try {
           val uri = URI.create(uriStr)
-          if (CacheManager.findHttpModule(uri) == null) {
+          if (project.cacheManager.findHttpModule(uri) == null) {
             diagnosticsHolder += error(node, ErrorMessages.create("invalidHttpsUrlImport"))
           }
         } catch (_: IllegalArgumentException) {

@@ -27,6 +27,7 @@ import org.pkl.lsp.type.Type
 import org.pkl.lsp.type.TypeParameterBindings
 
 interface Node {
+  val project: Project
   val span: Span
   val parent: Node?
   val children: List<Node>
@@ -645,7 +646,11 @@ interface PklDefaultUnionType : PklType {
   }
 }
 
-abstract class AbstractNode(override val parent: Node?, protected open val ctx: ParseTree) : Node {
+abstract class AbstractNode(
+  override val project: Project,
+  override val parent: Node?,
+  protected open val ctx: ParseTree,
+) : Node {
   private val childrenByType: Map<KClass<out Node>, List<Node>> by lazy {
     if (ctx !is ParserRuleContext) {
       return@lazy emptyMap()
@@ -655,7 +660,7 @@ abstract class AbstractNode(override val parent: Node?, protected open val ctx: 
     // use LinkedHashMap to preserve order
     LinkedHashMap<KClass<out Node>, MutableList<Node>>().also { map ->
       for (idx in parserCtx.children.indices) {
-        val node = parserCtx.children.toNode(self, idx) ?: continue
+        val node = parserCtx.children.toNode(project, self, idx) ?: continue
         when (val nodes = map[node::class]) {
           null -> map[node::class] = mutableListOf(node)
           else -> nodes.add(node)
@@ -724,97 +729,98 @@ abstract class AbstractNode(override val parent: Node?, protected open val ctx: 
   }
 }
 
-fun List<ParseTree>.toNode(parent: Node?, idx: Int): Node? {
-  return get(idx).toNode(parent)
+fun List<ParseTree>.toNode(project: Project, parent: Node?, idx: Int): Node? {
+  return get(idx).toNode(project, parent)
 }
 
-fun ParseTree.toNode(parent: Node?): Node? {
+fun ParseTree.toNode(project: Project, parent: Node?): Node? {
   return when (this) {
     // a module can never be constructed from this function
     // is ModuleContext -> PklModuleImpl(this)
-    is ModuleDeclContext -> PklModuleDeclarationImpl(parent!!, this)
-    is ModuleHeaderContext -> PklModuleHeaderImpl(parent!!, this)
-    is ImportClauseContext -> PklImportImpl(parent!!, this)
-    is ModuleExtendsOrAmendsClauseContext -> PklModuleExtendsAmendsClauseImpl(parent!!, this)
-    is ClazzContext -> PklClassImpl(parent!!, this)
-    is ClassHeaderContext -> PklClassHeaderImpl(parent!!, this)
-    is ClassBodyContext -> PklClassBodyImpl(parent!!, this)
-    is ClassPropertyContext -> PklClassPropertyImpl(parent!!, this)
-    is MethodHeaderContext -> PklMethodHeaderImpl(parent!!, this)
-    is ClassMethodContext -> PklClassMethodImpl(parent!!, this)
-    is ParameterListContext -> PklParameterListImpl(parent!!, this)
-    is ParameterContext -> PklParameterImpl(parent!!, this)
-    is ArgumentListContext -> PklArgumentListImpl(parent!!, this)
-    is AnnotationContext -> PklAnnotationImpl(parent!!, this)
-    is TypeAnnotationContext -> PklTypeAnnotationImpl(parent!!, this)
-    is TypedIdentifierContext -> PklTypedIdentifierImpl(parent!!, this)
-    is UnknownTypeContext -> PklUnknownTypeImpl(parent!!, this)
-    is NothingTypeContext -> PklNothingTypeImpl(parent!!, this)
-    is ModuleTypeContext -> PklModuleTypeImpl(parent!!, this)
-    is StringLiteralTypeContext -> PklStringLiteralTypeImpl(parent!!, this)
-    is DeclaredTypeContext -> PklDeclaredTypeImpl(parent!!, this)
-    is ParenthesizedTypeContext -> PklParenthesizedTypeImpl(parent!!, this)
-    is NullableTypeContext -> PklNullableTypeImpl(parent!!, this)
-    is ConstrainedTypeContext -> PklConstrainedTypeImpl(parent!!, this)
-    is UnionTypeContext -> PklUnionTypeImpl(parent!!, this)
-    is DefaultUnionTypeContext -> PklDefaultUnionTypeImpl(parent!!, this)
-    is FunctionTypeContext -> PklFunctionTypeImpl(parent!!, this)
-    is TypeArgumentListContext -> PklTypeArgumentListImpl(parent!!, this)
-    is ThisExprContext -> PklThisExprImpl(parent!!, this)
-    is OuterExprContext -> PklOuterExprImpl(parent!!, this)
-    is ModuleExprContext -> PklModuleExprImpl(parent!!, this)
-    is NullLiteralContext -> PklNullLiteralExprImpl(parent!!, this)
-    is TrueLiteralContext -> PklTrueLiteralExprImpl(parent!!, this)
-    is FalseLiteralContext -> PklFalseLiteralExprImpl(parent!!, this)
-    is IntLiteralContext -> PklIntLiteralExprImpl(parent!!, this)
-    is FloatLiteralContext -> PklFloatLiteralExprImpl(parent!!, this)
-    is ThrowExprContext -> PklThrowExprImpl(parent!!, this)
-    is TraceExprContext -> PklTraceExprImpl(parent!!, this)
-    is ImportExprContext -> PklImportExprImpl(parent!!, this)
-    is ReadExprContext -> PklReadExprImpl(parent!!, this)
-    is UnqualifiedAccessExprContext -> PklUnqualifiedAccessExprImpl(parent!!, this)
-    is SingleLineStringLiteralContext -> PklSingleLineStringLiteralImpl(parent!!, this)
-    is SingleLineStringPartContext -> SingleLineStringPartImpl(parent!!, this)
-    is MultiLineStringLiteralContext -> PklMultiLineStringLiteralImpl(parent!!, this)
-    is MultiLineStringPartContext -> MultiLineStringPartImpl(parent!!, this)
-    is StringConstantContext -> PklStringConstantImpl(parent!!, this)
-    is NewExprContext -> PklNewExprImpl(parent!!, this)
-    is AmendExprContext -> PklAmendExprImpl(parent!!, this)
-    is SuperAccessExprContext -> PklSuperAccessExprImpl(parent!!, this)
-    is SuperSubscriptExprContext -> PklSuperSubscriptExprImpl(parent!!, this)
-    is QualifiedAccessExprContext -> PklQualifiedAccessExprImpl(parent!!, this)
-    is SubscriptExprContext -> PklSubscriptExprImpl(parent!!, this)
-    is NonNullExprContext -> PklNonNullExprImpl(parent!!, this)
-    is UnaryMinusExprContext -> PklUnaryMinusExprImpl(parent!!, this)
-    is LogicalNotExprContext -> PklLogicalNotExprImpl(parent!!, this)
-    is ExponentiationExprContext -> PklExponentiationExprImpl(parent!!, this)
-    is MultiplicativeExprContext -> PklMultiplicativeExprImpl(parent!!, this)
-    is AdditiveExprContext -> PklAdditiveExprImpl(parent!!, this)
-    is ComparisonExprContext -> PklComparisonExprImpl(parent!!, this)
-    is TypeTestExprContext -> PklTypeTestExprImpl(parent!!, this)
-    is EqualityExprContext -> PklEqualityExprImpl(parent!!, this)
-    is LogicalAndExprContext -> PklLogicalAndExprImpl(parent!!, this)
-    is LogicalOrExprContext -> PklLogicalOrExprImpl(parent!!, this)
-    is PipeExprContext -> PklPipeExprImpl(parent!!, this)
-    is NullCoalesceExprContext -> PklNullCoalesceExprImpl(parent!!, this)
-    is IfExprContext -> PklIfExprImpl(parent!!, this)
-    is LetExprContext -> PklLetExprImpl(parent!!, this)
-    is FunctionLiteralContext -> PklFunctionLiteralExprImpl(parent!!, this)
-    is ParenthesizedExprContext -> PklParenthesizedExprImpl(parent!!, this)
-    is QualifiedIdentifierContext -> PklQualifiedIdentifierImpl(parent!!, this)
-    is ObjectBodyContext -> PklObjectBodyImpl(parent!!, this)
-    is ObjectPropertyContext -> PklObjectPropertyImpl(parent!!, this)
-    is ObjectMethodContext -> PklObjectMethodImpl(parent!!, this)
-    is ObjectEntryContext -> PklObjectEntryImpl(parent!!, this)
-    is MemberPredicateContext -> PklMemberPredicateImpl(parent!!, this)
-    is ForGeneratorContext -> PklForGeneratorImpl(parent!!, this)
-    is WhenGeneratorContext -> PklWhenGeneratorImpl(parent!!, this)
-    is ObjectElementContext -> PklObjectElementImpl(parent!!, this)
-    is ObjectSpreadContext -> PklObjectSpreadImpl(parent!!, this)
-    is TypeParameterContext -> PklTypeParameterImpl(parent!!, this)
-    is TypeParameterListContext -> PklTypeParameterListImpl(parent!!, this)
-    is TypeAliasHeaderContext -> PklTypeAliasHeaderImpl(parent!!, this)
-    is TypeAliasContext -> PklTypeAliasImpl(parent!!, this)
+    is ModuleDeclContext -> PklModuleDeclarationImpl(project, parent!!, this)
+    is ModuleHeaderContext -> PklModuleHeaderImpl(project, parent!!, this)
+    is ImportClauseContext -> PklImportImpl(project, parent!!, this)
+    is ModuleExtendsOrAmendsClauseContext ->
+      PklModuleExtendsAmendsClauseImpl(project, parent!!, this)
+    is ClazzContext -> PklClassImpl(project, parent!!, this)
+    is ClassHeaderContext -> PklClassHeaderImpl(project, parent!!, this)
+    is ClassBodyContext -> PklClassBodyImpl(project, parent!!, this)
+    is ClassPropertyContext -> PklClassPropertyImpl(project, parent!!, this)
+    is MethodHeaderContext -> PklMethodHeaderImpl(project, parent!!, this)
+    is ClassMethodContext -> PklClassMethodImpl(project, parent!!, this)
+    is ParameterListContext -> PklParameterListImpl(project, parent!!, this)
+    is ParameterContext -> PklParameterImpl(project, parent!!, this)
+    is ArgumentListContext -> PklArgumentListImpl(project, parent!!, this)
+    is AnnotationContext -> PklAnnotationImpl(project, parent!!, this)
+    is TypeAnnotationContext -> PklTypeAnnotationImpl(project, parent!!, this)
+    is TypedIdentifierContext -> PklTypedIdentifierImpl(project, parent!!, this)
+    is UnknownTypeContext -> PklUnknownTypeImpl(project, parent!!, this)
+    is NothingTypeContext -> PklNothingTypeImpl(project, parent!!, this)
+    is ModuleTypeContext -> PklModuleTypeImpl(project, parent!!, this)
+    is StringLiteralTypeContext -> PklStringLiteralTypeImpl(project, parent!!, this)
+    is DeclaredTypeContext -> PklDeclaredTypeImpl(project, parent!!, this)
+    is ParenthesizedTypeContext -> PklParenthesizedTypeImpl(project, parent!!, this)
+    is NullableTypeContext -> PklNullableTypeImpl(project, parent!!, this)
+    is ConstrainedTypeContext -> PklConstrainedTypeImpl(project, parent!!, this)
+    is UnionTypeContext -> PklUnionTypeImpl(project, parent!!, this)
+    is DefaultUnionTypeContext -> PklDefaultUnionTypeImpl(project, parent!!, this)
+    is FunctionTypeContext -> PklFunctionTypeImpl(project, parent!!, this)
+    is TypeArgumentListContext -> PklTypeArgumentListImpl(project, parent!!, this)
+    is ThisExprContext -> PklThisExprImpl(project, parent!!, this)
+    is OuterExprContext -> PklOuterExprImpl(project, parent!!, this)
+    is ModuleExprContext -> PklModuleExprImpl(project, parent!!, this)
+    is NullLiteralContext -> PklNullLiteralExprImpl(project, parent!!, this)
+    is TrueLiteralContext -> PklTrueLiteralExprImpl(project, parent!!, this)
+    is FalseLiteralContext -> PklFalseLiteralExprImpl(project, parent!!, this)
+    is IntLiteralContext -> PklIntLiteralExprImpl(project, parent!!, this)
+    is FloatLiteralContext -> PklFloatLiteralExprImpl(project, parent!!, this)
+    is ThrowExprContext -> PklThrowExprImpl(project, parent!!, this)
+    is TraceExprContext -> PklTraceExprImpl(project, parent!!, this)
+    is ImportExprContext -> PklImportExprImpl(project, parent!!, this)
+    is ReadExprContext -> PklReadExprImpl(project, parent!!, this)
+    is UnqualifiedAccessExprContext -> PklUnqualifiedAccessExprImpl(project, parent!!, this)
+    is SingleLineStringLiteralContext -> PklSingleLineStringLiteralImpl(project, parent!!, this)
+    is SingleLineStringPartContext -> SingleLineStringPartImpl(project, parent!!, this)
+    is MultiLineStringLiteralContext -> PklMultiLineStringLiteralImpl(project, parent!!, this)
+    is MultiLineStringPartContext -> MultiLineStringPartImpl(project, parent!!, this)
+    is StringConstantContext -> PklStringConstantImpl(project, parent!!, this)
+    is NewExprContext -> PklNewExprImpl(project, parent!!, this)
+    is AmendExprContext -> PklAmendExprImpl(project, parent!!, this)
+    is SuperAccessExprContext -> PklSuperAccessExprImpl(project, parent!!, this)
+    is SuperSubscriptExprContext -> PklSuperSubscriptExprImpl(project, parent!!, this)
+    is QualifiedAccessExprContext -> PklQualifiedAccessExprImpl(project, parent!!, this)
+    is SubscriptExprContext -> PklSubscriptExprImpl(project, parent!!, this)
+    is NonNullExprContext -> PklNonNullExprImpl(project, parent!!, this)
+    is UnaryMinusExprContext -> PklUnaryMinusExprImpl(project, parent!!, this)
+    is LogicalNotExprContext -> PklLogicalNotExprImpl(project, parent!!, this)
+    is ExponentiationExprContext -> PklExponentiationExprImpl(project, parent!!, this)
+    is MultiplicativeExprContext -> PklMultiplicativeExprImpl(project, parent!!, this)
+    is AdditiveExprContext -> PklAdditiveExprImpl(project, parent!!, this)
+    is ComparisonExprContext -> PklComparisonExprImpl(project, parent!!, this)
+    is TypeTestExprContext -> PklTypeTestExprImpl(project, parent!!, this)
+    is EqualityExprContext -> PklEqualityExprImpl(project, parent!!, this)
+    is LogicalAndExprContext -> PklLogicalAndExprImpl(project, parent!!, this)
+    is LogicalOrExprContext -> PklLogicalOrExprImpl(project, parent!!, this)
+    is PipeExprContext -> PklPipeExprImpl(project, parent!!, this)
+    is NullCoalesceExprContext -> PklNullCoalesceExprImpl(project, parent!!, this)
+    is IfExprContext -> PklIfExprImpl(project, parent!!, this)
+    is LetExprContext -> PklLetExprImpl(project, parent!!, this)
+    is FunctionLiteralContext -> PklFunctionLiteralExprImpl(project, parent!!, this)
+    is ParenthesizedExprContext -> PklParenthesizedExprImpl(project, parent!!, this)
+    is QualifiedIdentifierContext -> PklQualifiedIdentifierImpl(project, parent!!, this)
+    is ObjectBodyContext -> PklObjectBodyImpl(project, parent!!, this)
+    is ObjectPropertyContext -> PklObjectPropertyImpl(project, parent!!, this)
+    is ObjectMethodContext -> PklObjectMethodImpl(project, parent!!, this)
+    is ObjectEntryContext -> PklObjectEntryImpl(project, parent!!, this)
+    is MemberPredicateContext -> PklMemberPredicateImpl(project, parent!!, this)
+    is ForGeneratorContext -> PklForGeneratorImpl(project, parent!!, this)
+    is WhenGeneratorContext -> PklWhenGeneratorImpl(project, parent!!, this)
+    is ObjectElementContext -> PklObjectElementImpl(project, parent!!, this)
+    is ObjectSpreadContext -> PklObjectSpreadImpl(project, parent!!, this)
+    is TypeParameterContext -> PklTypeParameterImpl(project, parent!!, this)
+    is TypeParameterListContext -> PklTypeParameterListImpl(project, parent!!, this)
+    is TypeAliasHeaderContext -> PklTypeAliasHeaderImpl(project, parent!!, this)
+    is TypeAliasContext -> PklTypeAliasImpl(project, parent!!, this)
     // is TypeAnnotationContext -> Ty
     // treat modifiers as terminals; matches how we do it in pkl-intellij
     is ModifierContext -> {

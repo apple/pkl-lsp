@@ -15,8 +15,6 @@
  */
 package org.pkl.lsp.ast
 
-import org.pkl.lsp.PklBaseModule
-import org.pkl.lsp.Stdlib
 import org.pkl.lsp.resolvers.ResolveVisitor
 import org.pkl.lsp.resolvers.visitIfNotNull
 
@@ -90,7 +88,7 @@ private constructor(
           null -> {
             // has unresolvable amends clause ->
             // has same cached members as pkl.base#Module (but additional dependency)
-            val pklBaseModuleClassCache = Stdlib.baseModule().cache
+            val pklBaseModuleClassCache = module.project.stdlib.baseModule().cache
             ModuleMemberCache(
               module,
               mapOf(),
@@ -138,7 +136,7 @@ private constructor(
       } else {
         // has no amends/extends clause or unresolvable extends clause ->
         // extends class pkl.base#Module
-        val pklBaseModuleClassCache = PklBaseModule.instance.moduleType.ctx.cache
+        val pklBaseModuleClassCache = module.project.pklBaseModule.moduleType.ctx.cache
         methods.putAll(pklBaseModuleClassCache.methods)
         properties.putAll(pklBaseModuleClassCache.properties)
         leafProperties.putAll(pklBaseModuleClassCache.leafProperties)

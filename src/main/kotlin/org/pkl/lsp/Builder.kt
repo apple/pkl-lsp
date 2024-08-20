@@ -32,18 +32,18 @@ import org.pkl.lsp.ast.PklModule
 import org.pkl.lsp.ast.PklModuleImpl
 import org.pkl.lsp.ast.Span
 
-class Builder(private val server: PklLSPServer) {
+class Builder(private val server: PklLSPServer, project: Project) : Component(project) {
   private val runningBuild: MutableMap<String, CompletableFuture<PklModule?>> = mutableMapOf()
 
   private val parser = Parser()
 
   private val analyzers: List<Analyzer> =
     listOf(
-      ModifierAnalyzer(server),
-      AnnotationAnalyzer(server),
-      SyntaxAnalyzer(server),
-      ImportAnalyzer(server),
-      ModuleMemberAnalyzer(server),
+      ModifierAnalyzer(project),
+      AnnotationAnalyzer(project),
+      SyntaxAnalyzer(project),
+      ImportAnalyzer(project),
+      ModuleMemberAnalyzer(project),
     )
 
   fun runningBuild(uri: String): CompletableFuture<PklModule?> =
@@ -59,7 +59,7 @@ class Builder(private val server: PklLSPServer) {
 
   private fun build(file: URI, vfile: VirtualFile, change: String): PklModule? {
     return try {
-      server.logger().log("building $file")
+      logger.log("building $file")
       val moduleCtx = parser.parseModule(change)
       val module = PklModuleImpl(moduleCtx, file, vfile)
       val diagnostics = analyze(module)
@@ -67,11 +67,11 @@ class Builder(private val server: PklLSPServer) {
       buildCache[file] = module
       return module
     } catch (e: LexParseException) {
-      server.logger().error("Parser Error building $file: ${e.message}")
+      logger.error("Parser Error building $file: ${e.message}")
       makeParserDiagnostics(file, listOf(toParserError(e)))
       null
     } catch (e: Exception) {
-      server.logger().error("Error building $file: ${e.message} ${e.stackTraceToString()}")
+      logger.error("Error building $file: ${e.message} ${e.stackTraceToString()}")
       null
     }
   }
@@ -91,14 +91,14 @@ class Builder(private val server: PklLSPServer) {
         val diag = Diagnostic(err.span.toRange(), "$msg\n\n")
         diag.severity = DiagnosticSeverity.Error
         diag.source = "Pkl Language Server"
-        server.logger().log("diagnostic: $msg at ${err.span}")
+        logger.log("diagnostic: $msg at ${err.span}")
         diag
       }
     makeDiagnostics(file, diags)
   }
 
   private fun makeDiagnostics(file: URI, diags: List<Diagnostic>) {
-    server.logger().log("Found ${diags.size} diagnostic errors for $file")
+    logger.log("Found ${diags.size} diagnostic errors for $file")
     val params = PublishDiagnosticsParams(file.toString(), diags)
     // Have to publish diagnostics even if there are no errors, so we clear previous problems
     server.client().publishDiagnostics(params)

@@ -19,15 +19,15 @@ import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.Hover
 import org.eclipse.lsp4j.HoverParams
 import org.eclipse.lsp4j.MarkupContent
-import org.pkl.lsp.PklBaseModule
+import org.pkl.lsp.Component
 import org.pkl.lsp.PklLSPServer
+import org.pkl.lsp.Project
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.resolvers.ResolveVisitors
 import org.pkl.lsp.resolvers.Resolvers
 import org.pkl.lsp.type.*
 
-class HoverFeature(val server: PklLSPServer) {
-
+class HoverFeature(val server: PklLSPServer, project: Project) : Component(project) {
   fun onHover(params: HoverParams): CompletableFuture<Hover> {
     fun run(mod: PklModule?): Hover {
       if (mod == null) return Hover(listOf())
@@ -42,7 +42,7 @@ class HoverFeature(val server: PklLSPServer) {
 
   private fun resolveHover(originalNode: Node, line: Int, col: Int): String? {
     val node = originalNode.resolveReference(line, col) ?: return null
-    val base = PklBaseModule.instance
+    val base = project.pklBaseModule
     if (node !== originalNode) return node.toMarkdown(originalNode)
     return when (node) {
       is PklProperty -> node.toMarkdown(originalNode)
@@ -110,7 +110,7 @@ class HoverFeature(val server: PklLSPServer) {
             } else {
               val parent = this@render.parent
               if (parent != null && parent is PklMethod) {
-                val type = parent.body.computeExprType(PklBaseModule.instance, mapOf())
+                val type = parent.body.computeExprType(project.pklBaseModule, mapOf())
                 type.render()
               } else "unknown"
             }
@@ -173,7 +173,7 @@ class HoverFeature(val server: PklLSPServer) {
           }
           moduleUri?.stringConstant?.escapedText()?.let { append("\"$it\"") }
           val definitionType =
-            resolve().computeResolvedImportType(PklBaseModule.instance, mapOf(), false)
+            resolve().computeResolvedImportType(project.pklBaseModule, mapOf(), false)
           append(": ")
           definitionType.render(this, DefaultTypeNameRenderer)
         }
@@ -209,16 +209,16 @@ class HoverFeature(val server: PklLSPServer) {
             ResolveVisitors.typeOfFirstElementNamed(
               name,
               null,
-              PklBaseModule.instance,
+              project.pklBaseModule,
               isNullSafeAccess = false,
               preserveUnboundTypeVars = false,
             )
           val computedType =
             Resolvers.resolveUnqualifiedAccess(
               originalNode,
-              node.computeThisType(PklBaseModule.instance, mapOf()),
+              node.computeThisType(project.pklBaseModule, mapOf()),
               true,
-              PklBaseModule.instance,
+              project.pklBaseModule,
               mapOf(),
               visitor,
             )
@@ -234,7 +234,7 @@ class HoverFeature(val server: PklLSPServer) {
           append(type.render(originalNode))
         }
         else -> {
-          val computedType = node.computeResolvedImportType(PklBaseModule.instance, mapOf())
+          val computedType = node.computeResolvedImportType(project.pklBaseModule, mapOf())
           append(": ")
           computedType.render(this)
         }
@@ -244,7 +244,7 @@ class HoverFeature(val server: PklLSPServer) {
 
   private fun Type.toMarkdown(): String {
     val markdown = render()
-    val ctx = getNode()
+    val ctx = getNode(project)
     return when {
       ctx is PklModule && ctx.declaration != null ->
         showDocCommentAndModule(ctx.declaration!!, markdown)

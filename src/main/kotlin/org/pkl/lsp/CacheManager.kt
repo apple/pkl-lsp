@@ -25,11 +25,14 @@ import org.pkl.core.parser.LexParseException
 import org.pkl.lsp.ast.PklModule
 
 /** Manages all Pkl files that are not local to the file system: http(s), packages. */
-object CacheManager {
-  val pklDir = Path.of(System.getProperty("user.home")).resolve(".pkl")
-  val pklCacheDir = pklDir.resolve(".cache")
+class CacheManager(project: Project) : Component(project) {
+  companion object {
+    val pklDir: Path = Path.of(System.getProperty("user.home")).resolve(".pkl")
+    val pklCacheDir: Path = pklDir.resolve(".cache")
+  }
 
-  val lspCacheDir = Files.createTempDirectory("pkl-lsp-cache")
+  val lspCacheDir: Path by lazy { Files.createTempDirectory("pkl-lsp-cache") }
+
   private val httpsErrors = ConcurrentHashMap<URI, Any>()
   private val errObject = Any()
 
@@ -55,7 +58,7 @@ object CacheManager {
     if (httpsErrors.contains(uri)) return null
     return findHttpContent(uri)?.let { contents ->
       try {
-        Builder.fileToModule(contents, uri, HttpsFile(uri))
+        Builder.fileToModule(contents, uri, HttpsFile(uri, project))
       } catch (e: LexParseException) {
         httpsErrors[uri] = errObject
         return null

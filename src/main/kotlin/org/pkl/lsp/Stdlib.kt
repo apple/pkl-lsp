@@ -22,8 +22,7 @@ import org.pkl.core.util.IoUtils
 import org.pkl.lsp.ast.PklModule
 import org.pkl.lsp.ast.PklModuleImpl
 
-object Stdlib {
-
+class Stdlib(private val project: Project) {
   fun baseModule(): PklModule = stdlibModules["base"]!!
 
   fun getModule(name: String): PklModule? = stdlibModules[name]
@@ -40,7 +39,7 @@ object Stdlib {
   private fun loadStdlibModule(name: String, parser: Parser) {
     val text = loadStdlibSource(name)
     val moduleCtx = parser.parseModule(text)
-    val module = PklModuleImpl(moduleCtx, URI("pkl:$name"), StdlibFile(name))
+    val module = PklModuleImpl(moduleCtx, URI("pkl:$name"), StdlibFile(name, project))
     stdlibModules[name] = module
   }
 
