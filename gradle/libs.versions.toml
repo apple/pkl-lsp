@@ -8,9 +8,11 @@ lsp4j = "0.23.1"
 pkl = "0.26.2"
 shadowPlugin = "8.1.1"
 spotless = "6.21.0"
+assertj = "3.26.3"
 
 [libraries]
 antlr = { group = "com.tunnelvisionlabs", name = "antlr4", version.ref = "antlr" }
+assertJ = { group = "org.assertj", name = "assertj-core", version.ref = "assertj" }
 clikt = { group = "com.github.ajalt.clikt", name = "clikt", version.ref = "clikt" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
 lsp4j = { group = "org.eclipse.lsp4j", name = "org.eclipse.lsp4j", version.ref = "lsp4j" }
