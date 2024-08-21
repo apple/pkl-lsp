@@ -7,7 +7,9 @@ jobs:
     steps:
     - checkout
     - run:
-        command: echo "build"
+        command: ./gradlew --info --stacktrace -DtestReportsDir=${HOME}/test-results check
+    - store_test_results:
+        path: ~/test-results
     docker:
     - image: cimg/openjdk:17.0
   do-release:

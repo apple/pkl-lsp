@@ -5,13 +5,18 @@ prb = buildWorkflow
 main = buildWorkflow
 
 jobs {
-  ["build"] = (baseJob) {
-    steps {
-      new RunStep {
-        command = """
-          echo "build"
-          """
+  ["build"] {
+    docker {
+      new {
+        image = "cimg/openjdk:17.0"
       }
+    }
+    steps {
+      "checkout"
+      new RunStep {
+        command = "./gradlew --info --stacktrace -DtestReportsDir=${HOME}/test-results check"
+      }
+      new StoreTestResults { path = "~/test-results" }
     }
   }
   ["do-release"] {
@@ -29,17 +34,6 @@ jobs {
           """
       }
     }
-  }
-}
-
-local baseJob: Job = new {
-  docker {
-    new {
-      image = "cimg/openjdk:17.0"
-    }
-  }
-  steps {
-    "checkout"
   }
 }
 
