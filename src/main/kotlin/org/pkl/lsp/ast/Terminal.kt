@@ -18,12 +18,14 @@ package org.pkl.lsp.ast
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.pkl.core.parser.antlr.PklParser
 import org.pkl.lsp.PklVisitor
+import org.pkl.lsp.Project
 
 class TerminalImpl(
+  project: Project,
   override val parent: Node,
   override val ctx: TerminalNode,
   override val type: TokenType,
-) : AbstractNode(parent, ctx), Terminal {
+) : AbstractNode(project, parent, ctx), Terminal {
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitTerminal(this)
@@ -145,5 +147,5 @@ fun TerminalNode.toTerminal(parent: Node): Terminal? {
       PklParser.MLCharacters -> TokenType.MLCharacters
       else -> return null
     }
-  return TerminalImpl(parent, this, tokenType)
+  return TerminalImpl(parent.project, parent, this, tokenType)
 }

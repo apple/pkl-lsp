@@ -26,17 +26,18 @@ import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.*
 import org.pkl.core.util.IoUtils
 
-class PklLSPServer(private val verbose: Boolean) : LanguageServer, LanguageClientAware {
-
-  private val workspaceService: PklWorkspaceService = PklWorkspaceService()
-  private val textService: PklTextDocumentService = PklTextDocumentService(this)
-
+class PklLSPServer(val verbose: Boolean) : LanguageServer, LanguageClientAware {
+  private val project: Project = Project(this)
   private lateinit var client: LanguageClient
   private lateinit var logger: ClientLogger
-  private val builder: Builder = Builder(this)
+
+  private val workspaceService: PklWorkspaceService by lazy { PklWorkspaceService() }
+  private val textService: PklTextDocumentService by lazy { PklTextDocumentService(this, project) }
+
+  private val builder: Builder by lazy { Builder(this, project) }
 
   private val cacheDir: Path = Files.createTempDirectory("pklLSP")
-  val stdlibDir = cacheDir.resolve("stdlib")
+  private val stdlibDir = cacheDir.resolve("stdlib")
 
   override fun initialize(params: InitializeParams): CompletableFuture<InitializeResult> {
     val res = InitializeResult(ServerCapabilities())
@@ -68,20 +69,20 @@ class PklLSPServer(private val verbose: Boolean) : LanguageServer, LanguageClien
   override fun getWorkspaceService(): WorkspaceService = workspaceService
 
   override fun setTrace(params: SetTraceParams?) {
-    //noop
+    // noop
   }
 
   fun builder(): Builder = builder
 
   fun client(): LanguageClient = client
 
-  fun logger(): ClientLogger = logger
-
   override fun connect(client: LanguageClient) {
     this.client = client
-    logger = ClientLogger(client, verbose)
+    logger = project.getLogger(this::class)
+    logger.log("Starting Pkl LSP Server")
   }
 
+  @Suppress("unused")
   @JsonRequest(value = "pkl/fileContents")
   fun fileContentsRequest(param: TextDocumentIdentifier): CompletableFuture<String> {
     return CompletableFuture.supplyAsync {
@@ -90,7 +91,7 @@ class PklLSPServer(private val verbose: Boolean) : LanguageServer, LanguageClien
       val path = uri.path.drop(1)
       logger.log("parsed uri: $uri")
       when (origin) {
-        Origin.HTTPS -> CacheManager.findHttpContent(URI.create(path)) ?: ""
+        Origin.HTTPS -> project.cacheManager.findHttpContent(URI.create(path)) ?: ""
         Origin.STDLIB -> {
           val name = path.replace("pkl:", "")
           IoUtils.readClassPathResourceAsString(javaClass, "/org/pkl/core/stdlib/$name")
@@ -105,7 +106,7 @@ class PklLSPServer(private val verbose: Boolean) : LanguageServer, LanguageClien
 
   private fun cacheStdlib() {
     stdlibDir.toFile().mkdirs()
-    for ((name, _) in Stdlib.allModules()) {
+    for ((name, _) in project.stdlib.allModules()) {
       val file = stdlibDir.resolve("$name.pkl")
       val text = IoUtils.readClassPathResourceAsString(javaClass, "/org/pkl/core/stdlib/$name.pkl")
       Files.writeString(file, text, Charsets.UTF_8)

@@ -19,16 +19,16 @@ import java.io.File
 import java.net.URI
 import org.pkl.core.parser.Parser
 import org.pkl.lsp.FsFile
+import org.pkl.lsp.Project
 
 object PklNodeFactory {
-
   @Suppress("MemberVisibilityCanBePrivate")
-  fun createModule(text: String): PklModule {
-    return PklModuleImpl(parser.parseModule(text), URI("fake:module"), FsFile(File(".")))
+  fun createModule(project: Project, text: String): PklModule {
+    return PklModuleImpl(parser.parseModule(text), URI("fake:module"), FsFile(File("."), project))
   }
 
-  fun createTypeParameter(name: String): PklTypeParameter {
-    val module = createModule("class X<$name>")
+  fun createTypeParameter(project: Project, name: String): PklTypeParameter {
+    val module = createModule(project, "class X<$name>")
     return module.classes[0].classHeader.typeParameterList!!.typeParameters[0]
   }
 

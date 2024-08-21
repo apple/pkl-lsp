@@ -42,6 +42,7 @@ interface VirtualFile {
   val name: String
   val uri: URI
   val pklAuthority: String
+  val project: Project
 
   fun parent(): VirtualFile?
 
@@ -50,9 +51,10 @@ interface VirtualFile {
   fun toModule(): PklModule?
 
   companion object {
-    fun fromUri(uri: URI, logger: ClientLogger): VirtualFile? {
+    fun fromUri(uri: URI, project: Project): VirtualFile? {
+      val logger = project.getLogger(this::class)
       return if (uri.scheme.equals("file", ignoreCase = true)) {
-        FsFile(File(uri))
+        FsFile(File(uri), project)
       } else if (uri.scheme.equals("pkl", ignoreCase = true)) {
         val origin = Origin.fromString(uri.authority.uppercase())
         if (origin == null) {
@@ -61,9 +63,9 @@ interface VirtualFile {
         }
         val path = uri.path.drop(1)
         when (origin) {
-          Origin.FILE -> FsFile(File(path))
-          Origin.STDLIB -> StdlibFile(path.replace(".pkl", ""))
-          Origin.HTTPS -> HttpsFile(URI.create(path))
+          Origin.FILE -> FsFile(File(path), project)
+          Origin.STDLIB -> StdlibFile(path.replace(".pkl", ""), project)
+          Origin.HTTPS -> HttpsFile(URI.create(path), project)
           else -> {
             logger.error("Origin $origin is not supported")
             null
@@ -74,16 +76,16 @@ interface VirtualFile {
   }
 }
 
-class FsFile(private val file: File) : VirtualFile {
+class FsFile(private val file: File, override val project: Project) : VirtualFile {
 
   override val name: String = file.name
   override val uri: URI = file.toURI()
   override val pklAuthority: String = Origin.FILE.name.lowercase()
 
-  override fun parent(): VirtualFile? = file.parentFile?.let { FsFile(it) }
+  override fun parent(): VirtualFile? = file.parentFile?.let { FsFile(it, project) }
 
   override fun resolve(path: String): VirtualFile {
-    return FsFile(file.resolve(path))
+    return FsFile(file.resolve(path), project)
   }
 
   override fun toModule(): PklModule? {
@@ -93,7 +95,7 @@ class FsFile(private val file: File) : VirtualFile {
   }
 }
 
-class StdlibFile(moduleName: String) : VirtualFile {
+class StdlibFile(moduleName: String, override val project: Project) : VirtualFile {
   override val name: String = moduleName
   override val uri: URI = URI("pkl:$moduleName")
   override val pklAuthority: String = Origin.STDLIB.name.lowercase()
@@ -103,25 +105,25 @@ class StdlibFile(moduleName: String) : VirtualFile {
   override fun resolve(path: String): VirtualFile? = null
 
   override fun toModule(): PklModule? {
-    return Stdlib.getModule(name)
+    return project.stdlib.getModule(name)
   }
 }
 
-class HttpsFile(override val uri: URI) : VirtualFile {
+class HttpsFile(override val uri: URI, override val project: Project) : VirtualFile {
   override val name: String = ""
   override val pklAuthority: String = Origin.HTTPS.name.lowercase()
 
   override fun parent(): VirtualFile {
     val newUri = if (uri.path.endsWith("/")) uri.resolve("..") else uri.resolve(".")
-    return HttpsFile(newUri)
+    return HttpsFile(newUri, project)
   }
 
   override fun resolve(path: String): VirtualFile {
-    return HttpsFile(uri.resolve(path))
+    return HttpsFile(uri.resolve(path), project)
   }
 
   override fun toModule(): PklModule? {
-    return CacheManager.findHttpModule(uri)
+    return project.cacheManager.findHttpModule(uri)
   }
 }
 
@@ -130,6 +132,7 @@ private constructor(
   private val originalFile: File,
   private val jarFile: java.util.jar.JarFile,
   private val entryPath: String,
+  override val project: Project,
 ) : VirtualFile {
 
   override val name: String = entryPath.substringAfterLast('/')
@@ -143,7 +146,7 @@ private constructor(
       if (entryPath.contains('/')) {
         entryPath.substringBeforeLast('/')
       } else "/"
-    return JarFile(originalFile, jarFile, path)
+    return JarFile(originalFile, jarFile, path, project)
   }
 
   override fun resolve(path: String): VirtualFile {
@@ -151,7 +154,7 @@ private constructor(
       if (entryPath.contains('/') && entryPath != "/") {
         entryPath.substringBeforeLast('/') + "/" + path
       } else path
-    return JarFile(originalFile, jarFile, actualPath)
+    return JarFile(originalFile, jarFile, actualPath, project)
   }
 
   override fun toModule(): PklModule? {
@@ -164,11 +167,11 @@ private constructor(
   }
 
   companion object {
-    fun create(jarFile: File, entryPath: String): JarFile? {
+    fun create(jarFile: File, entryPath: String, project: Project): JarFile? {
       try {
         if (!jarFile.exists()) return null
         val jar = java.util.jar.JarFile(jarFile)
-        return JarFile(jarFile, jar, entryPath)
+        return JarFile(jarFile, jar, entryPath, project)
       } catch (_: IOException) {
         return null
       }

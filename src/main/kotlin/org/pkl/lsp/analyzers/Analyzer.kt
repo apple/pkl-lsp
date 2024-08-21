@@ -16,6 +16,8 @@
 package org.pkl.lsp.analyzers
 
 import org.eclipse.lsp4j.DiagnosticSeverity
+import org.pkl.lsp.Component
+import org.pkl.lsp.Project
 import org.pkl.lsp.ast.Node
 import org.pkl.lsp.ast.isInStdlib
 
@@ -24,7 +26,7 @@ import org.pkl.lsp.ast.isInStdlib
  *
  * Diagnostics then get reported back to the user.
  */
-abstract class Analyzer {
+abstract class Analyzer(project: Project) : Component(project) {
   fun analyze(node: Node, diagnosticsHolder: MutableList<PklDiagnostic>) {
     if (node.isInStdlib()) return
     if (!doAnalyze(node, diagnosticsHolder)) {

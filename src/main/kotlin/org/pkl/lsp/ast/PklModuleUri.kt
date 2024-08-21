@@ -20,8 +20,8 @@ import org.antlr.v4.runtime.tree.ParseTree
 import org.pkl.lsp.*
 import org.pkl.lsp.LSPUtil.firstInstanceOf
 
-class PklModuleUriImpl(override val parent: Node, override val ctx: ParseTree) :
-  AbstractNode(parent, ctx), PklModuleUri {
+class PklModuleUriImpl(project: Project, override val parent: Node, override val ctx: ParseTree) :
+  AbstractNode(project, parent, ctx), PklModuleUri {
   override val stringConstant: PklStringConstant by lazy {
     children.firstInstanceOf<PklStringConstant>()!!
   }
@@ -33,6 +33,7 @@ class PklModuleUriImpl(override val parent: Node, override val ctx: ParseTree) :
   companion object {
 
     fun resolve(
+      project: Project,
       targetUri: String,
       moduleUri: String,
       sourceFile: VirtualFile,
@@ -54,10 +55,11 @@ class PklModuleUriImpl(override val parent: Node, override val ctx: ParseTree) :
           else -> targetUri
         }
 
-      return resolveVirtual(effectiveTargetUri, sourceFile, enclosingModule)
+      return resolveVirtual(project, effectiveTargetUri, sourceFile, enclosingModule)
     }
 
     private fun resolveVirtual(
+      project: Project,
       targetUriStr: String,
       sourceFile: VirtualFile,
       enclosingModule: PklModule?,
@@ -66,18 +68,18 @@ class PklModuleUriImpl(override val parent: Node, override val ctx: ParseTree) :
       val targetUri = parseUriOrNull(targetUriStr) ?: return null
 
       return when (targetUri.scheme) {
-        "pkl" -> Stdlib.getModule(targetUri.schemeSpecificPart)
+        "pkl" -> project.stdlib.getModule(targetUri.schemeSpecificPart)
         "file" ->
           when {
             // be on the safe side and only follow file: URLs from local files
             sourceFile is FsFile -> {
-              findByAbsolutePath(targetUri.path)
+              findByAbsolutePath(sourceFile, targetUri.path)
             }
             else -> null
           }
         "https" ->
           when {
-            targetUri.host != null -> CacheManager.findHttpModule(targetUri)
+            targetUri.host != null -> project.cacheManager.findHttpModule(targetUri)
             else -> null
           }
         // targetUri is a relative URI
@@ -98,14 +100,14 @@ class PklModuleUriImpl(override val parent: Node, override val ctx: ParseTree) :
     private fun findOnFileSystem(sourceFile: VirtualFile, targetPath: String): PklModule? {
       return when {
         targetPath.startsWith(".../") -> findTripleDotPathOnFileSystem(sourceFile, targetPath)
-        targetPath.startsWith("/") -> findByAbsolutePath(targetPath)
+        targetPath.startsWith("/") -> findByAbsolutePath(sourceFile, targetPath)
         else -> sourceFile.parent()?.resolve(targetPath)?.toModule()
       }
     }
 
-    private fun findByAbsolutePath(targetPath: String): PklModule? {
+    private fun findByAbsolutePath(sourceFile: VirtualFile, targetPath: String): PklModule? {
       val file = File(targetPath)
-      return Builder.fileToModule(file, FsFile(file))
+      return Builder.fileToModule(file, FsFile(file, sourceFile.project))
     }
 
     private fun findTripleDotPathOnFileSystem(

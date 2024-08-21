@@ -17,6 +17,7 @@ package org.pkl.lsp.type
 
 import java.util.*
 import org.pkl.lsp.PklBaseModule
+import org.pkl.lsp.Project
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.resolvers.ResolveVisitor
 import org.pkl.lsp.unexpectedType
@@ -193,12 +194,12 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
 
   override fun toString(): String = render()
 
-  fun getNode(): Node? =
+  fun getNode(project: Project): Node? =
     when (this) {
       is Class -> ctx
       is Module -> ctx
-      is StringLiteral -> PklBaseModule.instance.stringType.getNode()
-      is Alias -> unaliased(PklBaseModule.instance).getNode()
+      is StringLiteral -> project.pklBaseModule.stringType.getNode(project)
+      is Alias -> unaliased(project.pklBaseModule).getNode(project)
       is Union -> null
       else -> null
     }
@@ -941,7 +942,7 @@ fun PklType?.toType(
     is PklDefaultUnionType -> type.toType(base, bindings, preserveUnboundTypeVars)
     is PklConstrainedType -> {
       // TODO: cache `constraintExprs`
-      val constraintExprs = exprs.toConstraintExprs(PklBaseModule.instance)
+      val constraintExprs = exprs.toConstraintExprs(project.pklBaseModule)
       type.toType(base, bindings, preserveUnboundTypeVars).withConstraints(constraintExprs)
     }
     is PklNullableType -> type.toType(base, bindings, preserveUnboundTypeVars).nullable(base)

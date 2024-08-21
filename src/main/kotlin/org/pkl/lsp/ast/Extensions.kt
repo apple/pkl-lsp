@@ -35,7 +35,7 @@ val PklClass.superclass: PklClass?
       null ->
         when {
           isPklBaseAnyClass -> null
-          else -> PklBaseModule.instance.typedType.ctx
+          else -> project.pklBaseModule.typedType.ctx
         }
       else -> unexpectedType(st)
     }
@@ -56,7 +56,7 @@ val PklClass.supermodule: PklModule?
 
 val PklClass.isPklBaseAnyClass: Boolean
   get() {
-    return name == "Any" && this === PklBaseModule.instance.anyType.ctx
+    return name == "Any" && this === project.pklBaseModule.anyType.ctx
   }
 
 fun PklTypeName.resolve(): Node? = simpleTypeName.resolve()
@@ -66,7 +66,7 @@ fun PklSimpleTypeName.resolve(): Node? {
 
   val moduleName = typeName.moduleName
   val simpleTypeNameText = identifier?.text ?: return null
-  val base = PklBaseModule.instance
+  val base = project.pklBaseModule
 
   if (moduleName != null) {
     return moduleName.resolve()?.cache?.types?.get(simpleTypeNameText)
@@ -119,7 +119,7 @@ fun PklClass.isSubclassOf(other: PklClass): Boolean {
   while (clazz != null) {
     if (clazz == other) return true
     if (clazz.supermodule != null) {
-      return PklBaseModule.instance.moduleType.ctx.isSubclassOf(other)
+      return project.pklBaseModule.moduleType.ctx.isSubclassOf(other)
     }
     clazz = clazz.superclass
   }
@@ -215,7 +215,7 @@ private fun PklType?.isRecursive(seen: MutableSet<PklTypeAlias>): Boolean =
   }
 
 val Node.isInPklBaseModule: Boolean
-  get() = enclosingModule == Stdlib.baseModule()
+  get() = enclosingModule?.let { it == it.project.stdlib.baseModule() } == true
 
 interface TypeNameRenderer {
   fun render(name: PklTypeName, appendable: Appendable)
@@ -281,7 +281,7 @@ fun PklModuleUri.resolveGlob(): List<PklModule> = TODO("implement") // resolveMo
 
 fun PklModuleUri.resolve(): PklModule? =
   this.stringConstant.escapedText()?.let { text ->
-    resolve(text, text, containingFile, enclosingModule)
+    resolve(project, text, text, containingFile, enclosingModule)
   }
 
 sealed class ModuleResolutionResult {

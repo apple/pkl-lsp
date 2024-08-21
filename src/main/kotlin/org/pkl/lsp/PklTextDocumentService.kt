@@ -27,21 +27,22 @@ import org.pkl.lsp.features.CompletionFeature
 import org.pkl.lsp.features.GoToDefinitionFeature
 import org.pkl.lsp.features.HoverFeature
 
-class PklTextDocumentService(private val server: PklLSPServer) : TextDocumentService {
+class PklTextDocumentService(private val server: PklLSPServer, project: Project) :
+  Component(project), TextDocumentService {
 
-  private val hover = HoverFeature(server)
-  private val definition = GoToDefinitionFeature(server)
-  private val completion = CompletionFeature(server)
+  private val hover = HoverFeature(server, project)
+  private val definition = GoToDefinitionFeature(server, project)
+  private val completion = CompletionFeature(server, project)
 
   override fun didOpen(params: DidOpenTextDocumentParams) {
     val uri = URI(params.textDocument.uri)
-    val vfile = VirtualFile.fromUri(uri, server.logger()) ?: return
+    val vfile = VirtualFile.fromUri(uri, project) ?: return
     server.builder().requestBuild(uri, vfile, params.textDocument.text)
   }
 
   override fun didChange(params: DidChangeTextDocumentParams) {
     val uri = URI(params.textDocument.uri)
-    val vfile = VirtualFile.fromUri(uri, server.logger()) ?: return
+    val vfile = VirtualFile.fromUri(uri, project) ?: return
     server.builder().requestBuild(uri, vfile, params.contentChanges[0].text)
   }
 
@@ -53,14 +54,14 @@ class PklTextDocumentService(private val server: PklLSPServer) : TextDocumentSer
     val uri = URI(params.textDocument.uri)
     if (!uri.scheme.equals("file", ignoreCase = true)) {
       // you can only save files
-      server.logger().error("Saved non file URI: $uri")
+      logger.error("Saved non file URI: $uri")
       return
     }
     try {
       val contents = IoUtils.readString(uri.toURL())
-      server.builder().requestBuild(uri, FsFile(File(uri)), contents)
+      server.builder().requestBuild(uri, FsFile(File(uri), project), contents)
     } catch (e: IOException) {
-      server.logger().error("Error reading $uri: ${e.message}")
+      logger.error("Error reading $uri: ${e.message}")
     }
   }
 

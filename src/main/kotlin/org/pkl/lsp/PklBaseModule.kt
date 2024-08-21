@@ -20,9 +20,9 @@ import org.pkl.core.Version
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.type.Type
 
-class PklBaseModule private constructor() {
+class PklBaseModule(project: Project) {
 
-  private val baseModule: PklModule = Stdlib.baseModule()
+  private val baseModule: PklModule = project.stdlib.baseModule()
   val ctx: PklModule = baseModule
 
   val types: Map<String, Type>
@@ -43,7 +43,7 @@ class PklBaseModule private constructor() {
             "TypeAlias" -> {
               val typeParameters =
                 member.classHeader.typeParameterList?.typeParameters
-                  ?: listOf(PklNodeFactory.createTypeParameter("Type"))
+                  ?: listOf(PklNodeFactory.createTypeParameter(project, "Type"))
               types[className] = Type.Class(member, listOf(), listOf(), typeParameters)
             }
             else -> types[className] = Type.Class(member)
@@ -338,8 +338,4 @@ class PklBaseModule private constructor() {
 
   private fun aliasType(name: String): Type.Alias =
     types[name] as Type.Alias? ?: throw AssertionError("Cannot find stdlib alias `base.$name`.")
-
-  companion object {
-    val instance: PklBaseModule by lazy { PklBaseModule() }
-  }
 }

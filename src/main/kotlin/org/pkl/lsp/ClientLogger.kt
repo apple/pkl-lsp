@@ -19,29 +19,37 @@ import org.eclipse.lsp4j.MessageParams
 import org.eclipse.lsp4j.MessageType
 import org.eclipse.lsp4j.services.LanguageClient
 
-class ClientLogger(private val client: LanguageClient, private val verbose: Boolean) {
+class ClientLogger(
+  private val client: LanguageClient,
+  private val verbose: Boolean,
+  private val name: String,
+) {
+  private fun String.toMessageParams(type: MessageType): MessageParams {
+    val formattedMessage = "[$name] $this"
+    return MessageParams(type, formattedMessage)
+  }
 
   fun log(msg: String) {
     if (!verbose) return
-    val params = MessageParams(MessageType.Log, msg)
+    val params = msg.toMessageParams(MessageType.Log)
     client.logMessage(params)
   }
 
   fun warn(msg: String) {
     if (!verbose) return
-    val params = MessageParams(MessageType.Warning, msg)
+    val params = msg.toMessageParams(MessageType.Warning)
     client.logMessage(params)
   }
 
   fun info(msg: String) {
     if (!verbose) return
-    val params = MessageParams(MessageType.Info, msg)
+    val params = msg.toMessageParams(MessageType.Info)
     client.logMessage(params)
   }
 
   fun error(msg: String) {
     if (!verbose) return
-    val params = MessageParams(MessageType.Error, msg)
+    val params = msg.toMessageParams(MessageType.Error)
     client.logMessage(params)
   }
 }

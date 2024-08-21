@@ -16,13 +16,13 @@
 package org.pkl.lsp.analyzers
 
 import org.pkl.lsp.ErrorMessages
-import org.pkl.lsp.PklLSPServer
+import org.pkl.lsp.Project
 import org.pkl.lsp.ast.Node
 import org.pkl.lsp.ast.PklMethod
 import org.pkl.lsp.ast.PklModule
 import org.pkl.lsp.ast.PklProperty
 
-class ModuleMemberAnalyzer(private val server: PklLSPServer) : Analyzer() {
+class ModuleMemberAnalyzer(project: Project) : Analyzer(project) {
 
   override fun doAnalyze(node: Node, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
     when (node) {

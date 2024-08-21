@@ -18,15 +18,16 @@ package org.pkl.lsp.features
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either
-import org.pkl.lsp.PklBaseModule
+import org.pkl.lsp.Component
 import org.pkl.lsp.PklLSPServer
+import org.pkl.lsp.Project
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.type.Type
 import org.pkl.lsp.type.computeResolvedImportType
 import org.pkl.lsp.type.computeThisType
 import org.pkl.lsp.type.toType
 
-class CompletionFeature(val server: PklLSPServer) {
+class CompletionFeature(private val server: PklLSPServer, project: Project) : Component(project) {
   fun onCompletion(
     params: CompletionParams
   ): CompletableFuture<Either<List<CompletionItem>, CompletionList>> {
@@ -62,17 +63,17 @@ class CompletionFeature(val server: PklLSPServer) {
       is PklSingleLineStringLiteral,
       is PklMultiLineStringLiteral,
       is SingleLineStringPart,
-      is MultiLineStringPart -> PklBaseModule.instance.stringType.ctx.complete()
-      is PklIntLiteralExpr -> PklBaseModule.instance.intType.ctx.complete()
-      is PklFloatLiteralExpr -> PklBaseModule.instance.floatType.ctx.complete()
+      is MultiLineStringPart -> project.pklBaseModule.stringType.ctx.complete()
+      is PklIntLiteralExpr -> project.pklBaseModule.intType.ctx.complete()
+      is PklFloatLiteralExpr -> project.pklBaseModule.floatType.ctx.complete()
       is PklTrueLiteralExpr,
-      is PklFalseLiteralExpr -> PklBaseModule.instance.booleanType.ctx.complete()
-      is PklReadExpr -> PklBaseModule.instance.resourceType.ctx.complete()
+      is PklFalseLiteralExpr -> project.pklBaseModule.booleanType.ctx.complete()
+      is PklReadExpr -> project.pklBaseModule.resourceType.ctx.complete()
       is PklModule -> node.complete(showTypes, module)
       is PklClass -> node.complete(showTypes, module)
       is PklClassProperty -> node.complete(showTypes, module)
       is PklThisExpr -> {
-        val base = PklBaseModule.instance
+        val base = project.pklBaseModule
         node.computeThisType(base, mapOf()).toClassType(base)?.ctx?.complete()
       }
       is PklModuleExpr -> module?.complete(showTypes, module)
@@ -122,7 +123,7 @@ class CompletionFeature(val server: PklLSPServer) {
     showTypes: Boolean,
     sourceModule: PklModule?,
   ): List<CompletionItem> {
-    val base = PklBaseModule.instance
+    val base = project.pklBaseModule
     val typ =
       when (val typ = type) {
         null -> {
@@ -145,7 +146,7 @@ class CompletionFeature(val server: PklLSPServer) {
           addAll(leftType.complete(showTypes, sourceModule))
           addAll(rightType.complete(showTypes, sourceModule))
         }
-      is Type.Alias -> unaliased(PklBaseModule.instance).complete(showTypes, sourceModule)
+      is Type.Alias -> unaliased(project.pklBaseModule).complete(showTypes, sourceModule)
       else -> listOf()
     }
   }
