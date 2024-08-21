@@ -15,11 +15,14 @@
  */
 package org.pkl.lsp
 
-import java.io.File
 import java.io.IOException
 import java.net.URI
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.io.path.isDirectory
+import kotlin.io.path.readText
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
 import org.eclipse.lsp4j.PublishDiagnosticsParams
@@ -109,10 +112,10 @@ class Builder(private val server: PklLSPServer, project: Project) : Component(pr
       return null
     }
 
-    fun fileToModule(file: File, virtualFile: VirtualFile): PklModule? {
-      if (!file.exists() || file.isDirectory) return null
-      val change = file.readText()
-      return fileToModule(change, file.normalize().toURI(), virtualFile)
+    fun fileToModule(path: Path, virtualFile: VirtualFile): PklModule? {
+      if (!Files.exists(path) || path.isDirectory()) return null
+      val change = path.readText()
+      return fileToModule(change, path.normalize().toUri(), virtualFile)
     }
 
     fun fileToModule(contents: String, uri: URI, virtualFile: VirtualFile): PklModule? {

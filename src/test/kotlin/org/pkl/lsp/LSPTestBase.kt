@@ -113,7 +113,7 @@ abstract class LSPTestBase {
 
   private fun parseAndStoreModule(contents: String, path: Path): PklModule {
     val moduleCtx = parser.parseModule(contents)
-    return PklModuleImpl(moduleCtx, path.toUri(), FsFile(path.toFile(), fakeProject)).also {
+    return PklModuleImpl(moduleCtx, path.toUri(), FsFile(path, fakeProject)).also {
       modules[path.toUri()] = it
     }
   }
