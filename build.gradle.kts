@@ -40,7 +40,12 @@ tasks.jar { manifest { attributes += mapOf("Main-Class" to "org.pkl.lsp.cli.Main
 
 application { mainClass.set("org.pkl.lsp.cli.Main") }
 
-tasks.named<Test>("test") { useJUnitPlatform() }
+tasks.test {
+  useJUnitPlatform()
+  System.getProperty("testReportsDir")?.let { reportsDir ->
+    reports.junitXml.outputLocation.set(file(reportsDir).resolve(project.name).resolve(name))
+  }
+}
 
 tasks.shadowJar { archiveFileName.set("pkl-lsp") }
 
