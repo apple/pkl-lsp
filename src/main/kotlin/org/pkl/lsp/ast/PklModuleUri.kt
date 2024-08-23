@@ -15,7 +15,7 @@
  */
 package org.pkl.lsp.ast
 
-import java.io.File
+import java.nio.file.Path
 import org.antlr.v4.runtime.tree.ParseTree
 import org.pkl.lsp.*
 import org.pkl.lsp.LSPUtil.firstInstanceOf
@@ -106,8 +106,8 @@ class PklModuleUriImpl(project: Project, override val parent: Node, override val
     }
 
     private fun findByAbsolutePath(sourceFile: VirtualFile, targetPath: String): PklModule? {
-      val file = File(targetPath)
-      return Builder.fileToModule(file, FsFile(file, sourceFile.project))
+      val path = Path.of(targetPath)
+      return Builder.fileToModule(path, FsFile(path, sourceFile.project))
     }
 
     private fun findTripleDotPathOnFileSystem(

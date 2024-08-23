@@ -15,9 +15,9 @@
  */
 package org.pkl.lsp
 
-import java.io.File
 import java.io.IOException
 import java.net.URI
+import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either
@@ -59,7 +59,7 @@ class PklTextDocumentService(private val server: PklLSPServer, project: Project)
     }
     try {
       val contents = IoUtils.readString(uri.toURL())
-      server.builder().requestBuild(uri, FsFile(File(uri), project), contents)
+      server.builder().requestBuild(uri, FsFile(Path.of(uri), project), contents)
     } catch (e: IOException) {
       logger.error("Error reading $uri: ${e.message}")
     }

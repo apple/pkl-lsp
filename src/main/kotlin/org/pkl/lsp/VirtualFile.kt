@@ -18,6 +18,8 @@ package org.pkl.lsp
 import java.io.File
 import java.io.IOException
 import java.net.URI
+import java.nio.file.Path
+import kotlin.io.path.name
 import org.pkl.lsp.ast.PklModule
 
 enum class Origin {
@@ -54,7 +56,7 @@ interface VirtualFile {
     fun fromUri(uri: URI, project: Project): VirtualFile? {
       val logger = project.getLogger(this::class)
       return if (uri.scheme.equals("file", ignoreCase = true)) {
-        FsFile(File(uri), project)
+        FsFile(Path.of(uri), project)
       } else if (uri.scheme.equals("pkl", ignoreCase = true)) {
         val origin = Origin.fromString(uri.authority.uppercase())
         if (origin == null) {
@@ -63,7 +65,7 @@ interface VirtualFile {
         }
         val path = uri.path.drop(1)
         when (origin) {
-          Origin.FILE -> FsFile(File(path), project)
+          Origin.FILE -> FsFile(Path.of(path), project)
           Origin.STDLIB -> StdlibFile(path.replace(".pkl", ""), project)
           Origin.HTTPS -> HttpsFile(URI.create(path), project)
           else -> {
@@ -76,22 +78,22 @@ interface VirtualFile {
   }
 }
 
-class FsFile(private val file: File, override val project: Project) : VirtualFile {
+class FsFile(private val path: Path, override val project: Project) : VirtualFile {
 
-  override val name: String = file.name
-  override val uri: URI = file.toURI()
+  override val name: String = path.name
+  override val uri: URI = path.toUri()
   override val pklAuthority: String = Origin.FILE.name.lowercase()
 
-  override fun parent(): VirtualFile? = file.parentFile?.let { FsFile(it, project) }
+  override fun parent(): VirtualFile? = path.parent?.let { FsFile(it, project) }
 
   override fun resolve(path: String): VirtualFile {
-    return FsFile(file.resolve(path), project)
+    return FsFile(this.path.resolve(path), project)
   }
 
   override fun toModule(): PklModule? {
     // get this module from the cache if possible so changes to it are propagated even
     // if the file was not saved
-    return Builder.findModuleInCache(uri) ?: Builder.fileToModule(file, this)
+    return Builder.findModuleInCache(uri) ?: Builder.fileToModule(path, this)
   }
 }
 
