@@ -33,6 +33,7 @@ dependencies {
   implementation(libs.pklCore)
   implementation(libs.lsp4j)
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+  testImplementation(libs.assertJ)
   testImplementation(libs.junit.jupiter)
 }
 

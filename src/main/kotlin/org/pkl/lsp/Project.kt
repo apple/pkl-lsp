@@ -24,9 +24,7 @@ class Project(private val server: PklLSPServer) {
 
   val stdlib: Stdlib by lazy { Stdlib(this) }
 
-  /**
-   * Creates a logger with the given class as the logger's name.
-   */
+  /** Creates a logger with the given class as the logger's name. */
   fun getLogger(clazz: KClass<*>): ClientLogger =
     ClientLogger(
       server.client(),
