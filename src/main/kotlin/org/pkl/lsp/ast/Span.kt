@@ -30,6 +30,11 @@ data class Span(val beginLine: Int, val beginCol: Int, val endLine: Int, val end
       else -> true
     }
 
+  fun drop(offset: Int): Span = Span(beginLine, beginCol + offset, endLine, endCol)
+
+  fun spliceLine(offset: Int, length: Int): Span =
+    Span(beginLine, beginCol + offset, beginLine, beginCol + offset + length)
+
   companion object {
     fun from(s1: Span, s2: Span): Span = Span(s1.beginLine, s1.beginCol, s2.endLine, s2.endCol)
   }

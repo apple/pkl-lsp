@@ -16,6 +16,7 @@
 plugins {
   application
   alias(libs.plugins.kotlin)
+  alias(libs.plugins.kotlinSerialization)
   alias(libs.plugins.shadow)
   alias(libs.plugins.spotless)
 }
@@ -27,21 +28,30 @@ java {
   toolchain { languageVersion = JavaLanguageVersion.of(17) }
 }
 
+val pklCli: Configuration by configurations.creating
+
 dependencies {
   implementation(libs.antlr)
   implementation(libs.clikt)
   implementation(libs.pklCore)
   implementation(libs.lsp4j)
+  implementation(libs.kotlinxSerializationJson)
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
   testImplementation(libs.assertJ)
   testImplementation(libs.junit.jupiter)
+  pklCli(libs.pklCli)
 }
+
+val configurePklCliExecutable by
+  tasks.registering { doLast { pklCli.singleFile.setExecutable(true) } }
 
 tasks.jar { manifest { attributes += mapOf("Main-Class" to "org.pkl.lsp.cli.Main") } }
 
 application { mainClass.set("org.pkl.lsp.cli.Main") }
 
 tasks.test {
+  dependsOn(configurePklCliExecutable)
+  systemProperties["pklExecutable"] = pklCli.singleFile.absolutePath
   useJUnitPlatform()
   System.getProperty("testReportsDir")?.let { reportsDir ->
     reports.junitXml.outputLocation.set(file(reportsDir).resolve(project.name).resolve(name))

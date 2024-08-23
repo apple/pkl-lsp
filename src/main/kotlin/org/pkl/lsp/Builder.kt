@@ -45,29 +45,35 @@ class Builder(private val server: PklLSPServer, project: Project) : Component(pr
       ModifierAnalyzer(project),
       AnnotationAnalyzer(project),
       SyntaxAnalyzer(project),
-      ImportAnalyzer(project),
+      ModuleUriAnalyzer(project),
       ModuleMemberAnalyzer(project),
     )
 
   fun runningBuild(uri: String): CompletableFuture<PklModule?> =
     runningBuild[uri] ?: CompletableFuture.supplyAsync(::noop)
 
-  fun requestBuild(uri: URI, vfile: VirtualFile, change: String): CompletableFuture<PklModule?> {
-    val build = CompletableFuture.supplyAsync { build(uri, vfile, change) }
+  fun requestBuild(
+    uri: URI,
+    vfile: VirtualFile,
+    fileContents: String? = null,
+  ): CompletableFuture<PklModule?> {
+    val build = CompletableFuture.supplyAsync { build(uri, vfile, fileContents) }
     runningBuild[uri.toString()] = build
     return build
   }
 
   fun lastSuccessfulBuild(uri: String): PklModule? = buildCache[URI.create(uri)]
 
-  private fun build(file: URI, vfile: VirtualFile, change: String): PklModule? {
+  private fun build(file: URI, vfile: VirtualFile, fileContents: String?): PklModule? {
     return try {
+      val contents = fileContents ?: vfile.contents()
       logger.log("building $file")
-      val moduleCtx = parser.parseModule(change)
+      val moduleCtx = parser.parseModule(contents)
       val module = PklModuleImpl(moduleCtx, file, vfile)
       val diagnostics = analyze(module)
-      makeDiagnostics(file, diagnostics)
+      makeDiagnostics(file, diagnostics.map { it.toMessage() })
       buildCache[file] = module
+      diagnosticsCache[file] = diagnostics
       return module
     } catch (e: LexParseException) {
       logger.error("Parser Error building $file: ${e.message}")
@@ -79,8 +85,8 @@ class Builder(private val server: PklLSPServer, project: Project) : Component(pr
     }
   }
 
-  private fun analyze(node: PklNode): List<Diagnostic> {
-    return buildList<PklDiagnostic> {
+  private fun analyze(node: PklNode): List<PklDiagnostic> {
+    return buildList {
       for (analyzer in analyzers) {
         analyzer.analyze(node, this)
       }
@@ -112,7 +118,7 @@ class Builder(private val server: PklLSPServer, project: Project) : Component(pr
       return null
     }
 
-    fun fileToModule(path: Path, virtualFile: VirtualFile): PklModule? {
+    fun pathToModule(path: Path, virtualFile: VirtualFile): PklModule? {
       if (!Files.exists(path) || path.isDirectory()) return null
       val change = path.readText()
       return fileToModule(change, path.normalize().toUri(), virtualFile)
@@ -122,7 +128,7 @@ class Builder(private val server: PklLSPServer, project: Project) : Component(pr
       val parser = Parser()
       try {
         val moduleCtx = parser.parseModule(contents)
-        return PklModuleImpl(moduleCtx, uri, virtualFile)
+        return PklModuleImpl(moduleCtx, uri, virtualFile).also { buildCache[uri] = it }
       } catch (_: IOException) {
         return null
       }
@@ -133,7 +139,9 @@ class Builder(private val server: PklLSPServer, project: Project) : Component(pr
       return ParseError(ex.message ?: "Parser error", span)
     }
 
-    private val buildCache: ConcurrentHashMap<URI, PklModule> = ConcurrentHashMap()
+    private val buildCache: MutableMap<URI, PklModule> = ConcurrentHashMap()
+
+    val diagnosticsCache: MutableMap<URI, List<PklDiagnostic>> = ConcurrentHashMap()
 
     fun findModuleInCache(uri: URI): PklModule? = buildCache[uri]
   }

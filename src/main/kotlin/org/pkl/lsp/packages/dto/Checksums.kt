@@ -13,16 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.pkl.lsp
+package org.pkl.lsp.packages.dto
 
-import org.eclipse.lsp4j.DidChangeConfigurationParams
-import org.eclipse.lsp4j.DidChangeWatchedFilesParams
-import org.eclipse.lsp4j.services.WorkspaceService
+import kotlinx.serialization.Serializable
 
-class PklWorkspaceService(private val project: Project) : WorkspaceService {
-  override fun didChangeConfiguration(params: DidChangeConfigurationParams) {
-    project.settingsManager.loadSettings()
-  }
-
-  override fun didChangeWatchedFiles(params: DidChangeWatchedFilesParams?) {}
-}
+@Suppress("PROVIDED_RUNTIME_TOO_LOW") @Serializable data class Checksums(val sha256: String)

@@ -16,13 +16,32 @@
 package org.pkl.lsp
 
 import kotlin.reflect.KClass
+import org.eclipse.lsp4j.services.LanguageClient
+import org.pkl.lsp.services.PackageManager
+import org.pkl.lsp.services.PklCli
+import org.pkl.lsp.services.SettingsManager
+import org.pkl.lsp.services.WorkspaceState
+import org.pkl.lsp.util.CachedValuesManager
+import org.pkl.lsp.util.FileCacheManager
 
 class Project(private val server: PklLSPServer) {
-  val cacheManager: CacheManager by lazy { CacheManager(this) }
+  val fileCacheManager: FileCacheManager by lazy { FileCacheManager(this) }
 
   val pklBaseModule: PklBaseModule by lazy { PklBaseModule(this) }
 
   val stdlib: Stdlib by lazy { Stdlib(this) }
+
+  val packageManager: PackageManager by lazy { PackageManager(this) }
+
+  val cachedValuesManager: CachedValuesManager by lazy { CachedValuesManager(this) }
+
+  val pklCli: PklCli by lazy { PklCli(this) }
+
+  val settingsManager: SettingsManager by lazy { SettingsManager(this) }
+
+  val workspaceState: WorkspaceState by lazy { WorkspaceState(this) }
+
+  val languageClient: LanguageClient by lazy { server.client() }
 
   /** Creates a logger with the given class as the logger's name. */
   fun getLogger(clazz: KClass<*>): ClientLogger =

@@ -25,35 +25,60 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.*
 import org.pkl.core.util.IoUtils
+import org.pkl.lsp.packages.dto.PackageUri
 
 class PklLSPServer(val verbose: Boolean) : LanguageServer, LanguageClientAware {
   private val project: Project = Project(this)
   private lateinit var client: LanguageClient
   private lateinit var logger: ClientLogger
 
-  private val workspaceService: PklWorkspaceService by lazy { PklWorkspaceService() }
+  private val workspaceService: PklWorkspaceService by lazy { PklWorkspaceService(project) }
   private val textService: PklTextDocumentService by lazy { PklTextDocumentService(this, project) }
 
   private val builder: Builder by lazy { Builder(this, project) }
 
   private val cacheDir: Path = Files.createTempDirectory("pklLSP")
   private val stdlibDir = cacheDir.resolve("stdlib")
+  private lateinit var clientCapabilities: ClientCapabilities
 
   override fun initialize(params: InitializeParams): CompletableFuture<InitializeResult> {
-    val res = InitializeResult(ServerCapabilities())
-    res.capabilities.textDocumentSync = Either.forLeft(TextDocumentSyncKind.Full)
+    clientCapabilities = params.capabilities
+    val res =
+      InitializeResult(ServerCapabilities()).apply {
+        capabilities.textDocumentSync = Either.forLeft(TextDocumentSyncKind.Full)
 
-    // hover capability
-    res.capabilities.setHoverProvider(true)
-    // go to definition capability
-    res.capabilities.definitionProvider = Either.forLeft(true)
-    // auto completion capability
-    res.capabilities.completionProvider = CompletionOptions(false, listOf("."))
+        // hover capability
+        capabilities.setHoverProvider(true)
+        // go to definition capability
+        capabilities.definitionProvider = Either.forLeft(true)
+        // auto completion capability
+        capabilities.completionProvider = CompletionOptions(false, listOf("."))
+        capabilities.setCodeActionProvider(CodeActionOptions(listOf(CodeActionKind.QuickFix)))
+        capabilities.workspace =
+          WorkspaceServerCapabilities().apply {
+            workspaceFolders =
+              WorkspaceFoldersOptions().apply { changeNotifications = Either.forRight(true) }
+          }
+      }
 
     // cache the stdlib, so we can open it in the client
     CompletableFuture.supplyAsync(::cacheStdlib)
 
     return CompletableFuture.supplyAsync { res }
+  }
+
+  override fun initialized(params: InitializedParams) {
+    project.settingsManager.loadSettings()
+    // listen for configuration changes
+    if (clientCapabilities.workspace.didChangeConfiguration?.dynamicRegistration == true) {
+      client.registerCapability(
+        RegistrationParams(
+          listOf(
+            Registration("didChangeConfigurationRegistration", "workspace/didChangeConfiguration")
+          )
+        )
+      )
+    }
   }
 
   override fun shutdown(): CompletableFuture<Any> {
@@ -87,21 +112,37 @@ class PklLSPServer(val verbose: Boolean) : LanguageServer, LanguageClientAware {
   fun fileContentsRequest(param: TextDocumentIdentifier): CompletableFuture<String> {
     return CompletableFuture.supplyAsync {
       val uri = URI.create(param.uri)
-      val origin = Origin.valueOf(uri.authority.uppercase())
-      val path = uri.path.drop(1)
       logger.log("parsed uri: $uri")
-      when (origin) {
-        Origin.HTTPS -> project.cacheManager.findHttpContent(URI.create(path)) ?: ""
-        Origin.STDLIB -> {
-          val name = path.replace("pkl:", "")
-          IoUtils.readClassPathResourceAsString(javaClass, "/org/pkl/core/stdlib/$name")
-        }
-        // if origin is file either we have a bug or this is an absolute file import
-        // from inside a non-file module, which shouldn't be allowed
-        Origin.FILE -> ""
-        else -> ""
-      }
+      VirtualFile.fromUri(uri, project)?.contents() ?: ""
     }
+  }
+
+  @Suppress("unused")
+  @JsonRequest(value = "pkl/downloadPackage")
+  fun downloadPackage(param: String): CompletableFuture<Unit> {
+    val packageUri = PackageUri.create(param)!!
+    return project.pklCli
+      .downloadPackage(listOf(packageUri))
+      .thenApply {
+        project.workspaceState.openFiles.forEach { uri ->
+          val virtualFile = VirtualFile.fromUri(uri, project) ?: return@forEach
+          // refresh diagnostics for every module
+          builder().requestBuild(uri, virtualFile)
+        }
+      }
+      .exceptionally { err ->
+        client.showMessage(
+          MessageParams(
+            MessageType.Error,
+            """
+          Failed to download package `$packageUri`.
+          
+          $err
+        """
+              .trimIndent(),
+          )
+        )
+      }
   }
 
   private fun cacheStdlib() {
