@@ -37,7 +37,7 @@ abstract class LSPTestBase {
     @JvmStatic
     @BeforeAll
     fun beforeAll() {
-      server = PklLSPServer(true).also { it.connect(FakeLanguageClient) }
+      server = PklLSPServer(true).also { it.connect(TestLanguageClient) }
       parser = Parser()
       fakeProject = Project(server)
       stdlibModules = fakeProject.stdlib.allModules().mapKeys { it.value.uri }

@@ -22,7 +22,7 @@ import org.eclipse.lsp4j.PublishDiagnosticsParams
 import org.eclipse.lsp4j.ShowMessageRequestParams
 import org.eclipse.lsp4j.services.LanguageClient
 
-object FakeLanguageClient : LanguageClient {
+object TestLanguageClient : LanguageClient {
   override fun telemetryEvent(`object`: Any?) {
     // no-op
   }
