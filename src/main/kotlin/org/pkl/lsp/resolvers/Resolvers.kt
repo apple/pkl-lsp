@@ -31,7 +31,7 @@ object Resolvers {
   }
 
   fun <R> resolveQualifiedTypeName(
-    position: Node,
+    position: PklNode,
     moduleName: String,
     // receives elements of type PklTypeDef, PklImport, and PklTypeParameter
     visitor: ResolveVisitor<R>,
@@ -52,7 +52,7 @@ object Resolvers {
   }
 
   fun <R> resolveUnqualifiedTypeName(
-    position: Node,
+    position: PklNode,
     base: PklBaseModule,
     bindings: TypeParameterBindings,
     // receives elements of type PklTypeDef, PklImport, and PklTypeParameter
@@ -97,7 +97,7 @@ object Resolvers {
 
   /** Note: For resolving [PklAccessExpr], use [PklAccessExpr.resolve] instead. */
   fun <R> resolveUnqualifiedAccess(
-    position: Node,
+    position: PklNode,
     // optionally provide the type of `this` at [position]
     // to avoid its recomputation in case it is needed
     thisType: Type?,
@@ -111,7 +111,7 @@ object Resolvers {
   }
 
   fun <R> resolveUnqualifiedAccess(
-    position: Node,
+    position: PklNode,
     // optionally provide the type of `this` at [position]
     // to avoid its recomputation in case it is needed
     thisType: Type?,
@@ -131,7 +131,7 @@ object Resolvers {
   }
 
   fun <R> resolveUnqualifiedAccessAndLookupMode(
-    position: Node,
+    position: PklNode,
     // optionally provide the type of `this` at [position]
     // to avoid its recomputation in case it is needed
     thisType: Type?,
@@ -175,7 +175,7 @@ object Resolvers {
   }
 
   private fun <R> resolveUnqualifiedVariableAccess(
-    position: Node,
+    position: PklNode,
     thisType: Type?,
     base: PklBaseModule,
     bindings: TypeParameterBindings,
@@ -183,7 +183,7 @@ object Resolvers {
     visitor: ResolveVisitor<R>,
   ): Pair<R, LookupMode> {
 
-    var element: Node? = position
+    var element: PklNode? = position
     var skipNextObjectBody = false
 
     while (element != null) {
@@ -477,14 +477,14 @@ object Resolvers {
   }
 
   private fun <R> resolveUnqualifiedMethodAccess(
-    position: Node,
+    position: PklNode,
     thisType: Type?,
     base: PklBaseModule,
     bindings: TypeParameterBindings,
     visitor: ResolveVisitor<R>,
   ): Pair<R, LookupMode> {
 
-    var element: Node? = position
+    var element: PklNode? = position
 
     while (element != null) {
       when (element) {

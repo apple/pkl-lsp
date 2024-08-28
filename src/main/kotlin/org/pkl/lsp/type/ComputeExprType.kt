@@ -20,9 +20,9 @@ import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.resolvers.ResolveVisitors
 
-private val cache: IdentityHashMap<Node, Type> = IdentityHashMap()
+private val cache: IdentityHashMap<PklNode, Type> = IdentityHashMap()
 
-fun Node?.computeExprType(base: PklBaseModule, bindings: TypeParameterBindings): Type {
+fun PklNode?.computeExprType(base: PklBaseModule, bindings: TypeParameterBindings): Type {
   return when {
     this == null || this !is PklExpr -> Type.Unknown
     // TODO: properly invalidate the cache
@@ -40,7 +40,7 @@ fun Node?.computeExprType(base: PklBaseModule, bindings: TypeParameterBindings):
   }
 }
 
-private fun Node.doComputeExprType(base: PklBaseModule, bindings: TypeParameterBindings): Type {
+private fun PklNode.doComputeExprType(base: PklBaseModule, bindings: TypeParameterBindings): Type {
   return when (this) {
     is PklUnqualifiedAccessExpr -> {
       val visitor =

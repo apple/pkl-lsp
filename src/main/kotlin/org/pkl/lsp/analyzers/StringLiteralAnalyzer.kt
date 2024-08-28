@@ -16,10 +16,10 @@
 package org.pkl.lsp.analyzers
 
 import org.pkl.lsp.Project
-import org.pkl.lsp.ast.Node
+import org.pkl.lsp.ast.PklNode
 
 class StringLiteralAnalyzer(project: Project) : Analyzer(project) {
-  override fun doAnalyze(node: Node, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
+  override fun doAnalyze(node: PklNode, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
     TODO("Not yet implemented")
   }
 }

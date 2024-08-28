@@ -30,9 +30,9 @@ import org.pkl.core.parser.LexParseException
 import org.pkl.core.parser.Parser
 import org.pkl.lsp.LSPUtil.toRange
 import org.pkl.lsp.analyzers.*
-import org.pkl.lsp.ast.Node
 import org.pkl.lsp.ast.PklModule
 import org.pkl.lsp.ast.PklModuleImpl
+import org.pkl.lsp.ast.PklNode
 import org.pkl.lsp.ast.Span
 
 class Builder(private val server: PklLSPServer, project: Project) : Component(project) {
@@ -79,7 +79,7 @@ class Builder(private val server: PklLSPServer, project: Project) : Component(pr
     }
   }
 
-  private fun analyze(node: Node): List<Diagnostic> {
+  private fun analyze(node: PklNode): List<Diagnostic> {
     return buildList<PklDiagnostic> {
       for (analyzer in analyzers) {
         analyzer.analyze(node, this)

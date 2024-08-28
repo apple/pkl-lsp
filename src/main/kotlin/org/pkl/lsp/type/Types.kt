@@ -194,7 +194,7 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
 
   override fun toString(): String = render()
 
-  fun getNode(project: Project): Node? =
+  fun getNode(project: Project): PklNode? =
     when (this) {
       is Class -> ctx
       is Module -> ctx

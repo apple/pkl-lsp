@@ -79,7 +79,7 @@ open class PklVisitor<R> {
     return visitType(o)
   }
 
-  open fun visitElement(o: Node): R? {
+  open fun visitElement(o: PklNode): R? {
     return null
   }
 

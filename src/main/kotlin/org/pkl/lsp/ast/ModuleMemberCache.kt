@@ -65,7 +65,7 @@ private constructor(
     return if (isProperty) doVisit(typeDefsAndProperties, visitor) else doVisit(methods, visitor)
   }
 
-  private fun doVisit(members: Map<String, Node>, visitor: ResolveVisitor<*>): Boolean {
+  private fun doVisit(members: Map<String, PklNode>, visitor: ResolveVisitor<*>): Boolean {
     val exactName = visitor.exactName
     if (exactName != null) {
       return (visitor.visitIfNotNull(exactName, members[exactName], mapOf()))

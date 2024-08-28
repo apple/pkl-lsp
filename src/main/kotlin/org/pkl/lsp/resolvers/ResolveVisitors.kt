@@ -26,7 +26,7 @@ interface ResolveVisitor<R> {
    * Note: [element] may be of type [PklImport], which visitors need to `resolve()` on their own if
    * so desired.
    */
-  fun visit(name: String, element: Node, bindings: TypeParameterBindings): Boolean
+  fun visit(name: String, element: PklNode, bindings: TypeParameterBindings): Boolean
 
   val result: R
 
@@ -41,7 +41,7 @@ interface ResolveVisitor<R> {
 
 fun ResolveVisitor<*>.visitIfNotNull(
   name: String?,
-  element: Node?,
+  element: PklNode?,
   bindings: TypeParameterBindings,
 ): Boolean = if (name != null && element != null) visit(name, element, bindings) else true
 
@@ -66,7 +66,7 @@ object ResolveVisitors {
     resolveTypeParamsInParamTypes: Boolean = true,
   ): ResolveVisitor<List<Type>?> =
     object : ResolveVisitor<List<Type>?> {
-      override fun visit(name: String, element: Node, bindings: TypeParameterBindings): Boolean {
+      override fun visit(name: String, element: PklNode, bindings: TypeParameterBindings): Boolean {
         if (name != expectedName) return true
 
         when (element) {
@@ -130,7 +130,7 @@ object ResolveVisitors {
         return false
       }
 
-      override fun visit(name: String, element: Node, bindings: TypeParameterBindings): Boolean {
+      override fun visit(name: String, element: PklNode, bindings: TypeParameterBindings): Boolean {
         if (name != elementName) return true
 
         val type =
@@ -283,9 +283,9 @@ object ResolveVisitors {
     expectedName: String,
     base: PklBaseModule,
     resolveImports: Boolean = true,
-  ): ResolveVisitor<Node?> =
-    object : ResolveVisitor<Node?> {
-      override fun visit(name: String, element: Node, bindings: TypeParameterBindings): Boolean {
+  ): ResolveVisitor<PklNode?> =
+    object : ResolveVisitor<PklNode?> {
+      override fun visit(name: String, element: PklNode, bindings: TypeParameterBindings): Boolean {
         if (name != expectedName) return true
 
         when {
@@ -309,7 +309,7 @@ object ResolveVisitors {
         return false
       }
 
-      override var result: Node? = null
+      override var result: PklNode? = null
 
       override val exactName: String
         get() = expectedName
@@ -320,9 +320,9 @@ object ResolveVisitors {
     expectedName: String,
     base: PklBaseModule,
     resolveImports: Boolean = true,
-  ): ResolveVisitor<List<Node>> =
-    object : ResolveVisitor<List<Node>> {
-      override fun visit(name: String, element: Node, bindings: TypeParameterBindings): Boolean {
+  ): ResolveVisitor<List<PklNode>> =
+    object : ResolveVisitor<List<PklNode>> {
+      override fun visit(name: String, element: PklNode, bindings: TypeParameterBindings): Boolean {
         if (name != expectedName) return true
 
         when {
@@ -346,7 +346,7 @@ object ResolveVisitors {
         return true
       }
 
-      override var result: MutableList<Node> = mutableListOf()
+      override var result: MutableList<PklNode> = mutableListOf()
 
       override val exactName: String
         get() = expectedName
@@ -377,7 +377,7 @@ fun <R> ResolveVisitor<R>.withoutShadowedElements(): ResolveVisitor<R> =
     private val visitedProperties = mutableSetOf<String>()
     private val visitedMethods = mutableSetOf<String>()
 
-    override fun visit(name: String, element: Node, bindings: TypeParameterBindings): Boolean {
+    override fun visit(name: String, element: PklNode, bindings: TypeParameterBindings): Boolean {
       return when (element) {
         is PklMethod ->
           if (visitedMethods.add(name)) {

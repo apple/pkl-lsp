@@ -21,7 +21,7 @@ import org.pkl.lsp.ast.*
 import org.pkl.lsp.type.computeThisType
 
 class AnnotationAnalyzer(project: Project) : Analyzer(project) {
-  override fun doAnalyze(node: Node, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
+  override fun doAnalyze(node: PklNode, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
     if (node !is PklAnnotation) return true
     val type = node.type ?: return true
     if (type !is PklDeclaredType) {

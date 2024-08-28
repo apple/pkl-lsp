@@ -45,7 +45,7 @@ class GoToDefinitionFeature(private val server: PklLSPServer, project: Project) 
     return server.builder().runningBuild(params.textDocument.uri).thenApply(::run)
   }
 
-  private fun resolveDeclaration(originalNode: Node, line: Int, col: Int): Location? {
+  private fun resolveDeclaration(originalNode: PklNode, line: Int, col: Int): Location? {
     val node = originalNode.resolveReference(line, col) ?: return null
     return when (node) {
       is PklThisExpr ->
@@ -54,7 +54,7 @@ class GoToDefinitionFeature(private val server: PklLSPServer, project: Project) 
     }
   }
 
-  private fun Node.toLocation(): Location {
+  private fun PklNode.toLocation(): Location {
     return Location(toURIString(), beginningSpan().toRange())
   }
 }

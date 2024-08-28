@@ -55,7 +55,7 @@ class CompletionFeature(private val server: PklLSPServer, project: Project) : Co
     return server.builder().runningBuild(params.textDocument.uri).thenApply(::run)
   }
 
-  private fun Node.resolveCompletion(line: Int, col: Int): List<CompletionItem>? {
+  private fun PklNode.resolveCompletion(line: Int, col: Int): List<CompletionItem>? {
     val node = resolveReference(line, col) ?: return null
     val showTypes = parentOfType<PklNewExpr>() != null
     val module = if (this is PklModule) this else enclosingModule
@@ -81,7 +81,7 @@ class CompletionFeature(private val server: PklLSPServer, project: Project) : Co
     }
   }
 
-  private fun Node.complete(showTypes: Boolean, sourceModule: PklModule?): List<CompletionItem> =
+  private fun PklNode.complete(showTypes: Boolean, sourceModule: PklModule?): List<CompletionItem> =
     when (this) {
       is PklModule -> complete(showTypes, sourceModule)
       is PklClass -> complete()

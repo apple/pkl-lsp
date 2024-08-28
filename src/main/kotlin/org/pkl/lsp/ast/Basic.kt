@@ -22,9 +22,9 @@ import org.pkl.lsp.Project
 
 class PklQualifiedIdentifierImpl(
   override val project: Project,
-  override val parent: Node,
+  override val parent: PklNode,
   override val ctx: QualifiedIdentifierContext,
-) : AbstractNode(project, parent, ctx), PklQualifiedIdentifier {
+) : AbstractPklNode(project, parent, ctx), PklQualifiedIdentifier {
   override val identifiers: List<Terminal> by lazy { terminals }
   override val fullName: String by lazy { text }
 
@@ -35,9 +35,9 @@ class PklQualifiedIdentifierImpl(
 
 class PklStringConstantImpl(
   override val project: Project,
-  override val parent: Node,
+  override val parent: PklNode,
   override val ctx: StringConstantContext,
-) : AbstractNode(project, parent, ctx), PklStringConstant {
+) : AbstractPklNode(project, parent, ctx), PklStringConstant {
   override val value: String by lazy { text }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {

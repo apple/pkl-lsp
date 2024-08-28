@@ -17,12 +17,12 @@ package org.pkl.lsp.analyzers
 
 import java.net.URI
 import org.pkl.lsp.*
-import org.pkl.lsp.ast.Node
 import org.pkl.lsp.ast.PklImportBase
+import org.pkl.lsp.ast.PklNode
 import org.pkl.lsp.ast.escapedText
 
 class ImportAnalyzer(project: Project) : Analyzer(project) {
-  override fun doAnalyze(node: Node, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
+  override fun doAnalyze(node: PklNode, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
     if (node !is PklImportBase) {
       return true
     }

@@ -40,7 +40,7 @@ class HoverFeature(val server: PklLSPServer, project: Project) : Component(proje
     return server.builder().runningBuild(params.textDocument.uri).thenApply(::run)
   }
 
-  private fun resolveHover(originalNode: Node, line: Int, col: Int): String? {
+  private fun resolveHover(originalNode: PklNode, line: Int, col: Int): String? {
     val node = originalNode.resolveReference(line, col) ?: return null
     val base = project.pklBaseModule
     if (node !== originalNode) return node.toMarkdown(originalNode)
@@ -80,7 +80,7 @@ class HoverFeature(val server: PklLSPServer, project: Project) : Component(proje
     }
   }
 
-  private fun Node.render(originalNode: Node?): String =
+  private fun PklNode.render(originalNode: PklNode?): String =
     when (this) {
       is PklProperty ->
         buildString {
@@ -197,8 +197,8 @@ class HoverFeature(val server: PklLSPServer, project: Project) : Component(proje
   private fun renderTypeAnnotation(
     name: String?,
     type: PklType?,
-    node: Node,
-    originalNode: Node?,
+    node: PklNode,
+    originalNode: PklNode?,
   ): String? {
     if (name == null) return null
     return buildString {
@@ -252,7 +252,7 @@ class HoverFeature(val server: PklLSPServer, project: Project) : Component(proje
     }
   }
 
-  private fun Node.toMarkdown(originalNode: Node?): String {
+  private fun PklNode.toMarkdown(originalNode: PklNode?): String {
     val markdown = render(originalNode)
     return when {
       this is PklModule && declaration != null -> showDocCommentAndModule(declaration!!, markdown)
@@ -260,7 +260,7 @@ class HoverFeature(val server: PklLSPServer, project: Project) : Component(proje
     }
   }
 
-  private fun showDocCommentAndModule(node: Node?, text: String): String {
+  private fun showDocCommentAndModule(node: PklNode?, text: String): String {
     val markdown = "```pkl\n$text\n```"
     val withDoc =
       if (node is PklDocCommentOwner) {

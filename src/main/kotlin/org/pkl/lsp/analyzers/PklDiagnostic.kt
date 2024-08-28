@@ -18,13 +18,13 @@ package org.pkl.lsp.analyzers
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
 import org.pkl.lsp.LSPUtil.toRange
-import org.pkl.lsp.ast.Node
+import org.pkl.lsp.ast.PklNode
 import org.pkl.lsp.ast.Span
 
 class PklDiagnostic(span: Span, message: String, severity: DiagnosticSeverity) :
   Diagnostic(span.toRange(), message, severity, "pkl") {
   constructor(
-    node: Node,
+    node: PklNode,
     message: String,
     severity: DiagnosticSeverity,
   ) : this(node.span, message, severity)
