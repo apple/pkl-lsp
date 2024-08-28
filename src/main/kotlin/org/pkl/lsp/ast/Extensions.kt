@@ -59,9 +59,9 @@ val PklClass.isPklBaseAnyClass: Boolean
     return name == "Any" && this === project.pklBaseModule.anyType.ctx
   }
 
-fun PklTypeName.resolve(): Node? = simpleTypeName.resolve()
+fun PklTypeName.resolve(): PklNode? = simpleTypeName.resolve()
 
-fun PklSimpleTypeName.resolve(): Node? {
+fun PklSimpleTypeName.resolve(): PklNode? {
   val typeName = parentOfType<PklTypeName>() ?: return null
 
   val moduleName = typeName.moduleName
@@ -92,7 +92,7 @@ fun PklModuleName.resolve(): PklModule? {
   return null
 }
 
-fun Node.isAncestor(of: Node): Boolean {
+fun PklNode.isAncestor(of: PklNode): Boolean {
   var node = of.parent
   while (node != null) {
     if (this == node) return true
@@ -101,7 +101,7 @@ fun Node.isAncestor(of: Node): Boolean {
   return false
 }
 
-fun Node.isInStdlib(): Boolean {
+fun PklNode.isInStdlib(): Boolean {
   return this.enclosingModule?.let { mod ->
     val uri = mod.uri
     uri.scheme == "pkl" && uri.authority == "stdlib"
@@ -157,7 +157,7 @@ fun PklSingleLineStringLiteral.escapedText(): String? =
 fun PklMultiLineStringLiteral.escapedText(): String? =
   parts.mapNotNull { it.getEscapedText() }.joinToString("")
 
-private fun Node.getEscapedText(): String? = buildString {
+private fun PklNode.getEscapedText(): String? = buildString {
   for (terminal in terminals) {
     when (terminal.type) {
       TokenType.SLQuote,
@@ -214,7 +214,7 @@ private fun PklType?.isRecursive(seen: MutableSet<PklTypeAlias>): Boolean =
     else -> false
   }
 
-val Node.isInPklBaseModule: Boolean
+val PklNode.isInPklBaseModule: Boolean
   get() = enclosingModule?.let { it == it.project.stdlib.baseModule() } == true
 
 interface TypeNameRenderer {
@@ -258,7 +258,7 @@ val PklMethod.isOverridable: Boolean
       else -> unexpectedType(this)
     }
 
-inline fun <reified T : Node> Node.parentOfType(): T? {
+inline fun <reified T : PklNode> PklNode.parentOfType(): T? {
   return parentOfTypes(T::class)
 }
 
@@ -337,7 +337,7 @@ class GlobModuleResolutionResult(val resolved: List<PklModule>) : ModuleResoluti
 }
 
 // Resolve the reference under the cursor
-fun Node.resolveReference(line: Int, col: Int): Node? {
+fun PklNode.resolveReference(line: Int, col: Int): PklNode? {
   return when (this) {
     is PklSuperAccessExpr -> if (matches(line, col)) resolve() else null
     is PklProperty -> if (matches(line, col)) resolve() else null
@@ -378,14 +378,14 @@ fun Node.resolveReference(line: Int, col: Int): Node? {
 }
 
 /** Find the deepest node that matches [line] and [col]. */
-fun Node.findBySpan(line: Int, col: Int, includeTerminals: Boolean = false): Node? {
+fun PklNode.findBySpan(line: Int, col: Int, includeTerminals: Boolean = false): PklNode? {
   if (!includeTerminals && this is Terminal) return null
   val hit = if (span.matches(line, col)) this else null
   val childHit = children.firstNotNullOfOrNull { it.findBySpan(line, col) }
   return childHit ?: hit
 }
 
-fun Node.toURIString(): String {
+fun PklNode.toURIString(): String {
   return when (val file = containingFile) {
     is StdlibFile -> "pkl://stdlib/${file.name}.pkl"
     !is FsFile -> {
@@ -396,14 +396,14 @@ fun Node.toURIString(): String {
   }
 }
 
-fun Node.toCommandURIString(): String {
+fun PklNode.toCommandURIString(): String {
   val sp = beginningSpan()
   val params = """["${toURIString()}",${sp.beginLine},${sp.beginCol}]"""
   return "command:pkl.open.file?${URLEncoder.encode(params, Charsets.UTF_8)}"
 }
 
 // returns the span of this node, ignoring docs and annotations
-fun Node.beginningSpan(): Span =
+fun PklNode.beginningSpan(): Span =
   when (this) {
     is PklModule -> declaration?.beginningSpan() ?: span
     is PklModuleDeclaration -> moduleHeader?.beginningSpan() ?: span

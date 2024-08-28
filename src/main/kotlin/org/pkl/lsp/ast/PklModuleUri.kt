@@ -20,8 +20,11 @@ import org.antlr.v4.runtime.tree.ParseTree
 import org.pkl.lsp.*
 import org.pkl.lsp.LSPUtil.firstInstanceOf
 
-class PklModuleUriImpl(project: Project, override val parent: Node, override val ctx: ParseTree) :
-  AbstractNode(project, parent, ctx), PklModuleUri {
+class PklModuleUriImpl(
+  project: Project,
+  override val parent: PklNode,
+  override val ctx: ParseTree,
+) : AbstractPklNode(project, parent, ctx), PklModuleUri {
   override val stringConstant: PklStringConstant by lazy {
     children.firstInstanceOf<PklStringConstant>()!!
   }

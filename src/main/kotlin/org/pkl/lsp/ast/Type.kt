@@ -23,9 +23,9 @@ import org.pkl.lsp.Project
 
 class PklTypeAnnotationImpl(
   project: Project,
-  override val parent: Node,
+  override val parent: PklNode,
   ctx: TypeAnnotationContext,
-) : AbstractNode(project, parent, ctx), PklTypeAnnotation {
+) : AbstractPklNode(project, parent, ctx), PklTypeAnnotation {
   override val type: PklType? by lazy { children.firstInstanceOf<PklType>() }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
@@ -33,22 +33,22 @@ class PklTypeAnnotationImpl(
   }
 }
 
-class PklUnknownTypeImpl(project: Project, override val parent: Node, ctx: UnknownTypeContext) :
-  AbstractNode(project, parent, ctx), PklUnknownType {
+class PklUnknownTypeImpl(project: Project, override val parent: PklNode, ctx: UnknownTypeContext) :
+  AbstractPklNode(project, parent, ctx), PklUnknownType {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitUnknownType(this)
   }
 }
 
-class PklNothingTypeImpl(project: Project, override val parent: Node, ctx: NothingTypeContext) :
-  AbstractNode(project, parent, ctx), PklNothingType {
+class PklNothingTypeImpl(project: Project, override val parent: PklNode, ctx: NothingTypeContext) :
+  AbstractPklNode(project, parent, ctx), PklNothingType {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitNothingType(this)
   }
 }
 
-class PklModuleTypeImpl(project: Project, override val parent: Node, ctx: ModuleTypeContext) :
-  AbstractNode(project, parent, ctx), PklModuleType {
+class PklModuleTypeImpl(project: Project, override val parent: PklNode, ctx: ModuleTypeContext) :
+  AbstractPklNode(project, parent, ctx), PklModuleType {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitModuleType(this)
   }
@@ -56,9 +56,9 @@ class PklModuleTypeImpl(project: Project, override val parent: Node, ctx: Module
 
 class PklStringLiteralTypeImpl(
   project: Project,
-  override val parent: Node,
+  override val parent: PklNode,
   ctx: StringLiteralTypeContext,
-) : AbstractNode(project, parent, ctx), PklStringLiteralType {
+) : AbstractPklNode(project, parent, ctx), PklStringLiteralType {
   override val stringConstant: PklStringConstant by lazy {
     children.firstInstanceOf<PklStringConstant>()!!
   }
@@ -70,9 +70,9 @@ class PklStringLiteralTypeImpl(
 
 class PklDeclaredTypeImpl(
   project: Project,
-  override val parent: Node,
+  override val parent: PklNode,
   override val ctx: DeclaredTypeContext,
-) : AbstractNode(project, parent, ctx), PklDeclaredType {
+) : AbstractPklNode(project, parent, ctx), PklDeclaredType {
   override val name: PklTypeName by lazy {
     toTypeName(children.firstInstanceOf<PklQualifiedIdentifier>()!!)
   }
@@ -92,9 +92,9 @@ class PklDeclaredTypeImpl(
 
 class PklTypeArgumentListImpl(
   project: Project,
-  override val parent: Node,
+  override val parent: PklNode,
   override val ctx: TypeArgumentListContext,
-) : AbstractNode(project, parent, ctx), PklTypeArgumentList {
+) : AbstractPklNode(project, parent, ctx), PklTypeArgumentList {
   override val types: List<PklType> by lazy { children.filterIsInstance<PklType>() }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
@@ -111,9 +111,9 @@ class PklTypeArgumentListImpl(
 
 class PklParenthesizedTypeImpl(
   project: Project,
-  override val parent: Node,
+  override val parent: PklNode,
   override val ctx: ParenthesizedTypeContext,
-) : AbstractNode(project, parent, ctx), PklParenthesizedType {
+) : AbstractPklNode(project, parent, ctx), PklParenthesizedType {
   override val type: PklType by lazy { children.firstInstanceOf<PklType>()!! }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
@@ -125,8 +125,11 @@ class PklParenthesizedTypeImpl(
   }
 }
 
-class PklNullableTypeImpl(project: Project, override val parent: Node, ctx: NullableTypeContext) :
-  AbstractNode(project, parent, ctx), PklNullableType {
+class PklNullableTypeImpl(
+  project: Project,
+  override val parent: PklNode,
+  ctx: NullableTypeContext,
+) : AbstractPklNode(project, parent, ctx), PklNullableType {
   override val type: PklType by lazy { children.firstInstanceOf<PklType>()!! }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
@@ -136,9 +139,9 @@ class PklNullableTypeImpl(project: Project, override val parent: Node, ctx: Null
 
 class PklConstrainedTypeImpl(
   project: Project,
-  override val parent: Node,
+  override val parent: PklNode,
   override val ctx: ConstrainedTypeContext,
-) : AbstractNode(project, parent, ctx), PklConstrainedType {
+) : AbstractPklNode(project, parent, ctx), PklConstrainedType {
   override val type: PklType? by lazy { children.firstInstanceOf<PklType>() }
   override val exprs: List<PklExpr> by lazy { children.filterIsInstance<PklExpr>() }
 
@@ -154,8 +157,8 @@ class PklConstrainedTypeImpl(
   }
 }
 
-class PklUnionTypeImpl(project: Project, override val parent: Node, ctx: UnionTypeContext) :
-  AbstractNode(project, parent, ctx), PklUnionType {
+class PklUnionTypeImpl(project: Project, override val parent: PklNode, ctx: UnionTypeContext) :
+  AbstractPklNode(project, parent, ctx), PklUnionType {
   override val typeList: List<PklType> by lazy { children.filterIsInstance<PklType>() }
   override val leftType: PklType by lazy { typeList[0] }
   override val rightType: PklType by lazy { typeList[1] }
@@ -167,9 +170,9 @@ class PklUnionTypeImpl(project: Project, override val parent: Node, ctx: UnionTy
 
 class PklFunctionTypeImpl(
   project: Project,
-  override val parent: Node,
+  override val parent: PklNode,
   override val ctx: FunctionTypeContext,
-) : AbstractNode(project, parent, ctx), PklFunctionType {
+) : AbstractPklNode(project, parent, ctx), PklFunctionType {
   override val parameterList: List<PklType> by lazy {
     children.filterIsInstance<PklType>().dropLast(1)
   }
@@ -189,9 +192,9 @@ class PklFunctionTypeImpl(
 
 class PklDefaultUnionTypeImpl(
   project: Project,
-  override val parent: Node,
+  override val parent: PklNode,
   ctx: DefaultUnionTypeContext,
-) : AbstractNode(project, parent, ctx), PklDefaultUnionType {
+) : AbstractPklNode(project, parent, ctx), PklDefaultUnionType {
   override val type: PklType by lazy { children.firstInstanceOf<PklType>()!! }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
@@ -199,8 +202,8 @@ class PklDefaultUnionTypeImpl(
   }
 }
 
-class PklTypeAliasImpl(project: Project, override val parent: Node?, ctx: TypeAliasContext) :
-  AbstractNode(project, parent, ctx), PklTypeAlias {
+class PklTypeAliasImpl(project: Project, override val parent: PklNode?, ctx: TypeAliasContext) :
+  AbstractPklNode(project, parent, ctx), PklTypeAlias {
   override val typeAliasHeader: PklTypeAliasHeader by lazy {
     children.firstInstanceOf<PklTypeAliasHeader>()!!
   }
@@ -219,9 +222,9 @@ class PklTypeAliasImpl(project: Project, override val parent: Node?, ctx: TypeAl
 
 class PklTypeAliasHeaderImpl(
   project: Project,
-  override val parent: Node?,
+  override val parent: PklNode?,
   ctx: TypeAliasHeaderContext,
-) : AbstractNode(project, parent, ctx), PklTypeAliasHeader {
+) : AbstractPklNode(project, parent, ctx), PklTypeAliasHeader {
   override val modifiers: List<Terminal>? by lazy { terminals.takeWhile { it.isModifier } }
   override val identifier: Terminal? by lazy { terminals.find { it.type == TokenType.Identifier } }
   override val typeParameterList: PklTypeParameterList? by lazy {
@@ -237,7 +240,7 @@ class PklTypeNameImpl(
   project: Project,
   ident: PklQualifiedIdentifier,
   override val ctx: QualifiedIdentifierContext,
-) : AbstractNode(project, ident.parent, ctx), PklTypeName {
+) : AbstractPklNode(project, ident.parent, ctx), PklTypeName {
   override val moduleName: PklModuleName? by lazy {
     // if there's only 1 identifier it's not qualified, therefore, there's no module name
     if (ctx.Identifier().size > 1) {
@@ -255,10 +258,10 @@ class PklTypeNameImpl(
 
 class PklSimpleTypeNameImpl(
   project: Project,
-  parent: Node,
+  parent: PklNode,
   terminal: Terminal,
   override val ctx: ParseTree,
-) : AbstractNode(project, parent, ctx), PklSimpleTypeName {
+) : AbstractPklNode(project, parent, ctx), PklSimpleTypeName {
   override val identifier: Terminal? by lazy { terminal }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
@@ -268,10 +271,10 @@ class PklSimpleTypeNameImpl(
 
 class PklModuleNameImpl(
   project: Project,
-  parent: Node,
+  parent: PklNode,
   terminal: Terminal,
   override val ctx: ParseTree,
-) : AbstractNode(project, parent, ctx), PklModuleName {
+) : AbstractPklNode(project, parent, ctx), PklModuleName {
   override val identifier: Terminal? by lazy { terminal }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {

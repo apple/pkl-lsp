@@ -32,7 +32,7 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
     private val OBJECT_PROPERTY_MODIFIERS = setOf(LOCAL)
   }
 
-  override fun doAnalyze(node: Node, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
+  override fun doAnalyze(node: PklNode, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
     // removing module and module declaration because this will be checked in PklModuleHeader
     if (
       node !is ModifierListOwner ||
@@ -43,11 +43,11 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
       return true
     }
 
-    var localModifier: Node? = null
-    var abstractModifier: Node? = null
-    var openModifier: Node? = null
-    var hiddenModifier: Node? = null
-    var fixedModifier: Node? = null
+    var localModifier: PklNode? = null
+    var abstractModifier: PklNode? = null
+    var openModifier: PklNode? = null
+    var hiddenModifier: PklNode? = null
+    var fixedModifier: PklNode? = null
 
     for (modifier in node.modifiers!!) {
       when (modifier.type) {

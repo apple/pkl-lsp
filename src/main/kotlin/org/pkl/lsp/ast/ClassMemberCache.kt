@@ -43,7 +43,7 @@ class ClassMemberCache(
   }
 
   private fun doVisit(
-    members: Map<String, Node>,
+    members: Map<String, PklNode>,
     bindings: TypeParameterBindings,
     visitor: ResolveVisitor<*>,
   ): Boolean {

@@ -23,12 +23,12 @@ import org.pkl.lsp.resolvers.Resolvers
 
 private val value = Any()
 
-fun Node?.computeResolvedImportType(
+fun PklNode?.computeResolvedImportType(
   base: PklBaseModule,
   bindings: TypeParameterBindings,
   preserveUnboundTypeVars: Boolean = false,
   canInferExprBody: Boolean = true,
-  cache: IdentityHashMap<Node, Any> = IdentityHashMap(),
+  cache: IdentityHashMap<PklNode, Any> = IdentityHashMap(),
 ): Type {
   if (this == null) return Type.Unknown
   if (cache.containsKey(this)) return Type.Unknown

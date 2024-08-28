@@ -22,10 +22,10 @@ import org.pkl.lsp.Project
 
 class TerminalImpl(
   project: Project,
-  override val parent: Node,
+  override val parent: PklNode,
   override val ctx: TerminalNode,
   override val type: TokenType,
-) : AbstractNode(project, parent, ctx), Terminal {
+) : AbstractPklNode(project, parent, ctx), Terminal {
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitTerminal(this)
@@ -37,7 +37,7 @@ val Terminal.isModifier: Boolean
     return modifierTypes.contains(type)
   }
 
-fun TerminalNode.toTerminal(parent: Node): Terminal? {
+fun TerminalNode.toTerminal(parent: PklNode): Terminal? {
   val tokenType =
     when (symbol.type) {
       PklParser.ABSTRACT -> TokenType.ABSTRACT

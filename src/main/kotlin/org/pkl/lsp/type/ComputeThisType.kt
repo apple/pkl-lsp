@@ -18,8 +18,8 @@ package org.pkl.lsp.type
 import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.ast.*
 
-fun Node.computeThisType(base: PklBaseModule, bindings: TypeParameterBindings): Type {
-  var element: Node? = this
+fun PklNode.computeThisType(base: PklBaseModule, bindings: TypeParameterBindings): Type {
+  var element: PklNode? = this
   var memberPredicateExprSeen = false
   var objectBodySeen = false
   var skipNextObjectBody = false

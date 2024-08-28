@@ -47,7 +47,7 @@ fun PklExpr?.inferExprTypeFromContext(
 private fun PklExpr?.doInferExprTypeFromContext(
   base: PklBaseModule,
   bindings: TypeParameterBindings,
-  parent: Node?,
+  parent: PklNode?,
   resolveTypeParamsInParamTypes: Boolean = true,
   canInferParentExpr: Boolean = true,
 ): Type {

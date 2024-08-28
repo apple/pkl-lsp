@@ -17,14 +17,14 @@ package org.pkl.lsp.analyzers
 
 import org.pkl.lsp.ErrorMessages
 import org.pkl.lsp.Project
-import org.pkl.lsp.ast.Node
 import org.pkl.lsp.ast.PklMethod
 import org.pkl.lsp.ast.PklModule
+import org.pkl.lsp.ast.PklNode
 import org.pkl.lsp.ast.PklProperty
 
 class ModuleMemberAnalyzer(project: Project) : Analyzer(project) {
 
-  override fun doAnalyze(node: Node, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
+  override fun doAnalyze(node: PklNode, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
     when (node) {
       is PklProperty -> {
         val isAmends = node.enclosingModule?.isAmend ?: false

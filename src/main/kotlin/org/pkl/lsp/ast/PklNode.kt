@@ -26,11 +26,11 @@ import org.pkl.lsp.resolvers.ResolveVisitor
 import org.pkl.lsp.type.Type
 import org.pkl.lsp.type.TypeParameterBindings
 
-interface Node {
+interface PklNode {
   val project: Project
   val span: Span
-  val parent: Node?
-  val children: List<Node>
+  val parent: PklNode?
+  val children: List<PklNode>
   val containingFile: VirtualFile
   val enclosingModule: PklModule?
   val terminals: List<Terminal>
@@ -40,8 +40,8 @@ interface Node {
   fun <R> accept(visitor: PklVisitor<R>): R?
 
   @Suppress("UNCHECKED_CAST")
-  fun <T : Node> parentOfTypes(vararg classes: KClass<out T>): T? {
-    var node: Node? = parent
+  fun <T : PklNode> parentOfTypes(vararg classes: KClass<out T>): T? {
+    var node: PklNode? = parent
     while (node != null) {
       for (clazz in classes) {
         if (clazz.isInstance(node)) return node as T
@@ -56,26 +56,26 @@ interface Node {
   fun checkClosingDelimiter(): String? = null
 }
 
-interface PklReference : Node {
-  fun resolve(): Node?
+interface PklReference : PklNode {
+  fun resolve(): PklNode?
 }
 
-interface PklQualifiedIdentifier : Node {
+interface PklQualifiedIdentifier : PklNode {
   val identifiers: List<Terminal>
   val fullName: String
 }
 
-interface PklStringConstant : Node {
+interface PklStringConstant : PklNode {
   val value: String
 }
 
-interface IdentifierOwner : Node {
+interface IdentifierOwner : PklNode {
   val identifier: Terminal?
 
   fun matches(line: Int, col: Int): Boolean = identifier?.span?.matches(line, col) == true
 }
 
-interface ModifierListOwner : Node {
+interface ModifierListOwner : PklNode {
   val modifiers: List<Terminal>?
 
   val isAbstract: Boolean
@@ -118,7 +118,7 @@ interface ModifierListOwner : Node {
   }
 }
 
-interface PklDocCommentOwner : Node {
+interface PklDocCommentOwner : PklNode {
   // assertion: DocComment is always the first node
   val docComment: Terminal?
     get() {
@@ -133,7 +133,7 @@ interface PklDocCommentOwner : Node {
     }
 }
 
-sealed interface PklNavigableElement : Node
+sealed interface PklNavigableElement : PklNode
 
 sealed interface PklTypeDefOrModule : PklNavigableElement, ModifierListOwner, PklDocCommentOwner
 
@@ -157,7 +157,7 @@ interface PklModule : PklTypeDefOrModule {
 }
 
 /** Either [moduleHeader] is set, or [moduleExtendsAmendsClause] is set. */
-interface PklModuleDeclaration : Node, ModifierListOwner, PklDocCommentOwner {
+interface PklModuleDeclaration : PklNode, ModifierListOwner, PklDocCommentOwner {
   val annotations: List<PklAnnotation>
 
   val isAmend: Boolean
@@ -171,14 +171,14 @@ interface PklModuleDeclaration : Node, ModifierListOwner, PklDocCommentOwner {
     get() = moduleHeader?.moduleExtendsAmendsClause ?: moduleExtendsAmendsClause
 }
 
-interface PklModuleHeader : Node, ModifierListOwner {
+interface PklModuleHeader : PklNode, ModifierListOwner {
   val qualifiedIdentifier: PklQualifiedIdentifier?
   val moduleExtendsAmendsClause: PklModuleExtendsAmendsClause?
   val shortDisplayName: String?
   val moduleName: String?
 }
 
-interface PklModuleExtendsAmendsClause : Node {
+interface PklModuleExtendsAmendsClause : PklNode {
   val isAmend: Boolean
 
   val isExtend: Boolean
@@ -207,7 +207,7 @@ interface PklClass : PklTypeDef {
   val cache: ClassMemberCache
 }
 
-interface PklClassBody : Node {
+interface PklClassBody : PklNode {
   val members: List<PklClassMember>
 }
 
@@ -217,16 +217,16 @@ interface PklAnnotation : PklObjectBodyOwner {
   override val objectBody: PklObjectBody?
 }
 
-interface PklTypeName : Node {
+interface PklTypeName : PklNode {
   val moduleName: PklModuleName?
   val simpleTypeName: PklSimpleTypeName
 }
 
-interface PklSimpleTypeName : Node, IdentifierOwner
+interface PklSimpleTypeName : PklNode, IdentifierOwner
 
-interface PklModuleName : Node, IdentifierOwner
+interface PklModuleName : PklNode, IdentifierOwner
 
-interface PklClassHeader : Node, IdentifierOwner, ModifierListOwner {
+interface PklClassHeader : PklNode, IdentifierOwner, ModifierListOwner {
   val typeParameterList: PklTypeParameterList?
   val extends: PklType?
 }
@@ -257,7 +257,7 @@ interface PklObjectMethod : PklMethod, PklObjectMember {
   val name: String
 }
 
-sealed interface PklObjectMember : Node
+sealed interface PklObjectMember : PklNode
 
 interface PklObjectProperty : PklNavigableElement, PklProperty, PklObjectMember
 
@@ -290,7 +290,7 @@ interface PklObjectSpread : PklObjectMember {
   val isNullable: Boolean
 }
 
-interface PklMethodHeader : Node, ModifierListOwner, IdentifierOwner {
+interface PklMethodHeader : PklNode, ModifierListOwner, IdentifierOwner {
   val parameterList: PklParameterList?
 
   val typeParameterList: PklTypeParameterList?
@@ -298,11 +298,11 @@ interface PklMethodHeader : Node, ModifierListOwner, IdentifierOwner {
   val returnType: PklType?
 }
 
-sealed interface PklObjectBodyOwner : Node {
+sealed interface PklObjectBodyOwner : PklNode {
   val objectBody: PklObjectBody?
 }
 
-interface PklObjectBody : Node {
+interface PklObjectBody : PklNode {
   val parameterList: PklParameterList
 
   val members: List<PklObjectMember>
@@ -312,7 +312,7 @@ interface PklObjectBody : Node {
   val methods: List<PklObjectMethod>
 }
 
-interface PklTypeParameterList : Node {
+interface PklTypeParameterList : PklNode {
   val typeParameters: List<PklTypeParameter>
 }
 
@@ -326,7 +326,7 @@ interface PklTypeParameter : PklNavigableElement, IdentifierOwner {
   val name: String
 }
 
-interface PklParameterList : Node {
+interface PklParameterList : PklNode {
   val elements: List<PklParameter>
 }
 
@@ -340,15 +340,15 @@ interface PklTypeAliasHeader : IdentifierOwner, ModifierListOwner {
   val typeParameterList: PklTypeParameterList?
 }
 
-interface Terminal : Node {
+interface Terminal : PklNode {
   val type: TokenType
 }
 
-interface PklModuleUri : Node {
+interface PklModuleUri : PklNode {
   val stringConstant: PklStringConstant
 }
 
-interface PklImportBase : Node {
+interface PklImportBase : PklNode {
   val isGlob: Boolean
 
   val moduleUri: PklModuleUri?
@@ -356,7 +356,7 @@ interface PklImportBase : Node {
 
 sealed interface PklImport : PklImportBase, IdentifierOwner
 
-sealed interface PklExpr : Node
+sealed interface PklExpr : PklNode
 
 interface PklThisExpr : PklExpr
 
@@ -392,7 +392,7 @@ interface PklSingleLineStringLiteral : PklExpr {
   val parts: List<SingleLineStringPart>
 }
 
-interface SingleLineStringPart : Node {
+interface SingleLineStringPart : PklNode {
   val expr: PklExpr?
 }
 
@@ -400,7 +400,7 @@ interface PklMultiLineStringLiteral : PklExpr {
   val parts: List<MultiLineStringPart>
 }
 
-interface MultiLineStringPart : Node {
+interface MultiLineStringPart : PklNode {
   val expr: PklExpr?
 }
 
@@ -520,7 +520,7 @@ interface PklParenthesizedExpr : PklExpr {
   val expr: PklExpr?
 }
 
-interface PklTypeAnnotation : Node {
+interface PklTypeAnnotation : PklNode {
   val type: PklType?
 }
 
@@ -528,17 +528,17 @@ interface PklTypedIdentifier : PklNavigableElement, IdentifierOwner {
   val typeAnnotation: PklTypeAnnotation?
 }
 
-interface PklParameter : Node {
+interface PklParameter : PklNode {
   val typedIdentifier: PklTypedIdentifier?
   val isUnderscore: Boolean
   val type: PklType?
 }
 
-interface PklArgumentList : Node {
+interface PklArgumentList : PklNode {
   val elements: List<PklExpr>
 }
 
-sealed interface PklType : Node {
+sealed interface PklType : PklNode {
   fun render(): String
 }
 
@@ -576,7 +576,7 @@ interface PklDeclaredType : PklType {
   }
 }
 
-interface PklTypeArgumentList : Node {
+interface PklTypeArgumentList : PklNode {
   val types: List<PklType>
 }
 
@@ -646,19 +646,19 @@ interface PklDefaultUnionType : PklType {
   }
 }
 
-abstract class AbstractNode(
+abstract class AbstractPklNode(
   override val project: Project,
-  override val parent: Node?,
+  override val parent: PklNode?,
   protected open val ctx: ParseTree,
-) : Node {
-  private val childrenByType: Map<KClass<out Node>, List<Node>> by lazy {
+) : PklNode {
+  private val childrenByType: Map<KClass<out PklNode>, List<PklNode>> by lazy {
     if (ctx !is ParserRuleContext) {
       return@lazy emptyMap()
     }
     val parserCtx = ctx as ParserRuleContext
     val self = this
     // use LinkedHashMap to preserve order
-    LinkedHashMap<KClass<out Node>, MutableList<Node>>().also { map ->
+    LinkedHashMap<KClass<out PklNode>, MutableList<PklNode>>().also { map ->
       for (idx in parserCtx.children.indices) {
         val node = parserCtx.children.toNode(project, self, idx) ?: continue
         when (val nodes = map[node::class]) {
@@ -688,7 +688,7 @@ abstract class AbstractNode(
   }
 
   override val enclosingModule: PklModule? by lazy {
-    var top: Node? = this
+    var top: PklNode? = this
     // navigate the parent chain until the module is reached
     while (top != null) {
       if (top is PklModule) return@lazy top
@@ -701,17 +701,17 @@ abstract class AbstractNode(
     enclosingModule?.virtualFile ?: throw RuntimeException("Node is not contained in a module")
   }
 
-  protected fun <T : Node> getChild(clazz: KClass<T>): T? {
+  protected fun <T : PklNode> getChild(clazz: KClass<T>): T? {
     @Suppress("UNCHECKED_CAST") return childrenByType[clazz]?.firstOrNull() as T?
   }
 
-  protected fun <T : Node> getChildren(clazz: KClass<T>): List<T>? {
+  protected fun <T : PklNode> getChildren(clazz: KClass<T>): List<T>? {
     @Suppress("UNCHECKED_CAST") return childrenByType[clazz] as List<T>?
   }
 
   override val terminals: List<Terminal> by lazy { getChildren(TerminalImpl::class) ?: emptyList() }
 
-  override val children: List<Node> by lazy { childrenByType.values.flatten() }
+  override val children: List<PklNode> by lazy { childrenByType.values.flatten() }
 
   override val text: String by lazy { ctx.text }
 
@@ -723,17 +723,17 @@ abstract class AbstractNode(
   override fun equals(other: Any?): Boolean {
     return when (other) {
       null -> false
-      is AbstractNode -> ctx === other.ctx
+      is AbstractPklNode -> ctx === other.ctx
       else -> false
     }
   }
 }
 
-fun List<ParseTree>.toNode(project: Project, parent: Node?, idx: Int): Node? {
+fun List<ParseTree>.toNode(project: Project, parent: PklNode?, idx: Int): PklNode? {
   return get(idx).toNode(project, parent)
 }
 
-fun ParseTree.toNode(project: Project, parent: Node?): Node? {
+fun ParseTree.toNode(project: Project, parent: PklNode?): PklNode? {
   return when (this) {
     // a module can never be constructed from this function
     // is ModuleContext -> PklModuleImpl(this)

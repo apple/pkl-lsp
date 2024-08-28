@@ -18,7 +18,7 @@ package org.pkl.lsp.analyzers
 import org.eclipse.lsp4j.DiagnosticSeverity
 import org.pkl.lsp.Component
 import org.pkl.lsp.Project
-import org.pkl.lsp.ast.Node
+import org.pkl.lsp.ast.PklNode
 import org.pkl.lsp.ast.isInStdlib
 
 /**
@@ -27,7 +27,7 @@ import org.pkl.lsp.ast.isInStdlib
  * Diagnostics then get reported back to the user.
  */
 abstract class Analyzer(project: Project) : Component(project) {
-  fun analyze(node: Node, diagnosticsHolder: MutableList<PklDiagnostic>) {
+  fun analyze(node: PklNode, diagnosticsHolder: MutableList<PklDiagnostic>) {
     if (node.isInStdlib()) return
     if (!doAnalyze(node, diagnosticsHolder)) {
       return
@@ -42,13 +42,13 @@ abstract class Analyzer(project: Project) : Component(project) {
    * [doAnalyze] on its children.
    */
   protected abstract fun doAnalyze(
-    node: Node,
+    node: PklNode,
     diagnosticsHolder: MutableList<PklDiagnostic>,
   ): Boolean
 
-  protected fun warn(node: Node, message: String): PklDiagnostic =
+  protected fun warn(node: PklNode, message: String): PklDiagnostic =
     PklDiagnostic(node, message, DiagnosticSeverity.Warning)
 
-  protected fun error(node: Node, message: String): PklDiagnostic =
+  protected fun error(node: PklNode, message: String): PklDiagnostic =
     PklDiagnostic(node, message, DiagnosticSeverity.Error)
 }

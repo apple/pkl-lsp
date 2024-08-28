@@ -22,9 +22,9 @@ import org.eclipse.lsp4j.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.io.TempDir
 import org.pkl.core.parser.Parser
-import org.pkl.lsp.ast.Node
 import org.pkl.lsp.ast.PklModule
 import org.pkl.lsp.ast.PklModuleImpl
+import org.pkl.lsp.ast.PklNode
 import org.pkl.lsp.ast.findBySpan
 
 abstract class LSPTestBase {
@@ -85,7 +85,7 @@ abstract class LSPTestBase {
    * Issues a goto definition command on the position underneath the cursor, and returns the
    * resolved nodes.
    */
-  protected fun goToDefinition(): List<Node> {
+  protected fun goToDefinition(): List<PklNode> {
     if (fileInFocus == null)
       throw IllegalStateException(
         "No active Pkl module found in editor. Call `createPklFile` first."
