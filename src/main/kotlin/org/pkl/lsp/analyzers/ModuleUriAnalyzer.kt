@@ -23,6 +23,7 @@ import org.pkl.lsp.ast.*
 import org.pkl.lsp.packages.PackageDependency
 import org.pkl.lsp.packages.dto.Checksums
 import org.pkl.lsp.packages.dto.PackageUri
+import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.packages.dto.Version
 
 class ModuleUriAnalyzer(project: Project) : Analyzer(project) {
@@ -32,7 +33,19 @@ class ModuleUriAnalyzer(project: Project) : Analyzer(project) {
     }
     val moduleUri = node.moduleUri ?: return true
     val uriStr = moduleUri.stringConstant.escapedText() ?: return false
-    val resolved = moduleUri.resolve()
+    val context = node.containingFile.pklProject
+    val resolved = moduleUri.resolve(context)
+
+    if (
+      checkDependencyNotation(
+        moduleUri,
+        resolved?.let { listOf(it) } ?: emptyList(),
+        diagnosticsHolder,
+        context,
+      )
+    ) {
+      return false
+    }
 
     if (resolved != null) {
       return false
@@ -120,7 +133,7 @@ class ModuleUriAnalyzer(project: Project) : Analyzer(project) {
     }
     val packageService = project.packageManager
     val packageUri = PackageUri(uri.authority, uri.path, version, checksum)
-    val packageDependency = PackageDependency(packageUri, null)
+    val packageDependency = PackageDependency(packageUri, null, null)
     val roots = packageService.getLibraryRoots(packageDependency)
     if (roots == null) {
       holder +=
@@ -132,5 +145,33 @@ class ModuleUriAnalyzer(project: Project) : Analyzer(project) {
       return true
     }
     return false
+  }
+
+  private fun checkDependencyNotation(
+    element: PklModuleUri,
+    resolved: List<PklNode>,
+    holder: MutableList<PklDiagnostic>,
+    context: PklProject?,
+  ): Boolean {
+    if (element.stringConstant.escapedText()?.startsWith("@") == false) return false
+    if (resolved.isNotEmpty() && resolved.all { it.isInPackage }) return false
+
+    val dependencyName =
+      element.stringConstant.escapedText()?.substringBefore('/')?.drop(1) ?: return false
+    if (resolved.isNotEmpty()) return true
+    val deps = element.enclosingModule?.dependencies(context) ?: return false
+    if (deps.containsKey(dependencyName)) {
+      holder +=
+        warn(
+          element.stringConstant,
+          ErrorMessages.create("missingPackageSources", dependencyName),
+          PklDownloadPackageAction(project, deps[dependencyName]!!.packageUri),
+        )
+      return true
+    } else {
+      holder +=
+        warn(element.stringConstant, ErrorMessages.create("cannotFindDependency", dependencyName))
+      return true
+    }
   }
 }

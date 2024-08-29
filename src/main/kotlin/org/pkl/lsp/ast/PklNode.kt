@@ -22,8 +22,9 @@ import org.antlr.v4.runtime.tree.ParseTree
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.pkl.core.parser.antlr.PklParser.*
 import org.pkl.lsp.*
+import org.pkl.lsp.VirtualFile
 import org.pkl.lsp.packages.Dependency
-import org.pkl.lsp.packages.PackageDependency
+import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.resolvers.ResolveVisitor
 import org.pkl.lsp.type.Type
 import org.pkl.lsp.type.TypeParameterBindings
@@ -59,7 +60,7 @@ interface PklNode {
 }
 
 interface PklReference : PklNode {
-  fun resolve(): PklNode?
+  fun resolve(context: PklProject?): PklNode?
 }
 
 interface PklQualifiedIdentifier : PklNode {
@@ -152,13 +153,16 @@ interface PklModule : PklTypeDefOrModule {
   val typeDefsAndProperties: List<PklTypeDefOrProperty>
   val properties: List<PklClassProperty>
   val methods: List<PklClassMethod>
-  val supermodule: PklModule?
-  val cache: ModuleMemberCache
+
+  fun supermodule(context: PklProject?): PklModule?
+
+  fun cache(context: PklProject?): ModuleMemberCache
+
   val shortDisplayName: String
   val moduleName: String?
-  val `package`: PackageDependency?
 
-  fun dependencies(): Map<String, Dependency>?
+  /** The package dependencies of this module. */
+  fun dependencies(context: PklProject?): Map<String, Dependency>?
 }
 
 /** Either [moduleHeader] is set, or [moduleExtendsAmendsClause] is set. */
@@ -211,7 +215,8 @@ interface PklClass : PklTypeDef {
   val members: List<PklClassMember>
   val properties: List<PklClassProperty>
   val methods: List<PklClassMethod>
-  val cache: ClassMemberCache
+
+  fun cache(context: PklProject?): ClassMemberCache
 }
 
 interface PklClassBody : PklNode {
@@ -340,7 +345,8 @@ interface PklParameterList : PklNode {
 interface PklTypeAlias : PklTypeDef {
   val typeAliasHeader: PklTypeAliasHeader
   val type: PklType
-  val isRecursive: Boolean
+
+  fun isRecursive(context: PklProject?): Boolean
 }
 
 interface PklTypeAliasHeader : IdentifierOwner, ModifierListOwner {
@@ -437,6 +443,7 @@ interface PklAccessExpr : PklExpr, PklReference, IdentifierOwner {
     receiverType: Type?,
     bindings: TypeParameterBindings,
     visitor: ResolveVisitor<R>,
+    context: PklProject?,
   ): R
 }
 

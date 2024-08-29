@@ -16,12 +16,18 @@
 package org.pkl.lsp.services
 
 import java.net.URI
-import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.CompletableFuture
+import org.eclipse.lsp4j.MessageParams
+import org.eclipse.lsp4j.MessageType
 import org.pkl.lsp.*
+import org.pkl.lsp.VirtualFile
 import org.pkl.lsp.packages.Dependency
 import org.pkl.lsp.packages.PackageDependency
 import org.pkl.lsp.packages.dto.PackageMetadata
+import org.pkl.lsp.packages.dto.PackageUri
+import org.pkl.lsp.packages.dto.PklProject
+import org.pkl.lsp.packages.toDependency
 import org.pkl.lsp.util.CachedValue
 import org.pkl.lsp.util.FileCacheManager.Companion.pklCacheDir
 
@@ -31,19 +37,26 @@ data class PackageLibraryRoots(
   val packageRoot: VirtualFile,
 )
 
+val packageTopic = Topic<PackageEvent>("PackageEvent")
+
+data class PackageEvent(val type: PackageEventType, val packageUri: PackageUri)
+
+enum class PackageEventType {
+  PACKAGE_DOWNLOADED
+}
+
 class PackageManager(project: Project) : Component(project) {
-  private fun Path.toFsFile(): VirtualFile? =
-    if (Files.exists(this)) FsFile(this, project) else null
+  private fun Path.toVirtualFile(): VirtualFile? = project.virtualFileManager.get(this)
 
   fun getLibraryRoots(dependency: PackageDependency): PackageLibraryRoots? =
     project.cachedValuesManager.getCachedValue("library-roots-${dependency.packageUri}") {
       logger.info("Getting library roots for ${dependency.packageUri}")
-      if (!Files.isDirectory(pklCacheDir)) {
+      if (pklCacheDir == null) {
         return@getCachedValue null
       }
       val metadataFile =
         dependency.packageUri.relativeMetadataFiles.firstNotNullOfOrNull {
-          pklCacheDir.resolve(it).toFsFile()
+          pklCacheDir.resolve(it).toVirtualFile()
         }
           ?: run {
             val paths = dependency.packageUri.relativeMetadataFiles.map(pklCacheDir::resolve)
@@ -52,20 +65,33 @@ class PackageManager(project: Project) : Component(project) {
           }
       val zipFile =
         dependency.packageUri.relativeZipFiles.firstNotNullOfOrNull {
-          pklCacheDir.resolve(it).toFsFile()
+          pklCacheDir.resolve(it).toVirtualFile()
         }
           ?: run {
             val paths = dependency.packageUri.relativeZipFiles.map(pklCacheDir::resolve)
             logger.info("Missing zip file at paths ${paths.joinToString(", ") { "`$it`" }}")
             return@getCachedValue null
           }
-      val jarRoot = JarFile(URI("jar:${zipFile.uri}!/"), project)
+      val jarRoot = project.virtualFileManager.get(URI("jar:${zipFile.uri}!/"))!!
       CachedValue(PackageLibraryRoots(zipFile, metadataFile, jarRoot))
     }
 
-  fun getResolvedDependencies(packageDependency: PackageDependency): Map<String, Dependency>? {
+  fun getResolvedDependencies(
+    packageDependency: PackageDependency,
+    context: PklProject?,
+  ): Map<String, Dependency>? {
     val metadata = getPackageMetadata(packageDependency) ?: return null
-    return metadata.dependencies.mapValues { (_, dep) -> PackageDependency(dep.uri, dep.checksums) }
+    if (packageDependency.pklProject != null) {
+      return getResolvedDependenciesOfProjectPackage(packageDependency.pklProject, metadata)
+    }
+    return metadata.dependencies.mapValues { (_, dep) ->
+      if (context != null) {
+        val resolvedDep = context.projectDeps?.getResolvedDependency(dep.uri) ?: dep
+        resolvedDep.toDependency(context) ?: PackageDependency(dep.uri, null, dep.checksums)
+      } else {
+        PackageDependency(dep.uri, null, dep.checksums)
+      }
+    }
   }
 
   private fun getPackageMetadata(packageDependency: PackageDependency): PackageMetadata? =
@@ -75,4 +101,41 @@ class PackageManager(project: Project) : Component(project) {
       val roots = getLibraryRoots(packageDependency) ?: return@getCachedValue null
       CachedValue(PackageMetadata.load(roots.metadataFile))
     }
+
+  private fun getResolvedDependenciesOfProjectPackage(
+    pklProject: PklProject,
+    metadata: PackageMetadata,
+  ): Map<String, Dependency>? {
+    val projectDeps = pklProject.projectDeps ?: return null
+    return metadata.dependencies.entries.fold(mapOf()) { acc, (name, packageDependency) ->
+      val dep =
+        projectDeps.getResolvedDependency(packageDependency.uri)?.toDependency(pklProject)
+          ?: return@fold acc
+      acc.plus(name to dep)
+    }
+  }
+
+  fun downloadPackage(packageUri: PackageUri): CompletableFuture<Unit> {
+    return project.pklCli
+      .downloadPackage(listOf(packageUri), pklCacheDir)
+      .thenApply {
+        project.messageBus.emit(
+          packageTopic,
+          PackageEvent(PackageEventType.PACKAGE_DOWNLOADED, packageUri),
+        )
+      }
+      .exceptionally { err ->
+        project.languageClient.showMessage(
+          MessageParams(
+            MessageType.Error,
+            """
+          Failed to download package `$packageUri`.
+          
+          $err
+        """
+              .trimIndent(),
+          )
+        )
+      }
+  }
 }

@@ -16,7 +16,6 @@
 package org.pkl.lsp
 
 import java.net.URI
-import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either
@@ -25,6 +24,18 @@ import org.pkl.lsp.features.CodeActionFeature
 import org.pkl.lsp.features.CompletionFeature
 import org.pkl.lsp.features.GoToDefinitionFeature
 import org.pkl.lsp.features.HoverFeature
+import org.pkl.lsp.services.Topic
+
+val textDocumentTopic = Topic<TextDocumentEvent>("TextDocumentEvent")
+
+data class TextDocumentEvent(val file: URI, val type: TextDocumentEventType)
+
+enum class TextDocumentEventType {
+  OPENED,
+  CHANGED,
+  CLOSED,
+  SAVED,
+}
 
 class PklTextDocumentService(private val server: PklLSPServer, project: Project) :
   Component(project), TextDocumentService {
@@ -32,34 +43,40 @@ class PklTextDocumentService(private val server: PklLSPServer, project: Project)
   private val hover = HoverFeature(server, project)
   private val definition = GoToDefinitionFeature(server, project)
   private val completion = CompletionFeature(server, project)
-  private val codeAction = CodeActionFeature(server, project)
+  private val codeAction = CodeActionFeature(project)
 
   override fun didOpen(params: DidOpenTextDocumentParams) {
     val uri = URI(params.textDocument.uri)
-    project.workspaceState.openFiles.add(uri)
-    val vfile = VirtualFile.fromUri(uri, project) ?: return
+    project.messageBus.emit(textDocumentTopic, TextDocumentEvent(uri, TextDocumentEventType.OPENED))
+    val vfile = project.virtualFileManager.get(uri) ?: return
     server.builder().requestBuild(uri, vfile, params.textDocument.text)
   }
 
   override fun didChange(params: DidChangeTextDocumentParams) {
     val uri = URI(params.textDocument.uri)
-    val vfile = VirtualFile.fromUri(uri, project) ?: return
+    project.messageBus.emit(
+      textDocumentTopic,
+      TextDocumentEvent(uri, TextDocumentEventType.CHANGED),
+    )
+    val vfile = project.virtualFileManager.get(uri) ?: return
     server.builder().requestBuild(uri, vfile, params.contentChanges[0].text)
   }
 
   override fun didClose(params: DidCloseTextDocumentParams) {
     val uri = URI(params.textDocument.uri)
-    project.workspaceState.openFiles.remove(uri)
+    project.messageBus.emit(textDocumentTopic, TextDocumentEvent(uri, TextDocumentEventType.CLOSED))
   }
 
   override fun didSave(params: DidSaveTextDocumentParams) {
     val uri = URI(params.textDocument.uri)
-    if (!uri.scheme.equals("file", ignoreCase = true)) {
-      // you can only save files
+    if (!uri.scheme.equals("file")) {
       logger.error("Saved non file URI: $uri")
       return
     }
-    server.builder().requestBuild(uri, FsFile(Path.of(uri), project))
+    project.messageBus.emit(textDocumentTopic, TextDocumentEvent(uri, TextDocumentEventType.SAVED))
+    // guaranteed to exist because `file:` URIs are always supported.
+    val file = project.virtualFileManager.get(uri)!!
+    server.builder().requestBuild(uri, file)
   }
 
   override fun hover(params: HoverParams): CompletableFuture<Hover> {

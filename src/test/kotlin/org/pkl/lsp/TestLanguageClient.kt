@@ -15,14 +15,25 @@
  */
 package org.pkl.lsp
 
+import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
-import org.eclipse.lsp4j.MessageActionItem
-import org.eclipse.lsp4j.MessageParams
-import org.eclipse.lsp4j.PublishDiagnosticsParams
-import org.eclipse.lsp4j.ShowMessageRequestParams
-import org.eclipse.lsp4j.services.LanguageClient
+import kotlin.io.path.name
+import org.eclipse.lsp4j.*
+import org.pkl.lsp.messages.ActionableNotification
 
-object TestLanguageClient : LanguageClient {
+object TestLanguageClient : PklLanguageClient {
+  lateinit var testProjectDir: Path
+
+  val actionableNotifications: MutableList<ActionableNotification> = mutableListOf()
+
+  fun reset() {
+    actionableNotifications.clear()
+  }
+
+  override fun sendActionableNotification(params: ActionableNotification) {
+    actionableNotifications.add(params)
+  }
+
   override fun telemetryEvent(`object`: Any?) {
     // no-op
   }
@@ -44,5 +55,17 @@ object TestLanguageClient : LanguageClient {
 
   override fun logMessage(message: MessageParams?) {
     // no-op
+  }
+
+  override fun workspaceFolders(): CompletableFuture<List<WorkspaceFolder>> {
+    return CompletableFuture.completedFuture(
+      listOf(WorkspaceFolder(testProjectDir.toUri().toString(), testProjectDir.name))
+    )
+  }
+
+  override fun configuration(
+    configurationParams: ConfigurationParams
+  ): CompletableFuture<List<Any>> {
+    return CompletableFuture.completedFuture(listOf())
   }
 }

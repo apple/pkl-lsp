@@ -21,18 +21,16 @@ import org.eclipse.lsp4j.CodeAction
 import org.eclipse.lsp4j.CodeActionParams
 import org.eclipse.lsp4j.Command
 import org.eclipse.lsp4j.jsonrpc.messages.Either
-import org.pkl.lsp.Builder
 import org.pkl.lsp.Component
 import org.pkl.lsp.LSPUtil.toRange
-import org.pkl.lsp.PklLSPServer
 import org.pkl.lsp.Project
 
-class CodeActionFeature(private val server: PklLSPServer, project: Project) : Component(project) {
+class CodeActionFeature(project: Project) : Component(project) {
 
   fun onCodeAction(params: CodeActionParams): CompletableFuture<List<Either<Command, CodeAction>>> {
-    return server.builder().runningBuild(params.textDocument.uri).thenApply {
+    return project.builder.runningBuild(params.textDocument.uri).thenApply {
       val diagnostics =
-        Builder.diagnosticsCache[URI(params.textDocument.uri)]
+        project.builder.diagnosticsCache[URI(params.textDocument.uri)]
           ?: return@thenApply emptyList<Either<Command, CodeAction>>()
       diagnostics
         .filter { it.span.toRange() == params.range }

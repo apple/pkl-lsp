@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test
 import org.pkl.lsp.ast.PklClassProperty
 import org.pkl.lsp.ast.PklModuleHeader
 import org.pkl.lsp.packages.dto.PackageUri
+import org.pkl.lsp.util.FileCacheManager.Companion.pklCacheDir
 
 class GoToDefinitionPackagesTest : LSPTestBase() {
   companion object {
@@ -35,6 +36,7 @@ class GoToDefinitionPackagesTest : LSPTestBase() {
               "package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.appEnvCluster@1.0.2"
             )!!
           ),
+          pklCacheDir,
           false,
         )
         .get()

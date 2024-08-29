@@ -24,7 +24,7 @@ data class CachedValue<T>(val value: T, val dependencies: List<ModificationTrack
 }
 
 class CachedValuesManager(project: Project) : Component(project) {
-  private val cachedValues: MutableMap<String, Pair<List<Int>, CachedValue<*>>> =
+  private val cachedValues: MutableMap<String, Pair<List<Long>, CachedValue<*>>> =
     ConcurrentHashMap()
 
   /** Returns the currently cached value, or `null` if the cached value is out of date. */
@@ -41,7 +41,7 @@ class CachedValuesManager(project: Project) : Component(project) {
     cachedValues[key] = value.dependencies.map { it.getModificationCount() } to value
   }
 
-  private fun CachedValue<*>.isUpToDate(lastModificationCounts: List<Int>): Boolean {
+  private fun CachedValue<*>.isUpToDate(lastModificationCounts: List<Long>): Boolean {
     if (lastModificationCounts.size != dependencies.size) {
       throw IllegalArgumentException("Modification counts do not match dependency size")
     }

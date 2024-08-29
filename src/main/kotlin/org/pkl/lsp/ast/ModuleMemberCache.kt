@@ -15,8 +15,10 @@
  */
 package org.pkl.lsp.ast
 
+import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.resolvers.ResolveVisitor
 import org.pkl.lsp.resolvers.visitIfNotNull
+import org.pkl.lsp.util.ModificationTracker
 
 /** Caches non-local, i.e., externally accessible, members of a module. */
 class ModuleMemberCache
@@ -33,62 +35,72 @@ private constructor(
    */
   val leafProperties: Map<String, PklClassProperty>,
   val typeDefsAndProperties: Map<String, PklTypeDefOrProperty>,
-  val dependencies: List<Any>,
+  val dependencies: List<ModificationTracker>,
 ) {
 
   // val minPklVersion: PklVersion? by lazy { module.minPklVersion }
 
-  fun visitTypes(visitor: ResolveVisitor<*>): Boolean {
-    return doVisit(types, visitor)
+  fun visitTypes(visitor: ResolveVisitor<*>, context: PklProject?): Boolean {
+    return doVisit(types, visitor, context)
   }
 
-  fun visitMethods(visitor: ResolveVisitor<*>): Boolean {
-    return doVisit(methods, visitor)
+  fun visitMethods(visitor: ResolveVisitor<*>, context: PklProject?): Boolean {
+    return doVisit(methods, visitor, context)
   }
 
-  fun visitProperties(visitor: ResolveVisitor<*>): Boolean {
-    return doVisit(properties, visitor)
+  fun visitProperties(visitor: ResolveVisitor<*>, context: PklProject?): Boolean {
+    return doVisit(properties, visitor, context)
   }
 
-  fun visitPropertiesOrMethods(isProperty: Boolean, visitor: ResolveVisitor<*>): Boolean {
-    return if (isProperty) doVisit(properties, visitor) else doVisit(methods, visitor)
+  fun visitPropertiesOrMethods(
+    isProperty: Boolean,
+    visitor: ResolveVisitor<*>,
+    context: PklProject?,
+  ): Boolean {
+    return if (isProperty) doVisit(properties, visitor, context)
+    else doVisit(methods, visitor, context)
   }
 
-  fun visitTypeDefsAndProperties(visitor: ResolveVisitor<*>): Boolean {
-    return doVisit(typeDefsAndProperties, visitor)
+  fun visitTypeDefsAndProperties(visitor: ResolveVisitor<*>, context: PklProject?): Boolean {
+    return doVisit(typeDefsAndProperties, visitor, context)
   }
 
   fun visitTypeDefsAndPropertiesOrMethods(
     isProperty: Boolean,
     visitor: ResolveVisitor<*>,
+    context: PklProject?,
   ): Boolean {
-    return if (isProperty) doVisit(typeDefsAndProperties, visitor) else doVisit(methods, visitor)
+    return if (isProperty) doVisit(typeDefsAndProperties, visitor, context)
+    else doVisit(methods, visitor, context)
   }
 
-  private fun doVisit(members: Map<String, PklNode>, visitor: ResolveVisitor<*>): Boolean {
+  private fun doVisit(
+    members: Map<String, PklNode>,
+    visitor: ResolveVisitor<*>,
+    context: PklProject?,
+  ): Boolean {
     val exactName = visitor.exactName
     if (exactName != null) {
-      return (visitor.visitIfNotNull(exactName, members[exactName], mapOf()))
+      return (visitor.visitIfNotNull(exactName, members[exactName], mapOf(), context))
     }
 
     for ((name, member) in members) {
-      if (!visitor.visit(name, member, mapOf())) return false
+      if (!visitor.visit(name, member, mapOf(), context)) return false
     }
 
     return true
   }
 
   companion object {
-    fun create(module: PklModule): ModuleMemberCache {
-      val supercache = module.supermodule?.cache
+    fun create(module: PklModule, context: PklProject?): ModuleMemberCache {
+      val supercache = module.supermodule(context)?.cache(context)
 
       if (module.isAmend) {
-        val extendsAmendsClause = module.declaration!!.moduleExtendsAmendsClause!!
         return when (supercache) {
           null -> {
             // has unresolvable amends clause ->
             // has same cached members as pkl.base#Module (but additional dependency)
-            val pklBaseModuleClassCache = module.project.stdlib.baseModule().cache
+            val pklBaseModuleClassCache = module.project.stdlib.baseModule().cache(context)
             ModuleMemberCache(
               module,
               mapOf(),
@@ -98,7 +110,7 @@ private constructor(
               pklBaseModuleClassCache.leafProperties,
               // try to be clever and depend on amends clause
               // instead of entire module (which can't define non-local members)
-              pklBaseModuleClassCache.dependencies + extendsAmendsClause,
+              pklBaseModuleClassCache.dependencies + module.modificationTracker(),
             )
           }
           // has resolvable amends clause ->
@@ -113,7 +125,7 @@ private constructor(
               supercache.typeDefsAndProperties,
               // try to be clever and depend on amends clause
               // instead of entire module (which can't define non-local members)
-              supercache.dependencies + extendsAmendsClause,
+              supercache.dependencies + module.modificationTracker(),
             )
         }
       }
@@ -123,7 +135,7 @@ private constructor(
       val properties = mutableMapOf<String, PklClassProperty>()
       val leafProperties = mutableMapOf<String, PklClassProperty>()
       val typesAndProperties = mutableMapOf<String, PklTypeDefOrProperty>()
-      val dependencies = mutableListOf<Any>(module)
+      val dependencies = mutableListOf(module.modificationTracker())
 
       if (supercache != null) {
         // has resolvable extends clause
@@ -136,7 +148,7 @@ private constructor(
       } else {
         // has no amends/extends clause or unresolvable extends clause ->
         // extends class pkl.base#Module
-        val pklBaseModuleClassCache = module.project.pklBaseModule.moduleType.ctx.cache
+        val pklBaseModuleClassCache = module.project.pklBaseModule.moduleType.ctx.cache(null)
         methods.putAll(pklBaseModuleClassCache.methods)
         properties.putAll(pklBaseModuleClassCache.properties)
         leafProperties.putAll(pklBaseModuleClassCache.leafProperties)

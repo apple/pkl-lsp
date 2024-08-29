@@ -110,20 +110,30 @@ class PklBaseModule(project: Project) {
   val comparableType: Type = aliasType("Comparable")
 
   val iterableType: Type by lazy {
-    Type.union(collectionType, mapType, dynamicType, listingType, mappingType, intSeqType, this)
+    Type.union(
+      collectionType,
+      mapType,
+      dynamicType,
+      listingType,
+      mappingType,
+      intSeqType,
+      this,
+      null,
+    )
   }
 
   fun spreadType(enclosingObjectClassType: Type.Class): Type {
     return when {
       enclosingObjectClassType.classEquals(listingType) -> {
         val elemType = enclosingObjectClassType.typeArguments[0]
-        if (elemType.isSubtypeOf(intType, this))
+        if (elemType.isSubtypeOf(intType, this, null))
           Type.union(
             collectionType.withTypeArguments(elemType),
             listingType.withTypeArguments(elemType),
             dynamicType,
             intSeqType,
             this,
+            null,
           )
         else
           Type.union(
@@ -131,6 +141,7 @@ class PklBaseModule(project: Project) {
             listingType.withTypeArguments(elemType),
             dynamicType,
             this,
+            null,
           )
       }
       enclosingObjectClassType.classEquals(mappingType) -> {
@@ -141,6 +152,7 @@ class PklBaseModule(project: Project) {
           mappingType.withTypeArguments(keyType, elemType),
           dynamicType,
           this,
+          null,
         )
       }
       enclosingObjectClassType.classEquals(dynamicType) -> iterableType
@@ -150,24 +162,44 @@ class PklBaseModule(project: Project) {
   }
 
   val additiveOperandType: Type by lazy {
-    Type.union(stringType, numberType, durationType, dataSizeType, collectionType, mapType, this)
+    Type.union(
+      stringType,
+      numberType,
+      durationType,
+      dataSizeType,
+      collectionType,
+      mapType,
+      this,
+      null,
+    )
   }
 
   val multiplicativeOperandType: Type by lazy {
-    Type.union(numberType, durationType, dataSizeType, this)
+    Type.union(numberType, durationType, dataSizeType, this, null)
   }
 
   val subscriptableType: Type by lazy {
-    Type.union(stringType, collectionType, mapType, listingType, mappingType, dynamicType, this)
+    Type.union(
+      stringType,
+      collectionType,
+      mapType,
+      listingType,
+      mappingType,
+      dynamicType,
+      this,
+      null,
+    )
   }
 
-  private val intPsiCache by lazy { intType.ctx.cache }
+  private val intPsiCache by lazy { intType.ctx.cache(null) }
 
-  private val floatPsiCache by lazy { floatType.ctx.cache }
+  private val floatPsiCache by lazy { floatType.ctx.cache(null) }
 
-  val booleanXorMethod: PklClassMethod by lazy { booleanType.ctx.cache.methods.getValue("xor") }
+  val booleanXorMethod: PklClassMethod by lazy {
+    booleanType.ctx.cache(null).methods.getValue("xor")
+  }
   val booleanImpliesMethod: PklClassMethod by lazy {
-    booleanType.ctx.cache.methods.getValue("implies")
+    booleanType.ctx.cache(null).methods.getValue("implies")
   }
 
   val intIsPositiveProperty: PklClassProperty by lazy {
@@ -232,92 +264,102 @@ class PklBaseModule(project: Project) {
   val floatIsBetweenMethod: PklClassMethod by lazy { floatPsiCache.methods.getValue("isBetween") }
 
   val durationIsBetweenMethod: PklClassMethod by lazy {
-    durationType.ctx.cache.methods.getValue("isBetween")
+    durationType.ctx.cache(null).methods.getValue("isBetween")
   }
   val durationIsPositiveProperty: PklClassProperty by lazy {
-    durationType.ctx.cache.properties.getValue("isPositive")
+    durationType.ctx.cache(null).properties.getValue("isPositive")
   }
 
   val dataSizeIsPositiveProperty: PklClassProperty by lazy {
-    dataSizeType.ctx.cache.properties.getValue("isPositive")
+    dataSizeType.ctx.cache(null).properties.getValue("isPositive")
   }
   val dataSizeIsBinaryUnitProperty: PklClassProperty by lazy {
-    dataSizeType.ctx.cache.properties.getValue("isBinaryUnit")
+    dataSizeType.ctx.cache(null).properties.getValue("isBinaryUnit")
   }
   val dataSizeIsDecimalUnitProperty: PklClassProperty by lazy {
-    dataSizeType.ctx.cache.properties.getValue("isDecimalUnit")
+    dataSizeType.ctx.cache(null).properties.getValue("isDecimalUnit")
   }
   val dataSizeIsBetweenMethod: PklClassMethod by lazy {
-    dataSizeType.ctx.cache.methods.getValue("isBetween")
+    dataSizeType.ctx.cache(null).methods.getValue("isBetween")
   }
 
   val stringIsEmptyProperty: PklClassProperty by lazy {
-    stringType.ctx.cache.properties.getValue("isEmpty")
+    stringType.ctx.cache(null).properties.getValue("isEmpty")
   }
   val stringIsRegexProperty: PklClassProperty by lazy {
-    stringType.ctx.cache.properties.getValue("isRegex")
+    stringType.ctx.cache(null).properties.getValue("isRegex")
   }
   val stringLengthProperty: PklClassProperty by lazy {
-    stringType.ctx.cache.properties.getValue("length")
+    stringType.ctx.cache(null).properties.getValue("length")
   }
   val stringMatchesMethod: PklClassMethod by lazy {
-    stringType.ctx.cache.methods.getValue("matches")
+    stringType.ctx.cache(null).methods.getValue("matches")
   }
   val stringContainsMethod: PklClassMethod by lazy {
-    stringType.ctx.cache.methods.getValue("contains")
+    stringType.ctx.cache(null).methods.getValue("contains")
   }
   val stringStartsWithMethod: PklClassMethod by lazy {
-    stringType.ctx.cache.methods.getValue("startsWith")
+    stringType.ctx.cache(null).methods.getValue("startsWith")
   }
   val stringEndsWithMethod: PklClassMethod by lazy {
-    stringType.ctx.cache.methods.getValue("endsWith")
+    stringType.ctx.cache(null).methods.getValue("endsWith")
   }
 
   val listIsDistinctProperty: PklClassProperty? by lazy {
-    listType.ctx.cache.properties["isDistinct"]
+    listType.ctx.cache(null).properties["isDistinct"]
   }
-  val listIsDistinctByMethod: PklClassMethod? by lazy { listType.ctx.cache.methods["isDistinctBy"] }
+  val listIsDistinctByMethod: PklClassMethod? by lazy {
+    listType.ctx.cache(null).methods["isDistinctBy"]
+  }
   val listIsEmptyProperty: PklClassProperty by lazy {
-    listType.ctx.cache.properties.getValue("isEmpty")
+    listType.ctx.cache(null).properties.getValue("isEmpty")
   }
-  val listFoldMethod: PklClassMethod? by lazy { listType.ctx.cache.methods["fold"] }
-  val listFoldIndexedMethod: PklClassMethod? by lazy { listType.ctx.cache.methods["foldIndexed"] }
-  val listJoinMethod: PklClassMethod by lazy { listType.ctx.cache.methods.getValue("join") }
+  val listFoldMethod: PklClassMethod? by lazy { listType.ctx.cache(null).methods["fold"] }
+  val listFoldIndexedMethod: PklClassMethod? by lazy {
+    listType.ctx.cache(null).methods["foldIndexed"]
+  }
+  val listJoinMethod: PklClassMethod by lazy { listType.ctx.cache(null).methods.getValue("join") }
   val listLengthProperty: PklClassProperty by lazy {
-    listType.ctx.cache.properties.getValue("length")
+    listType.ctx.cache(null).properties.getValue("length")
   }
 
   val listingDefaultProperty: PklClassProperty by lazy {
-    listingType.ctx.cache.properties.getValue("default")
+    listingType.ctx.cache(null).properties.getValue("default")
   }
   val listingToListMethod: PklClassMethod by lazy {
-    listingType.ctx.cache.methods.getValue("toList")
+    listingType.ctx.cache(null).methods.getValue("toList")
   }
 
   val setIsEmptyProperty: PklClassProperty by lazy {
-    setType.ctx.cache.properties.getValue("isEmpty")
+    setType.ctx.cache(null).properties.getValue("isEmpty")
   }
   val setLengthProperty: PklClassProperty by lazy {
-    setType.ctx.cache.properties.getValue("length")
+    setType.ctx.cache(null).properties.getValue("length")
   }
 
   val mapContainsKeyMethod: PklClassMethod by lazy {
-    mapType.ctx.cache.methods.getValue("containsKey")
+    mapType.ctx.cache(null).methods.getValue("containsKey")
   }
-  val mapFoldMethod: PklClassMethod? by lazy { mapType.ctx.cache.methods["fold"] }
-  val mapGetOrNullMethod: PklClassMethod by lazy { mapType.ctx.cache.methods.getValue("getOrNull") }
+  val mapFoldMethod: PklClassMethod? by lazy { mapType.ctx.cache(null).methods["fold"] }
+  val mapGetOrNullMethod: PklClassMethod by lazy {
+    mapType.ctx.cache(null).methods.getValue("getOrNull")
+  }
   val mapIsEmptyProperty: PklClassProperty by lazy {
-    mapType.ctx.cache.properties.getValue("isEmpty")
+    mapType.ctx.cache(null).properties.getValue("isEmpty")
   }
-  val mapKeysProperty: PklClassProperty by lazy { mapType.ctx.cache.properties.getValue("keys") }
+  val mapKeysProperty: PklClassProperty by lazy {
+    mapType.ctx.cache(null).properties.getValue("keys")
+  }
   val mapLengthProperty: PklClassProperty by lazy {
-    mapType.ctx.cache.properties.getValue("length")
+    mapType.ctx.cache(null).properties.getValue("length")
   }
 
   val mappingDefaultProperty: PklClassProperty by lazy {
-    mappingType.ctx.cache.properties.getValue("default")
+    mappingType.ctx.cache(null).properties.getValue("default")
   }
-  val mappingToMapMethod: PklClassMethod by lazy { mappingType.ctx.cache.methods.getValue("toMap") }
+  val mappingToMapMethod: PklClassMethod by lazy {
+    mappingType.ctx.cache(null).methods.getValue("toMap")
+  }
 
   private fun method(name: String): PklClassMethod =
     methods[name]

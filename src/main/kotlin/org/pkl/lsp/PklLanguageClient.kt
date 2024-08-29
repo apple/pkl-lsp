@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.pkl.lsp.services
+package org.pkl.lsp
 
-import java.net.URI
-import org.pkl.lsp.Component
-import org.pkl.lsp.Project
+import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
+import org.eclipse.lsp4j.services.LanguageClient
+import org.pkl.lsp.messages.ActionableNotification
 
-class WorkspaceState(project: Project) : Component(project) {
-  val openFiles: MutableSet<URI> = mutableSetOf()
+interface PklLanguageClient : LanguageClient {
+  @JsonNotification("pkl/actionableNotification")
+  fun sendActionableNotification(params: ActionableNotification)
 }

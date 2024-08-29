@@ -15,26 +15,11 @@
  */
 package org.pkl.lsp.ast
 
-import java.net.URI
-import java.nio.file.Path
-import org.pkl.core.parser.Parser
-import org.pkl.lsp.FsFile
 import org.pkl.lsp.Project
 
 object PklNodeFactory {
-  @Suppress("MemberVisibilityCanBePrivate")
-  fun createModule(project: Project, text: String): PklModule {
-    return PklModuleImpl(
-      parser.parseModule(text),
-      URI("fake:module"),
-      FsFile(Path.of("."), project),
-    )
-  }
-
   fun createTypeParameter(project: Project, name: String): PklTypeParameter {
-    val module = createModule(project, "class X<$name>")
+    val module = project.virtualFileManager.getEphemeral("class X<$name>").toModule()!!
     return module.classes[0].classHeader.typeParameterList!!.typeParameters[0]
   }
-
-  private val parser: Parser = Parser()
 }

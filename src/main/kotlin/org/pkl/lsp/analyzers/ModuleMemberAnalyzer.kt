@@ -25,10 +25,11 @@ import org.pkl.lsp.ast.PklProperty
 class ModuleMemberAnalyzer(project: Project) : Analyzer(project) {
 
   override fun doAnalyze(node: PklNode, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
+    val context = node.containingFile.pklProject
     when (node) {
       is PklProperty -> {
         val isAmends = node.enclosingModule?.isAmend ?: false
-        val supermodule = node.enclosingModule?.supermodule?.cache
+        val supermodule = node.enclosingModule?.supermodule(context)?.cache(context)
 
         if (isAmends && !node.isLocal && supermodule != null) {
           val superProperty = supermodule.properties[node.name]

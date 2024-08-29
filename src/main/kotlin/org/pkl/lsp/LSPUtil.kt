@@ -17,6 +17,7 @@ package org.pkl.lsp
 
 import java.net.URI
 import java.net.URISyntaxException
+import java.nio.file.Path
 import java.util.regex.Pattern
 import kotlin.math.max
 import org.eclipse.lsp4j.Position
@@ -110,4 +111,22 @@ fun parseUriOrNull(uriStr: String): URI? =
     if (isAbsoluteUriLike(uriStr)) URI(uriStr) else URI(null, null, uriStr, null)
   } catch (_: URISyntaxException) {
     null
+  }
+
+val osName: String by lazy { System.getProperty("os.name") }
+
+fun Path.toUnixPathString() =
+  if (osName.contains("Windows")) toString().replace("\\", "/") else toString()
+
+val URI.effectiveUri: URI?
+  get() {
+    if (scheme != "pkl-lsp") return this
+    val origin = Origin.fromString(authority.uppercase()) ?: return null
+    val path = this.path.drop(1)
+    return when (origin) {
+      Origin.STDLIB -> URI("pkl:${path.replace(".pkl", "")}")
+      Origin.HTTPS,
+      Origin.JAR -> URI.create(path)
+      else -> null
+    }
   }

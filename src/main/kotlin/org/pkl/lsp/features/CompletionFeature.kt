@@ -22,6 +22,7 @@ import org.pkl.lsp.Component
 import org.pkl.lsp.PklLSPServer
 import org.pkl.lsp.Project
 import org.pkl.lsp.ast.*
+import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.type.Type
 import org.pkl.lsp.type.computeResolvedImportType
 import org.pkl.lsp.type.computeThisType
@@ -39,6 +40,7 @@ class CompletionFeature(private val server: PklLSPServer, project: Project) : Co
 
       val line = params.position.line + 1
       val col = params.position.character
+      val context = pklMod.containingFile.pklProject
       @Suppress("WHEN_ENUM_CAN_BE_NULL_IN_JAVA")
       return when (params.context.triggerKind) {
         CompletionTriggerKind.Invoked -> Either.forLeft(listOf())
@@ -46,7 +48,7 @@ class CompletionFeature(private val server: PklLSPServer, project: Project) : Co
         CompletionTriggerKind.TriggerCharacter -> {
           // go two position behind to find the actual node to complete
           val completions =
-            pklMod.findBySpan(line, col)?.resolveCompletion(line, col)
+            pklMod.findBySpan(line, col)?.resolveCompletion(line, col, context)
               ?: return Either.forLeft(listOf())
           return Either.forLeft(completions)
         }
@@ -55,43 +57,59 @@ class CompletionFeature(private val server: PklLSPServer, project: Project) : Co
     return server.builder().runningBuild(params.textDocument.uri).thenApply(::run)
   }
 
-  private fun PklNode.resolveCompletion(line: Int, col: Int): List<CompletionItem>? {
-    val node = resolveReference(line, col) ?: return null
+  private fun PklNode.resolveCompletion(
+    line: Int,
+    col: Int,
+    context: PklProject?,
+  ): List<CompletionItem>? {
+    val node = resolveReference(line, col, context) ?: return null
     val showTypes = parentOfType<PklNewExpr>() != null
     val module = if (this is PklModule) this else enclosingModule
     return when (node) {
       is PklSingleLineStringLiteral,
       is PklMultiLineStringLiteral,
       is SingleLineStringPart,
-      is MultiLineStringPart -> project.pklBaseModule.stringType.ctx.complete()
-      is PklIntLiteralExpr -> project.pklBaseModule.intType.ctx.complete()
-      is PklFloatLiteralExpr -> project.pklBaseModule.floatType.ctx.complete()
+      is MultiLineStringPart ->
+        project.pklBaseModule.stringType.ctx.complete(showTypes, module, context)
+      is PklIntLiteralExpr -> project.pklBaseModule.intType.ctx.complete(showTypes, module, context)
+      is PklFloatLiteralExpr ->
+        project.pklBaseModule.floatType.ctx.complete(showTypes, module, context)
       is PklTrueLiteralExpr,
-      is PklFalseLiteralExpr -> project.pklBaseModule.booleanType.ctx.complete()
-      is PklReadExpr -> project.pklBaseModule.resourceType.ctx.complete()
-      is PklModule -> node.complete(showTypes, module)
-      is PklClass -> node.complete(showTypes, module)
-      is PklClassProperty -> node.complete(showTypes, module)
+      is PklFalseLiteralExpr ->
+        project.pklBaseModule.booleanType.ctx.complete(showTypes, module, context)
+      is PklReadExpr -> project.pklBaseModule.resourceType.ctx.complete(showTypes, module, context)
+      is PklModule -> node.complete(showTypes, module, context)
+      is PklClass -> node.complete(showTypes, module, context)
+      is PklClassProperty -> node.complete(showTypes, module, context)
       is PklThisExpr -> {
         val base = project.pklBaseModule
-        node.computeThisType(base, mapOf()).toClassType(base)?.ctx?.complete()
+        node
+          .computeThisType(base, mapOf(), context)
+          .toClassType(base, context)
+          ?.ctx
+          ?.complete(showTypes, module, context)
       }
-      is PklModuleExpr -> module?.complete(showTypes, module)
-      else -> if (this !== node) node.complete(showTypes, module) else null
+      is PklModuleExpr -> module?.complete(showTypes, module, context)
+      else -> if (this !== node) node.complete(showTypes, module, context) else null
     }
   }
 
-  private fun PklNode.complete(showTypes: Boolean, sourceModule: PklModule?): List<CompletionItem> =
+  private fun PklNode.complete(
+    showTypes: Boolean,
+    sourceModule: PklModule?,
+    context: PklProject?,
+  ): List<CompletionItem> =
     when (this) {
-      is PklModule -> complete(showTypes, sourceModule)
-      is PklClass -> complete()
-      is PklClassProperty -> complete(showTypes, sourceModule)
+      is PklModule -> complete(showTypes, sourceModule, context)
+      is PklClass -> complete(context)
+      is PklClassProperty -> complete(showTypes, sourceModule, context)
       else -> listOf()
     }
 
   private fun PklModule.complete(
     showTypes: Boolean,
     sourceModule: PklModule?,
+    context: PklProject?,
   ): List<CompletionItem> =
     if (showTypes) {
       completeTypes(sourceModule)
@@ -114,7 +132,7 @@ class CompletionFeature(private val server: PklLSPServer, project: Project) : Co
     }
   }
 
-  private fun PklClass.complete(): List<CompletionItem> = buildList {
+  private fun PklClass.complete(context: PklProject?): List<CompletionItem> = buildList {
     addAll(properties.map { it.toCompletionItem() })
     addAll(methods.map { it.toCompletionItem() })
   }
@@ -122,31 +140,37 @@ class CompletionFeature(private val server: PklLSPServer, project: Project) : Co
   private fun PklClassProperty.complete(
     showTypes: Boolean,
     sourceModule: PklModule?,
+    context: PklProject?,
   ): List<CompletionItem> {
     val base = project.pklBaseModule
     val typ =
       when (val typ = type) {
         null -> {
-          val res = resolve()
+          val res = resolve(context)
           if (res is PklClassProperty && res.type != null) {
-            res.type!!.toType(base, mapOf())
+            res.type!!.toType(base, mapOf(), context)
           } else null
         }
-        else -> typ.toType(base, mapOf())
-      } ?: computeResolvedImportType(base, mapOf())
-    return typ.complete(showTypes, sourceModule)
+        else -> typ.toType(base, mapOf(), context)
+      } ?: computeResolvedImportType(base, mapOf(), context)
+    return typ.complete(showTypes, sourceModule, context)
   }
 
-  private fun Type.complete(showTypes: Boolean, sourceModule: PklModule?): List<CompletionItem> {
+  private fun Type.complete(
+    showTypes: Boolean,
+    sourceModule: PklModule?,
+    context: PklProject?,
+  ): List<CompletionItem> {
     return when (this) {
-      is Type.Module -> ctx.complete(showTypes, sourceModule)
-      is Type.Class -> ctx.complete()
+      is Type.Module -> ctx.complete(showTypes, sourceModule, context)
+      is Type.Class -> ctx.complete(context)
       is Type.Union ->
         buildList {
-          addAll(leftType.complete(showTypes, sourceModule))
-          addAll(rightType.complete(showTypes, sourceModule))
+          addAll(leftType.complete(showTypes, sourceModule, context))
+          addAll(rightType.complete(showTypes, sourceModule, context))
         }
-      is Type.Alias -> unaliased(project.pklBaseModule).complete(showTypes, sourceModule)
+      is Type.Alias ->
+        unaliased(project.pklBaseModule, context).complete(showTypes, sourceModule, context)
       else -> listOf()
     }
   }

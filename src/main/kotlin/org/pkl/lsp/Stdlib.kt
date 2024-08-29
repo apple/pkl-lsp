@@ -22,7 +22,7 @@ import org.pkl.core.util.IoUtils
 import org.pkl.lsp.ast.PklModule
 import org.pkl.lsp.ast.PklModuleImpl
 
-class Stdlib(private val project: Project) {
+class Stdlib(project: Project) : Component(project) {
   fun baseModule(): PklModule = stdlibModules["base"]!!
 
   fun getModule(name: String): PklModule? = stdlibModules[name]
@@ -39,7 +39,8 @@ class Stdlib(private val project: Project) {
   private fun loadStdlibModule(name: String, parser: Parser) {
     val text = loadStdlibSource(name)
     val moduleCtx = parser.parseModule(text)
-    val module = PklModuleImpl(moduleCtx, URI("pkl:$name"), StdlibFile(name, project))
+    val uri = URI("pkl:$name")
+    val module = PklModuleImpl(moduleCtx, project.virtualFileManager.get(uri)!!)
     stdlibModules[name] = module
   }
 
@@ -56,6 +57,7 @@ class Stdlib(private val project: Project) {
       "Benchmark",
       "DocPackageInfo",
       "DocsiteInfo",
+      "EvaluatorSettings",
       "json",
       "jsonnet",
       "math",

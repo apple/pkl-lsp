@@ -31,6 +31,7 @@ java {
 val pklCli: Configuration by configurations.creating
 
 dependencies {
+  implementation(kotlin("reflect"))
   implementation(libs.antlr)
   implementation(libs.clikt)
   implementation(libs.pklCore)

@@ -17,6 +17,7 @@ package org.pkl.lsp.actions
 
 import org.eclipse.lsp4j.CodeActionDisabled
 import org.eclipse.lsp4j.CodeActionKind
+import org.pkl.lsp.ErrorMessages
 import org.pkl.lsp.Project
 import org.pkl.lsp.packages.dto.PackageUri
 
@@ -30,9 +31,8 @@ class PklDownloadPackageAction(project: Project, packageUri: PackageUri) :
 
   override val arguments: List<Any> = listOf(packageUri.toString())
 
-  override val disabled: CodeActionDisabled?
-    get() =
-      if (project.settingsManager.settings.pklCliPath == null)
-        CodeActionDisabled("Pkl CLI is not configured")
-      else null
+  override val disabled: CodeActionDisabled? =
+    if (project.pklCli.isUnavailable)
+      CodeActionDisabled(ErrorMessages.create("pklCliNotConfigured"))
+    else null
 }

@@ -17,6 +17,7 @@ package org.pkl.lsp.resolvers
 
 import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.ast.*
+import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.type.Type
 import org.pkl.lsp.type.TypeParameterBindings
 import org.pkl.lsp.type.computeThisType
@@ -35,6 +36,7 @@ object Resolvers {
     moduleName: String,
     // receives elements of type PklTypeDef, PklImport, and PklTypeParameter
     visitor: ResolveVisitor<R>,
+    context: PklProject?,
   ): R {
 
     val enclosingModule = position.enclosingModule ?: return visitor.result
@@ -42,8 +44,8 @@ object Resolvers {
     for (import in enclosingModule.imports) {
       if (import.memberName == moduleName) {
         val importedModule =
-          import.resolve() as? SimpleModuleResolutionResult ?: return visitor.result
-        importedModule.resolved?.cache?.visitTypes(visitor)
+          import.resolve(context) as? SimpleModuleResolutionResult ?: return visitor.result
+        importedModule.resolved?.cache(context)?.visitTypes(visitor, context)
         return visitor.result
       }
     }
@@ -57,18 +59,20 @@ object Resolvers {
     bindings: TypeParameterBindings,
     // receives elements of type PklTypeDef, PklImport, and PklTypeParameter
     visitor: ResolveVisitor<R>,
+    context: PklProject?,
   ): R {
 
     // search type parameters of enclosing method
     val method = position.parentOfType<PklClassMethod>()
     if (method != null) {
-      if (!method.methodHeader.typeParameterList.visit(mapOf(), visitor)) return visitor.result
+      if (!method.methodHeader.typeParameterList.visit(mapOf(), visitor, context))
+        return visitor.result
     }
 
     // search type parameters of enclosing class or type alias
     val typeDef = position.parentOfTypes(PklTypeDef::class)
     if (typeDef != null) {
-      if (!typeDef.typeParameterList.visit(bindings, visitor)) return visitor.result
+      if (!typeDef.typeParameterList.visit(bindings, visitor, context)) return visitor.result
     }
 
     // search enclosing module
@@ -77,21 +81,22 @@ object Resolvers {
       for (import in module.imports) {
         // globs do not import a type
         if (import.isGlob) continue
-        if (!visitor.visitIfNotNull(import.memberName, import, mapOf())) return visitor.result
+        if (!visitor.visitIfNotNull(import.memberName, import, mapOf(), context))
+          return visitor.result
       }
       for (member in module.typeDefs) {
-        if (!visitor.visitIfNotNull(member.name, member, mapOf())) return visitor.result
+        if (!visitor.visitIfNotNull(member.name, member, mapOf(), context)) return visitor.result
       }
 
       // search supermodules
-      val supermodule = module.supermodule
+      val supermodule = module.supermodule(context)
       if (supermodule != null) {
-        if (!supermodule.cache.visitTypes(visitor)) return visitor.result
+        if (!supermodule.cache(context).visitTypes(visitor, context)) return visitor.result
       }
     }
 
     // search pkl.base
-    base.ctx.cache.visitTypes(visitor)
+    base.ctx.cache(null).visitTypes(visitor, context)
     return visitor.result
   }
 
@@ -105,9 +110,19 @@ object Resolvers {
     base: PklBaseModule,
     bindings: TypeParameterBindings,
     visitor: ResolveVisitor<R>,
+    context: PklProject?,
   ): R {
 
-    return resolveUnqualifiedAccess(position, thisType, isProperty, true, base, bindings, visitor)
+    return resolveUnqualifiedAccess(
+      position,
+      thisType,
+      isProperty,
+      true,
+      base,
+      bindings,
+      visitor,
+      context,
+    )
   }
 
   fun <R> resolveUnqualifiedAccess(
@@ -120,13 +135,22 @@ object Resolvers {
     base: PklBaseModule,
     bindings: TypeParameterBindings,
     visitor: ResolveVisitor<R>,
+    context: PklProject?,
   ): R {
 
     return if (isProperty) {
-      resolveUnqualifiedVariableAccess(position, thisType, base, bindings, allowClasses, visitor)
+      resolveUnqualifiedVariableAccess(
+          position,
+          thisType,
+          base,
+          bindings,
+          allowClasses,
+          visitor,
+          context,
+        )
         .first
     } else {
-      resolveUnqualifiedMethodAccess(position, thisType, base, bindings, visitor).first
+      resolveUnqualifiedMethodAccess(position, thisType, base, bindings, visitor, context).first
     }
   }
 
@@ -140,11 +164,20 @@ object Resolvers {
     base: PklBaseModule,
     bindings: TypeParameterBindings,
     visitor: ResolveVisitor<R>,
+    context: PklProject?,
   ): Pair<R, LookupMode> {
     return if (isProperty) {
-      resolveUnqualifiedVariableAccess(position, thisType, base, bindings, allowClasses, visitor)
+      resolveUnqualifiedVariableAccess(
+        position,
+        thisType,
+        base,
+        bindings,
+        allowClasses,
+        visitor,
+        context,
+      )
     } else {
-      resolveUnqualifiedMethodAccess(position, thisType, base, bindings, visitor)
+      resolveUnqualifiedMethodAccess(position, thisType, base, bindings, visitor, context)
     }
   }
 
@@ -154,21 +187,23 @@ object Resolvers {
     isProperty: Boolean,
     base: PklBaseModule,
     visitor: ResolveVisitor<R>,
+    context: PklProject?,
   ): R {
 
-    receiverType.visitMembers(isProperty, allowClasses = true, base, visitor)
+    receiverType.visitMembers(isProperty, allowClasses = true, base, visitor, context)
     return visitor.result
   }
 
   private fun PklTypeParameterList?.visit(
     bindings: TypeParameterBindings,
     visitor: ResolveVisitor<*>,
+    context: PklProject?,
   ): Boolean {
     if (this == null) return true
 
     for (parameter in typeParameters) {
       val parameterName = parameter.identifier!!.text
-      if (!visitor.visit(parameterName, parameter, bindings)) return false
+      if (!visitor.visit(parameterName, parameter, bindings, context)) return false
     }
 
     return true
@@ -181,6 +216,7 @@ object Resolvers {
     bindings: TypeParameterBindings,
     allowClasses: Boolean,
     visitor: ResolveVisitor<R>,
+    context: PklProject?,
   ): Pair<R, LookupMode> {
 
     var element: PklNode? = position
@@ -190,13 +226,14 @@ object Resolvers {
       when (element) {
         is PklExpr -> {
           if (element is PklFunctionLiteralExpr) {
-            val functionType = element.inferExprTypeFromContext(base, bindings)
+            val functionType = element.inferExprTypeFromContext(base, bindings, context)
             for (parameter in element.parameterList.elements) {
               if (
                 !visitor.visitIfNotNull(
                   parameter.typedIdentifier?.identifier?.text,
                   parameter.typedIdentifier,
                   functionType.bindings,
+                  context,
                 )
               )
                 return visitor.result to LookupMode.LEXICAL
@@ -214,7 +251,7 @@ object Resolvers {
             is PklLetExpr -> {
               if (element == parent.bodyExpr) {
                 parent.parameter?.typedIdentifier?.let { typedId ->
-                  if (!visitor.visitIfNotNull(typedId.identifier?.text, typedId, bindings))
+                  if (!visitor.visitIfNotNull(typedId.identifier?.text, typedId, bindings, context))
                     return visitor.result to LookupMode.LEXICAL
                 }
               }
@@ -224,13 +261,13 @@ object Resolvers {
               when {
                 element == parent.thenExpr -> {
                   parent.conditionExpr.let { condExpr ->
-                    if (!visitSatisfiedCondition(condExpr, bindings, visitor))
+                    if (!visitSatisfiedCondition(condExpr, bindings, visitor, context))
                       return visitor.result to LookupMode.NONE
                   }
                 }
                 element == parent.elseExpr -> {
                   parent.conditionExpr.let { condExpr ->
-                    if (!visitUnsatisfiedCondition(condExpr, bindings, visitor))
+                    if (!visitUnsatisfiedCondition(condExpr, bindings, visitor, context))
                       return visitor.result to LookupMode.NONE
                   }
                 }
@@ -239,14 +276,14 @@ object Resolvers {
             // flow typing of `expr && ...`
             is PklLogicalAndExpr -> {
               if (element == parent.rightExpr) {
-                if (!visitSatisfiedCondition(parent.leftExpr, bindings, visitor))
+                if (!visitSatisfiedCondition(parent.leftExpr, bindings, visitor, context))
                   return visitor.result to LookupMode.NONE
               }
             }
             // flow typing of `expr || ...`
             is PklLogicalOrExpr -> {
               if (element == parent.rightExpr) {
-                if (!visitUnsatisfiedCondition(parent.leftExpr, bindings, visitor))
+                if (!visitUnsatisfiedCondition(parent.leftExpr, bindings, visitor, context))
                   return visitor.result to LookupMode.NONE
               }
             }
@@ -257,7 +294,7 @@ object Resolvers {
             skipNextObjectBody = false
           } else {
             for (member in element.properties) {
-              if (!visitor.visitIfNotNull(member.name, member, bindings))
+              if (!visitor.visitIfNotNull(member.name, member, bindings, context))
                 return visitor.result to LookupMode.LEXICAL
             }
             element.parameterList.elements.let { parameterList ->
@@ -267,6 +304,7 @@ object Resolvers {
                     parameter.typedIdentifier?.identifier?.text,
                     parameter.typedIdentifier,
                     bindings,
+                    context,
                   )
                 )
                   return visitor.result to LookupMode.LEXICAL
@@ -280,13 +318,13 @@ object Resolvers {
             when {
               element == parent.thenBody -> {
                 parent.conditionExpr?.let { condExpr ->
-                  if (!visitSatisfiedCondition(condExpr, bindings, visitor))
+                  if (!visitSatisfiedCondition(condExpr, bindings, visitor, context))
                     return visitor.result to LookupMode.NONE
                 }
               }
               element == parent.elseBody -> {
                 parent.conditionExpr?.let { condExpr ->
-                  if (!visitUnsatisfiedCondition(condExpr, bindings, visitor))
+                  if (!visitUnsatisfiedCondition(condExpr, bindings, visitor, context))
                     return visitor.result to LookupMode.NONE
                 }
               }
@@ -295,7 +333,7 @@ object Resolvers {
         }
         is PklForGenerator -> {
           for (typedId in element.parameters.mapNotNull { it.typedIdentifier }) {
-            if (!visitor.visitIfNotNull(typedId.identifier?.text, typedId, bindings))
+            if (!visitor.visitIfNotNull(typedId.identifier?.text, typedId, bindings, context))
               return visitor.result to LookupMode.LEXICAL
           }
         }
@@ -307,6 +345,7 @@ object Resolvers {
                   parameter.typedIdentifier?.identifier?.text,
                   parameter.typedIdentifier,
                   bindings,
+                  context,
                 )
               )
                 return visitor.result to LookupMode.LEXICAL
@@ -315,18 +354,18 @@ object Resolvers {
         }
         is PklClass -> {
           for (property in element.properties) {
-            if (!visitor.visitIfNotNull(property.name, property, bindings))
+            if (!visitor.visitIfNotNull(property.name, property, bindings, context))
               return visitor.result to LookupMode.LEXICAL
           }
         }
         is PklModule -> {
           for (import in element.imports) {
-            if (!visitor.visitIfNotNull(import.memberName, import, bindings))
+            if (!visitor.visitIfNotNull(import.memberName, import, bindings, context))
               return visitor.result to LookupMode.LEXICAL
           }
           val members = if (allowClasses) element.typeDefsAndProperties else element.properties
           for (member in members) {
-            if (!visitor.visitIfNotNull(member.name, member, bindings))
+            if (!visitor.visitIfNotNull(member.name, member, bindings, context))
               return visitor.result to LookupMode.LEXICAL
           }
         }
@@ -336,14 +375,15 @@ object Resolvers {
 
     // if resolve happens within base module, this is a redundant lookup, but it shouldn't hurt
     if (allowClasses) {
-      if (!base.ctx.cache.visitTypeDefsAndProperties(visitor))
+      if (!base.ctx.cache(null).visitTypeDefsAndProperties(visitor, context))
         return visitor.result to LookupMode.BASE
     } else {
-      if (!base.ctx.cache.visitProperties(visitor)) return visitor.result to LookupMode.BASE
+      if (!base.ctx.cache(null).visitProperties(visitor, context))
+        return visitor.result to LookupMode.BASE
     }
 
-    val myThisType = thisType ?: position.computeThisType(base, bindings)
-    myThisType.visitMembers(isProperty = true, allowClasses, base, visitor)
+    val myThisType = thisType ?: position.computeThisType(base, bindings, context)
+    myThisType.visitMembers(isProperty = true, allowClasses, base, visitor, context)
 
     return visitor.result to LookupMode.IMPLICIT_THIS
   }
@@ -353,6 +393,7 @@ object Resolvers {
     expr: PklExpr,
     bindings: TypeParameterBindings,
     visitor: ResolveVisitor<*>,
+    context: PklProject?,
   ): Boolean {
     if (visitor !is FlowTypingResolveVisitor<*>) return true
 
@@ -363,9 +404,9 @@ object Resolvers {
         if (expr.operator == TypeTestOperator.AS) {
           true
         } else if (leftExpr is PklUnqualifiedAccessExpr && leftExpr.isPropertyAccess) {
-          visitor.visitHasType(leftExpr.memberNameText, expr.type, bindings, false)
+          visitor.visitHasType(leftExpr.memberNameText, expr.type, bindings, false, context)
         } else if (leftExpr is PklThisExpr) {
-          visitor.visitHasType(leftExpr.text, expr.type, bindings, false)
+          visitor.visitHasType(leftExpr.text, expr.type, bindings, false, context)
         } else true
       }
       // foo != null, null != foo
@@ -378,13 +419,13 @@ object Resolvers {
               leftExpr.isPropertyAccess &&
               expr.rightExpr is PklNullLiteralExpr
           ) {
-            visitor.visitEqualsConstant(leftExpr.memberNameText, null, true)
+            visitor.visitEqualsConstant(leftExpr.memberNameText, null, true, context)
           } else if (
             rightExpr is PklUnqualifiedAccessExpr &&
               rightExpr.isPropertyAccess &&
               expr.leftExpr is PklNullLiteralExpr
           ) {
-            visitor.visitEqualsConstant(rightExpr.memberNameText, null, true)
+            visitor.visitEqualsConstant(rightExpr.memberNameText, null, true, context)
           } else true
         } else true
       }
@@ -402,16 +443,16 @@ object Resolvers {
         // and use cases for `foo != null && foo is Foo?`
         // (or `if (foo != null) if (foo is Foo?)`) are limited.
         val rightExpr = expr.rightExpr
-        (visitSatisfiedCondition(rightExpr, bindings, visitor)) &&
-          visitSatisfiedCondition(expr.leftExpr, bindings, visitor)
+        (visitSatisfiedCondition(rightExpr, bindings, visitor, context)) &&
+          visitSatisfiedCondition(expr.leftExpr, bindings, visitor, context)
       }
       is PklLogicalNotExpr -> {
         val childExpr = expr.expr
-        visitUnsatisfiedCondition(childExpr, bindings, visitor)
+        visitUnsatisfiedCondition(childExpr, bindings, visitor, context)
       }
       is PklParenthesizedExpr -> {
         val childExpr = expr.expr
-        childExpr == null || visitSatisfiedCondition(childExpr, bindings, visitor)
+        childExpr == null || visitSatisfiedCondition(childExpr, bindings, visitor, context)
       }
       else -> true
     }
@@ -422,6 +463,7 @@ object Resolvers {
     expr: PklExpr,
     bindings: TypeParameterBindings,
     visitor: ResolveVisitor<*>,
+    context: PklProject?,
   ): Boolean {
     if (visitor !is FlowTypingResolveVisitor<*>) return true
 
@@ -430,9 +472,9 @@ object Resolvers {
       is PklTypeTestExpr -> {
         val leftExpr = expr.expr
         if (leftExpr is PklUnqualifiedAccessExpr && leftExpr.isPropertyAccess) {
-          visitor.visitHasType(leftExpr.memberNameText, expr.type, bindings, true)
+          visitor.visitHasType(leftExpr.memberNameText, expr.type, bindings, true, context)
         } else if (leftExpr is PklThisExpr) {
-          visitor.visitHasType(leftExpr.text, expr.type, bindings, true)
+          visitor.visitHasType(leftExpr.text, expr.type, bindings, true, context)
         } else true
       }
       // foo == null -negated-> foo != null
@@ -446,31 +488,31 @@ object Resolvers {
               leftExpr.isPropertyAccess &&
               expr.rightExpr is PklNullLiteralExpr
           ) {
-            visitor.visitEqualsConstant(leftExpr.memberNameText, null, true)
+            visitor.visitEqualsConstant(leftExpr.memberNameText, null, true, context)
           } else if (
             rightExpr is PklUnqualifiedAccessExpr &&
               rightExpr.isPropertyAccess &&
               expr.leftExpr is PklNullLiteralExpr
           ) {
-            visitor.visitEqualsConstant(rightExpr.memberNameText, null, true)
+            visitor.visitEqualsConstant(rightExpr.memberNameText, null, true, context)
           } else true
         } else true
       }
       // leftExpr || rightExpr -negated-> !leftExpr && !rightExpr
       is PklLogicalOrExpr -> {
         val rightExpr = expr.rightExpr
-        (visitUnsatisfiedCondition(rightExpr, bindings, visitor)) &&
-          visitUnsatisfiedCondition(expr.leftExpr, bindings, visitor)
+        (visitUnsatisfiedCondition(rightExpr, bindings, visitor, context)) &&
+          visitUnsatisfiedCondition(expr.leftExpr, bindings, visitor, context)
       }
       // !expr -negated-> expr
       is PklLogicalNotExpr -> {
         val childExpr = expr.expr
-        visitSatisfiedCondition(childExpr, bindings, visitor)
+        visitSatisfiedCondition(childExpr, bindings, visitor, context)
       }
       // (expr) -negated-> !expr
       is PklParenthesizedExpr -> {
         val childExpr = expr.expr
-        childExpr == null || visitUnsatisfiedCondition(childExpr, bindings, visitor)
+        childExpr == null || visitUnsatisfiedCondition(childExpr, bindings, visitor, context)
       }
       else -> true
     }
@@ -482,6 +524,7 @@ object Resolvers {
     base: PklBaseModule,
     bindings: TypeParameterBindings,
     visitor: ResolveVisitor<R>,
+    context: PklProject?,
   ): Pair<R, LookupMode> {
 
     var element: PklNode? = position
@@ -490,19 +533,19 @@ object Resolvers {
       when (element) {
         is PklObjectBody -> {
           for (member in element.methods) {
-            if (!visitor.visitIfNotNull(member.name, member, bindings))
+            if (!visitor.visitIfNotNull(member.name, member, bindings, context))
               return visitor.result to LookupMode.LEXICAL
           }
         }
         is PklClass -> {
           for (method in element.methods) {
-            if (!visitor.visitIfNotNull(method.name, method, bindings))
+            if (!visitor.visitIfNotNull(method.name, method, bindings, context))
               return visitor.result to LookupMode.LEXICAL
           }
         }
         is PklModule -> {
           for (method in element.methods) {
-            if (!visitor.visitIfNotNull(method.name, method, bindings))
+            if (!visitor.visitIfNotNull(method.name, method, bindings, context))
               return visitor.result to LookupMode.LEXICAL
           }
         }
@@ -511,10 +554,11 @@ object Resolvers {
     }
 
     // if resolve happens within base module, this is a redundant lookup, but it shouldn't hurt
-    if (!base.ctx.cache.visitMethods(visitor)) return visitor.result to LookupMode.BASE
+    if (!base.ctx.cache(context).visitMethods(visitor, context))
+      return visitor.result to LookupMode.BASE
 
-    val myThisType = thisType ?: position.computeThisType(base, bindings)
-    myThisType.visitMembers(isProperty = false, allowClasses = true, base, visitor)
+    val myThisType = thisType ?: position.computeThisType(base, bindings, context)
+    myThisType.visitMembers(isProperty = false, allowClasses = true, base, visitor, context)
 
     return visitor.result to LookupMode.IMPLICIT_THIS
   }

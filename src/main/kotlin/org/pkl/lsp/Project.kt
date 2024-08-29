@@ -16,11 +16,10 @@
 package org.pkl.lsp
 
 import kotlin.reflect.KClass
-import org.eclipse.lsp4j.services.LanguageClient
-import org.pkl.lsp.services.PackageManager
-import org.pkl.lsp.services.PklCli
-import org.pkl.lsp.services.SettingsManager
-import org.pkl.lsp.services.WorkspaceState
+import kotlin.reflect.KProperty
+import kotlin.reflect.full.isSubtypeOf
+import kotlin.reflect.full.starProjectedType
+import org.pkl.lsp.services.*
 import org.pkl.lsp.util.CachedValuesManager
 import org.pkl.lsp.util.FileCacheManager
 
@@ -33,15 +32,29 @@ class Project(private val server: PklLSPServer) {
 
   val packageManager: PackageManager by lazy { PackageManager(this) }
 
+  val pklProjectManager: PklProjectManager by lazy { PklProjectManager(this) }
+
   val cachedValuesManager: CachedValuesManager by lazy { CachedValuesManager(this) }
 
   val pklCli: PklCli by lazy { PklCli(this) }
 
   val settingsManager: SettingsManager by lazy { SettingsManager(this) }
 
-  val workspaceState: WorkspaceState by lazy { WorkspaceState(this) }
+  val messageBus: MessageBus by lazy { MessageBus(this) }
 
-  val languageClient: LanguageClient by lazy { server.client() }
+  val virtualFileManager: VirtualFileManager by lazy { VirtualFileManager(this) }
+
+  val builder: Builder by lazy { server.builder() }
+
+  val languageClient: PklLanguageClient by lazy { server.client() }
+
+  fun initialize() {
+    myComponents.forEach { it.initialize() }
+  }
+
+  fun dispose() {
+    myComponents.forEach { it.dispose() }
+  }
 
   /** Creates a logger with the given class as the logger's name. */
   fun getLogger(clazz: KClass<*>): ClientLogger =
@@ -50,4 +63,15 @@ class Project(private val server: PklLSPServer) {
       server.verbose,
       clazz.qualifiedName ?: clazz.java.descriptorString(),
     )
+
+  private val myComponents: Iterable<Component>
+    get() {
+      return this::class
+        .java
+        .kotlin
+        .members
+        .filterIsInstance(KProperty::class.java)
+        .filter { it.returnType.isSubtypeOf(Component::class.starProjectedType) }
+        .map { it.call(this) as Component }
+    }
 }

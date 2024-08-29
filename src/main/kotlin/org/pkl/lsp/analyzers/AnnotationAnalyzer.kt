@@ -24,12 +24,13 @@ class AnnotationAnalyzer(project: Project) : Analyzer(project) {
   override fun doAnalyze(node: PklNode, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
     if (node !is PklAnnotation) return true
     val type = node.type ?: return true
+    val context = node.containingFile.pklProject
     if (type !is PklDeclaredType) {
       diagnosticsHolder.add(error(type, ErrorMessages.create("annotationHasNoName")))
       return true
     }
 
-    val resolvedType = type.name.resolve()
+    val resolvedType = type.name.resolve(context)
     if (resolvedType == null || resolvedType !is PklClass) {
       diagnosticsHolder.add(error(type, ErrorMessages.create("cannotFindType")))
       return true
@@ -38,7 +39,11 @@ class AnnotationAnalyzer(project: Project) : Analyzer(project) {
       diagnosticsHolder.add(error(type, ErrorMessages.create("typeIsAbstract")))
     }
     val base = project.pklBaseModule
-    if (!resolvedType.computeThisType(base, mapOf()).isSubtypeOf(base.annotationType, base)) {
+    if (
+      !resolvedType
+        .computeThisType(base, mapOf(), context)
+        .isSubtypeOf(base.annotationType, base, context)
+    ) {
       diagnosticsHolder.add(error(type, ErrorMessages.create("notAnnotation")))
     }
 

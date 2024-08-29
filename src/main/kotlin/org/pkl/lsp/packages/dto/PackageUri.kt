@@ -107,5 +107,6 @@ data class PackageUri(
   val relativeMetadataFiles =
     listOf(encodePath("package-2/$packageFilenameBase.json"), "package-1/$packageFilenameBase.json")
 
-  fun asPackageDependency(): PackageDependency = PackageDependency(this, this.checksums)
+  fun asPackageDependency(context: PklProject?): PackageDependency =
+    PackageDependency(this, context, this.checksums)
 }
