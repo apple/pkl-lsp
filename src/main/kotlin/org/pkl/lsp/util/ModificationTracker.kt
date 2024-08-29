@@ -13,16 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.pkl.lsp
+package org.pkl.lsp.util
 
-import org.eclipse.lsp4j.DidChangeConfigurationParams
-import org.eclipse.lsp4j.DidChangeWatchedFilesParams
-import org.eclipse.lsp4j.services.WorkspaceService
-
-class PklWorkspaceService(private val project: Project) : WorkspaceService {
-  override fun didChangeConfiguration(params: DidChangeConfigurationParams) {
-    project.settingsManager.loadSettings()
-  }
-
-  override fun didChangeWatchedFiles(params: DidChangeWatchedFilesParams?) {}
+interface ModificationTracker {
+  fun getModificationCount(): Int
 }

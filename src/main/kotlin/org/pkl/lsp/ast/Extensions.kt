@@ -388,11 +388,11 @@ fun PklNode.findBySpan(line: Int, col: Int, includeTerminals: Boolean = false): 
 fun PklNode.toURIString(): String {
   return when (val file = containingFile) {
     is StdlibFile -> "pkl://stdlib/${file.name}.pkl"
-    !is FsFile -> {
+    is FsFile -> file.uri.toString()
+    else -> {
       val uri = file.uri.toString()
       "pkl://${file.pklAuthority}/${URLEncoder.encode(uri, Charsets.UTF_8)}"
     }
-    else -> file.uri.toString()
   }
 }
 

@@ -13,16 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.pkl.lsp
+package org.pkl.lsp.services
 
-import org.eclipse.lsp4j.DidChangeConfigurationParams
-import org.eclipse.lsp4j.DidChangeWatchedFilesParams
-import org.eclipse.lsp4j.services.WorkspaceService
+import java.net.URI
+import org.pkl.lsp.Component
+import org.pkl.lsp.Project
 
-class PklWorkspaceService(private val project: Project) : WorkspaceService {
-  override fun didChangeConfiguration(params: DidChangeConfigurationParams) {
-    project.settingsManager.loadSettings()
-  }
-
-  override fun didChangeWatchedFiles(params: DidChangeWatchedFilesParams?) {}
+class WorkspaceState(project: Project) : Component(project) {
+  val openFiles: MutableSet<URI> = mutableSetOf()
 }

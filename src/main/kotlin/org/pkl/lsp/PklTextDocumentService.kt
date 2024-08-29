@@ -15,14 +15,13 @@
  */
 package org.pkl.lsp
 
-import java.io.IOException
 import java.net.URI
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.eclipse.lsp4j.services.TextDocumentService
-import org.pkl.core.util.IoUtils
+import org.pkl.lsp.features.CodeActionFeature
 import org.pkl.lsp.features.CompletionFeature
 import org.pkl.lsp.features.GoToDefinitionFeature
 import org.pkl.lsp.features.HoverFeature
@@ -33,9 +32,11 @@ class PklTextDocumentService(private val server: PklLSPServer, project: Project)
   private val hover = HoverFeature(server, project)
   private val definition = GoToDefinitionFeature(server, project)
   private val completion = CompletionFeature(server, project)
+  private val codeAction = CodeActionFeature(server, project)
 
   override fun didOpen(params: DidOpenTextDocumentParams) {
     val uri = URI(params.textDocument.uri)
+    project.workspaceState.openFiles.add(uri)
     val vfile = VirtualFile.fromUri(uri, project) ?: return
     server.builder().requestBuild(uri, vfile, params.textDocument.text)
   }
@@ -47,7 +48,8 @@ class PklTextDocumentService(private val server: PklLSPServer, project: Project)
   }
 
   override fun didClose(params: DidCloseTextDocumentParams) {
-    // noop
+    val uri = URI(params.textDocument.uri)
+    project.workspaceState.openFiles.remove(uri)
   }
 
   override fun didSave(params: DidSaveTextDocumentParams) {
@@ -57,12 +59,7 @@ class PklTextDocumentService(private val server: PklLSPServer, project: Project)
       logger.error("Saved non file URI: $uri")
       return
     }
-    try {
-      val contents = IoUtils.readString(uri.toURL())
-      server.builder().requestBuild(uri, FsFile(Path.of(uri), project), contents)
-    } catch (e: IOException) {
-      logger.error("Error reading $uri: ${e.message}")
-    }
+    server.builder().requestBuild(uri, FsFile(Path.of(uri), project))
   }
 
   override fun hover(params: HoverParams): CompletableFuture<Hover> {
@@ -79,5 +76,11 @@ class PklTextDocumentService(private val server: PklLSPServer, project: Project)
     params: CompletionParams
   ): CompletableFuture<Either<List<CompletionItem>, CompletionList>> {
     return completion.onCompletion(params)
+  }
+
+  override fun codeAction(
+    params: CodeActionParams
+  ): CompletableFuture<List<Either<Command, CodeAction>>> {
+    return codeAction.onCodeAction(params)
   }
 }

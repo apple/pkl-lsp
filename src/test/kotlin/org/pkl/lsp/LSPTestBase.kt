@@ -17,6 +17,8 @@ package org.pkl.lsp
 
 import java.net.URI
 import java.nio.file.Path
+import kotlin.io.path.readText
+import kotlin.io.path.toPath
 import kotlin.io.path.writeText
 import org.eclipse.lsp4j.*
 import org.junit.jupiter.api.BeforeAll
@@ -31,8 +33,7 @@ abstract class LSPTestBase {
   companion object {
     private lateinit var server: PklLSPServer
     private lateinit var parser: Parser
-    private lateinit var fakeProject: Project
-    private lateinit var stdlibModules: Map<URI, PklModule>
+    internal lateinit var fakeProject: Project
 
     @JvmStatic
     @BeforeAll
@@ -40,7 +41,9 @@ abstract class LSPTestBase {
       server = PklLSPServer(true).also { it.connect(TestLanguageClient) }
       parser = Parser()
       fakeProject = Project(server)
-      stdlibModules = fakeProject.stdlib.allModules().mapKeys { it.value.uri }
+      System.getProperty("pklExecutable")?.let {
+        fakeProject.settingsManager.settings.pklCliPath = Path.of(it)
+      }
     }
   }
 
@@ -50,7 +53,7 @@ abstract class LSPTestBase {
 
   private var fileInFocus: Path? = null
 
-  private val modules: MutableMap<URI, PklModule> = HashMap(stdlibModules)
+  private val modules: MutableMap<URI, PklModule> = HashMap()
 
   protected fun createPklFile(contents: String) {
     createPklFile("main.pkl", contents)
@@ -98,12 +101,28 @@ abstract class LSPTestBase {
       else result.right.map { Location(it.targetUri, it.targetRange) }
     return locations.map { location ->
       val moduleUri = resolveToRealUri(location.uri)
-      val resolvedModule =
-        modules[moduleUri]
-          ?: throw IllegalStateException("Received completion for unknown module $moduleUri")
+      val resolvedModule = getOrInsertModule(moduleUri)
       val position = location.range.start
       resolvedModule.findBySpan(position.line + 1, position.character + 1)
         ?: throw IllegalStateException("Failed to find node at position $location")
+    }
+  }
+
+  private fun getOrInsertModule(uri: URI): PklModule {
+    modules[uri]?.let {
+      return it
+    }
+    return when (uri.scheme) {
+      "pkl" -> fakeProject.stdlib.getModule(uri.schemeSpecificPart)!!.also { modules[uri] = it }
+      "file" -> {
+        val path = uri.toPath()
+        parseAndStoreModule(path.readText(), path)
+      }
+      "jar" -> {
+        val path = uri.toPath()
+        parseAndStoreJar(path.readText(), path)
+      }
+      else -> throw IllegalArgumentException("Received completion for unknown module: $uri")
     }
   }
 
@@ -115,6 +134,14 @@ abstract class LSPTestBase {
     val moduleCtx = parser.parseModule(contents)
     return PklModuleImpl(moduleCtx, path.toUri(), FsFile(path, fakeProject)).also {
       modules[path.toUri()] = it
+    }
+  }
+
+  private fun parseAndStoreJar(contents: String, path: Path): PklModule {
+    val moduleCtx = parser.parseModule(contents)
+    val uri = path.toUri()
+    return PklModuleImpl(moduleCtx, path.toUri(), JarFile(path, uri, fakeProject)).also {
+      modules[uri] = it
     }
   }
 

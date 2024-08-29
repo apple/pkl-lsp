@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.pkl.lsp
+package org.pkl.lsp.util
 
 import java.net.URI
 import java.net.URLEncoder
@@ -22,13 +22,17 @@ import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.io.path.*
 import org.pkl.core.parser.LexParseException
+import org.pkl.lsp.Builder
+import org.pkl.lsp.Component
+import org.pkl.lsp.HttpsFile
+import org.pkl.lsp.Project
 import org.pkl.lsp.ast.PklModule
 
 /** Manages all Pkl files that are not local to the file system: http(s), packages. */
-class CacheManager(project: Project) : Component(project) {
+class FileCacheManager(project: Project) : Component(project) {
   companion object {
-    val pklDir: Path = Path.of(System.getProperty("user.home")).resolve(".pkl")
-    val pklCacheDir: Path = pklDir.resolve(".cache")
+    val pklHomeDir: Path = Path.of(System.getProperty("user.home")).resolve(".pkl")
+    val pklCacheDir: Path = pklHomeDir.resolve("cache")
   }
 
   val lspCacheDir: Path by lazy { Files.createTempDirectory("pkl-lsp-cache") }

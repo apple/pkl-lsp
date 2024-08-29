@@ -15,18 +15,24 @@
  */
 package org.pkl.lsp
 
-import java.io.File
-import java.io.IOException
 import java.net.URI
+import java.nio.file.FileSystemAlreadyExistsException
+import java.nio.file.FileSystems
+import java.nio.file.Files
 import java.nio.file.Path
+import java.util.HashMap
 import kotlin.io.path.name
+import kotlin.io.path.readText
+import org.pkl.core.util.IoUtils
 import org.pkl.lsp.ast.PklModule
+import org.pkl.lsp.util.CachedValue
 
 enum class Origin {
   FILE,
   STDLIB,
   HTTPS,
   PACKAGE,
+  JAR,
   MODULEPATH;
 
   companion object {
@@ -52,6 +58,8 @@ interface VirtualFile {
 
   fun toModule(): PklModule?
 
+  fun contents(): String
+
   companion object {
     fun fromUri(uri: URI, project: Project): VirtualFile? {
       val logger = project.getLogger(this::class)
@@ -68,6 +76,7 @@ interface VirtualFile {
           Origin.FILE -> FsFile(Path.of(path), project)
           Origin.STDLIB -> StdlibFile(path.replace(".pkl", ""), project)
           Origin.HTTPS -> HttpsFile(URI.create(path), project)
+          Origin.JAR -> JarFile(URI(path), project)
           else -> {
             logger.error("Origin $origin is not supported")
             null
@@ -78,23 +87,25 @@ interface VirtualFile {
   }
 }
 
-class FsFile(private val path: Path, override val project: Project) : VirtualFile {
-
+class FsFile(val path: Path, override val project: Project) : VirtualFile {
   override val name: String = path.name
   override val uri: URI = path.toUri()
   override val pklAuthority: String = Origin.FILE.name.lowercase()
 
   override fun parent(): VirtualFile? = path.parent?.let { FsFile(it, project) }
 
-  override fun resolve(path: String): VirtualFile {
-    return FsFile(this.path.resolve(path), project)
+  override fun resolve(path: String): VirtualFile? {
+    val resolvedPath = this.path.resolve(path)
+    return if (Files.exists(resolvedPath)) FsFile(this.path.resolve(path), project) else null
   }
 
   override fun toModule(): PklModule? {
     // get this module from the cache if possible so changes to it are propagated even
     // if the file was not saved
-    return Builder.findModuleInCache(uri) ?: Builder.fileToModule(path, this)
+    return Builder.findModuleInCache(uri) ?: Builder.pathToModule(path, this)
   }
+
+  override fun contents(): String = path.readText()
 }
 
 class StdlibFile(moduleName: String, override val project: Project) : VirtualFile {
@@ -108,6 +119,10 @@ class StdlibFile(moduleName: String, override val project: Project) : VirtualFil
 
   override fun toModule(): PklModule? {
     return project.stdlib.getModule(name)
+  }
+
+  override fun contents(): String {
+    return IoUtils.readClassPathResourceAsString(javaClass, "/org/pkl/core/stdlib/$name.pkl")
   }
 }
 
@@ -125,58 +140,59 @@ class HttpsFile(override val uri: URI, override val project: Project) : VirtualF
   }
 
   override fun toModule(): PklModule? {
-    return project.cacheManager.findHttpModule(uri)
+    return project.fileCacheManager.findHttpModule(uri)
+  }
+
+  override fun contents(): String {
+    return project.fileCacheManager.findHttpContent(uri) ?: ""
   }
 }
 
-class JarFile
-private constructor(
-  private val originalFile: File,
-  private val jarFile: java.util.jar.JarFile,
-  private val entryPath: String,
-  override val project: Project,
-) : VirtualFile {
+private fun ensureJarFileSystem(uri: URI) {
+  try {
+    FileSystems.newFileSystem(uri, HashMap<String, Any>())
+  } catch (e: FileSystemAlreadyExistsException) {
+    FileSystems.getFileSystem(uri)
+  }
+}
 
-  override val name: String = entryPath.substringAfterLast('/')
-  override val uri: URI = URI("jar://${originalFile.absolutePath}!/$entryPath")
-  override val pklAuthority: String = Origin.MODULEPATH.name.lowercase()
+class JarFile : VirtualFile {
+  val path: Path
+  override val uri: URI
+  override val project: Project
+  override val name: String
+    get() = path.name
 
-  override fun parent(): VirtualFile? {
-    if (entryPath == "/") return null
+  override val pklAuthority: String
+    get() = Origin.JAR.name.lowercase()
 
-    val path =
-      if (entryPath.contains('/')) {
-        entryPath.substringBeforeLast('/')
-      } else "/"
-    return JarFile(originalFile, jarFile, path, project)
+  constructor(path: Path, uri: URI, project: Project) {
+    this.path = path
+    this.uri = uri
+    this.project = project
   }
 
-  override fun resolve(path: String): VirtualFile {
-    val actualPath =
-      if (entryPath.contains('/') && entryPath != "/") {
-        entryPath.substringBeforeLast('/') + "/" + path
-      } else path
-    return JarFile(originalFile, jarFile, actualPath, project)
+  constructor(uri: URI, project: Project) {
+    ensureJarFileSystem(uri)
+    this.uri = uri
+    this.path = Path.of(uri)
+    this.project = project
+  }
+
+  override fun parent(): VirtualFile? = path.parent?.let { JarFile(it, it.toUri(), project) }
+
+  override fun resolve(path: String): VirtualFile? {
+    val resolvedPath = this.path.resolve(path)
+    return if (Files.exists(resolvedPath)) JarFile(this.path.resolve(path).toUri(), project)
+    else null
   }
 
   override fun toModule(): PklModule? {
-    val entry = jarFile.getJarEntry(entryPath) ?: return null
-    if (entry.isDirectory) return null
-    jarFile.getInputStream(entry).use { input ->
-      val contents = input.bufferedReader().readText()
-      return Builder.fileToModule(contents, uri, this)
-    }
+    return Builder.findModuleInCache(uri) ?: Builder.pathToModule(path, this)
   }
 
-  companion object {
-    fun create(jarFile: File, entryPath: String, project: Project): JarFile? {
-      try {
-        if (!jarFile.exists()) return null
-        val jar = java.util.jar.JarFile(jarFile)
-        return JarFile(jarFile, jar, entryPath, project)
-      } catch (_: IOException) {
-        return null
-      }
-    }
-  }
+  override fun contents(): String =
+    project.cachedValuesManager.getCachedValue("${javaClass.simpleName}-contents-${uri}") {
+      CachedValue(path.readText())
+    }!!
 }

@@ -22,6 +22,8 @@ import org.antlr.v4.runtime.tree.ParseTree
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.pkl.core.parser.antlr.PklParser.*
 import org.pkl.lsp.*
+import org.pkl.lsp.packages.Dependency
+import org.pkl.lsp.packages.PackageDependency
 import org.pkl.lsp.resolvers.ResolveVisitor
 import org.pkl.lsp.type.Type
 import org.pkl.lsp.type.TypeParameterBindings
@@ -154,6 +156,9 @@ interface PklModule : PklTypeDefOrModule {
   val cache: ModuleMemberCache
   val shortDisplayName: String
   val moduleName: String?
+  val `package`: PackageDependency?
+
+  fun dependencies(): Map<String, Dependency>?
 }
 
 /** Either [moduleHeader] is set, or [moduleExtendsAmendsClause] is set. */
@@ -178,11 +183,13 @@ interface PklModuleHeader : PklNode, ModifierListOwner {
   val moduleName: String?
 }
 
-interface PklModuleExtendsAmendsClause : PklNode {
+interface PklModuleExtendsAmendsClause : PklNode, PklModuleUriOwner {
   val isAmend: Boolean
 
   val isExtend: Boolean
+}
 
+interface PklModuleUriOwner {
   val moduleUri: PklModuleUri?
 }
 
@@ -348,10 +355,8 @@ interface PklModuleUri : PklNode {
   val stringConstant: PklStringConstant
 }
 
-interface PklImportBase : PklNode {
+interface PklImportBase : PklNode, PklModuleUriOwner {
   val isGlob: Boolean
-
-  val moduleUri: PklModuleUri?
 }
 
 sealed interface PklImport : PklImportBase, IdentifierOwner
