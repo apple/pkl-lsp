@@ -15,6 +15,7 @@
  */
 package org.pkl.lsp
 
+import java.util.concurrent.CompletableFuture
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.isSubtypeOf
@@ -48,8 +49,8 @@ class Project(private val server: PklLSPServer) {
 
   val languageClient: PklLanguageClient by lazy { server.client() }
 
-  fun initialize() {
-    myComponents.forEach { it.initialize() }
+  fun initialize(): CompletableFuture<*> {
+    return CompletableFuture.allOf(*myComponents.map { it.initialize() }.toTypedArray())
   }
 
   fun dispose() {
@@ -67,8 +68,6 @@ class Project(private val server: PklLSPServer) {
   private val myComponents: Iterable<Component>
     get() {
       return this::class
-        .java
-        .kotlin
         .members
         .filterIsInstance(KProperty::class.java)
         .filter { it.returnType.isSubtypeOf(Component::class.starProjectedType) }

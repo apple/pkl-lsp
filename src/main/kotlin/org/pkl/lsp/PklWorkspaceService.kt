@@ -29,11 +29,16 @@ enum class WorkspaceEventType {
   DELETED,
 }
 
+val workspaceConfigurationChangedTopic =
+  Topic<WorkspaceConfigurationChangedEvent>("WorkspaceConfigurationChanged")
+
+object WorkspaceConfigurationChangedEvent
+
 val workspaceFolderTopic = Topic<WorkspaceFoldersChangeEvent>("WorkspaceFolderEvent")
 
 class PklWorkspaceService(private val project: Project) : WorkspaceService {
   override fun didChangeConfiguration(params: DidChangeConfigurationParams) {
-    project.settingsManager.loadSettings()
+    project.messageBus.emit(workspaceConfigurationChangedTopic, WorkspaceConfigurationChangedEvent)
   }
 
   override fun didChangeWorkspaceFolders(params: DidChangeWorkspaceFoldersParams) {

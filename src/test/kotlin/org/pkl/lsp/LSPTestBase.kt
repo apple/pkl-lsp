@@ -45,8 +45,9 @@ abstract class LSPTestBase {
       server = PklLSPServer(true).also { it.connect(TestLanguageClient) }
       parser = Parser()
       fakeProject = server.project
-      System.getProperty("pklExecutable")?.let {
-        fakeProject.settingsManager.settings.pklCliPath = Path.of(it)
+      System.getProperty("pklExecutable")?.let { executablePath ->
+        TestLanguageClient.settings["Pkl" to "pkl.cli.path"] = executablePath
+        fakeProject.settingsManager.settings.pklCliPath = Path.of(executablePath)
       }
     }
   }
@@ -74,6 +75,7 @@ abstract class LSPTestBase {
     server.initialized(InitializedParams())
     TestLanguageClient.testProjectDir = testProjectDir
     TestLanguageClient.reset()
+    fakeProject.initialize().get()
   }
 
   @AfterEach

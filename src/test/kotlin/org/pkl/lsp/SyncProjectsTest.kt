@@ -17,7 +17,6 @@ package org.pkl.lsp
 
 import java.nio.file.Path
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -44,12 +43,7 @@ class SyncProjectsTest : LSPTestBase() {
     """
           .trimIndent(),
       )
-    fakeProject.pklProjectManager.syncProjects().get()
-  }
-
-  @AfterEach
-  override fun afterEach() {
-    super.afterEach()
+    fakeProject.pklProjectManager.syncProjects(false).get()
   }
 
   @Test

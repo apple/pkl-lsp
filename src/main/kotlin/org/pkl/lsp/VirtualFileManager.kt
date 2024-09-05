@@ -18,16 +18,18 @@ package org.pkl.lsp
 import java.net.URI
 import java.nio.file.*
 import java.util.*
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
 class VirtualFileManager(project: Project) : Component(project) {
-  override fun initialize() {
+  override fun initialize(): CompletableFuture<*> {
     project.messageBus.subscribe(textDocumentTopic) { event ->
       val file = files[event.file] ?: return@subscribe
       if (event.type == TextDocumentEventType.CHANGED) {
         file.modificationCount.incrementAndGet()
       }
     }
+    return CompletableFuture.completedFuture(Unit)
   }
 
   private val files: MutableMap<URI, BaseFile> = ConcurrentHashMap()

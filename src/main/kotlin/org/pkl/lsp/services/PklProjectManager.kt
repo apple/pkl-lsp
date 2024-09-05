@@ -93,7 +93,7 @@ class PklProjectManager(project: Project) : Component(project) {
     }
   }
 
-  fun syncProjects(): CompletableFuture<Unit> {
+  fun syncProjects(emitEvents: Boolean = false): CompletableFuture<Unit> {
     val pklProjectFiles = discoverProjectFiles()
     if (pklProjectFiles.isEmpty()) {
       pklProjects.clear()
@@ -123,7 +123,9 @@ class PklProjectManager(project: Project) : Component(project) {
         project.languageClient.showMessage(
           MessageParams(MessageType.Info, "Project sync successful")
         )
-        project.messageBus.emit(projectTopic, ProjectEvent(ProjectEventType.PROJECTS_SYNCED))
+        if (emitEvents) {
+          project.messageBus.emit(projectTopic, ProjectEvent(ProjectEventType.PROJECTS_SYNCED))
+        }
       }
       .exceptionally { err ->
         project.languageClient.showMessage(

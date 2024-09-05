@@ -15,6 +15,7 @@
  */
 package org.pkl.lsp.services
 
+import com.google.gson.JsonElement
 import com.google.gson.JsonPrimitive
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
@@ -30,18 +31,20 @@ import org.pkl.lsp.messages.ActionableNotification
 
 class SettingsManager(project: Project) : Component(project) {
   var settings: WorkspaceSettings = WorkspaceSettings()
-  private var initialized: CompletableFuture<Unit> = CompletableFuture()
+  private lateinit var initialized: CompletableFuture<*>
 
-  override fun initialize() {
-    loadSettings()
+  override fun initialize(): CompletableFuture<*> {
+    initialized = loadSettings()
     project.messageBus.subscribe(textDocumentTopic, ::handleTextDocumentEvent)
+    project.messageBus.subscribe(workspaceConfigurationChangedTopic) { loadSettings() }
+    return initialized
   }
 
   override fun dispose() {
-    initialized = CompletableFuture()
+    initialized.cancel(true)
   }
 
-  fun loadSettings() {
+  private fun loadSettings(): CompletableFuture<Unit> {
     logger.log("Fetching configuration")
     val params =
       ConfigurationParams(
@@ -52,26 +55,23 @@ class SettingsManager(project: Project) : Component(project) {
           }
         )
       )
-    project.languageClient
+    return project.languageClient
       .configuration(params)
       .thenApply { (cliPath) ->
         logger.log("Got configuration: $cliPath")
-        cliPath as JsonPrimitive
+        cliPath as JsonElement
         if (cliPath.isJsonNull) {
           settings.pklCliPath = null
           return@thenApply
         }
-        if (!cliPath.isString) {
+        if (!(cliPath is JsonPrimitive && cliPath.isString)) {
           logger.warn("Got non-string value for configuration: $cliPath")
           return@thenApply
         }
         settings.pklCliPath = cliPath.asString.let { if (it.isEmpty()) null else Path.of(it) }
       }
       .exceptionally { logger.error("Failed to fetch settings: ${it.cause}") }
-      .whenComplete { _, _ ->
-        logger.log("Settings changed to $settings")
-        initialized.complete(Unit)
-      }
+      .whenComplete { _, _ -> logger.log("Settings changed to $settings") }
   }
 
   private fun handleTextDocumentEvent(event: TextDocumentEvent) {

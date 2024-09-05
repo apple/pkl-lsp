@@ -15,6 +15,8 @@
  */
 package org.pkl.lsp
 
+import com.google.gson.JsonNull
+import com.google.gson.JsonPrimitive
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import kotlin.io.path.name
@@ -25,6 +27,8 @@ object TestLanguageClient : PklLanguageClient {
   lateinit var testProjectDir: Path
 
   val actionableNotifications: MutableList<ActionableNotification> = mutableListOf()
+
+  val settings: MutableMap<Pair<String, String>, String> = mutableMapOf()
 
   fun reset() {
     actionableNotifications.clear()
@@ -54,15 +58,8 @@ object TestLanguageClient : PklLanguageClient {
   }
 
   override fun logMessage(message: MessageParams) {
-    @Suppress("WHEN_ENUM_CAN_BE_NULL_IN_JAVA")
-    val label =
-      when (message.type) {
-        MessageType.Info -> "INFO"
-        MessageType.Log -> "LOG"
-        MessageType.Warning -> "WARNING"
-        MessageType.Error -> "ERROR"
-      }
-    println("[$label] ${message.message}")
+    if (message.type == MessageType.Info || message.type == MessageType.Log) return
+    System.err.println(message.message)
   }
 
   override fun workspaceFolders(): CompletableFuture<List<WorkspaceFolder>> {
@@ -74,6 +71,10 @@ object TestLanguageClient : PklLanguageClient {
   override fun configuration(
     configurationParams: ConfigurationParams
   ): CompletableFuture<List<Any>> {
-    return CompletableFuture.completedFuture(listOf())
+    return CompletableFuture.completedFuture(
+      configurationParams.items.map { item ->
+        settings[item.scopeUri to item.section]?.let { JsonPrimitive(it) } ?: JsonNull.INSTANCE
+      }
+    )
   }
 }

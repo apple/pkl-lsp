@@ -49,7 +49,7 @@ class PklTextDocumentService(private val server: PklLSPServer, project: Project)
     val uri = URI(params.textDocument.uri)
     project.messageBus.emit(textDocumentTopic, TextDocumentEvent(uri, TextDocumentEventType.OPENED))
     val vfile = project.virtualFileManager.get(uri) ?: return
-    server.builder().requestBuild(uri, vfile, params.textDocument.text)
+    server.builder().requestBuild(vfile, params.textDocument.text)
   }
 
   override fun didChange(params: DidChangeTextDocumentParams) {
@@ -59,7 +59,7 @@ class PklTextDocumentService(private val server: PklLSPServer, project: Project)
       TextDocumentEvent(uri, TextDocumentEventType.CHANGED),
     )
     val vfile = project.virtualFileManager.get(uri) ?: return
-    server.builder().requestBuild(uri, vfile, params.contentChanges[0].text)
+    server.builder().requestBuild(vfile, params.contentChanges[0].text)
   }
 
   override fun didClose(params: DidCloseTextDocumentParams) {
@@ -76,7 +76,7 @@ class PklTextDocumentService(private val server: PklLSPServer, project: Project)
     project.messageBus.emit(textDocumentTopic, TextDocumentEvent(uri, TextDocumentEventType.SAVED))
     // guaranteed to exist because `file:` URIs are always supported.
     val file = project.virtualFileManager.get(uri)!!
-    server.builder().requestBuild(uri, file)
+    server.builder().requestBuild(file)
   }
 
   override fun hover(params: HoverParams): CompletableFuture<Hover> {

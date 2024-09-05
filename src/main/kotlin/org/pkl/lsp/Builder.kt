@@ -50,7 +50,7 @@ class Builder(private val server: PklLSPServer, project: Project) : Component(pr
 
   private val openFiles: MutableMap<URI, Boolean> = ConcurrentHashMap()
 
-  override fun initialize() {
+  override fun initialize(): CompletableFuture<*> {
     project.messageBus.subscribe(textDocumentTopic) { event ->
       if (event.type == TextDocumentEventType.OPENED) {
         openFiles[event.file] = true
@@ -63,7 +63,7 @@ class Builder(private val server: PklLSPServer, project: Project) : Component(pr
       openFiles.forEach { (uri, _) ->
         val virtualFile = project.virtualFileManager.get(uri) ?: return@forEach
         // refresh diagnostics for every module
-        project.builder.requestBuild(uri, virtualFile)
+        project.builder.requestBuild(virtualFile)
       }
     }
     project.messageBus.subscribe(projectTopic) { event ->
@@ -71,9 +71,10 @@ class Builder(private val server: PklLSPServer, project: Project) : Component(pr
       openFiles.forEach { (uri, _) ->
         val virtualFile = project.virtualFileManager.get(uri) ?: return@forEach
         // refresh diagnostics for every module
-        project.builder.requestBuild(uri, virtualFile)
+        project.builder.requestBuild(virtualFile)
       }
     }
+    return CompletableFuture.completedFuture(Unit)
   }
 
   private val analyzers: List<Analyzer> =
@@ -90,18 +91,9 @@ class Builder(private val server: PklLSPServer, project: Project) : Component(pr
     return runningBuild[effectiveUri.toString()] ?: CompletableFuture.completedFuture(null)
   }
 
-  fun requestBuild(
-    uri: URI,
-    vfile: VirtualFile,
-    fileContents: String? = null,
-  ): CompletableFuture<PklModule?> {
-    val effectiveUri = uri.effectiveUri
-    if (effectiveUri == null) {
-      logger.warn("Received unknown URI: $uri")
-      return CompletableFuture.completedFuture(null)
-    }
-    val build = CompletableFuture.supplyAsync { build(effectiveUri, vfile, fileContents) }
-    runningBuild[effectiveUri.toString()] = build
+  fun requestBuild(file: VirtualFile, fileContents: String? = null): CompletableFuture<PklModule?> {
+    val build = CompletableFuture.supplyAsync { build(file, fileContents) }
+    runningBuild[file.uri.toString()] = build
     return build
   }
 
@@ -127,20 +119,20 @@ class Builder(private val server: PklLSPServer, project: Project) : Component(pr
 
   fun findModuleInCache(uri: URI): PklModule? = buildCache[uri]
 
-  private fun build(file: URI, vfile: VirtualFile, fileContents: String?): PklModule? {
+  private fun build(file: VirtualFile, fileContents: String?): PklModule? {
     return try {
-      val contents = fileContents ?: vfile.contents()
-      logger.log("building $file")
+      val contents = fileContents ?: file.contents()
+      logger.log("building ${file.uri}")
       val moduleCtx = parser.parseModule(contents)
-      val module = PklModuleImpl(moduleCtx, vfile)
+      val module = PklModuleImpl(moduleCtx, file)
       val diagnostics = analyze(module)
-      makeDiagnostics(file, diagnostics.map { it.toMessage() })
-      buildCache[file] = module
-      diagnosticsCache[file] = diagnostics
+      makeDiagnostics(file.uri, diagnostics.map { it.toMessage() })
+      buildCache[file.uri] = module
+      diagnosticsCache[file.uri] = diagnostics
       return module
     } catch (e: LexParseException) {
       logger.error("Parser Error building $file: ${e.message}")
-      makeParserDiagnostics(file, listOf(toParserError(e)))
+      makeParserDiagnostics(file.uri, listOf(toParserError(e)))
       null
     } catch (e: Exception) {
       logger.error("Error building $file: ${e.message} ${e.stackTraceToString()}")

@@ -184,10 +184,8 @@ class HttpsFile(override val uri: URI, override val project: Project) : BaseFile
   }
 }
 
-class JarFile : BaseFile {
-  override val path: Path
-  override val uri: URI
-  override val project: Project
+class JarFile(override val path: Path, override val uri: URI, override val project: Project) :
+  BaseFile() {
   override val name: String
     get() = path.name
 
@@ -209,18 +207,6 @@ class JarFile : BaseFile {
 
   override val pklAuthority: String
     get() = Origin.JAR.name.lowercase()
-
-  constructor(path: Path, uri: URI, project: Project) {
-    this.path = path
-    this.uri = uri
-    this.project = project
-  }
-
-  constructor(uri: URI, project: Project) {
-    this.uri = uri
-    this.path = Path.of(uri)
-    this.project = project
-  }
 
   override fun parent(): VirtualFile? = path.parent?.let { project.virtualFileManager.get(it) }
 
