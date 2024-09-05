@@ -53,8 +53,16 @@ object TestLanguageClient : PklLanguageClient {
     return CompletableFuture()
   }
 
-  override fun logMessage(message: MessageParams?) {
-    // no-op
+  override fun logMessage(message: MessageParams) {
+    @Suppress("WHEN_ENUM_CAN_BE_NULL_IN_JAVA")
+    val label =
+      when (message.type) {
+        MessageType.Info -> "INFO"
+        MessageType.Log -> "LOG"
+        MessageType.Warning -> "WARNING"
+        MessageType.Error -> "ERROR"
+      }
+    println("[$label] ${message.message}")
   }
 
   override fun workspaceFolders(): CompletableFuture<List<WorkspaceFolder>> {

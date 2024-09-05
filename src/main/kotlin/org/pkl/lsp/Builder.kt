@@ -177,10 +177,6 @@ class Builder(private val server: PklLSPServer, project: Project) : Component(pr
   }
 
   companion object {
-    private fun noop(): PklModule? {
-      return null
-    }
-
     private fun toParserError(ex: LexParseException): ParseError {
       val span = Span(ex.line, ex.column, ex.line, ex.column + ex.length)
       return ParseError(ex.message ?: "Parser error", span)
