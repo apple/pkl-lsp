@@ -115,9 +115,7 @@ class PklProjectManager(project: Project) : Component(project) {
           val pklProject = PklProject(metadata, resolvedDeps)
           pklProjects[key] = pklProject
           lastPklProjectSyncState[key] = projectFile.getModificationCount()
-          if (pklCacheDir != null) {
-            doDownloadDependencies(pklProject, pklCacheDir)
-          }
+          doDownloadDependencies(pklProject, pklCacheDir)
         }
         persistState()
         project.languageClient.showMessage(

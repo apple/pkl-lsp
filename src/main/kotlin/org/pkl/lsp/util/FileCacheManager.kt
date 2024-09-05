@@ -30,8 +30,7 @@ import org.pkl.lsp.ast.PklModule
 class FileCacheManager(project: Project) : Component(project) {
   companion object {
     private val pklHomeDir: Path = Path.of(System.getProperty("user.home")).resolve(".pkl")
-    val pklCacheDir: Path? =
-      pklHomeDir.resolve("cache").let { if (Files.isDirectory(it)) it else null }
+    val pklCacheDir: Path = pklHomeDir.resolve("cache")
   }
 
   val lspCacheDir: Path by lazy { Files.createTempDirectory("pkl-lsp-cache") }

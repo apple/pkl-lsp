@@ -43,7 +43,13 @@ class SyncProjectsTest : LSPTestBase() {
     """
           .trimIndent(),
       )
-    fakeProject.pklProjectManager.syncProjects(false).get()
+    fakeProject.pklProjectManager
+      .syncProjects(
+        // prevent other components from reacting to this change because these file gets deleted
+        // after each test finishes
+        emitEvents = false
+      )
+      .get()
   }
 
   @Test

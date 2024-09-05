@@ -51,9 +51,6 @@ class PackageManager(project: Project) : Component(project) {
   fun getLibraryRoots(dependency: PackageDependency): PackageLibraryRoots? =
     project.cachedValuesManager.getCachedValue("library-roots-${dependency.packageUri}") {
       logger.info("Getting library roots for ${dependency.packageUri}")
-      if (pklCacheDir == null) {
-        return@getCachedValue null
-      }
       val metadataFile =
         dependency.packageUri.relativeMetadataFiles.firstNotNullOfOrNull {
           pklCacheDir.resolve(it).toVirtualFile()
