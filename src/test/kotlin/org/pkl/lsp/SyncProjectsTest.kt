@@ -110,4 +110,18 @@ class SyncProjectsTest : LSPTestBase() {
     val resolvedFile = resolved.first().containingFile
     assertThat(resolvedFile).isInstanceOf(JarFile::class.java)
   }
+
+  @Test
+  fun `resolve glob import`() {
+    createPklFile(
+      """
+      import* "@appEnvCluster/*.pkl<caret>"
+    """
+        .trimIndent()
+    )
+    val resolved = goToDefinition()
+    assertThat(resolved).hasSize(1)
+    val resolvedFile = resolved.first().containingFile
+    assertThat(resolvedFile).isInstanceOf(JarFile::class.java)
+  }
 }

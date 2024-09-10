@@ -25,6 +25,8 @@ import org.pkl.lsp.LSPUtil.firstInstanceOf
 import org.pkl.lsp.VirtualFile
 import org.pkl.lsp.packages.dto.PackageUri
 import org.pkl.lsp.packages.dto.PklProject
+import org.pkl.lsp.util.CachedValue
+import org.pkl.lsp.util.GlobResolver
 
 class PklModuleUriImpl(
   project: Project,
@@ -67,6 +69,31 @@ class PklModuleUriImpl(
 
       return resolveVirtual(project, effectiveTargetUri, sourceFile, enclosingModule, context)
     }
+
+    /**
+     * @param targetUriString The prefix of [moduleUriString] that this reference refers to
+     * @param moduleUriString The whole URI
+     */
+    fun resolveGlob(
+      targetUriString: String,
+      moduleUriString: String,
+      element: PklModuleUri,
+      context: PklProject?,
+    ): List<VirtualFile>? =
+      element.project.cachedValuesManager.getCachedValue(
+        "PklModuleUri.resolveGlob($targetUriString, $moduleUriString, ${element.containingFile.path}, ${context?.projectDir})"
+      ) {
+        val result =
+          doResolveGlob(targetUriString, moduleUriString, element, context)
+            ?: return@getCachedValue null
+        val dependencies = buildList {
+          add(element.project.pklFileTracker)
+          if (context != null) {
+            add(element.project.pklProjectManager.syncTracker)
+          }
+        }
+        CachedValue(result, dependencies)
+      }
 
     private fun resolveVirtual(
       project: Project,
@@ -124,6 +151,71 @@ class PklModuleUriImpl(
           }
         }
         // unsupported scheme
+        else -> null
+      }
+    }
+
+    private fun doResolveGlob(
+      targetUriString: String,
+      moduleUriString: String,
+      element: PklModuleUri,
+      context: PklProject?,
+    ): List<VirtualFile>? {
+      val sourceFile = element.containingFile
+      val parentDir = sourceFile.parent() ?: return null
+      // triple-dot URI's are not supported
+      if (targetUriString.startsWith("...")) {
+        return null
+      }
+      val isPartialUri = moduleUriString != targetUriString
+      val targetUri = parseUriOrNull(targetUriString) ?: return null
+      val project = sourceFile.project
+
+      val effectiveScheme = targetUri.scheme ?: sourceFile.uri.scheme
+
+      return when (effectiveScheme) {
+        "file" -> {
+          val listChildren = { it: VirtualFile -> it.children ?: emptyList() }
+          val targetPath = targetUri.path ?: return null
+          return when {
+            targetPath.startsWith('/') -> {
+              val fileRoot = project.virtualFileManager.getFsFile(Path.of("/")) ?: return null
+              GlobResolver.resolveAbsoluteGlob(fileRoot, targetPath, isPartialUri, listChildren)
+            }
+            targetPath.startsWith('@') -> {
+              getDependencyRoot(project, targetPath, element.enclosingModule, context)?.let { root
+                ->
+                val effectiveTargetString = targetPath.substringAfter('/', "")
+                GlobResolver.resolveRelativeGlob(
+                  root,
+                  effectiveTargetString,
+                  isPartialUri,
+                  listChildren,
+                )
+              }
+            }
+            else ->
+              GlobResolver.resolveRelativeGlob(
+                parentDir,
+                targetUriString,
+                isPartialUri,
+                listChildren,
+              )
+          }
+        }
+        "package" -> {
+          if (targetUri.fragment?.startsWith('/') != true) {
+            return null
+          }
+          val packageRoot =
+            getDependencyRoot(project, targetUriString, element.enclosingModule, context)
+              ?: return null
+          val listChildren = { it: VirtualFile -> it.children ?: emptyList() }
+          val targetPath = targetUri.fragment ?: return null
+          val resolved =
+            GlobResolver.resolveAbsoluteGlob(packageRoot, targetPath, isPartialUri, listChildren)
+          return resolved
+        }
         else -> null
       }
     }

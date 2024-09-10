@@ -49,6 +49,8 @@ class Project(private val server: PklLSPServer) {
 
   val languageClient: PklLanguageClient by lazy { server.client() }
 
+  val pklFileTracker: PklFileTracker by lazy { PklFileTracker(this) }
+
   fun initialize(): CompletableFuture<*> {
     return CompletableFuture.allOf(*myComponents.map { it.initialize() }.toTypedArray())
   }
