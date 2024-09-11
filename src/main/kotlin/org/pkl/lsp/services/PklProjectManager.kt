@@ -29,7 +29,6 @@ import org.eclipse.lsp4j.*
 import org.pkl.lsp.*
 import org.pkl.lsp.FsFile
 import org.pkl.lsp.VirtualFile
-import org.pkl.lsp.messages.ActionableNotification
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.packages.dto.PklProject.Companion.DerivedProjectMetadata
 import org.pkl.lsp.packages.dto.RemoteDependency
@@ -164,26 +163,42 @@ class PklProjectManager(project: Project) : Component(project) {
       file.path.endsWith("PklProject") &&
         event is TextDocumentEvent.Saved &&
         file.pklProject != null &&
-        !isPklProjectFileClean(file)
+        !isPklProjectFileClean(file) &&
+        project.settingsManager.settings.pklCliPath != null
     ) {
-      project.languageClient.sendActionableNotification(
-        ActionableNotification(
-          type = MessageType.Info,
-          message = ErrorMessages.create("pklProjectFileModified"),
-          commands = listOf(Command("Sync projects", "pkl.syncProjects")),
+      project.languageClient
+        .showMessageRequest(
+          ShowMessageRequestParams().apply {
+            this.type = MessageType.Info
+            this.message = ErrorMessages.create("pklProjectFileModified")
+            this.actions = listOf(MessageActionItem().apply { this.title = "Sync Projects" })
+          }
         )
-      )
+        .thenApply { response ->
+          if (response?.title == "Sync Projects") {
+            project.pklProjectManager.syncProjects(true)
+          }
+        }
     }
     if (
-      event is TextDocumentEvent.Opened && file.pklProjectDir != null && file.pklProject == null
+      event is TextDocumentEvent.Opened &&
+        file.pklProjectDir != null &&
+        file.pklProject == null &&
+        project.settingsManager.settings.pklCliPath != null
     ) {
-      project.languageClient.sendActionableNotification(
-        ActionableNotification(
-          type = MessageType.Info,
-          message = ErrorMessages.create("unsyncedPklProject"),
-          commands = listOf(Command("Sync projects", "pkl.syncProjects")),
+      project.languageClient
+        .showMessageRequest(
+          ShowMessageRequestParams().apply {
+            this.type = MessageType.Info
+            this.message = ErrorMessages.create("unsyncedPklProject")
+            this.actions = listOf(MessageActionItem().apply { this.title = "Sync Projects" })
+          }
         )
-      )
+        .thenApply { response ->
+          if (response?.title == "Sync Projects") {
+            project.pklProjectManager.syncProjects(true)
+          }
+        }
     }
   }
 

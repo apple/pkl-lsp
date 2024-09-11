@@ -19,11 +19,11 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonPrimitive
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
+import kotlin.io.path.isExecutable
+import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.name
 import kotlinx.serialization.Serializable
-import org.eclipse.lsp4j.Command
-import org.eclipse.lsp4j.ConfigurationItem
-import org.eclipse.lsp4j.ConfigurationParams
-import org.eclipse.lsp4j.MessageType
+import org.eclipse.lsp4j.*
 import org.pkl.lsp.*
 import org.pkl.lsp.messages.ActionableNotification
 
@@ -61,17 +61,31 @@ class SettingsManager(project: Project) : Component(project) {
         logger.log("Got configuration: $cliPath")
         cliPath as JsonElement
         if (cliPath.isJsonNull) {
-          settings.pklCliPath = null
+          settings.pklCliPath = findPklCliOnPath()
           return@thenApply
         }
         if (!(cliPath is JsonPrimitive && cliPath.isString)) {
           logger.warn("Got non-string value for configuration: $cliPath")
           return@thenApply
         }
-        settings.pklCliPath = cliPath.asString.let { if (it.isEmpty()) null else Path.of(it) }
+        settings.pklCliPath =
+          cliPath.asString.let { if (it.isEmpty()) findPklCliOnPath() else Path.of(it) }
       }
       .exceptionally { logger.error("Failed to fetch settings: ${it.cause}") }
       .whenComplete { _, _ -> logger.log("Settings changed to $settings") }
+  }
+
+  private fun findPklCliOnPath(): Path? {
+    val pathDirs = System.getenv("PATH").split(if (isWindows) ";" else ":")
+    for (dir in pathDirs) {
+      for (file in Path.of(dir).listDirectoryEntries()) {
+        if (file.name == "pkl" && file.isExecutable()) {
+          logger.log("Using Pkl CLI on PATH: $file")
+          return file
+        }
+      }
+    }
+    return null
   }
 
   private fun handleTextDocumentEvent(event: TextDocumentEvent) {
@@ -79,14 +93,23 @@ class SettingsManager(project: Project) : Component(project) {
     val file = project.virtualFileManager.getFsFile(event.file) ?: return
     initialized.whenComplete { _, _ ->
       if (settings.pklCliPath == null && file.pklProjectDir != null) {
-        project.languageClient.sendActionableNotification(
-          ActionableNotification(
-            type = MessageType.Info,
-            message = "Pkl CLI is not configured",
-            commands =
-              listOf(Command("Configure CLI path", "pkl.configure", listOf("pkl.cli.path"))),
+        if (
+          project.clientCapabilities.extended.actionableRuntimeNotifications == true &&
+            project.clientCapabilities.extended.pklConfigureCommand == true
+        ) {
+          project.languageClient.sendActionableNotification(
+            ActionableNotification(
+              type = MessageType.Info,
+              message = ErrorMessages.create("pklCliNotConfigured"),
+              commands =
+                listOf(Command("Configure CLI path", "pkl.configure", listOf("pkl.cli.path"))),
+            )
           )
-        )
+        } else {
+          project.languageClient.showMessage(
+            MessageParams(MessageType.Info, ErrorMessages.create("pklCliNotFound"))
+          )
+        }
       }
     }
   }

@@ -48,6 +48,10 @@ class Project(private val server: PklLSPServer) {
 
   val diagnosticsManager: DiagnosticsManager by lazy { DiagnosticsManager(this) }
 
+  val clientOptions: PklClientOptions by lazy { server.pklClientOptions }
+
+  val clientCapabilities: PklClientCapabilities by lazy { server.clientCapabilities }
+
   fun initialize(): CompletableFuture<*> {
     return CompletableFuture.allOf(*myComponents.map { it.initialize() }.toTypedArray())
   }

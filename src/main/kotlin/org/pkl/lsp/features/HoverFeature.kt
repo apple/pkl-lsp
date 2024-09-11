@@ -288,7 +288,7 @@ class HoverFeature(project: Project) : Component(project) {
     val module = (if (node is PklModule) node else node?.enclosingModule)
     val footer =
       if (module != null) {
-        "\n\n---\n\nin [${module.moduleName}](${module.toCommandURIString()})"
+        "\n\n---\n\nin [${module.moduleName}](${module.getLocationUri(true)})"
       } else ""
     return "$withDoc$footer"
   }

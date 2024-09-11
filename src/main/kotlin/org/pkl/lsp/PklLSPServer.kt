@@ -15,6 +15,8 @@
  */
 package org.pkl.lsp
 
+import com.google.gson.Gson
+import com.google.gson.JsonObject
 import java.net.URI
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
@@ -29,16 +31,23 @@ class PklLSPServer(val verbose: Boolean) : LanguageServer {
   internal val project: Project = Project(this)
   private lateinit var client: PklLanguageClient
   private lateinit var logger: ClientLogger
+  private val gson = Gson()
 
   private val workspaceService: PklWorkspaceService by lazy { PklWorkspaceService(project) }
   private val textService: PklTextDocumentService by lazy { PklTextDocumentService(project) }
 
-  private lateinit var clientCapabilities: ClientCapabilities
   private var workspaceFolders: List<WorkspaceFolder>? = null
+  lateinit var pklClientOptions: PklClientOptions
+  lateinit var clientCapabilities: PklClientCapabilities
 
   override fun initialize(params: InitializeParams): CompletableFuture<InitializeResult> {
-    clientCapabilities = params.capabilities
     workspaceFolders = params.workspaceFolders
+    pklClientOptions = decodeClientOptions(params.initializationOptions) ?: PklClientOptions.default
+    clientCapabilities =
+      PklClientCapabilities(
+        standard = params.capabilities,
+        extended = pklClientOptions.extendedClientCapabilities,
+      )
     val res =
       InitializeResult(ServerCapabilities()).apply {
         capabilities.textDocumentSync = Either.forLeft(TextDocumentSyncKind.Full)
@@ -60,11 +69,11 @@ class PklLSPServer(val verbose: Boolean) : LanguageServer {
   }
 
   override fun initialized(params: InitializedParams) {
-    if (clientCapabilities.workspace.workspaceFolders == true) {
+    if (clientCapabilities.standard.workspace.workspaceFolders == true) {
       project.pklProjectManager.initialize(workspaceFolders?.map { Path.of(URI(it.uri)) })
     }
     // listen for configuration changes
-    if (clientCapabilities.workspace.didChangeConfiguration?.dynamicRegistration == true) {
+    if (clientCapabilities.standard.workspace.didChangeConfiguration?.dynamicRegistration == true) {
       client.registerCapability(
         RegistrationParams(
           listOf(
@@ -121,5 +130,12 @@ class PklLSPServer(val verbose: Boolean) : LanguageServer {
   @JsonRequest(value = "pkl/syncProjects")
   fun syncProjects(@Suppress("UNUSED_PARAMETER") ignored: Any?): CompletableFuture<Unit> {
     return project.pklProjectManager.syncProjects(true)
+  }
+
+  private fun decodeClientOptions(options: Any?): PklClientOptions? {
+    if (options is JsonObject) {
+      return gson.fromJson(options, PklClientOptions::class.java)
+    }
+    return null
   }
 }
