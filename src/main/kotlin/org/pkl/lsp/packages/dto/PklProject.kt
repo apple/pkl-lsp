@@ -16,14 +16,11 @@
 package org.pkl.lsp.packages.dto
 
 import java.net.URI
-import java.nio.file.Files
 import java.nio.file.Path
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.pkl.lsp.VirtualFile
 import org.pkl.lsp.packages.Dependency
-import org.pkl.lsp.packages.LocalProjectDependency
-import org.pkl.lsp.packages.PackageDependency
 import org.pkl.lsp.packages.toDependency
 import org.pkl.lsp.util.URISerializer
 
@@ -76,7 +73,8 @@ data class PklProject(val metadata: DerivedProjectMetadata, val projectDeps: Pro
   val myDependencies: Map<String, Dependency>
     get() {
       return metadata.declaredDependencies.entries.fold(mapOf()) { acc, (name, packageUri) ->
-        val dep = projectDeps?.getResolvedDependency(packageUri)?.asDependency ?: return@fold acc
+        val dep =
+          projectDeps?.getResolvedDependency(packageUri)?.toDependency(this) ?: return@fold acc
         acc.plus(name to dep)
       }
     }
@@ -89,19 +87,4 @@ data class PklProject(val metadata: DerivedProjectMetadata, val projectDeps: Pro
       context.projectDeps?.getResolvedDependency(dep.packageUri)?.toDependency(context) ?: dep
     }
   }
-
-  private val self = this
-
-  private val ResolvedDependency.asDependency: Dependency?
-    get() =
-      when (this) {
-        is LocalDependency -> {
-          val localPath = projectDir.resolve(path)
-          if (Files.exists(localPath)) LocalProjectDependency(uri, localPath) else null
-        }
-        else -> {
-          this as RemoteDependency
-          PackageDependency(uri, self, checksums)
-        }
-      }
 }

@@ -70,12 +70,15 @@ class PklTextDocumentService(private val server: PklLSPServer, project: Project)
   override fun didSave(params: DidSaveTextDocumentParams) {
     val uri = URI(params.textDocument.uri)
     if (!uri.scheme.equals("file")) {
-      logger.error("Saved non file URI: $uri")
+      logger.warn("Saved non file URI: $uri")
       return
     }
     project.messageBus.emit(textDocumentTopic, TextDocumentEvent(uri, TextDocumentEventType.SAVED))
-    // guaranteed to exist because `file:` URIs are always supported.
-    val file = project.virtualFileManager.get(uri)!!
+    val file = project.virtualFileManager.get(uri)
+    if (file == null) {
+      logger.warn("Got textDocument/didSave for file that doesn't exist: $uri")
+      return
+    }
     server.builder().requestBuild(file)
   }
 
