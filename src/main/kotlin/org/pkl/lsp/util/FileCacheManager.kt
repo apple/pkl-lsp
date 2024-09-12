@@ -22,16 +22,14 @@ import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.io.path.*
 import org.pkl.core.parser.LexParseException
-import org.pkl.lsp.Builder
 import org.pkl.lsp.Component
-import org.pkl.lsp.HttpsFile
 import org.pkl.lsp.Project
 import org.pkl.lsp.ast.PklModule
 
 /** Manages all Pkl files that are not local to the file system: http(s), packages. */
 class FileCacheManager(project: Project) : Component(project) {
   companion object {
-    val pklHomeDir: Path = Path.of(System.getProperty("user.home")).resolve(".pkl")
+    private val pklHomeDir: Path = Path.of(System.getProperty("user.home")).resolve(".pkl")
     val pklCacheDir: Path = pklHomeDir.resolve("cache")
   }
 
@@ -62,7 +60,8 @@ class FileCacheManager(project: Project) : Component(project) {
     if (httpsErrors.contains(uri)) return null
     return findHttpContent(uri)?.let { contents ->
       try {
-        Builder.fileToModule(contents, uri, HttpsFile(uri, project))
+        val file = project.virtualFileManager.get(uri)!!
+        project.builder.fileToModule(contents, uri, file)
       } catch (e: LexParseException) {
         httpsErrors[uri] = errObject
         return null

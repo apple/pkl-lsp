@@ -25,6 +25,7 @@ import org.pkl.lsp.LSPUtil.toRange
 import org.pkl.lsp.PklLSPServer
 import org.pkl.lsp.Project
 import org.pkl.lsp.ast.*
+import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.type.computeThisType
 
 class GoToDefinitionFeature(private val server: PklLSPServer, project: Project) :
@@ -37,24 +38,33 @@ class GoToDefinitionFeature(private val server: PklLSPServer, project: Project) 
       if (mod == null) return Either.forLeft(listOf())
       val line = params.position.line + 1
       val col = params.position.character + 1
+      val context = mod.containingFile.pklProject
       val location =
-        mod.findBySpan(line, col)?.let { resolveDeclaration(it, line, col) }
+        mod.findBySpan(line, col)?.let { resolveDeclaration(it, line, col, context) }
           ?: return Either.forLeft(listOf())
       return Either.forLeft(listOf(location))
     }
     return server.builder().runningBuild(params.textDocument.uri).thenApply(::run)
   }
 
-  private fun resolveDeclaration(originalNode: PklNode, line: Int, col: Int): Location? {
-    val node = originalNode.resolveReference(line, col) ?: return null
+  private fun resolveDeclaration(
+    originalNode: PklNode,
+    line: Int,
+    col: Int,
+    context: PklProject?,
+  ): Location? {
+    val node = originalNode.resolveReference(line, col, context) ?: return null
     return when (node) {
       is PklThisExpr ->
-        node.computeThisType(project.pklBaseModule, mapOf()).getNode(project)?.toLocation()
+        node
+          .computeThisType(project.pklBaseModule, mapOf(), context)
+          .getNode(project, context)
+          ?.toLocation()
       else -> if (node !== originalNode) node.toLocation() else null
     }
   }
 
   private fun PklNode.toLocation(): Location {
-    return Location(toURIString(), beginningSpan().toRange())
+    return Location(toLspURIString(), beginningSpan().toRange())
   }
 }

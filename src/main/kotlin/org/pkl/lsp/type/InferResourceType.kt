@@ -18,19 +18,29 @@ package org.pkl.lsp.type
 import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.ast.PklSingleLineStringLiteral
 import org.pkl.lsp.ast.TokenType
+import org.pkl.lsp.packages.dto.PklProject
 
-fun inferResourceType(resourceUri: PklSingleLineStringLiteral, base: PklBaseModule): Type {
+fun inferResourceType(
+  resourceUri: PklSingleLineStringLiteral,
+  base: PklBaseModule,
+  context: PklProject?,
+): Type {
   // note that [resourceUri] could be an interpolated string.
   // we only operate on the first string part.
   val firstChild =
     resourceUri.parts.firstOrNull()
-      ?: return Type.union(base.stringType, base.resourceType, base) // empty string -> bail out
+      ?: return Type.union(
+        base.stringType,
+        base.resourceType,
+        base,
+        context,
+      ) // empty string -> bail out
   val stringChars = firstChild.text
 
   return when {
     firstChild.terminals.firstOrNull()?.type != TokenType.SLCharacters ->
       // starts with escape sequence or interpolation expression -> bail out
-      Type.union(base.stringType, base.resourceType, base)
+      Type.union(base.stringType, base.resourceType, base, context)
     stringChars.startsWith("env:", ignoreCase = true) -> base.stringType
     stringChars.startsWith("prop:", ignoreCase = true) -> base.stringType
 
@@ -42,6 +52,6 @@ fun inferResourceType(resourceUri: PklSingleLineStringLiteral, base: PklBaseModu
     !stringChars.contains(":") -> base.resourceType
     else ->
       // bail out
-      Type.union(base.stringType, base.resourceType, base)
+      Type.union(base.stringType, base.resourceType, base, context)
   }
 }

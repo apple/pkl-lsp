@@ -15,6 +15,16 @@
  */
 package org.pkl.lsp
 
+import java.util.concurrent.CompletableFuture
+
 abstract class Component(protected val project: Project) {
   protected val logger by lazy { project.getLogger(this::class) }
+
+  /** Gets called after the server is ready to accept messages. */
+  open fun initialize(): CompletableFuture<*> {
+    return CompletableFuture.completedFuture(Unit)
+  }
+
+  /** Gets called when the server is shutting down. */
+  open fun dispose() {}
 }

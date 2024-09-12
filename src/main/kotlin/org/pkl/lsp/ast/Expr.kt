@@ -18,6 +18,7 @@ package org.pkl.lsp.ast
 import org.pkl.core.parser.antlr.PklParser.*
 import org.pkl.lsp.*
 import org.pkl.lsp.LSPUtil.firstInstanceOf
+import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.resolvers.ResolveVisitor
 import org.pkl.lsp.resolvers.ResolveVisitors
 import org.pkl.lsp.resolvers.Resolvers
@@ -186,10 +187,10 @@ class PklUnqualifiedAccessExprImpl(
   }
   override val isNullSafeAccess: Boolean = false
 
-  override fun resolve(): PklNode? {
+  override fun resolve(context: PklProject?): PklNode? {
     val base = project.pklBaseModule
     val visitor = ResolveVisitors.firstElementNamed(memberNameText, base)
-    return resolve(base, null, mapOf(), visitor)
+    return resolve(base, null, mapOf(), visitor, context)
   }
 
   override fun <R> resolve(
@@ -197,6 +198,7 @@ class PklUnqualifiedAccessExprImpl(
     receiverType: Type?,
     bindings: TypeParameterBindings,
     visitor: ResolveVisitor<R>,
+    context: PklProject?,
   ): R {
     return Resolvers.resolveUnqualifiedAccess(
       this,
@@ -205,6 +207,7 @@ class PklUnqualifiedAccessExprImpl(
       base,
       bindings,
       visitor,
+      context,
     )
   }
 
@@ -303,10 +306,10 @@ class PklSuperAccessExprImpl(
     children.firstInstanceOf<PklArgumentList>()
   }
 
-  override fun resolve(): PklNode? {
+  override fun resolve(context: PklProject?): PklNode? {
     val base = project.pklBaseModule
     val visitor = ResolveVisitors.firstElementNamed(memberNameText, base)
-    return resolve(base, null, mapOf(), visitor)
+    return resolve(base, null, mapOf(), visitor, context)
   }
 
   override fun <R> resolve(
@@ -314,12 +317,13 @@ class PklSuperAccessExprImpl(
     receiverType: Type?,
     bindings: TypeParameterBindings,
     visitor: ResolveVisitor<R>,
+    context: PklProject?,
   ): R {
     // TODO: Pkl doesn't currently enforce that `super.foo`
     // has the same type as `this.foo` if `super.foo` is defined in a superclass.
     // In particular, covariant property types are used in the wild.
-    val thisType = receiverType ?: computeThisType(base, bindings)
-    return Resolvers.resolveQualifiedAccess(thisType, isPropertyAccess, base, visitor)
+    val thisType = receiverType ?: computeThisType(base, bindings, context)
+    return Resolvers.resolveQualifiedAccess(thisType, isPropertyAccess, base, visitor, context)
   }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
@@ -354,11 +358,11 @@ class PklQualifiedAccessExprImpl(
   }
   override val receiverExpr: PklExpr by lazy { children.firstInstanceOf<PklExpr>()!! }
 
-  override fun resolve(): PklNode? {
+  override fun resolve(context: PklProject?): PklNode? {
     val base = project.pklBaseModule
     val visitor = ResolveVisitors.firstElementNamed(memberNameText, base)
     // TODO: check if receiver is `module`
-    return resolve(base, null, mapOf(), visitor)
+    return resolve(base, null, mapOf(), visitor, context)
   }
 
   override fun <R> resolve(
@@ -366,9 +370,16 @@ class PklQualifiedAccessExprImpl(
     receiverType: Type?,
     bindings: TypeParameterBindings,
     visitor: ResolveVisitor<R>,
+    context: PklProject?,
   ): R {
-    val myReceiverType: Type = receiverType ?: receiverExpr.computeExprType(base, bindings)
-    return Resolvers.resolveQualifiedAccess(myReceiverType, isPropertyAccess, base, visitor)
+    val myReceiverType: Type = receiverType ?: receiverExpr.computeExprType(base, bindings, context)
+    return Resolvers.resolveQualifiedAccess(
+      myReceiverType,
+      isPropertyAccess,
+      base,
+      visitor,
+      context,
+    )
   }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {

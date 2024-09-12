@@ -15,14 +15,45 @@
  */
 package org.pkl.lsp
 
-import org.eclipse.lsp4j.DidChangeConfigurationParams
-import org.eclipse.lsp4j.DidChangeWatchedFilesParams
+import java.net.URI
+import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.services.WorkspaceService
+import org.pkl.lsp.services.Topic
+
+val workspaceTopic = Topic<WorkspaceEvent>("WorkspaceEvent")
+
+data class WorkspaceEvent(val files: List<URI>, val type: WorkspaceEventType)
+
+enum class WorkspaceEventType {
+  CREATED,
+  DELETED,
+}
+
+val workspaceConfigurationChangedTopic =
+  Topic<WorkspaceConfigurationChangedEvent>("WorkspaceConfigurationChanged")
+
+object WorkspaceConfigurationChangedEvent
+
+val workspaceFolderTopic = Topic<WorkspaceFoldersChangeEvent>("WorkspaceFolderEvent")
 
 class PklWorkspaceService(private val project: Project) : WorkspaceService {
   override fun didChangeConfiguration(params: DidChangeConfigurationParams) {
-    project.settingsManager.loadSettings()
+    project.messageBus.emit(workspaceConfigurationChangedTopic, WorkspaceConfigurationChangedEvent)
+  }
+
+  override fun didChangeWorkspaceFolders(params: DidChangeWorkspaceFoldersParams) {
+    project.messageBus.emit(workspaceFolderTopic, params.event)
   }
 
   override fun didChangeWatchedFiles(params: DidChangeWatchedFilesParams?) {}
+
+  override fun didCreateFiles(params: CreateFilesParams) {
+    val files = params.files.map { URI(it.uri) }
+    project.messageBus.emit(workspaceTopic, WorkspaceEvent(files, WorkspaceEventType.CREATED))
+  }
+
+  override fun didDeleteFiles(params: DeleteFilesParams) {
+    val files = params.files.map { URI(it.uri) }
+    project.messageBus.emit(workspaceTopic, WorkspaceEvent(files, WorkspaceEventType.DELETED))
+  }
 }

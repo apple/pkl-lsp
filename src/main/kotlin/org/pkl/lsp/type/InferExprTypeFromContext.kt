@@ -18,6 +18,7 @@ package org.pkl.lsp.type
 import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.PklVisitor
 import org.pkl.lsp.ast.*
+import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.resolvers.ResolveVisitors
 
 // TODO: Returns upper bounds for some binary expression operands,
@@ -27,6 +28,7 @@ import org.pkl.lsp.resolvers.ResolveVisitors
 fun PklExpr?.inferExprTypeFromContext(
   base: PklBaseModule,
   bindings: TypeParameterBindings,
+  context: PklProject?,
   resolveTypeParamsInParamTypes: Boolean = true,
   canInferParentExpr: Boolean = true,
 ): Type =
@@ -39,6 +41,7 @@ fun PklExpr?.inferExprTypeFromContext(
         base,
         bindings,
         parent,
+        context,
         resolveTypeParamsInParamTypes,
         canInferParentExpr,
       )
@@ -48,6 +51,7 @@ private fun PklExpr?.doInferExprTypeFromContext(
   base: PklBaseModule,
   bindings: TypeParameterBindings,
   parent: PklNode?,
+  context: PklProject?,
   resolveTypeParamsInParamTypes: Boolean = true,
   canInferParentExpr: Boolean = true,
 ): Type {
@@ -64,7 +68,8 @@ private fun PklExpr?.doInferExprTypeFromContext(
           return when (expr) {
             parent.keyExpr -> {
               val enclosingObjectType =
-                parent.computeThisType(base, bindings).toClassType(base) ?: return Type.Unknown
+                parent.computeThisType(base, bindings, context).toClassType(base, context)
+                  ?: return Type.Unknown
               when {
                 enclosingObjectType.classEquals(base.listingType) -> base.intType
                 enclosingObjectType.classEquals(base.mappingType) ->
@@ -74,20 +79,20 @@ private fun PklExpr?.doInferExprTypeFromContext(
             }
             parent.valueExpr -> {
               val defaultExpectedType by lazy {
-                parent.computeResolvedImportType(base, bindings, canInferExprBody = false)
+                parent.computeResolvedImportType(base, bindings, context, canInferExprBody = false)
               }
               // special support for converters
               return if (
                 // optimization: only compute type if within a property called "converters"
                 expr.parentOfType<PklProperty>()?.name == "converters" &&
                   parent.keyExpr
-                    ?.computeThisType(base, bindings)
-                    ?.isSubtypeOf(base.valueRenderer, base) == true
+                    ?.computeThisType(base, bindings, context)
+                    ?.isSubtypeOf(base.valueRenderer, base, context) == true
               ) {
                 val keyExpr =
                   (parent.keyExpr as? PklUnqualifiedAccessExpr) ?: return defaultExpectedType
                 val visitor = ResolveVisitors.firstElementNamed(keyExpr.memberNameText, base, true)
-                val resolved = keyExpr.resolve(base, null, bindings, visitor)
+                val resolved = keyExpr.resolve(base, null, bindings, visitor, context)
                 if (resolved is PklClass) {
                   base.function1Type.withTypeArguments(Type.Class(resolved), base.anyType)
                 } else {
@@ -105,9 +110,10 @@ private fun PklExpr?.doInferExprTypeFromContext(
           return when (expr) {
             parent.expr -> {
               val enclosingObjectType =
-                parent.computeThisType(base, bindings).toClassType(base) ?: return base.iterableType
+                parent.computeThisType(base, bindings, context).toClassType(base, context)
+                  ?: return base.iterableType
               val baseExpected = base.spreadType(enclosingObjectType)
-              if (parent.isNullable) baseExpected.nullable(base) else baseExpected
+              if (parent.isNullable) baseExpected.nullable(base, context) else baseExpected
             }
             else -> base.iterableType
           }
@@ -117,7 +123,7 @@ private fun PklExpr?.doInferExprTypeFromContext(
           when (expr) {
             parent.conditionExpr -> base.booleanType
             parent.valueExpr ->
-              parent.computeResolvedImportType(base, bindings, canInferExprBody = false)
+              parent.computeResolvedImportType(base, bindings, context, canInferExprBody = false)
             else -> Type.Unknown // parse error
           }
 
@@ -144,7 +150,7 @@ private fun PklExpr?.doInferExprTypeFromContext(
               base,
               resolveTypeParamsInParamTypes,
             )
-          val paramTypes = accessExpr.resolve(base, null, bindings, visitor)
+          val paramTypes = accessExpr.resolve(base, null, bindings, visitor, context)
           if (paramTypes.isNullOrEmpty()) return Type.Unknown
 
           base.varArgsType.let { varArgsType ->
@@ -163,14 +169,14 @@ private fun PklExpr?.doInferExprTypeFromContext(
           return when (expr) {
             parent.leftExpr -> base.subscriptableType
             else -> {
-              doVisitSubscriptExpr(parent.leftExpr.computeExprType(base, bindings))
+              doVisitSubscriptExpr(parent.leftExpr.computeExprType(base, bindings, context))
             }
           }
         }
 
         // computes the type of `y` in `x[y]` given the type of `x`
         private fun doVisitSubscriptExpr(subscriptableType: Type): Type {
-          return when (val unaliasedType = subscriptableType.unaliased(base)) {
+          return when (val unaliasedType = subscriptableType.unaliased(base, context)) {
             base.stringType -> base.intType
             base.dynamicType -> Type.Unknown
             is Type.Class -> {
@@ -188,6 +194,7 @@ private fun PklExpr?.doInferExprTypeFromContext(
                 doVisitSubscriptExpr(unaliasedType.leftType),
                 doVisitSubscriptExpr(unaliasedType.rightType),
                 base,
+                context,
               )
             else -> Type.Unknown // unsupported type
           }
@@ -196,26 +203,27 @@ private fun PklExpr?.doInferExprTypeFromContext(
         override fun visitExponentiationExpr(parent: PklExponentiationExpr): Type {
           return when (expr) {
             parent.leftExpr ->
-              Type.union(base.numberType, base.dataSizeType, base.durationType, base)
+              Type.union(base.numberType, base.dataSizeType, base.durationType, base, context)
             else -> base.numberType
           }
         }
 
         override fun visitMultiplicativeExpr(parent: PklMultiplicativeExpr): Type {
           return doVisitMultiplicativeBinExpr(
-            parent.otherExpr(expr).computeExprType(base, bindings)
+            parent.otherExpr(expr).computeExprType(base, bindings, context)
           )
         }
 
         private fun doVisitMultiplicativeBinExpr(otherType: Type): Type {
-          return when (val unaliasedType = otherType.unaliased(base)) {
-            base.durationType -> Type.union(base.numberType, base.durationType, base)
-            base.dataSizeType -> Type.union(base.numberType, base.dataSizeType, base)
+          return when (val unaliasedType = otherType.unaliased(base, context)) {
+            base.durationType -> Type.union(base.numberType, base.durationType, base, context)
+            base.dataSizeType -> Type.union(base.numberType, base.dataSizeType, base, context)
             is Type.Union ->
               Type.union(
                 doVisitMultiplicativeBinExpr(unaliasedType.leftType),
                 doVisitMultiplicativeBinExpr(unaliasedType.rightType),
                 base,
+                context,
               )
             // int/float/number/unsupported type
             else -> base.multiplicativeOperandType
@@ -223,11 +231,13 @@ private fun PklExpr?.doInferExprTypeFromContext(
         }
 
         override fun visitAdditiveExpr(parent: PklAdditiveExpr): Type {
-          return doVisitAdditiveBinExpr(parent.otherExpr(expr).computeExprType(base, bindings))
+          return doVisitAdditiveBinExpr(
+            parent.otherExpr(expr).computeExprType(base, bindings, context)
+          )
         }
 
         private fun doVisitAdditiveBinExpr(otherType: Type): Type {
-          return when (val unaliasedType = otherType.unaliased(base)) {
+          return when (val unaliasedType = otherType.unaliased(base, context)) {
             base.stringType -> base.stringType
             base.intType,
             base.floatType,
@@ -248,6 +258,7 @@ private fun PklExpr?.doInferExprTypeFromContext(
                 doVisitAdditiveBinExpr(unaliasedType.leftType),
                 doVisitAdditiveBinExpr(unaliasedType.rightType),
                 base,
+                context,
               )
             // unsupported type
             else -> base.additiveOperandType
@@ -255,11 +266,13 @@ private fun PklExpr?.doInferExprTypeFromContext(
         }
 
         override fun visitComparisonExpr(parent: PklComparisonExpr): Type {
-          return doVisitComparisonBinExpr(parent.otherExpr(expr).computeExprType(base, bindings))
+          return doVisitComparisonBinExpr(
+            parent.otherExpr(expr).computeExprType(base, bindings, context)
+          )
         }
 
         private fun doVisitComparisonBinExpr(otherType: Type): Type {
-          return when (val unaliasedType = otherType.unaliased(base)) {
+          return when (val unaliasedType = otherType.unaliased(base, context)) {
             base.stringType -> base.stringType
             base.intType,
             base.floatType,
@@ -271,6 +284,7 @@ private fun PklExpr?.doInferExprTypeFromContext(
                 doVisitComparisonBinExpr(unaliasedType.leftType),
                 doVisitComparisonBinExpr(unaliasedType.rightType),
                 base,
+                context,
               )
             else -> base.comparableType // unsupported type
           }
@@ -281,16 +295,17 @@ private fun PklExpr?.doInferExprTypeFromContext(
         override fun visitPipeExpr(parent: PklPipeExpr): Type =
           when (expr) {
             parent.rightExpr -> {
-              val paramType = parent.leftExpr.computeExprType(base, mapOf())
+              val paramType = parent.leftExpr.computeExprType(base, mapOf(), context)
               val returnType = inferParentExpr(parent)
               Type.function1(paramType, returnType, base)
             }
-            parent.leftExpr -> doVisitPipeExpr(parent.rightExpr.computeExprType(base, mapOf()))
+            parent.leftExpr ->
+              doVisitPipeExpr(parent.rightExpr.computeExprType(base, mapOf(), context))
             else -> Type.Unknown // parse error
           }
 
         private fun doVisitPipeExpr(rightExprType: Type): Type {
-          return when (val unaliasedType = rightExprType.unaliased(base)) {
+          return when (val unaliasedType = rightExprType.unaliased(base, context)) {
             is Type.Class ->
               when {
                 unaliasedType.classEquals(base.function1Type) -> unaliasedType.typeArguments[0]
@@ -301,6 +316,7 @@ private fun PklExpr?.doInferExprTypeFromContext(
                 doVisitPipeExpr(unaliasedType.leftType),
                 doVisitPipeExpr(unaliasedType.rightType),
                 base,
+                context,
               )
             else -> Type.Unknown // unsupported type
           }
@@ -316,7 +332,7 @@ private fun PklExpr?.doInferExprTypeFromContext(
 
         override fun visitLetExpr(parent: PklLetExpr): Type =
           when (expr) {
-            parent.varExpr -> parent.parameter?.type.toType(base, bindings)
+            parent.varExpr -> parent.parameter?.type.toType(base, bindings, context)
             parent.bodyExpr -> inferParentExpr(parent)
             else -> Type.Unknown
           }
@@ -326,6 +342,7 @@ private fun PklExpr?.doInferExprTypeFromContext(
             base,
             bindings,
             parent.parent,
+            context,
             resolveTypeParamsInParamTypes,
             canInferParentExpr,
           )
@@ -347,6 +364,7 @@ private fun PklExpr?.doInferExprTypeFromContext(
                 base,
                 bindings,
                 parent.parent,
+                context,
                 resolveTypeParamsInParamTypes,
                 true,
               )
@@ -355,5 +373,6 @@ private fun PklExpr?.doInferExprTypeFromContext(
       }
     )
 
-  return result ?: parent.computeResolvedImportType(base, bindings, canInferExprBody = false)
+  return result
+    ?: parent.computeResolvedImportType(base, bindings, context, canInferExprBody = false)
 }

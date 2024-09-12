@@ -16,12 +16,16 @@
 package org.pkl.lsp
 
 import java.net.URI
+import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.io.path.name
 import kotlin.io.path.readText
 import kotlin.io.path.toPath
 import kotlin.io.path.writeText
 import org.eclipse.lsp4j.*
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.io.TempDir
 import org.pkl.core.parser.Parser
 import org.pkl.lsp.ast.PklModule
@@ -40,9 +44,10 @@ abstract class LSPTestBase {
     fun beforeAll() {
       server = PklLSPServer(true).also { it.connect(TestLanguageClient) }
       parser = Parser()
-      fakeProject = Project(server)
-      System.getProperty("pklExecutable")?.let {
-        fakeProject.settingsManager.settings.pklCliPath = Path.of(it)
+      fakeProject = server.project
+      System.getProperty("pklExecutable")?.let { executablePath ->
+        TestLanguageClient.settings["Pkl" to "pkl.cli.path"] = executablePath
+        fakeProject.settingsManager.settings.pklCliPath = Path.of(executablePath)
       }
     }
   }
@@ -55,9 +60,30 @@ abstract class LSPTestBase {
 
   private val modules: MutableMap<URI, PklModule> = HashMap()
 
-  protected fun createPklFile(contents: String) {
-    createPklFile("main.pkl", contents)
+  @BeforeEach
+  open fun beforeEach() {
+    server.initialize(
+      InitializeParams().apply {
+        capabilities =
+          ClientCapabilities().apply {
+            workspace = WorkspaceClientCapabilities().apply { workspaceFolders = true }
+          }
+        workspaceFolders =
+          listOf(WorkspaceFolder(testProjectDir.toUri().toString(), testProjectDir.name))
+      }
+    )
+    server.initialized(InitializedParams())
+    TestLanguageClient.testProjectDir = testProjectDir
+    TestLanguageClient.reset()
+    fakeProject.initialize().get()
   }
+
+  @AfterEach
+  open fun afterEach() {
+    server.shutdown()
+  }
+
+  protected fun createPklFile(contents: String): Path = createPklFile("main.pkl", contents)
 
   /**
    * Creates a Pkl file with [contents] in the test project, and also sets the currently active
@@ -68,7 +94,7 @@ abstract class LSPTestBase {
    *
    * If this method is called multiple times, the last call determines the active editor.
    */
-  protected fun createPklFile(name: String, contents: String) {
+  protected fun createPklFile(name: String, contents: String): Path {
     val caret = contents.indexOf("<caret>")
     val effectiveContents =
       if (caret == -1) contents else contents.replaceRange(caret, caret + 7, "")
@@ -82,6 +108,7 @@ abstract class LSPTestBase {
       caretPosition = getPosition(effectiveContents, caret)
     }
     fileInFocus = file
+    return file
   }
 
   /**
@@ -108,6 +135,35 @@ abstract class LSPTestBase {
     }
   }
 
+  protected fun typeText(text: String) {
+    if (fileInFocus == null) {
+      throw IllegalStateException(
+        "No active Pkl module found in editor. Call `createPklFile` first."
+      )
+    }
+    val currentText = fileInFocus!!.readText()
+    val idx = caretPosition?.let { getIndex(currentText, it) } ?: (currentText.length - 1)
+    val newText = currentText.replaceRange(idx..idx, text)
+    Files.writeString(fileInFocus, newText)
+    server.textDocumentService.didChange(
+      DidChangeTextDocumentParams(
+        VersionedTextDocumentIdentifier(fileInFocus!!.toUri().toString(), 0),
+        listOf(TextDocumentContentChangeEvent(newText)),
+      )
+    )
+  }
+
+  protected fun saveFile() {
+    if (fileInFocus == null) {
+      throw IllegalStateException(
+        "No active Pkl module found in editor. Call `createPklFile` first."
+      )
+    }
+    server.textDocumentService.didSave(
+      DidSaveTextDocumentParams(TextDocumentIdentifier(fileInFocus!!.toUri().toString()))
+    )
+  }
+
   private fun getOrInsertModule(uri: URI): PklModule {
     modules[uri]?.let {
       return it
@@ -128,21 +184,17 @@ abstract class LSPTestBase {
 
   private fun resolveToRealUri(uri: String): URI =
     if (uri.startsWith("file:/") && !uri.startsWith("file:///")) Path.of(URI(uri)).toUri()
-    else VirtualFile.fromUri(URI(uri), fakeProject)!!.uri
+    else fakeProject.virtualFileManager.get(URI(uri))!!.uri
 
   private fun parseAndStoreModule(contents: String, path: Path): PklModule {
     val moduleCtx = parser.parseModule(contents)
-    return PklModuleImpl(moduleCtx, path.toUri(), FsFile(path, fakeProject)).also {
-      modules[path.toUri()] = it
-    }
+    return PklModuleImpl(moduleCtx, FsFile(path, fakeProject)).also { modules[path.toUri()] = it }
   }
 
   private fun parseAndStoreJar(contents: String, path: Path): PklModule {
     val moduleCtx = parser.parseModule(contents)
     val uri = path.toUri()
-    return PklModuleImpl(moduleCtx, path.toUri(), JarFile(path, uri, fakeProject)).also {
-      modules[uri] = it
-    }
+    return PklModuleImpl(moduleCtx, JarFile(path, uri, fakeProject)).also { modules[uri] = it }
   }
 
   private fun Path.toTextDocument(effectiveContents: String): TextDocumentItem =
@@ -159,5 +211,16 @@ abstract class LSPTestBase {
       currentPos = nextPos
     }
     throw IllegalArgumentException("Invalid index for contents")
+  }
+
+  private fun getIndex(contents: String, position: Position): Int {
+    var currentIndex = 0
+    for ((column, line) in contents.lines().withIndex()) {
+      if (column == position.line) {
+        return currentIndex + position.character
+      }
+      currentIndex += line.length + 1 // + 1 because newline is also a character
+    }
+    throw IllegalArgumentException("Invalid position for contents")
   }
 }

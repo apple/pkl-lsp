@@ -16,9 +16,11 @@
 package org.pkl.lsp.services
 
 import java.io.IOException
+import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import kotlin.io.path.absolutePathString
 import org.pkl.lsp.Component
+import org.pkl.lsp.ErrorMessages
 import org.pkl.lsp.Project
 import org.pkl.lsp.packages.dto.PackageUri
 
@@ -27,25 +29,34 @@ class PklCliException(message: String, cause: Throwable?) : Throwable(message, c
 }
 
 class PklCli(project: Project) : Component(project) {
+  /** Tells if the CLI is not available. */
+  val isUnavailable: Boolean
+    get() = project.settingsManager.settings.pklCliPath == null
+
   fun downloadPackage(
     packages: List<PackageUri>,
+    cacheDir: Path?,
     noTransitive: Boolean = true,
-  ): CompletableFuture<Unit> {
+  ): CompletableFuture<String> {
     val args = buildList {
       add("download-package")
       if (noTransitive) {
         add("--no-transitive")
       }
+      if (cacheDir != null) {
+        add("--cache-dir")
+        add(cacheDir.toString())
+      }
       addAll(packages.map { it.toStringWithChecksum() })
     }
-    return executeCommand(args).thenApply {}
+    return executeCommand(args)
   }
 
   private fun executeCommand(args: List<String>): CompletableFuture<String> {
     return CompletableFuture.supplyAsync {
       val cliPath =
         project.settingsManager.settings.pklCliPath?.absolutePathString()
-          ?: throw PklCliException("Pkl CLI path is not set")
+          ?: throw PklCliException(ErrorMessages.create("pklCliNotConfigured"))
       logger.info("Spawning command `$cliPath` with arguments $args")
       val process =
         try {
@@ -70,12 +81,13 @@ class PklCli(project: Project) : Component(project) {
         logger.error("\t[stderr]: $line")
         stderr.appendLine(line)
       }
-      if (process.exitValue() == 0) {
+      val exitCode = process.waitFor()
+      if (exitCode == 0) {
         result.toString()
       } else {
         throw PklCliException(
           """
-          Command exited with code ${process.exitValue()}.
+          Command exited with code $exitCode.
           
           Error output:
           $stderr
@@ -83,5 +95,33 @@ class PklCli(project: Project) : Component(project) {
         )
       }
     }
+  }
+
+  fun resolveProject(projectDirs: List<Path>): CompletableFuture<String> {
+    val normalizedDirs =
+      projectDirs.map { it.normalize().toAbsolutePath().toString() }.toTypedArray()
+    return executeCommand(listOf("project", "resolve", *normalizedDirs))
+  }
+
+  fun eval(
+    moduleUris: List<String>,
+    expression: String? = null,
+    moduleOutputSeparator: String? = null,
+  ): CompletableFuture<String> {
+    val args = buildList {
+      add("eval")
+      if (expression != null) {
+        add("-x")
+        add(expression)
+      }
+      if (moduleOutputSeparator != null) {
+        add("--module-output-separator")
+        add(moduleOutputSeparator)
+      }
+      for (uri in moduleUris) {
+        add(uri)
+      }
+    }
+    return executeCommand(args)
   }
 }

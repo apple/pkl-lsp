@@ -17,51 +17,53 @@ package org.pkl.lsp.ast
 
 import java.net.URLEncoder
 import org.pkl.lsp.*
+import org.pkl.lsp.FsFile
+import org.pkl.lsp.StdlibFile
 import org.pkl.lsp.ast.PklModuleUriImpl.Companion.resolve
+import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.resolvers.ResolveVisitors
 import org.pkl.lsp.resolvers.Resolvers
 import org.pkl.lsp.type.Type
 import org.pkl.lsp.type.TypeParameterBindings
 import org.pkl.lsp.type.computeResolvedImportType
+import org.pkl.lsp.util.ModificationTracker
 
 val PklClass.supertype: PklType?
   get() = classHeader.extends
 
-val PklClass.superclass: PklClass?
-  get() {
-    return when (val st = supertype) {
-      is PklDeclaredType -> st.name.resolve() as? PklClass?
-      is PklModuleType -> null // see PklClass.supermodule
-      null ->
-        when {
-          isPklBaseAnyClass -> null
-          else -> project.pklBaseModule.typedType.ctx
-        }
-      else -> unexpectedType(st)
-    }
+fun PklClass.superclass(context: PklProject?): PklClass? {
+  return when (val st = supertype) {
+    is PklDeclaredType -> st.name.resolve(context) as? PklClass?
+    is PklModuleType -> null // see PklClass.supermodule
+    null ->
+      when {
+        isPklBaseAnyClass -> null
+        else -> project.pklBaseModule.typedType.ctx
+      }
+    else -> unexpectedType(st)
   }
+}
 
 // Non-null when [this] extends a module (class).
 // Ideally, [Clazz.superclass] would cover this case,
 // but we don't have a common abstraction for Clazz and PklModule(Class),
 // and it seems challenging to introduce one.
-val PklClass.supermodule: PklModule?
-  get() {
-    return when (val st = supertype) {
-      is PklDeclaredType -> st.name.resolve() as? PklModule?
-      is PklModuleType -> enclosingModule
-      else -> null
-    }
+fun PklClass.supermodule(context: PklProject?): PklModule? {
+  return when (val st = supertype) {
+    is PklDeclaredType -> st.name.resolve(context) as? PklModule?
+    is PklModuleType -> enclosingModule
+    else -> null
   }
+}
 
 val PklClass.isPklBaseAnyClass: Boolean
   get() {
     return name == "Any" && this === project.pklBaseModule.anyType.ctx
   }
 
-fun PklTypeName.resolve(): PklNode? = simpleTypeName.resolve()
+fun PklTypeName.resolve(context: PklProject?): PklNode? = simpleTypeName.resolve(context)
 
-fun PklSimpleTypeName.resolve(): PklNode? {
+fun PklSimpleTypeName.resolve(context: PklProject?): PklNode? {
   val typeName = parentOfType<PklTypeName>() ?: return null
 
   val moduleName = typeName.moduleName
@@ -69,7 +71,7 @@ fun PklSimpleTypeName.resolve(): PklNode? {
   val base = project.pklBaseModule
 
   if (moduleName != null) {
-    return moduleName.resolve()?.cache?.types?.get(simpleTypeNameText)
+    return moduleName.resolve(context)?.cache(context)?.types?.get(simpleTypeNameText)
   }
 
   return Resolvers.resolveUnqualifiedTypeName(
@@ -77,15 +79,16 @@ fun PklSimpleTypeName.resolve(): PklNode? {
     base,
     mapOf(),
     ResolveVisitors.firstElementNamed(simpleTypeNameText, base),
+    context,
   )
 }
 
-fun PklModuleName.resolve(): PklModule? {
+fun PklModuleName.resolve(context: PklProject?): PklModule? {
   val module = enclosingModule ?: return null
   val moduleNameText = identifier!!.text
   for (import in module.imports) {
     if (import.memberName == moduleNameText) {
-      val resolved = import.resolve() as? SimpleModuleResolutionResult ?: return null
+      val resolved = import.resolve(context) as? SimpleModuleResolutionResult ?: return null
       return resolved.resolved
     }
   }
@@ -108,7 +111,7 @@ fun PklNode.isInStdlib(): Boolean {
   } ?: false
 }
 
-fun PklClass.isSubclassOf(other: PklClass): Boolean {
+fun PklClass.isSubclassOf(other: PklClass, context: PklProject?): Boolean {
   // optimization
   if (this === other) return true
 
@@ -118,28 +121,28 @@ fun PklClass.isSubclassOf(other: PklClass): Boolean {
   var clazz: PklClass? = this
   while (clazz != null) {
     if (clazz == other) return true
-    if (clazz.supermodule != null) {
-      return project.pklBaseModule.moduleType.ctx.isSubclassOf(other)
+    if (clazz.supermodule(context) != null) {
+      return project.pklBaseModule.moduleType.ctx.isSubclassOf(other, context)
     }
-    clazz = clazz.superclass
+    clazz = clazz.superclass(context)
   }
   return false
 }
 
-fun PklClass.isSubclassOf(other: PklModule): Boolean {
+fun PklClass.isSubclassOf(other: PklModule, context: PklProject?): Boolean {
   // optimization
   if (!other.isAbstractOrOpen) return false
 
   var clazz = this
-  var superclass = clazz.superclass
+  var superclass = clazz.superclass(context)
   while (superclass != null) {
     clazz = superclass
-    superclass = superclass.superclass
+    superclass = superclass.superclass(context)
   }
-  var module = clazz.supermodule
+  var module = clazz.supermodule(context)
   while (module != null) {
     if (module == other) return true
-    module = module.supermodule
+    module = module.supermodule(context)
   }
   return false
 }
@@ -151,10 +154,10 @@ val PklImport.memberName: String?
 
 fun PklStringConstant.escapedText(): String? = getEscapedText()
 
-fun PklSingleLineStringLiteral.escapedText(): String? =
+fun PklSingleLineStringLiteral.escapedText(): String =
   parts.mapNotNull { it.getEscapedText() }.joinToString("")
 
-fun PklMultiLineStringLiteral.escapedText(): String? =
+fun PklMultiLineStringLiteral.escapedText(): String =
   parts.mapNotNull { it.getEscapedText() }.joinToString("")
 
 private fun PklNode.getEscapedText(): String? = buildString {
@@ -197,20 +200,20 @@ private fun PklNode.getEscapedText(): String? = buildString {
   }
 }
 
-fun PklTypeAlias.isRecursive(seen: MutableSet<PklTypeAlias>): Boolean =
-  !seen.add(this) || type.isRecursive(seen)
+fun PklTypeAlias.isRecursive(seen: MutableSet<PklTypeAlias>, context: PklProject?): Boolean =
+  !seen.add(this) || type.isRecursive(seen, context)
 
-private fun PklType?.isRecursive(seen: MutableSet<PklTypeAlias>): Boolean =
+private fun PklType?.isRecursive(seen: MutableSet<PklTypeAlias>, context: PklProject?): Boolean =
   when (this) {
     is PklDeclaredType -> {
-      val resolved = name.resolve()
-      resolved is PklTypeAlias && resolved.isRecursive(seen)
+      val resolved = name.resolve(context)
+      resolved is PklTypeAlias && resolved.isRecursive(seen, context)
     }
-    is PklNullableType -> type.isRecursive(seen)
-    is PklDefaultUnionType -> type.isRecursive(seen)
-    is PklUnionType -> leftType.isRecursive(seen) || rightType.isRecursive(seen)
-    is PklConstrainedType -> type.isRecursive(seen)
-    is PklParenthesizedType -> type.isRecursive(seen)
+    is PklNullableType -> type.isRecursive(seen, context)
+    is PklDefaultUnionType -> type.isRecursive(seen, context)
+    is PklUnionType -> leftType.isRecursive(seen, context) || rightType.isRecursive(seen, context)
+    is PklConstrainedType -> type.isRecursive(seen, context)
+    is PklParenthesizedType -> type.isRecursive(seen, context)
     else -> false
   }
 
@@ -262,12 +265,12 @@ inline fun <reified T : PklNode> PklNode.parentOfType(): T? {
   return parentOfTypes(T::class)
 }
 
-fun PklImportBase.resolve(): ModuleResolutionResult =
-  if (isGlob) GlobModuleResolutionResult(moduleUri?.resolveGlob() ?: emptyList())
-  else SimpleModuleResolutionResult(moduleUri?.resolve())
+fun PklImportBase.resolve(context: PklProject?): ModuleResolutionResult =
+  if (isGlob) GlobModuleResolutionResult(moduleUri?.resolveGlob(context) ?: emptyList())
+  else SimpleModuleResolutionResult(moduleUri?.resolve(context))
 
-fun PklImportBase.resolveModules(): List<PklModule> =
-  resolve().let { result ->
+fun PklImportBase.resolveModules(context: PklProject?): List<PklModule> =
+  resolve(context).let { result ->
     when (result) {
       is SimpleModuleResolutionResult -> result.resolved?.let(::listOf) ?: emptyList()
       else -> {
@@ -277,11 +280,12 @@ fun PklImportBase.resolveModules(): List<PklModule> =
     }
   }
 
-fun PklModuleUri.resolveGlob(): List<PklModule> = TODO("implement") // resolveModuleUriGlob(this)
+fun PklModuleUri.resolveGlob(context: PklProject?): List<PklModule> =
+  TODO("implement") // resolveModuleUriGlob(this)
 
-fun PklModuleUri.resolve(): PklModule? =
+fun PklModuleUri.resolve(context: PklProject?): PklModule? =
   this.stringConstant.escapedText()?.let { text ->
-    resolve(project, text, text, containingFile, enclosingModule)
+    resolve(project, text, text, containingFile, enclosingModule, context)
   }
 
 sealed class ModuleResolutionResult {
@@ -289,6 +293,7 @@ sealed class ModuleResolutionResult {
     base: PklBaseModule,
     bindings: TypeParameterBindings,
     preserveUnboundedVars: Boolean,
+    context: PklProject?,
   ): Type
 }
 
@@ -297,8 +302,9 @@ class SimpleModuleResolutionResult(val resolved: PklModule?) : ModuleResolutionR
     base: PklBaseModule,
     bindings: TypeParameterBindings,
     preserveUnboundedVars: Boolean,
+    context: PklProject?,
   ): Type {
-    return resolved.computeResolvedImportType(base, bindings, preserveUnboundedVars)
+    return resolved.computeResolvedImportType(base, bindings, context, preserveUnboundedVars)
   }
 }
 
@@ -307,46 +313,52 @@ class GlobModuleResolutionResult(val resolved: List<PklModule>) : ModuleResoluti
     base: PklBaseModule,
     bindings: TypeParameterBindings,
     preserveUnboundedVars: Boolean,
+    context: PklProject?,
   ): Type {
     if (resolved.isEmpty())
       return base.mappingType.withTypeArguments(base.stringType, base.moduleType)
     val allTypes =
       resolved.map {
-        it.computeResolvedImportType(base, bindings, preserveUnboundedVars) as Type.Module
+        it.computeResolvedImportType(base, bindings, context, preserveUnboundedVars) as Type.Module
       }
     val firstType = allTypes.first()
     val unifiedType =
       allTypes.drop(1).fold<Type.Module, Type>(firstType) { acc, type ->
         val currentModule = acc as? Type.Module ?: return@fold acc
-        inferCommonType(base, currentModule, type)
+        inferCommonType(base, currentModule, type, context)
       }
     return base.mappingType.withTypeArguments(base.stringType, unifiedType)
   }
 
-  private fun inferCommonType(base: PklBaseModule, modA: Type.Module, modB: Type.Module): Type {
+  private fun inferCommonType(
+    base: PklBaseModule,
+    modA: Type.Module,
+    modB: Type.Module,
+    context: PklProject?,
+  ): Type {
     return when {
-      modA.isSubtypeOf(modB, base) -> modB
-      modB.isSubtypeOf(modA, base) -> modA
+      modA.isSubtypeOf(modB, base, context) -> modB
+      modB.isSubtypeOf(modA, base, context) -> modA
       else -> {
-        val superModA = modA.supermodule() ?: return base.moduleType
-        val superModB = modB.supermodule() ?: return base.moduleType
-        inferCommonType(base, superModA, superModB)
+        val superModA = modA.supermodule(context) ?: return base.moduleType
+        val superModB = modB.supermodule(context) ?: return base.moduleType
+        inferCommonType(base, superModA, superModB, context)
       }
     }
   }
 }
 
 // Resolve the reference under the cursor
-fun PklNode.resolveReference(line: Int, col: Int): PklNode? {
+fun PklNode.resolveReference(line: Int, col: Int, context: PklProject?): PklNode? {
   return when (this) {
-    is PklSuperAccessExpr -> if (matches(line, col)) resolve() else null
-    is PklProperty -> if (matches(line, col)) resolve() else null
+    is PklSuperAccessExpr -> if (matches(line, col)) resolve(context) else null
+    is PklProperty -> if (matches(line, col)) resolve(context) else null
     // qualified/unqualified access
-    is PklReference -> resolve()
-    is PklDeclaredType -> name.resolve()
+    is PklReference -> resolve(context)
+    is PklDeclaredType -> name.resolve(context)
     is PklImport -> {
       if (matches(line, col)) {
-        when (val res = resolve()) {
+        when (val res = resolve(context)) {
           is SimpleModuleResolutionResult -> res.resolved
           is GlobModuleResolutionResult -> null // TODO: globs
         }
@@ -355,12 +367,12 @@ fun PklNode.resolveReference(line: Int, col: Int): PklNode? {
     is PklStringConstant ->
       when (val parent = parent) {
         is PklImportBase -> {
-          when (val res = parent.resolve()) {
+          when (val res = parent.resolve(context)) {
             is SimpleModuleResolutionResult -> res.resolved
             is GlobModuleResolutionResult -> null // TODO: globs
           }
         }
-        is PklModuleExtendsAmendsClause -> parent.moduleUri?.resolve()
+        is PklModuleExtendsAmendsClause -> parent.moduleUri?.resolve(context)
         else -> null
       }
     is PklQualifiedIdentifier ->
@@ -368,8 +380,8 @@ fun PklNode.resolveReference(line: Int, col: Int): PklNode? {
         is PklDeclaredType -> {
           val mname = par.name.moduleName
           if (mname != null && mname.span.matches(line, col)) {
-            mname.resolve()
-          } else par.name.resolve()
+            mname.resolve(context)
+          } else par.name.resolve(context)
         }
         else -> this
       }
@@ -385,20 +397,20 @@ fun PklNode.findBySpan(line: Int, col: Int, includeTerminals: Boolean = false): 
   return childHit ?: hit
 }
 
-fun PklNode.toURIString(): String {
+fun PklNode.toLspURIString(): String {
   return when (val file = containingFile) {
-    is StdlibFile -> "pkl://stdlib/${file.name}.pkl"
+    is StdlibFile -> "pkl-lsp://stdlib/${file.name}.pkl"
     is FsFile -> file.uri.toString()
     else -> {
       val uri = file.uri.toString()
-      "pkl://${file.pklAuthority}/${URLEncoder.encode(uri, Charsets.UTF_8)}"
+      "pkl-lsp://${file.pklAuthority}/${URLEncoder.encode(uri, Charsets.UTF_8)}"
     }
   }
 }
 
 fun PklNode.toCommandURIString(): String {
   val sp = beginningSpan()
-  val params = """["${toURIString()}",${sp.beginLine},${sp.beginCol}]"""
+  val params = """["${toLspURIString()}",${sp.beginLine},${sp.beginCol}]"""
   return "command:pkl.open.file?${URLEncoder.encode(params, Charsets.UTF_8)}"
 }
 
@@ -419,3 +431,8 @@ fun PklNode.beginningSpan(): Span =
     }
     else -> span
   }
+
+fun PklNode.modificationTracker(): ModificationTracker = containingFile
+
+val PklNode.isInPackage: Boolean
+  get() = containingFile.`package` != null

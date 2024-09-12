@@ -15,10 +15,11 @@
  */
 package org.pkl.lsp.packages
 
+import java.nio.file.Files
+import java.nio.file.Path
 import org.pkl.lsp.Project
 import org.pkl.lsp.VirtualFile
-import org.pkl.lsp.packages.dto.Checksums
-import org.pkl.lsp.packages.dto.PackageUri
+import org.pkl.lsp.packages.dto.*
 
 /**
  * Either package dependency, or a local project.
@@ -33,15 +34,34 @@ sealed interface Dependency {
   val packageUri: PackageUri
 }
 
-data class PackageDependency(override val packageUri: PackageUri, val checksums: Checksums?) :
-  Dependency {
+data class PackageDependency(
+  override val packageUri: PackageUri,
+  val pklProject: PklProject?,
+  val checksums: Checksums?,
+) : Dependency {
   override fun getRoot(project: Project): VirtualFile? =
     project.packageManager.getLibraryRoots(this)?.packageRoot
 }
 
 data class LocalProjectDependency(
   override val packageUri: PackageUri,
-  private val projectDir: VirtualFile,
+  private val projectDir: Path,
 ) : Dependency {
-  override fun getRoot(project: Project): VirtualFile = projectDir
+  override fun getRoot(project: Project): VirtualFile? = project.virtualFileManager.get(projectDir)
 }
+
+fun ResolvedDependency.toDependency(pklProject: PklProject): Dependency? =
+  when (this) {
+    is LocalDependency -> {
+      val localProjectRoot = pklProject.projectDir.resolve(this.path)
+      if (Files.exists(localProjectRoot)) {
+        LocalProjectDependency(uri, localProjectRoot)
+      } else {
+        null
+      }
+    }
+    else -> {
+      this as RemoteDependency
+      PackageDependency(uri, pklProject, this.checksums)
+    }
+  }

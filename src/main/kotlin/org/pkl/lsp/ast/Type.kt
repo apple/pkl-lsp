@@ -20,6 +20,7 @@ import org.pkl.core.parser.antlr.PklParser.*
 import org.pkl.lsp.LSPUtil.firstInstanceOf
 import org.pkl.lsp.PklVisitor
 import org.pkl.lsp.Project
+import org.pkl.lsp.packages.dto.PklProject
 
 class PklTypeAnnotationImpl(
   project: Project,
@@ -210,7 +211,9 @@ class PklTypeAliasImpl(project: Project, override val parent: PklNode?, ctx: Typ
   override val modifiers: List<Terminal>? by lazy { typeAliasHeader.modifiers }
   override val name: String by lazy { ctx.typeAliasHeader().Identifier().text }
   override val type: PklType by lazy { children.firstInstanceOf<PklType>()!! }
-  override val isRecursive: Boolean by lazy { isRecursive(mutableSetOf()) }
+
+  override fun isRecursive(context: PklProject?): Boolean = isRecursive(mutableSetOf(), context)
+
   override val typeParameterList: PklTypeParameterList? by lazy {
     typeAliasHeader.typeParameterList
   }

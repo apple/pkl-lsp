@@ -15,20 +15,36 @@
  */
 package org.pkl.lsp.services
 
+import com.google.gson.JsonElement
 import com.google.gson.JsonPrimitive
 import java.nio.file.Path
+import java.util.concurrent.CompletableFuture
 import kotlinx.serialization.Serializable
+import org.eclipse.lsp4j.Command
 import org.eclipse.lsp4j.ConfigurationItem
 import org.eclipse.lsp4j.ConfigurationParams
-import org.pkl.lsp.Component
-import org.pkl.lsp.Project
+import org.eclipse.lsp4j.MessageType
+import org.pkl.lsp.*
+import org.pkl.lsp.messages.ActionableNotification
 
 @Serializable data class WorkspaceSettings(var pklCliPath: Path? = null)
 
 class SettingsManager(project: Project) : Component(project) {
   var settings: WorkspaceSettings = WorkspaceSettings()
+  private lateinit var initialized: CompletableFuture<*>
 
-  fun loadSettings() {
+  override fun initialize(): CompletableFuture<*> {
+    initialized = loadSettings()
+    project.messageBus.subscribe(textDocumentTopic, ::handleTextDocumentEvent)
+    project.messageBus.subscribe(workspaceConfigurationChangedTopic) { loadSettings() }
+    return initialized
+  }
+
+  override fun dispose() {
+    initialized.cancel(true)
+  }
+
+  private fun loadSettings(): CompletableFuture<Unit> {
     logger.log("Fetching configuration")
     val params =
       ConfigurationParams(
@@ -39,18 +55,39 @@ class SettingsManager(project: Project) : Component(project) {
           }
         )
       )
-    project.languageClient
+    return project.languageClient
       .configuration(params)
-      .thenApply { response ->
-        logger.log("Got $response from configuration request")
-        val cliPath = response[0] as JsonPrimitive
-        if (!cliPath.isString) {
-          logger.log("Got non-string value for configuration: $cliPath")
+      .thenApply { (cliPath) ->
+        logger.log("Got configuration: $cliPath")
+        cliPath as JsonElement
+        if (cliPath.isJsonNull) {
+          settings.pklCliPath = null
           return@thenApply
         }
-        settings.pklCliPath = Path.of(cliPath.asString)
-        logger.log("Loaded settings: $settings")
+        if (!(cliPath is JsonPrimitive && cliPath.isString)) {
+          logger.warn("Got non-string value for configuration: $cliPath")
+          return@thenApply
+        }
+        settings.pklCliPath = cliPath.asString.let { if (it.isEmpty()) null else Path.of(it) }
       }
-      .exceptionally { err -> logger.error("Failed to fetch configuration: ${err.cause}") }
+      .exceptionally { logger.error("Failed to fetch settings: ${it.cause}") }
+      .whenComplete { _, _ -> logger.log("Settings changed to $settings") }
+  }
+
+  private fun handleTextDocumentEvent(event: TextDocumentEvent) {
+    if (event.type != TextDocumentEventType.OPENED) return
+    val file = project.virtualFileManager.getFsFile(event.file) ?: return
+    initialized.whenComplete { _, _ ->
+      if (settings.pklCliPath == null && file.pklProjectDir != null) {
+        project.languageClient.sendActionableNotification(
+          ActionableNotification(
+            type = MessageType.Info,
+            message = "Pkl CLI is not configured",
+            commands =
+              listOf(Command("Configure CLI path", "pkl.configure", listOf("pkl.cli.path"))),
+          )
+        )
+      }
+    }
   }
 }

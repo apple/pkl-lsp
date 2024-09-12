@@ -27,9 +27,9 @@ import org.eclipse.lsp4j.services.*
 import org.pkl.core.util.IoUtils
 import org.pkl.lsp.packages.dto.PackageUri
 
-class PklLSPServer(val verbose: Boolean) : LanguageServer, LanguageClientAware {
-  private val project: Project = Project(this)
-  private lateinit var client: LanguageClient
+class PklLSPServer(val verbose: Boolean) : LanguageServer {
+  internal val project: Project = Project(this)
+  private lateinit var client: PklLanguageClient
   private lateinit var logger: ClientLogger
 
   private val workspaceService: PklWorkspaceService by lazy { PklWorkspaceService(project) }
@@ -40,9 +40,11 @@ class PklLSPServer(val verbose: Boolean) : LanguageServer, LanguageClientAware {
   private val cacheDir: Path = Files.createTempDirectory("pklLSP")
   private val stdlibDir = cacheDir.resolve("stdlib")
   private lateinit var clientCapabilities: ClientCapabilities
+  private var workspaceFolders: List<WorkspaceFolder>? = null
 
   override fun initialize(params: InitializeParams): CompletableFuture<InitializeResult> {
     clientCapabilities = params.capabilities
+    workspaceFolders = params.workspaceFolders
     val res =
       InitializeResult(ServerCapabilities()).apply {
         capabilities.textDocumentSync = Either.forLeft(TextDocumentSyncKind.Full)
@@ -68,7 +70,9 @@ class PklLSPServer(val verbose: Boolean) : LanguageServer, LanguageClientAware {
   }
 
   override fun initialized(params: InitializedParams) {
-    project.settingsManager.loadSettings()
+    if (clientCapabilities.workspace.workspaceFolders == true) {
+      project.pklProjectManager.initialize(workspaceFolders?.map { Path.of(URI(it.uri)) })
+    }
     // listen for configuration changes
     if (clientCapabilities.workspace.didChangeConfiguration?.dynamicRegistration == true) {
       client.registerCapability(
@@ -79,10 +83,12 @@ class PklLSPServer(val verbose: Boolean) : LanguageServer, LanguageClientAware {
         )
       )
     }
+    project.initialize()
   }
 
   override fun shutdown(): CompletableFuture<Any> {
-    return CompletableFuture.supplyAsync(::Object)
+    project.dispose()
+    return CompletableFuture.completedFuture(Unit)
   }
 
   override fun exit() {
@@ -99,9 +105,9 @@ class PklLSPServer(val verbose: Boolean) : LanguageServer, LanguageClientAware {
 
   fun builder(): Builder = builder
 
-  fun client(): LanguageClient = client
+  fun client(): PklLanguageClient = client
 
-  override fun connect(client: LanguageClient) {
+  fun connect(client: PklLanguageClient) {
     this.client = client
     logger = project.getLogger(this::class)
     logger.log("Starting Pkl LSP Server")
@@ -113,7 +119,7 @@ class PklLSPServer(val verbose: Boolean) : LanguageServer, LanguageClientAware {
     return CompletableFuture.supplyAsync {
       val uri = URI.create(param.uri)
       logger.log("parsed uri: $uri")
-      VirtualFile.fromUri(uri, project)?.contents() ?: ""
+      project.virtualFileManager.get(uri)?.contents() ?: ""
     }
   }
 
@@ -121,28 +127,13 @@ class PklLSPServer(val verbose: Boolean) : LanguageServer, LanguageClientAware {
   @JsonRequest(value = "pkl/downloadPackage")
   fun downloadPackage(param: String): CompletableFuture<Unit> {
     val packageUri = PackageUri.create(param)!!
-    return project.pklCli
-      .downloadPackage(listOf(packageUri))
-      .thenApply {
-        project.workspaceState.openFiles.forEach { uri ->
-          val virtualFile = VirtualFile.fromUri(uri, project) ?: return@forEach
-          // refresh diagnostics for every module
-          builder().requestBuild(uri, virtualFile)
-        }
-      }
-      .exceptionally { err ->
-        client.showMessage(
-          MessageParams(
-            MessageType.Error,
-            """
-          Failed to download package `$packageUri`.
-          
-          $err
-        """
-              .trimIndent(),
-          )
-        )
-      }
+    return project.packageManager.downloadPackage(packageUri)
+  }
+
+  @Suppress("unused")
+  @JsonRequest(value = "pkl/syncProjects")
+  fun syncProjects(@Suppress("UNUSED_PARAMETER") ignored: Any?): CompletableFuture<Unit> {
+    return project.pklProjectManager.syncProjects()
   }
 
   private fun cacheStdlib() {

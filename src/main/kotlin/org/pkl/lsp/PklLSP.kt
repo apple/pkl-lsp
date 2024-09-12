@@ -15,12 +15,13 @@
  */
 package org.pkl.lsp
 
+import org.eclipse.lsp4j.jsonrpc.Launcher
 import org.eclipse.lsp4j.launch.LSPLauncher
 
 object PklLSP {
   fun run(verbose: Boolean) {
     val server = PklLSPServer(verbose)
-    val launcher = LSPLauncher.createServerLauncher(server, System.`in`, System.out)
+    val launcher = createLauncher(server)
 
     val client = launcher.remoteProxy
     server.connect(client)
@@ -28,4 +29,13 @@ object PklLSP {
     val future = launcher.startListening()
     future.get()
   }
+
+  private fun createLauncher(server: PklLSPServer): Launcher<PklLanguageClient> =
+    with(LSPLauncher.Builder<PklLanguageClient>()) {
+      setLocalService(server)
+      setRemoteInterface(PklLanguageClient::class.java)
+      setInput(System.`in`)
+      setOutput(System.out)
+      create()
+    }
 }

@@ -13,20 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.pkl.lsp.util
+package org.pkl.lsp.messages
 
-import java.util.concurrent.atomic.AtomicLong
+import org.eclipse.lsp4j.Command
+import org.eclipse.lsp4j.MessageType
+import org.eclipse.lsp4j.jsonrpc.json.MessageJsonHandler
 
-interface ModificationTracker {
-  fun getModificationCount(): Long
-}
-
-class SimpleModificationTracker : ModificationTracker {
-  private val count = AtomicLong(0)
-
-  override fun getModificationCount(): Long = count.get()
-
-  fun increment() {
-    count.incrementAndGet()
-  }
+data class ActionableNotification(
+  val type: MessageType,
+  val message: String,
+  val commands: List<Command>,
+) {
+  override fun toString(): String = MessageJsonHandler.toString(this)
 }

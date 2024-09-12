@@ -15,18 +15,22 @@
  */
 package org.pkl.lsp.util
 
-import java.util.concurrent.atomic.AtomicLong
+import java.net.URI
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
-interface ModificationTracker {
-  fun getModificationCount(): Long
-}
+object URISerializer : KSerializer<URI> {
+  override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("URI", PrimitiveKind.STRING)
 
-class SimpleModificationTracker : ModificationTracker {
-  private val count = AtomicLong(0)
+  override fun deserialize(decoder: Decoder): URI {
+    return URI(decoder.decodeString())
+  }
 
-  override fun getModificationCount(): Long = count.get()
-
-  fun increment() {
-    count.incrementAndGet()
+  override fun serialize(encoder: Encoder, value: URI) {
+    return encoder.encodeString(value.toString())
   }
 }

@@ -18,6 +18,7 @@ package org.pkl.lsp.type
 import java.util.IdentityHashMap
 import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.ast.*
+import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.resolvers.ResolveVisitors
 import org.pkl.lsp.resolvers.Resolvers
 
@@ -26,6 +27,7 @@ private val value = Any()
 fun PklNode?.computeResolvedImportType(
   base: PklBaseModule,
   bindings: TypeParameterBindings,
+  context: PklProject?,
   preserveUnboundTypeVars: Boolean = false,
   canInferExprBody: Boolean = true,
   cache: IdentityHashMap<PklNode, Any> = IdentityHashMap(),
@@ -35,28 +37,29 @@ fun PklNode?.computeResolvedImportType(
   cache[this] = value
 
   return when (this) {
-    is PklModule -> Type.module(this, shortDisplayName)
+    is PklModule -> Type.module(this, shortDisplayName, context)
     is PklClass -> Type.Class(this)
-    is PklTypeAlias -> Type.alias(this)
+    is PklTypeAlias -> Type.alias(this, context)
     is PklMethod ->
       when {
         methodHeader.returnType != null ->
-          methodHeader.returnType.toType(base, bindings, preserveUnboundTypeVars)
+          methodHeader.returnType.toType(base, bindings, context, preserveUnboundTypeVars)
         else ->
           when {
-            canInferExprBody && !isOverridable -> body.computeExprType(base, bindings)
+            canInferExprBody && !isOverridable -> body.computeExprType(base, bindings, context)
             else -> Type.Unknown
           }
       }
     is PklProperty ->
       when {
-        type != null -> type.toType(base, bindings, preserveUnboundTypeVars)
+        type != null -> type.toType(base, bindings, context, preserveUnboundTypeVars)
         else ->
           when {
-            canInferExprBody && isLocalOrConstOrFixed -> expr.computeExprType(base, bindings)
+            canInferExprBody && isLocalOrConstOrFixed ->
+              expr.computeExprType(base, bindings, context)
             isDefinition -> Type.Unknown
             else -> {
-              val receiverType = computeThisType(base, bindings)
+              val receiverType = computeThisType(base, bindings, context)
               val visitor =
                 ResolveVisitors.typeOfFirstElementNamed(
                   name,
@@ -65,13 +68,13 @@ fun PklNode?.computeResolvedImportType(
                   false,
                   preserveUnboundTypeVars,
                 )
-              Resolvers.resolveQualifiedAccess(receiverType, true, base, visitor)
+              Resolvers.resolveQualifiedAccess(receiverType, true, base, visitor, context)
             }
           }
       }
     is PklMemberPredicate -> {
       val receiverClassType =
-        computeThisType(base, bindings).toClassType(base) ?: return Type.Unknown
+        computeThisType(base, bindings, context).toClassType(base, context) ?: return Type.Unknown
       val baseType =
         when {
           receiverClassType.classEquals(base.listingType) -> receiverClassType.typeArguments[0]
@@ -89,7 +92,8 @@ fun PklNode?.computeResolvedImportType(
           preserveUnboundTypeVars = false,
         )
       if (
-        Resolvers.visitSatisfiedCondition(cond, bindings, visitor) || visitor.result == Type.Unknown
+        Resolvers.visitSatisfiedCondition(cond, bindings, visitor, context) ||
+          visitor.result == Type.Unknown
       )
         baseType
       else visitor.result
@@ -97,7 +101,7 @@ fun PklNode?.computeResolvedImportType(
     is PklObjectEntry,
     is PklObjectElement -> {
       val receiverClassType =
-        computeThisType(base, bindings).toClassType(base) ?: return Type.Unknown
+        computeThisType(base, bindings, context).toClassType(base, context) ?: return Type.Unknown
       when {
         receiverClassType.classEquals(base.listingType) -> receiverClassType.typeArguments[0]
         receiverClassType.classEquals(base.mappingType) -> receiverClassType.typeArguments[1]
@@ -108,13 +112,14 @@ fun PklNode?.computeResolvedImportType(
       val type = typeAnnotation?.type
       val parameter = parent as PklParameter
       when {
-        type != null -> type.toType(base, bindings, preserveUnboundTypeVars)
+        type != null -> type.toType(base, bindings, context, preserveUnboundTypeVars)
         else -> { // try to infer identifier type
           when (val identifierOwner = parameter.parent) {
-            is PklLetExpr -> identifierOwner.varExpr.computeExprType(base, bindings)
+            is PklLetExpr -> identifierOwner.varExpr.computeExprType(base, bindings, context)
             is PklForGenerator -> {
-              val iterableType = identifierOwner.iterableExpr.computeExprType(base, bindings)
-              val iterableClassType = iterableType.toClassType(base) ?: return Type.Unknown
+              val iterableType =
+                identifierOwner.iterableExpr.computeExprType(base, bindings, context)
+              val iterableClassType = iterableType.toClassType(base, context) ?: return Type.Unknown
               val keyValueVars = identifierOwner.parameters.mapNotNull { it.typedIdentifier }
               when {
                 keyValueVars.size > 1 && keyValueVars[0] == this -> {
@@ -126,7 +131,7 @@ fun PklNode?.computeResolvedImportType(
                     iterableClassType.classEquals(base.mapType) ||
                       iterableClassType.classEquals(base.mappingType) ->
                       iterableClassType.typeArguments[0]
-                    iterableClassType.isSubtypeOf(base.typedType, base) -> base.stringType
+                    iterableClassType.isSubtypeOf(base.typedType, base, context) -> base.stringType
                     else -> Type.Unknown
                   }
                 }
@@ -140,7 +145,7 @@ fun PklNode?.computeResolvedImportType(
                     iterableClassType.classEquals(base.mapType) ||
                       iterableClassType.classEquals(base.mappingType) ->
                       iterableClassType.typeArguments[1]
-                    iterableClassType.isSubtypeOf(base.typedType, base) ->
+                    iterableClassType.isSubtypeOf(base.typedType, base, context) ->
                       Type.Unknown // could strengthen value type to union of property types
                     else -> Type.Unknown
                   }
@@ -150,14 +155,15 @@ fun PklNode?.computeResolvedImportType(
             is PklParameterList -> {
               when (val parameterListOwner = identifierOwner.parent) {
                 is PklFunctionLiteralExpr -> {
-                  val functionType = parameterListOwner.inferExprTypeFromContext(base, bindings)
-                  getFunctionParameterType(this, identifierOwner, functionType, base)
+                  val functionType =
+                    parameterListOwner.inferExprTypeFromContext(base, bindings, context)
+                  getFunctionParameterType(this, identifierOwner, functionType, base, context)
                 }
                 is PklObjectBody ->
                   when (val objectBodyOwner = parameterListOwner.parent) {
                     is PklExpr -> {
-                      val functionType = objectBodyOwner.computeExprType(base, bindings)
-                      getFunctionParameterType(this, identifierOwner, functionType, base)
+                      val functionType = objectBodyOwner.computeExprType(base, bindings, context)
+                      getFunctionParameterType(this, identifierOwner, functionType, base, context)
                     }
                     is PklObjectBodyOwner -> {
                       @Suppress("BooleanLiteralArgument")
@@ -165,11 +171,12 @@ fun PklNode?.computeResolvedImportType(
                         objectBodyOwner.computeResolvedImportType(
                           base,
                           bindings,
+                          context,
                           false,
                           false,
                           cache,
                         )
-                      getFunctionParameterType(this, identifierOwner, functionType, base)
+                      getFunctionParameterType(this, identifierOwner, functionType, base, context)
                     }
                     else -> Type.Unknown
                   }
@@ -191,6 +198,7 @@ private fun getFunctionParameterType(
   parameterList: PklParameterList,
   functionType: Type,
   base: PklBaseModule,
+  context: PklProject?,
 ): Type {
 
   return when (functionType) {
@@ -207,7 +215,13 @@ private fun getFunctionParameterType(
       }
     }
     is Type.Alias ->
-      getFunctionParameterType(parameter, parameterList, functionType.unaliased(base), base)
+      getFunctionParameterType(
+        parameter,
+        parameterList,
+        functionType.unaliased(base, context),
+        base,
+        context,
+      )
     else -> Type.Unknown
   }
 }

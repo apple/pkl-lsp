@@ -16,23 +16,22 @@
 package org.pkl.lsp.ast
 
 import java.net.URI
-import java.nio.file.Files
-import java.nio.file.Path
-import kotlin.io.path.nameWithoutExtension
 import org.pkl.core.parser.antlr.PklParser
 import org.pkl.core.parser.antlr.PklParser.ModuleHeaderContext
 import org.pkl.lsp.*
 import org.pkl.lsp.LSPUtil.firstInstanceOf
+import org.pkl.lsp.VirtualFile
 import org.pkl.lsp.packages.Dependency
-import org.pkl.lsp.packages.PackageDependency
-import org.pkl.lsp.packages.dto.PackageMetadata
+import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.util.CachedValue
 
 class PklModuleImpl(
   override val ctx: PklParser.ModuleContext,
-  override val uri: URI,
   override val virtualFile: VirtualFile,
 ) : AbstractPklNode(virtualFile.project, null, ctx), PklModule {
+  override val uri: URI
+    get() = virtualFile.uri
+
   override val isAmend: Boolean by lazy {
     declaration?.moduleExtendsAmendsClause?.isAmend
       ?: declaration?.moduleHeader?.moduleExtendsAmendsClause?.isAmend
@@ -58,10 +57,15 @@ class PklModuleImpl(
   }
 
   // This is cached at the VirtualFile level
-  override val supermodule: PklModule?
-    get() = extendsAmendsUri?.resolve()
+  override fun supermodule(context: PklProject?): PklModule? = extendsAmendsUri?.resolve(context)
 
-  override val cache: ModuleMemberCache by lazy { ModuleMemberCache.create(this) }
+  override fun cache(context: PklProject?): ModuleMemberCache =
+    project.cachedValuesManager.getCachedValue(
+      "PklModule.cache(${virtualFile.uri}, ${context?.projectDir}}"
+    ) {
+      val cache = ModuleMemberCache.create(this, context)
+      CachedValue(cache, cache.dependencies + project.pklProjectManager.syncTracker)
+    }!!
 
   override val modifiers: List<Terminal>? by lazy { declaration?.moduleHeader?.modifiers }
 
@@ -87,22 +91,9 @@ class PklModuleImpl(
       ?: uri.toString().substringAfterLast('/').replace(".pkl", "")
   }
 
-  override val `package`: PackageDependency?
-    get() =
-      project.cachedValuesManager.getCachedValue("${uri}.package") {
-        if (virtualFile !is JarFile) return@getCachedValue CachedValue(null)
-        val jarFile: Path = Path.of(URI(virtualFile.uri.toString().drop(4).substringBefore("!/")))
-        val jsonFile =
-          jarFile.parent.resolve(jarFile.nameWithoutExtension + ".json")
-            ?: return@getCachedValue null
-        if (!Files.exists(jsonFile)) return@getCachedValue null
-        val metadata = PackageMetadata.load(jsonFile)
-        val packageUri = metadata.packageUri
-        CachedValue(packageUri.asPackageDependency())
-      }
-
-  override fun dependencies(): Map<String, Dependency>? =
-    `package`?.let { project.packageManager.getResolvedDependencies(it) }
+  override fun dependencies(context: PklProject?): Map<String, Dependency>? =
+    containingFile.`package`?.let { project.packageManager.getResolvedDependencies(it, context) }
+      ?: containingFile.pklProject?.getResolvedDependencies(context)
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitModule(this)
@@ -225,7 +216,8 @@ class PklClassImpl(
 
   override val modifiers: List<Terminal>? by lazy { classHeader.modifiers }
 
-  override val cache: ClassMemberCache by lazy { ClassMemberCache.create(this) }
+  override fun cache(context: PklProject?): ClassMemberCache =
+    ClassMemberCache.create(this, context)
 
   override val typeParameterList: PklTypeParameterList? by lazy { classHeader.typeParameterList }
 

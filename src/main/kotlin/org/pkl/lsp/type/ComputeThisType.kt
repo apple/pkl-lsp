@@ -17,8 +17,13 @@ package org.pkl.lsp.type
 
 import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.ast.*
+import org.pkl.lsp.packages.dto.PklProject
 
-fun PklNode.computeThisType(base: PklBaseModule, bindings: TypeParameterBindings): Type {
+fun PklNode.computeThisType(
+  base: PklBaseModule,
+  bindings: TypeParameterBindings,
+  context: PklProject?,
+): Type {
   var element: PklNode? = this
   var memberPredicateExprSeen = false
   var objectBodySeen = false
@@ -29,10 +34,10 @@ fun PklNode.computeThisType(base: PklBaseModule, bindings: TypeParameterBindings
       is PklAmendExpr,
       is PklNewExpr -> {
         if (objectBodySeen) {
-          val type = element.computeExprType(base, bindings).amending(base)
+          val type = element.computeExprType(base, bindings, context).amending(base, context)
           return when {
             memberPredicateExprSeen -> {
-              val classType = type.toClassType(base) ?: return Type.Unknown
+              val classType = type.toClassType(base, context) ?: return Type.Unknown
               when {
                 classType.classEquals(base.listingType) -> classType.typeArguments[0]
                 classType.classEquals(base.mappingType) -> classType.typeArguments[1]
@@ -65,10 +70,11 @@ fun PklNode.computeThisType(base: PklBaseModule, bindings: TypeParameterBindings
       is PklObjectEntry,
       is PklMemberPredicate -> {
         if (objectBodySeen) {
-          val type = element.computeResolvedImportType(base, bindings).amending(base)
+          val type =
+            element.computeResolvedImportType(base, bindings, context).amending(base, context)
           return when {
             memberPredicateExprSeen -> {
-              val classType = type.toClassType(base) ?: return Type.Unknown
+              val classType = type.toClassType(base, context) ?: return Type.Unknown
               when {
                 classType.classEquals(base.listingType) -> classType.typeArguments[0]
                 classType.classEquals(base.mappingType) -> classType.typeArguments[1]
@@ -79,12 +85,12 @@ fun PklNode.computeThisType(base: PklBaseModule, bindings: TypeParameterBindings
           }
         }
       }
-      is PklConstrainedType -> return element.type.toType(base, bindings)
+      is PklConstrainedType -> return element.type.toType(base, bindings, context)
       is PklModule,
       is PklClass,
-      is PklTypeAlias -> return element.computeResolvedImportType(base, bindings)
+      is PklTypeAlias -> return element.computeResolvedImportType(base, bindings, context)
       is PklAnnotation ->
-        return element.typeName?.resolve().computeResolvedImportType(base, bindings)
+        return element.typeName?.resolve(context).computeResolvedImportType(base, bindings, context)
     }
     element = element.parent
   }
