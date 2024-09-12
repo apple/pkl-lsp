@@ -66,25 +66,27 @@ class HoverFeature(project: Project) : Component(project) {
           node.parent?.toMarkdown(originalNode, context)
         } else null
       }
-      is PklClass -> node.toMarkdown(originalNode, context)
-      is PklClassHeader -> {
+      is PklClass -> {
         val name = node.identifier
         // check if hovering over the class name
         if (name != null && name.span.matches(line, col)) {
-          // renders the class, which contains the doc comment
-          node.parent?.toMarkdown(originalNode, context)
+          node.toMarkdown(originalNode, context)
         } else null
       }
       is PklQualifiedIdentifier ->
         when (val par = node.parent) {
           // render the module declaration
-          is PklModuleHeader -> par.parent?.toMarkdown(originalNode, context)
+          is PklModuleClause -> node.enclosingModule?.toMarkdown(originalNode, context)
           else -> null
         }
       is PklDeclaredType -> node.toMarkdown(originalNode, context)
       is PklModule -> node.toMarkdown(originalNode, context)
-      // render the typealias which contains the doc comments
-      is PklTypeAliasHeader -> node.parent?.toMarkdown(originalNode, context)
+      is PklTypeAlias -> {
+        val name = node.identifier
+        if (name != null && name.span.matches(line, col)) {
+          node.toMarkdown(originalNode, context)
+        } else null
+      }
       is PklTypedIdentifier -> node.toMarkdown(originalNode, context)
       is PklThisExpr -> node.computeThisType(base, mapOf(), context).toMarkdown(context)
       is PklModuleExpr -> node.enclosingModule?.toMarkdown(originalNode, context)
@@ -139,13 +141,6 @@ class HoverFeature(project: Project) : Component(project) {
           it.render(originalNode, context)
         }
       }
-      is PklParameter ->
-        if (isUnderscore) {
-          "_"
-        } else {
-          // cannot be null here if it's not underscore
-          typedIdentifier!!.render(originalNode, context)
-        }
       is PklTypeAnnotation -> ": ${type!!.render(originalNode, context)}"
       is PklTypedIdentifier ->
         renderTypeAnnotation(identifier?.text, typeAnnotation?.type, this, originalNode, context)!!
@@ -157,22 +152,22 @@ class HoverFeature(project: Project) : Component(project) {
         buildString {
           append(modifiers.render())
           append("class ")
-          append(classHeader.identifier?.text ?: "<class>")
+          append(identifier?.text ?: "<class>")
           typeParameterList?.let { append(it.render(originalNode, context)) }
-          supertype?.let {
+          extends?.let {
             append(" extends ")
             append(it.render(originalNode, context))
           }
         }
-      is PklModule -> declaration?.render(originalNode, context) ?: "module $moduleName"
-      is PklModuleDeclaration ->
+      is PklModule -> header?.render(originalNode, context) ?: "module $moduleName"
+      is PklModuleHeader ->
         buildString {
           append(modifiers.render())
           append("module ")
           // can never be null
-          append(moduleHeader!!.render(originalNode, context))
+          append(moduleClause!!.render(originalNode, context))
         }
-      is PklModuleHeader ->
+      is PklModuleClause ->
         buildString {
           append(moduleName ?: enclosingModule?.moduleName ?: "<module>")
           moduleExtendsAmendsClause?.let {
@@ -194,8 +189,7 @@ class HoverFeature(project: Project) : Component(project) {
           append(": ")
           definitionType.render(this, DefaultTypeNameRenderer)
         }
-      is PklTypeAlias -> typeAliasHeader.render(originalNode, context)
-      is PklTypeAliasHeader ->
+      is PklTypeAlias ->
         buildString {
           append(modifiers.render())
           append("typealias ")
@@ -265,8 +259,7 @@ class HoverFeature(project: Project) : Component(project) {
     val markdown = render()
     val ctx = getNode(project, context)
     return when {
-      ctx is PklModule && ctx.declaration != null ->
-        showDocCommentAndModule(ctx.declaration!!, markdown)
+      ctx is PklModule && ctx.header != null -> showDocCommentAndModule(ctx.header!!, markdown)
       else -> showDocCommentAndModule(ctx, markdown)
     }
   }
@@ -274,7 +267,7 @@ class HoverFeature(project: Project) : Component(project) {
   private fun PklNode.toMarkdown(originalNode: PklNode?, context: PklProject?): String {
     val markdown = render(originalNode, context)
     return when {
-      this is PklModule && declaration != null -> showDocCommentAndModule(declaration!!, markdown)
+      this is PklModule && header != null -> showDocCommentAndModule(header!!, markdown)
       else -> showDocCommentAndModule(this, markdown)
     }
   }

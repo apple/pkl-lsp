@@ -15,6 +15,7 @@
  */
 pluginManagement {
   repositories {
+    google()
     gradlePluginPortal()
     mavenCentral()
   }
@@ -29,3 +30,5 @@ require(javaVersion.isCompatibleWith(JavaVersion.VERSION_17)) {
 }
 
 rootProject.name = "pkl-lsp"
+
+include(":pkl-language")

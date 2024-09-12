@@ -19,7 +19,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.pkl.lsp.ast.PklClassProperty
-import org.pkl.lsp.ast.PklModuleHeader
+import org.pkl.lsp.ast.PklModuleClause
 import org.pkl.lsp.packages.dto.PackageUri
 
 class GoToDefinitionPackagesTest : LSPTestBase() {
@@ -51,8 +51,8 @@ class GoToDefinitionPackagesTest : LSPTestBase() {
         .trimIndent()
     )
     val resolved = goToDefinition().single()
-    assertThat(resolved).isInstanceOf(PklModuleHeader::class.java)
-    resolved as PklModuleHeader
+    assertThat(resolved).isInstanceOf(PklModuleClause::class.java)
+    resolved as PklModuleClause
     assertThat(resolved.enclosingModule?.virtualFile).isInstanceOf(JarFile::class.java)
   }
 

@@ -47,10 +47,6 @@ open class PklVisitor<R> {
     return visitElement(o)
   }
 
-  open fun visitClassHeader(o: PklClassHeader): R? {
-    return visitModifierListOwner(o)
-  }
-
   open fun visitClassMember(o: PklClassMember): R? {
     return visitModuleMember(o)
   }
@@ -85,6 +81,10 @@ open class PklVisitor<R> {
 
   open fun visitEqualityExpr(o: PklEqualityExpr): R? {
     return visitExpr(o)
+  }
+
+  open fun visitError(o: PklError): R? {
+    return visitElement(o)
   }
 
   open fun visitExponentiationExpr(o: PklExponentiationExpr): R? {
@@ -171,7 +171,7 @@ open class PklVisitor<R> {
     return visitElement(o)
   }
 
-  open fun visitModuleDeclaration(o: PklModuleDeclaration): R? {
+  open fun visitModuleDeclaration(o: PklModuleHeader): R? {
     return visitDocCommentOwner(o)
   }
 
@@ -183,7 +183,7 @@ open class PklVisitor<R> {
     return visitElement(o)
   }
 
-  open fun visitModuleHeader(o: PklModuleHeader): R? {
+  open fun visitModuleHeader(o: PklModuleClause): R? {
     return visitElement(o)
   }
 
@@ -196,10 +196,6 @@ open class PklVisitor<R> {
   }
 
   open fun visitModuleUri(o: PklModuleUri): R? {
-    return visitElement(o)
-  }
-
-  open fun visitMlStringPart(o: MultiLineStringPart): R? {
     return visitElement(o)
   }
 
@@ -232,6 +228,10 @@ open class PklVisitor<R> {
   }
 
   open fun visitObjectBody(o: PklObjectBody): R? {
+    return visitElement(o)
+  }
+
+  open fun visitObjectBodyParameters(o: PklObjectBodyParameters): R? {
     return visitElement(o)
   }
 
@@ -275,10 +275,6 @@ open class PklVisitor<R> {
     return visitType(o)
   }
 
-  open fun visitParameter(o: PklParameter): R? {
-    return visitElement(o)
-  }
-
   open fun visitParameterList(o: PklParameterList): R? {
     return visitElement(o)
   }
@@ -305,10 +301,6 @@ open class PklVisitor<R> {
 
   open fun visitModuleName(o: PklModuleName): R? {
     return visitIdentifierOwner(o)
-  }
-
-  open fun visitSingleLineStringPart(o: SingleLineStringPart): R? {
-    return visitElement(o)
   }
 
   open fun visitStringConstant(o: PklStringConstant): R? {
@@ -361,10 +353,6 @@ open class PklVisitor<R> {
 
   open fun visitTypeAlias(o: PklTypeAlias): R? {
     return visitModuleMember(o)
-  }
-
-  open fun visitTypeAliasHeader(o: PklTypeAliasHeader): R? {
-    return visitModifierListOwner(o)
   }
 
   open fun visitTypeAnnotation(o: PklTypeAnnotation): R? {

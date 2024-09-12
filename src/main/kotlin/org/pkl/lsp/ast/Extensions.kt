@@ -16,6 +16,7 @@
 package org.pkl.lsp.ast
 
 import java.net.URI
+import io.github.treesitter.jtreesitter.Node
 import java.net.URLEncoder
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
@@ -36,7 +37,7 @@ import org.pkl.lsp.type.computeResolvedImportType
 import org.pkl.lsp.util.ModificationTracker
 
 val PklClass.supertype: PklType?
-  get() = classHeader.extends
+  get() = extends
 
 fun PklClass.superclass(context: PklProject?): PklClass? {
   return when (val st = supertype) {
@@ -118,9 +119,6 @@ fun PklClass.isSubclassOf(other: PklClass, context: PklProject?): Boolean {
   // optimization
   if (this === other) return true
 
-  // optimization
-  if (!other.isAbstractOrOpen) return this == other
-
   var clazz: PklClass? = this
   while (clazz != null) {
     if (clazz == other) return true
@@ -157,11 +155,11 @@ val PklImport.memberName: String?
 
 fun PklStringConstant.escapedText(): String? = getEscapedText()
 
-fun PklSingleLineStringLiteral.escapedText(): String =
-  parts.mapNotNull { it.getEscapedText() }.joinToString("")
+fun PklSingleLineStringLiteral.escapedText(): String? =
+  if (exprs.isEmpty()) getEscapedText() else null
 
-fun PklMultiLineStringLiteral.escapedText(): String =
-  parts.mapNotNull { it.getEscapedText() }.joinToString("")
+fun PklMultiLineStringLiteral.escapedText(): String? =
+  if (exprs.isEmpty()) getEscapedText() else null
 
 private fun PklNode.getEscapedText(): String? = buildString {
   for (terminal in terminals) {
@@ -172,27 +170,25 @@ private fun PklNode.getEscapedText(): String? = buildString {
       TokenType.MLEndQuote -> {} // ignore open/close quotes
       TokenType.SLCharacters,
       TokenType.MLCharacters -> append(terminal.text)
-      TokenType.SLCharacterEscape,
-      TokenType.MLCharacterEscape -> {
+      TokenType.CharacterEscape -> {
         val text = terminal.text
-        when (text[text.lastIndex]) {
-          'n' -> append('\n')
-          'r' -> append('\r')
-          't' -> append('\t')
-          '\\' -> append('\\')
-          '"' -> append('"')
-          else -> throw AssertionError("Unknown char escape: $text")
-        }
-      }
-      TokenType.SLUnicodeEscape,
-      TokenType.MLUnicodeEscape -> {
-        val text = terminal.text
-        val index = text.indexOf('{') + 1
-        if (index != -1) {
-          val hexString = text.substring(index, text.length - 1)
-          try {
-            append(Character.toChars(Integer.parseInt(hexString, 16)))
-          } catch (ignored: NumberFormatException) {} catch (ignored: IllegalArgumentException) {}
+        if (text.contains("u{")) {
+          val index = text.indexOf('{') + 1
+          if (index != -1) {
+            val hexString = text.substring(index, text.length - 1)
+            try {
+              append(Character.toChars(Integer.parseInt(hexString, 16)))
+            } catch (ignored: NumberFormatException) {} catch (ignored: IllegalArgumentException) {}
+          }
+        } else {
+          when (text[text.lastIndex]) {
+            'n' -> append('\n')
+            'r' -> append('\r')
+            't' -> append('\t')
+            '\\' -> append('\\')
+            '"' -> append('"')
+            else -> throw AssertionError("Unknown char escape: $text")
+          }
         }
       }
       TokenType.MLNewline -> append('\n')
@@ -448,10 +444,10 @@ fun PklNode.getLocationUri(forDocs: Boolean): URI {
 // returns the span of this node, ignoring docs and annotations
 fun PklNode.beginningSpan(): Span =
   when (this) {
-    is PklModule -> declaration?.beginningSpan() ?: span
-    is PklModuleDeclaration -> moduleHeader?.beginningSpan() ?: span
-    is PklClass -> classHeader.beginningSpan()
-    is PklTypeAlias -> typeAliasHeader.beginningSpan()
+    is PklModule -> header?.beginningSpan() ?: span
+    is PklModuleHeader -> moduleClause?.beginningSpan() ?: span
+    is PklClass -> identifier!!.span
+    is PklTypeAlias -> identifier!!.span
     is PklClassMethod -> methodHeader.beginningSpan()
     is PklClassProperty -> {
       val mods = modifiers
@@ -467,3 +463,9 @@ fun PklNode.modificationTracker(): ModificationTracker = containingFile
 
 val PklNode.isInPackage: Boolean
   get() = containingFile.`package` != null
+
+fun Node.utfAwareText(): String {
+  val utf8 = Charsets.UTF_8
+  val text = tree.text ?: throw RuntimeException("Syntax tree has no source")
+  return String(text.toByteArray(utf8), startByte, endByte - startByte, utf8)
+}

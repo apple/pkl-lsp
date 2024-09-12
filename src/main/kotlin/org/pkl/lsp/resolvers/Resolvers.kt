@@ -230,8 +230,8 @@ object Resolvers {
             for (parameter in element.parameterList.elements) {
               if (
                 !visitor.visitIfNotNull(
-                  parameter.typedIdentifier?.identifier?.text,
-                  parameter.typedIdentifier,
+                  parameter.identifier?.text,
+                  parameter,
                   functionType.bindings,
                   context,
                 )
@@ -250,7 +250,7 @@ object Resolvers {
             }
             is PklLetExpr -> {
               if (element == parent.bodyExpr) {
-                parent.parameter?.typedIdentifier?.let { typedId ->
+                parent.parameter.let { typedId ->
                   if (!visitor.visitIfNotNull(typedId.identifier?.text, typedId, bindings, context))
                     return visitor.result to LookupMode.LEXICAL
                 }
@@ -297,17 +297,13 @@ object Resolvers {
               if (!visitor.visitIfNotNull(member.name, member, bindings, context))
                 return visitor.result to LookupMode.LEXICAL
             }
-            element.parameterList.elements.let { parameterList ->
+            element.parameters.parameters.let { parameterList ->
               for (parameter in parameterList) {
                 if (
-                  !visitor.visitIfNotNull(
-                    parameter.typedIdentifier?.identifier?.text,
-                    parameter.typedIdentifier,
-                    bindings,
-                    context,
-                  )
-                )
+                  !visitor.visitIfNotNull(parameter.identifier?.text, parameter, bindings, context)
+                ) {
                   return visitor.result to LookupMode.LEXICAL
+                }
               }
             }
           }
@@ -332,7 +328,7 @@ object Resolvers {
           }
         }
         is PklForGenerator -> {
-          for (typedId in element.parameters.mapNotNull { it.typedIdentifier }) {
+          for (typedId in element.parameters) {
             if (!visitor.visitIfNotNull(typedId.identifier?.text, typedId, bindings, context))
               return visitor.result to LookupMode.LEXICAL
           }
@@ -341,14 +337,10 @@ object Resolvers {
           element.methodHeader.parameterList?.elements?.let { parameterList ->
             for (parameter in parameterList) {
               if (
-                !visitor.visitIfNotNull(
-                  parameter.typedIdentifier?.identifier?.text,
-                  parameter.typedIdentifier,
-                  bindings,
-                  context,
-                )
-              )
+                !visitor.visitIfNotNull(parameter.identifier?.text, parameter, bindings, context)
+              ) {
                 return visitor.result to LookupMode.LEXICAL
+              }
             }
           }
         }

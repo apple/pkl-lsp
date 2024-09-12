@@ -19,7 +19,6 @@ import org.pkl.core.parser.antlr.PklParser.*
 import org.pkl.lsp.LSPUtil.firstInstanceOf
 import org.pkl.lsp.PklVisitor
 import org.pkl.lsp.Project
-import org.pkl.lsp.VirtualFile
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.resolvers.ResolveVisitors
 import org.pkl.lsp.resolvers.Resolvers
@@ -28,18 +27,14 @@ import org.pkl.lsp.type.computeThisType
 class PklClassPropertyImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: ClassPropertyContext,
+  override val ctx: TreeSitterNode,
 ) : AbstractPklNode(project, parent, ctx), PklClassProperty {
   override val identifier: Terminal? by lazy { terminals.find { it.type == TokenType.Identifier } }
 
-  override val modifiers: List<Terminal> by lazy {
-    buildList {
-      children.forEach { node ->
-        if (node is Terminal && modifierTypes.contains(node.type)) {
-          add(node)
-        }
-      }
-    }
+  override val modifiers: List<Terminal> by lazy { terminals.filter { it.isModifier } }
+
+  override val annotations: List<PklAnnotation> by lazy {
+    children.filterIsInstance<PklAnnotation>()
   }
 
   override val typeAnnotation: PklTypeAnnotation? by lazy {
@@ -48,9 +43,10 @@ class PklClassPropertyImpl(
 
   override val expr: PklExpr? by lazy { children.firstInstanceOf<PklExpr>() }
 
+  // TODO: in tree-sitter this has multiple bodies
   override val objectBody: PklObjectBody? by lazy { getChild(PklObjectBodyImpl::class) }
 
-  override val name: String by lazy { ctx.Identifier().text }
+  override val name: String by lazy { identifier!!.text }
 
   override val type: PklType? by lazy { typeAnnotation?.type }
 
@@ -77,13 +73,17 @@ class PklClassPropertyImpl(
 class PklClassMethodImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: ClassMethodContext,
+  override val ctx: TreeSitterNode,
 ) : AbstractPklNode(project, parent, ctx), PklClassMethod {
   override val methodHeader: PklMethodHeader by lazy { getChild(PklMethodHeaderImpl::class)!! }
 
-  override val name: String by lazy { ctx.methodHeader().Identifier().text }
+  override val name: String by lazy { methodHeader.identifier!!.text }
 
   override val modifiers: List<Terminal>? by lazy { methodHeader.modifiers }
+
+  override val annotations: List<PklAnnotation> by lazy {
+    children.filterIsInstance<PklAnnotation>()
+  }
 
   override val body: PklExpr by lazy { children.firstInstanceOf<PklExpr>()!! }
 
@@ -95,7 +95,7 @@ class PklClassMethodImpl(
 class PklMethodHeaderImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: MethodHeaderContext,
+  override val ctx: TreeSitterNode,
 ) : AbstractPklNode(project, parent, ctx), PklMethodHeader {
   override val parameterList: PklParameterList? by lazy { getChild(PklParameterListImpl::class) }
 
@@ -117,65 +117,11 @@ class PklMethodHeaderImpl(
 class PklParameterListImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: ParameterListContext,
+  override val ctx: TreeSitterNode,
 ) : AbstractPklNode(project, parent, ctx), PklParameterList {
-  override val elements: List<PklParameter> by lazy { children.filterIsInstance<PklParameter>() }
-
-  override fun <R> accept(visitor: PklVisitor<R>): R? {
-    return visitor.visitParameterList(this)
+  override val elements: List<PklTypedIdentifier> by lazy {
+    children.filterIsInstance<PklTypedIdentifier>()
   }
-
-  override fun checkClosingDelimiter(): String? {
-    if (ctx.parameter().isNotEmpty() && ctx.errs.size != ctx.parameter().size - 1) {
-      return ","
-    }
-    return if (ctx.err != null) null else ")"
-  }
-}
-
-/**
- * Workaround: The Pkl parser in pkl-core represents an object body's parameters as simply a
- * sequence of nodes, whereas the logic copied from pkl-intellij assumes that it is a
- * [PklParameterList].
- *
- * This provides the glue from pkl-core's syntax tree to what we want here.
- */
-class PklParameterListOfObjectBodyImpl(
-  override val project: Project,
-  override val parent: PklNode,
-  private val parameters: List<ParameterContext>,
-) : PklParameterList {
-  override val elements: List<PklParameter> by lazy {
-    parameters.map { PklParameterImpl(project, this, it) }
-  }
-
-  override val span: Span
-    get() {
-      val start =
-        children.firstOrNull()?.span
-          ?: return Span(
-            parent.span.beginCol,
-            parent.span.endLine,
-            parent.span.beginCol,
-            parent.span.endLine,
-          )
-      val end = children.last().span
-      return if (start == end) start else Span.from(start, end)
-    }
-
-  override val children: List<PklNode> by lazy { elements }
-
-  override val containingFile: VirtualFile
-    get() = parent.containingFile
-
-  override val enclosingModule: PklModule?
-    get() = parent.enclosingModule
-
-  override val terminals: List<Terminal>
-    get() = emptyList()
-
-  override val text: String
-    get() = parameters.joinToString(", ") { it.text }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitParameterList(this)
@@ -185,14 +131,10 @@ class PklParameterListOfObjectBodyImpl(
 class PklObjectBodyImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: ObjectBodyContext,
+  override val ctx: TreeSitterNode,
 ) : AbstractPklNode(project, parent, ctx), PklObjectBody {
-  override val parameterList: PklParameterList by lazy {
-    PklParameterListOfObjectBodyImpl(project, this, ctx.parameter())
-  }
-
-  override val children: List<PklNode> by lazy {
-    listOf(parameterList) + super.children.filterNot { it is PklParameter }
+  override val parameters: PklObjectBodyParameters by lazy {
+    children.firstInstanceOf<PklObjectBodyParameters>()!!
   }
 
   override val members: List<PklObjectMember> by lazy {
@@ -210,23 +152,30 @@ class PklObjectBodyImpl(
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitObjectBody(this)
   }
+}
 
-  override fun checkClosingDelimiter(): String? {
-    if (ctx.parameter().isNotEmpty() && ctx.errs.size != ctx.parameter().size - 1) {
-      return ","
-    }
-    return if (ctx.err != null) null else "}"
+class PklObjectBodyParametersImpl(
+  override val project: Project,
+  override val parent: PklNode,
+  override val ctx: TreeSitterNode,
+) : AbstractPklNode(project, parent, ctx), PklObjectBodyParameters {
+  override val parameters: List<PklTypedIdentifier> by lazy {
+    children.filterIsInstance<PklTypedIdentifier>()
+  }
+
+  override fun <R> accept(visitor: PklVisitor<R>): R? {
+    return visitor.visitObjectBodyParameters(this)
   }
 }
 
 class PklObjectPropertyImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: ObjectPropertyContext,
+  override val ctx: TreeSitterNode,
 ) : AbstractPklNode(project, parent, ctx), PklObjectProperty {
   override val identifier: Terminal? by lazy { terminals.find { it.type == TokenType.Identifier } }
   override val modifiers: List<Terminal> by lazy { terminals.takeWhile { it.isModifier } }
-  override val name: String by lazy { ctx.Identifier().text }
+  override val name: String by lazy { identifier!!.text }
   override val type: PklType? = null
   override val expr: PklExpr? by lazy { children.firstInstanceOf<PklExpr>() }
   override val isDefinition: Boolean by lazy { expr != null }
@@ -255,7 +204,7 @@ class PklObjectPropertyImpl(
 class PklObjectMethodImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: ObjectMethodContext,
+  override val ctx: TreeSitterNode,
 ) : AbstractPklNode(project, parent, ctx), PklObjectMethod {
   override val methodHeader: PklMethodHeader by lazy { getChild(PklMethodHeaderImpl::class)!! }
   override val modifiers: List<Terminal>? by lazy { methodHeader.modifiers }
@@ -270,10 +219,13 @@ class PklObjectMethodImpl(
 class PklObjectEntryImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: ObjectEntryContext,
+  override val ctx: TreeSitterNode,
 ) : AbstractPklNode(project, parent, ctx), PklObjectEntry {
-  override val keyExpr: PklExpr? by lazy { ctx.k.toNode(project, this) as? PklExpr }
-  override val valueExpr: PklExpr? by lazy { ctx.v.toNode(project, this) as? PklExpr }
+  override val keyExpr: PklExpr? by lazy { ctx.children[1].toNode(project, this) as? PklExpr }
+  override val valueExpr: PklExpr? by lazy { ctx.children.last().toNode(project, this) as? PklExpr }
+  override val objectBodyList: List<PklObjectBody> by lazy {
+    children.filterIsInstance<PklObjectBody>()
+  }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitObjectEntry(this)
@@ -283,10 +235,10 @@ class PklObjectEntryImpl(
 class PklMemberPredicateImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: MemberPredicateContext,
+  override val ctx: TreeSitterNode,
 ) : AbstractPklNode(project, parent, ctx), PklMemberPredicate {
-  override val conditionExpr: PklExpr? by lazy { ctx.k.toNode(project, this) as? PklExpr }
-  override val valueExpr: PklExpr? by lazy { ctx.v?.toNode(project, this) as? PklExpr }
+  override val conditionExpr: PklExpr? by lazy { ctx.children[1].toNode(project, this) as? PklExpr }
+  override val valueExpr: PklExpr? by lazy { ctx.children.last().toNode(project, this) as? PklExpr }
   override val objectBodyList: List<PklObjectBody> by lazy {
     children.filterIsInstance<PklObjectBody>()
   }
@@ -299,43 +251,41 @@ class PklMemberPredicateImpl(
 class PklForGeneratorImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: ForGeneratorContext,
+  override val ctx: TreeSitterNode,
 ) : AbstractPklNode(project, parent, ctx), PklForGenerator {
   override val iterableExpr: PklExpr? by lazy { children.firstInstanceOf<PklExpr>() }
-  override val parameters: List<PklParameter> by lazy { children.filterIsInstance<PklParameter>() }
+  override val parameters: List<PklTypedIdentifier> by lazy {
+    children.filterIsInstance<PklTypedIdentifier>()
+  }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitForGenerator(this)
-  }
-
-  override fun checkClosingDelimiter(): String? {
-    return if (ctx.err != null) null else ")"
   }
 }
 
 class PklWhenGeneratorImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: WhenGeneratorContext,
+  override val ctx: TreeSitterNode,
 ) : AbstractPklNode(project, parent, ctx), PklWhenGenerator {
+  private val bodies by lazy { children.filterIsInstance<PklObjectBody>() }
   override val conditionExpr: PklExpr? by lazy { children.firstInstanceOf<PklExpr>() }
-  override val thenBody: PklObjectBody? by lazy { ctx.b1.toNode(project, this) as? PklObjectBody }
-  override val elseBody: PklObjectBody? by lazy { ctx.b2?.toNode(project, this) as? PklObjectBody }
+  override val thenBody: PklObjectBody? by lazy { bodies.firstOrNull() }
+  // TODO: tree-sitter doesn't support else clauses yet
+  override val elseBody: PklObjectBody? by lazy { if (bodies.size < 2) null else bodies.last() }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitWhenGenerator(this)
-  }
-
-  override fun checkClosingDelimiter(): String? {
-    return if (ctx.err != null) null else ")"
   }
 }
 
 class PklObjectElementImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: ObjectElementContext,
+  override val ctx: TreeSitterNode,
 ) : AbstractPklNode(project, parent, ctx), PklObjectElement {
+  override val expr: PklExpr by lazy { children.firstInstanceOf<PklExpr>()!! }
+
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitObjectElement(this)
   }
@@ -344,10 +294,10 @@ class PklObjectElementImpl(
 class PklObjectSpreadImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: ObjectSpreadContext,
+  override val ctx: TreeSitterNode,
 ) : AbstractPklNode(project, parent, ctx), PklObjectSpread {
   override val expr: PklExpr by lazy { children.firstInstanceOf<PklExpr>()!! }
-  override val isNullable: Boolean by lazy { ctx.QSPREAD() != null }
+  override val isNullable: Boolean by lazy { ctx.children[0].type == "...?" }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitObjectSpread(this)

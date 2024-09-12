@@ -1,11 +1,12 @@
 [versions]
 antlr = "4.+"
 clikt = "4.4.0"
+jtreesitter = "0.23.1"
 junit-jupiter = "5.10.2"
 kotlin = "2.0.0"
 ktfmt = "0.51"
 lsp4j = "0.23.1"
-pkl = "0.26.2"
+pkl = "0.26.3"
 shadowPlugin = "8.1.1"
 spotless = "6.21.0"
 assertj = "3.26.3"
@@ -15,6 +16,7 @@ kotlinx = "1.7.1"
 antlr = { group = "com.tunnelvisionlabs", name = "antlr4", version.ref = "antlr" }
 assertJ = { group = "org.assertj", name = "assertj-core", version.ref = "assertj" }
 clikt = { group = "com.github.ajalt.clikt", name = "clikt", version.ref = "clikt" }
+jtreesitter = { group = "io.github.tree-sitter", name = "jtreesitter", version.ref = "jtreesitter" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
 kotlinxSerializationJson = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx" }
 lsp4j = { group = "org.eclipse.lsp4j", name = "org.eclipse.lsp4j", version.ref = "lsp4j" }

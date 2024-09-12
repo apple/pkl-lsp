@@ -27,10 +27,12 @@ import org.pkl.core.parser.Parser
 import org.pkl.core.util.IoUtils
 import org.pkl.lsp.ast.PklModule
 import org.pkl.lsp.ast.PklModuleImpl
+import org.pkl.lsp.ast.TreeSitterNode
 import org.pkl.lsp.packages.PackageDependency
 import org.pkl.lsp.packages.dto.PackageMetadata
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.services.PklProjectManager.Companion.PKL_PROJECT_FILENAME
+import org.pkl.lsp.treesitter.PklParser
 import org.pkl.lsp.util.CachedValue
 import org.pkl.lsp.util.ModificationTracker
 

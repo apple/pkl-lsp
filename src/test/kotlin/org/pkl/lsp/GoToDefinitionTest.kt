@@ -100,8 +100,8 @@ class GoToDefinitionTest : LSPTestBase() {
         .trimIndent()
     )
     val resolved = goToDefinition().single()
-    assertThat(resolved).isInstanceOf(PklClassHeader::class.java)
-    resolved as PklClassHeader
+    assertThat(resolved).isInstanceOf(PklClass::class.java)
+    resolved as PklClass
     assertThat(resolved.identifier!!.text).isEqualTo("Person")
   }
 
@@ -114,9 +114,9 @@ class GoToDefinitionTest : LSPTestBase() {
         .trimIndent()
     )
     val resolved = goToDefinition().single()
-    assertThat(resolved).isInstanceOf(PklClassHeader::class.java)
+    assertThat(resolved).isInstanceOf(PklClass::class.java)
     assertThat(resolved.isInPklBaseModule)
-    resolved as PklClassHeader
+    resolved as PklClass
     assertThat(resolved.identifier!!.text).isEqualTo("String")
   }
 

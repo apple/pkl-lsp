@@ -70,9 +70,7 @@ class CompletionFeature(project: Project) : Component(project) {
     val module = if (this is PklModule) this else enclosingModule
     return when (node) {
       is PklSingleLineStringLiteral,
-      is PklMultiLineStringLiteral,
-      is SingleLineStringPart,
-      is MultiLineStringPart ->
+      is PklMultiLineStringLiteral ->
         project.pklBaseModule.stringType.ctx.complete(showTypes, module, context)
       is PklIntLiteralExpr -> project.pklBaseModule.intType.ctx.complete(showTypes, module, context)
       is PklFloatLiteralExpr ->
@@ -191,12 +189,12 @@ class CompletionFeature(project: Project) : Component(project) {
     val strPars =
       pars
         .mapIndexed { index, par ->
-          val name = par.typedIdentifier?.identifier?.text ?: "par"
+          val name = par.identifier?.text ?: "par"
           "\${${index + 1}:$name}"
         }
         .joinToString(", ")
 
-    val parTypes = pars.joinToString(", ") { it.type?.render() ?: "unknown" }
+    val parTypes = pars.joinToString(", ") { it.typeAnnotation?.type?.render() ?: "unknown" }
     val retType = methodHeader.returnType?.render() ?: "unknown"
 
     item.insertText = "$name($strPars)"
@@ -213,13 +211,13 @@ class CompletionFeature(project: Project) : Component(project) {
     item.detail =
       when (this) {
         is PklTypeAlias -> type.render()
-        is PklClass -> classHeader.render()
+        is PklClass -> render()
       }
     item.documentation = getDoc(this)
     return item
   }
 
-  private fun PklClassHeader.render(): String {
+  private fun PklClass.render(): String {
     return buildString {
       if (modifiers != null) {
         append(modifiers!!.joinToString(" ", postfix = " ") { it.text })

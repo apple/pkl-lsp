@@ -30,21 +30,24 @@ import org.pkl.core.parser.Parser
 import org.pkl.lsp.ast.PklModule
 import org.pkl.lsp.ast.PklNode
 import org.pkl.lsp.ast.findBySpan
+import org.pkl.lsp.ast.*
+import org.pkl.lsp.treesitter.PklParser
 
 abstract class LSPTestBase {
   companion object {
     private lateinit var server: PklLSPServer
-    private lateinit var parser: Parser
+    private lateinit var parser: PklParser
     internal lateinit var fakeProject: Project
 
     @JvmStatic
     @BeforeAll
     fun beforeAll() {
       server = PklLSPServer(true).also { it.connect(TestLanguageClient) }
-      parser = Parser()
+      parser = PklParser()
       fakeProject = server.project
       System.getProperty("pklExecutable")?.let { executablePath ->
         TestLanguageClient.settings["Pkl" to "pkl.cli.path"] = executablePath
+        println("pkl is: $executablePath")
         fakeProject.settingsManager.settings.pklCliPath = Path.of(executablePath)
       }
     }

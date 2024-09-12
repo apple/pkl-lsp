@@ -93,8 +93,7 @@ object ResolveVisitors {
             val effectiveBindings = if (resolveTypeParamsInParamTypes) bindings else mapOf()
             result =
               parameters.map {
-                it.typedIdentifier
-                  ?.typeAnnotation
+                it.typeAnnotation
                   ?.type
                   .toType(base, effectiveBindings, context, !resolveTypeParamsInParamTypes)
               }
@@ -174,14 +173,13 @@ object ResolveVisitors {
             is PklTypeAlias -> base.typeAliasType.withTypeArguments(Type.alias(element, context))
             is PklNavigableElement ->
               element.computeResolvedImportType(base, bindings, context, preserveUnboundTypeVars)
-            is PklParameter -> {
-              element.typedIdentifier?.computeResolvedImportType(
-                base,
-                bindings,
-                context,
-                preserveUnboundTypeVars,
-              ) ?: unexpectedType(element)
-            }
+            //            is PklParameter -> {
+            //              element.typedIdentifier?.computeResolvedImportType(
+            //                base,
+            //                bindings,
+            //                preserveUnboundTypeVars,
+            //              ) ?: unexpectedType(element)
+            //            }
             else -> unexpectedType(element)
           }
 
@@ -367,7 +365,7 @@ object ResolveVisitors {
           element is PklTypeParameter && bindings.contains(element) ->
             visit(name, toFirstDefinition(element, base, bindings), mapOf(), context)
           element is PklNavigableElement -> result = element
-          element is PklParameter -> result = element.typedIdentifier
+          // element is PklParameter -> result = element.typedIdentifier
           element is PklExpr -> return true
           else -> unexpectedType(element)
         }

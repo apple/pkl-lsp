@@ -17,21 +17,18 @@ package org.pkl.lsp.analyzers
 
 import org.pkl.lsp.ErrorMessages
 import org.pkl.lsp.Project
+import org.pkl.lsp.ast.PklError
 import org.pkl.lsp.ast.PklNode
 
 class SyntaxAnalyzer(project: Project) : Analyzer(project) {
   override fun doAnalyze(node: PklNode, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
 
-    val del = node.checkClosingDelimiter()
-    if (del != null) {
-      val err =
-        if (del == ",") {
-          ErrorMessages.create("missingCommaSeparator")
-        } else {
-          ErrorMessages.create("missingDelimiter", del)
-        }
-      diagnosticsHolder += error(node, err)
+    if (node is PklError) {
+      diagnosticsHolder += error(node, ErrorMessages.create("invalidSyntax"))
+    } else if (node.isMissing) {
+      diagnosticsHolder += error(node, ErrorMessages.create("missingSyntax", node.text))
     }
+
     return true
   }
 }

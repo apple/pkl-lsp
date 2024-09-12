@@ -16,6 +16,8 @@
 package org.pkl.lsp
 
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.isSubtypeOf
@@ -51,6 +53,9 @@ class Project(private val server: PklLSPServer) {
   val clientOptions: PklClientOptions by lazy { server.pklClientOptions }
 
   val clientCapabilities: PklClientCapabilities by lazy { server.clientCapabilities }
+
+  // The thread where all tree-sitter allocations happen
+  val astExecutor: ExecutorService by lazy { Executors.newSingleThreadExecutor() }
 
   fun initialize(): CompletableFuture<*> {
     return CompletableFuture.allOf(*myComponents.map { it.initialize() }.toTypedArray())

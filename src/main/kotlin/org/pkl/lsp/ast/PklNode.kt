@@ -17,10 +17,6 @@ package org.pkl.lsp.ast
 
 import java.net.URI
 import kotlin.reflect.KClass
-import org.antlr.v4.runtime.ParserRuleContext
-import org.antlr.v4.runtime.tree.ParseTree
-import org.antlr.v4.runtime.tree.TerminalNode
-import org.pkl.core.parser.antlr.PklParser.*
 import org.pkl.lsp.*
 import org.pkl.lsp.VirtualFile
 import org.pkl.lsp.packages.Dependency
@@ -39,6 +35,8 @@ interface PklNode {
   val terminals: List<Terminal>
   /** The verbatim text of this node. */
   val text: String
+  /** True if tree-sitter inserted this node. */
+  val isMissing: Boolean
 
   fun <R> accept(visitor: PklVisitor<R>): R?
 
@@ -53,11 +51,10 @@ interface PklNode {
     }
     return null
   }
-
-  // for syntax analyzer
-  // TODO: removed when we get rid of ANTLR
-  fun checkClosingDelimiter(): String? = null
 }
+
+/** Represents an error node in tree-sitter */
+interface PklError : PklNode
 
 interface PklReference : PklNode {
   fun resolve(context: PklProject?): PklNode?
@@ -144,7 +141,7 @@ interface PklModule : PklTypeDefOrModule {
   val uri: URI
   val virtualFile: VirtualFile
   val isAmend: Boolean
-  val declaration: PklModuleDeclaration?
+  val header: PklModuleHeader?
   val imports: List<PklImport>
   val members: List<PklModuleMember>
   val typeAliases: List<PklTypeAlias>
@@ -165,22 +162,22 @@ interface PklModule : PklTypeDefOrModule {
   fun dependencies(context: PklProject?): Map<String, Dependency>?
 }
 
-/** Either [moduleHeader] is set, or [moduleExtendsAmendsClause] is set. */
-interface PklModuleDeclaration : PklNode, ModifierListOwner, PklDocCommentOwner {
+/** Either [moduleClause] is set, or [moduleExtendsAmendsClause] is set. */
+interface PklModuleHeader : PklNode, ModifierListOwner, PklDocCommentOwner {
   val annotations: List<PklAnnotation>
 
   val isAmend: Boolean
     get() = effectiveExtendsOrAmendsCluse?.isAmend ?: false
 
-  val moduleHeader: PklModuleHeader?
+  val moduleClause: PklModuleClause?
 
   val moduleExtendsAmendsClause: PklModuleExtendsAmendsClause?
 
   val effectiveExtendsOrAmendsCluse: PklModuleExtendsAmendsClause?
-    get() = moduleHeader?.moduleExtendsAmendsClause ?: moduleExtendsAmendsClause
+    get() = moduleClause?.moduleExtendsAmendsClause ?: moduleExtendsAmendsClause
 }
 
-interface PklModuleHeader : PklNode, ModifierListOwner {
+interface PklModuleClause : PklNode, ModifierListOwner {
   val qualifiedIdentifier: PklQualifiedIdentifier?
   val moduleExtendsAmendsClause: PklModuleExtendsAmendsClause?
   val shortDisplayName: String?
@@ -208,9 +205,9 @@ sealed interface PklTypeDef :
   val typeParameterList: PklTypeParameterList?
 }
 
-interface PklClass : PklTypeDef {
-  val classHeader: PklClassHeader
+interface PklClass : PklTypeDef, IdentifierOwner {
   val annotations: List<PklAnnotation>?
+  val extends: PklType?
   val classBody: PklClassBody?
   val members: List<PklClassMember>
   val properties: List<PklClassProperty>
@@ -238,11 +235,6 @@ interface PklSimpleTypeName : PklNode, IdentifierOwner
 
 interface PklModuleName : PklNode, IdentifierOwner
 
-interface PklClassHeader : PklNode, IdentifierOwner, ModifierListOwner {
-  val typeParameterList: PklTypeParameterList?
-  val extends: PklType?
-}
-
 sealed interface PklClassMember : PklModuleMember, PklDocCommentOwner
 
 sealed interface PklProperty :
@@ -255,6 +247,7 @@ sealed interface PklProperty :
 }
 
 interface PklClassProperty : PklProperty, PklModuleMember, PklClassMember, PklTypeDefOrProperty {
+  val annotations: List<PklAnnotation>
   val objectBody: PklObjectBody?
 }
 
@@ -263,7 +256,9 @@ interface PklMethod : PklNavigableElement, ModifierListOwner {
   val body: PklExpr
 }
 
-interface PklClassMethod : PklMethod, PklModuleMember, PklClassMember
+interface PklClassMethod : PklMethod, PklModuleMember, PklClassMember {
+  val annotations: List<PklAnnotation>
+}
 
 interface PklObjectMethod : PklMethod, PklObjectMember {
   val name: String
@@ -276,6 +271,7 @@ interface PklObjectProperty : PklNavigableElement, PklProperty, PklObjectMember
 interface PklObjectEntry : PklObjectMember {
   val keyExpr: PklExpr?
   val valueExpr: PklExpr?
+  val objectBodyList: List<PklObjectBody>
 }
 
 interface PklMemberPredicate : PklObjectMember {
@@ -286,7 +282,7 @@ interface PklMemberPredicate : PklObjectMember {
 
 interface PklForGenerator : PklObjectMember {
   val iterableExpr: PklExpr?
-  val parameters: List<PklParameter>
+  val parameters: List<PklTypedIdentifier>
 }
 
 interface PklWhenGenerator : PklObjectMember {
@@ -295,7 +291,9 @@ interface PklWhenGenerator : PklObjectMember {
   val elseBody: PklObjectBody?
 }
 
-interface PklObjectElement : PklObjectMember
+interface PklObjectElement : PklObjectMember {
+  val expr: PklExpr
+}
 
 interface PklObjectSpread : PklObjectMember {
   val expr: PklExpr
@@ -315,13 +313,17 @@ sealed interface PklObjectBodyOwner : PklNode {
 }
 
 interface PklObjectBody : PklNode {
-  val parameterList: PklParameterList
+  val parameters: PklObjectBodyParameters
 
   val members: List<PklObjectMember>
 
   val properties: List<PklObjectProperty>
 
   val methods: List<PklObjectMethod>
+}
+
+interface PklObjectBodyParameters : PklNode {
+  val parameters: List<PklTypedIdentifier>
 }
 
 interface PklTypeParameterList : PklNode {
@@ -339,18 +341,13 @@ interface PklTypeParameter : PklNavigableElement, IdentifierOwner {
 }
 
 interface PklParameterList : PklNode {
-  val elements: List<PklParameter>
+  val elements: List<PklTypedIdentifier>
 }
 
-interface PklTypeAlias : PklTypeDef {
-  val typeAliasHeader: PklTypeAliasHeader
+interface PklTypeAlias : PklTypeDef, IdentifierOwner {
   val type: PklType
 
   fun isRecursive(context: PklProject?): Boolean
-}
-
-interface PklTypeAliasHeader : IdentifierOwner, ModifierListOwner {
-  val typeParameterList: PklTypeParameterList?
 }
 
 interface Terminal : PklNode {
@@ -400,19 +397,11 @@ interface PklReadExpr : PklExpr {
 }
 
 interface PklSingleLineStringLiteral : PklExpr {
-  val parts: List<SingleLineStringPart>
-}
-
-interface SingleLineStringPart : PklNode {
-  val expr: PklExpr?
+  val exprs: List<PklExpr>
 }
 
 interface PklMultiLineStringLiteral : PklExpr {
-  val parts: List<MultiLineStringPart>
-}
-
-interface MultiLineStringPart : PklNode {
-  val expr: PklExpr?
+  val exprs: List<PklExpr>
 }
 
 interface PklNewExpr : PklExpr, PklObjectBodyOwner {
@@ -518,13 +507,13 @@ interface PklIfExpr : PklExpr {
 }
 
 interface PklLetExpr : PklExpr, IdentifierOwner {
-  val varExpr: PklExpr?
-  val bodyExpr: PklExpr?
-  val parameter: PklParameter?
+  val varExpr: PklExpr
+  val bodyExpr: PklExpr
+  val parameter: PklTypedIdentifier
 }
 
 interface PklFunctionLiteralExpr : PklExpr {
-  val expr: PklExpr?
+  val expr: PklExpr
   val parameterList: PklParameterList
 }
 
@@ -538,12 +527,8 @@ interface PklTypeAnnotation : PklNode {
 
 interface PklTypedIdentifier : PklNavigableElement, IdentifierOwner {
   val typeAnnotation: PklTypeAnnotation?
-}
-
-interface PklParameter : PklNode {
-  val typedIdentifier: PklTypedIdentifier?
-  val isUnderscore: Boolean
   val type: PklType?
+  val isUnderscore: Boolean
 }
 
 interface PklArgumentList : PklNode {
@@ -661,18 +646,14 @@ interface PklDefaultUnionType : PklType {
 abstract class AbstractPklNode(
   override val project: Project,
   override val parent: PklNode?,
-  protected open val ctx: ParseTree,
+  protected open val ctx: TreeSitterNode,
 ) : PklNode {
   private val childrenByType: Map<KClass<out PklNode>, List<PklNode>> by lazy {
-    if (ctx !is ParserRuleContext) {
-      return@lazy emptyMap()
-    }
-    val parserCtx = ctx as ParserRuleContext
     val self = this
     // use LinkedHashMap to preserve order
     LinkedHashMap<KClass<out PklNode>, MutableList<PklNode>>().also { map ->
-      for (idx in parserCtx.children.indices) {
-        val node = parserCtx.children.toNode(project, self, idx) ?: continue
+      for (idx in ctx.children.indices) {
+        val node = ctx.children.toNode(project, self, idx) ?: continue
         when (val nodes = map[node::class]) {
           null -> map[node::class] = mutableListOf(node)
           else -> nodes.add(node)
@@ -681,23 +662,7 @@ abstract class AbstractPklNode(
     }
   }
 
-  override val span: Span by lazy {
-    when (ctx) {
-      is ParserRuleContext -> {
-        val c = ctx as ParserRuleContext
-        val begin = c.start
-        val end = c.stop
-        val endCol = end.charPositionInLine + 1 + end.text.length
-        Span(begin.line, begin.charPositionInLine + 1, end.line, endCol)
-      }
-      else -> {
-        ctx as TerminalNode
-        val token = (ctx as TerminalNode).symbol
-        val endCol = token.charPositionInLine + 1 + token.text.length
-        Span(token.line, token.charPositionInLine + 1, token.line, endCol)
-      }
-    }
-  }
+  override val span: Span by lazy { Span.fromRange(ctx.range) }
 
   override val enclosingModule: PklModule? by lazy {
     var top: PklNode? = this
@@ -727,6 +692,8 @@ abstract class AbstractPklNode(
 
   override val text: String by lazy { ctx.text }
 
+  override val isMissing: Boolean by lazy { ctx.isMissing }
+
   override fun hashCode(): Int {
     return ctx.hashCode()
   }
@@ -741,112 +708,175 @@ abstract class AbstractPklNode(
   }
 }
 
-fun List<ParseTree>.toNode(project: Project, parent: PklNode?, idx: Int): PklNode? {
+class PklErrorImpl(
+  override val project: Project,
+  override val parent: PklNode?,
+  override val ctx: TreeSitterNode,
+) : PklError, AbstractPklNode(project, parent, ctx) {
+  override fun <R> accept(visitor: PklVisitor<R>): R? {
+    return visitor.visitError(this)
+  }
+}
+
+fun List<TreeSitterNode>.toNode(project: Project, parent: PklNode?, idx: Int): PklNode? {
   return get(idx).toNode(project, parent)
 }
 
-fun ParseTree.toNode(project: Project, parent: PklNode?): PklNode? {
-  return when (this) {
+private fun TreeSitterNode.toTypeNode(project: Project, parent: PklNode?): PklNode? {
+  return when {
+    text == "unknown" -> PklUnknownTypeImpl(project, parent!!, this)
+    text == "nothing" -> PklNothingTypeImpl(project, parent!!, this)
+    text == "module" -> PklModuleTypeImpl(project, parent!!, this)
+    childCount <= 0 -> null
+    children[0].type == "stringConstant" -> PklStringLiteralTypeImpl(project, parent!!, this)
+    children[0].type == "qualifiedIdentifier" -> PklDeclaredTypeImpl(project, parent!!, this)
+    children[0].type == "(" && childCount == 3 -> PklParenthesizedTypeImpl(project, parent!!, this)
+    children[0].type == "(" -> PklFunctionTypeImpl(project, parent!!, this)
+    // TODO: for pkl-tree-sitter `*Foo` alone is a valid type
+    children[0].type == "*" -> PklDefaultUnionTypeImpl(project, parent!!, this)
+    children.last().type == "?" -> PklNullableTypeImpl(project, parent!!, this)
+    childCount == 3 && children[1].type == "|" -> PklUnionTypeImpl(project, parent!!, this)
+    children[1].type == "(" -> PklConstrainedTypeImpl(project, parent!!, this)
+    else -> null
+  }
+}
+
+fun TreeSitterNode.toNode(project: Project, parent: PklNode?): PklNode? {
+  return when (type) {
     // a module can never be constructed from this function
-    // is ModuleContext -> PklModuleImpl(this)
-    is ModuleDeclContext -> PklModuleDeclarationImpl(project, parent!!, this)
-    is ModuleHeaderContext -> PklModuleHeaderImpl(project, parent!!, this)
-    is ImportClauseContext -> PklImportImpl(project, parent!!, this)
-    is ModuleExtendsOrAmendsClauseContext ->
-      PklModuleExtendsAmendsClauseImpl(project, parent!!, this)
-    is ClazzContext -> PklClassImpl(project, parent!!, this)
-    is ClassHeaderContext -> PklClassHeaderImpl(project, parent!!, this)
-    is ClassBodyContext -> PklClassBodyImpl(project, parent!!, this)
-    is ClassPropertyContext -> PklClassPropertyImpl(project, parent!!, this)
-    is MethodHeaderContext -> PklMethodHeaderImpl(project, parent!!, this)
-    is ClassMethodContext -> PklClassMethodImpl(project, parent!!, this)
-    is ParameterListContext -> PklParameterListImpl(project, parent!!, this)
-    is ParameterContext -> PklParameterImpl(project, parent!!, this)
-    is ArgumentListContext -> PklArgumentListImpl(project, parent!!, this)
-    is AnnotationContext -> PklAnnotationImpl(project, parent!!, this)
-    is TypeAnnotationContext -> PklTypeAnnotationImpl(project, parent!!, this)
-    is TypedIdentifierContext -> PklTypedIdentifierImpl(project, parent!!, this)
-    is UnknownTypeContext -> PklUnknownTypeImpl(project, parent!!, this)
-    is NothingTypeContext -> PklNothingTypeImpl(project, parent!!, this)
-    is ModuleTypeContext -> PklModuleTypeImpl(project, parent!!, this)
-    is StringLiteralTypeContext -> PklStringLiteralTypeImpl(project, parent!!, this)
-    is DeclaredTypeContext -> PklDeclaredTypeImpl(project, parent!!, this)
-    is ParenthesizedTypeContext -> PklParenthesizedTypeImpl(project, parent!!, this)
-    is NullableTypeContext -> PklNullableTypeImpl(project, parent!!, this)
-    is ConstrainedTypeContext -> PklConstrainedTypeImpl(project, parent!!, this)
-    is UnionTypeContext -> PklUnionTypeImpl(project, parent!!, this)
-    is DefaultUnionTypeContext -> PklDefaultUnionTypeImpl(project, parent!!, this)
-    is FunctionTypeContext -> PklFunctionTypeImpl(project, parent!!, this)
-    is TypeArgumentListContext -> PklTypeArgumentListImpl(project, parent!!, this)
-    is ThisExprContext -> PklThisExprImpl(project, parent!!, this)
-    is OuterExprContext -> PklOuterExprImpl(project, parent!!, this)
-    is ModuleExprContext -> PklModuleExprImpl(project, parent!!, this)
-    is NullLiteralContext -> PklNullLiteralExprImpl(project, parent!!, this)
-    is TrueLiteralContext -> PklTrueLiteralExprImpl(project, parent!!, this)
-    is FalseLiteralContext -> PklFalseLiteralExprImpl(project, parent!!, this)
-    is IntLiteralContext -> PklIntLiteralExprImpl(project, parent!!, this)
-    is FloatLiteralContext -> PklFloatLiteralExprImpl(project, parent!!, this)
-    is ThrowExprContext -> PklThrowExprImpl(project, parent!!, this)
-    is TraceExprContext -> PklTraceExprImpl(project, parent!!, this)
-    is ImportExprContext -> PklImportExprImpl(project, parent!!, this)
-    is ReadExprContext -> PklReadExprImpl(project, parent!!, this)
-    is UnqualifiedAccessExprContext -> PklUnqualifiedAccessExprImpl(project, parent!!, this)
-    is SingleLineStringLiteralContext -> PklSingleLineStringLiteralImpl(project, parent!!, this)
-    is SingleLineStringPartContext -> SingleLineStringPartImpl(project, parent!!, this)
-    is MultiLineStringLiteralContext -> PklMultiLineStringLiteralImpl(project, parent!!, this)
-    is MultiLineStringPartContext -> MultiLineStringPartImpl(project, parent!!, this)
-    is StringConstantContext -> PklStringConstantImpl(project, parent!!, this)
-    is NewExprContext -> PklNewExprImpl(project, parent!!, this)
-    is AmendExprContext -> PklAmendExprImpl(project, parent!!, this)
-    is SuperAccessExprContext -> PklSuperAccessExprImpl(project, parent!!, this)
-    is SuperSubscriptExprContext -> PklSuperSubscriptExprImpl(project, parent!!, this)
-    is QualifiedAccessExprContext -> PklQualifiedAccessExprImpl(project, parent!!, this)
-    is SubscriptExprContext -> PklSubscriptExprImpl(project, parent!!, this)
-    is NonNullExprContext -> PklNonNullExprImpl(project, parent!!, this)
-    is UnaryMinusExprContext -> PklUnaryMinusExprImpl(project, parent!!, this)
-    is LogicalNotExprContext -> PklLogicalNotExprImpl(project, parent!!, this)
-    is ExponentiationExprContext -> PklExponentiationExprImpl(project, parent!!, this)
-    is MultiplicativeExprContext -> PklMultiplicativeExprImpl(project, parent!!, this)
-    is AdditiveExprContext -> PklAdditiveExprImpl(project, parent!!, this)
-    is ComparisonExprContext -> PklComparisonExprImpl(project, parent!!, this)
-    is TypeTestExprContext -> PklTypeTestExprImpl(project, parent!!, this)
-    is EqualityExprContext -> PklEqualityExprImpl(project, parent!!, this)
-    is LogicalAndExprContext -> PklLogicalAndExprImpl(project, parent!!, this)
-    is LogicalOrExprContext -> PklLogicalOrExprImpl(project, parent!!, this)
-    is PipeExprContext -> PklPipeExprImpl(project, parent!!, this)
-    is NullCoalesceExprContext -> PklNullCoalesceExprImpl(project, parent!!, this)
-    is IfExprContext -> PklIfExprImpl(project, parent!!, this)
-    is LetExprContext -> PklLetExprImpl(project, parent!!, this)
-    is FunctionLiteralContext -> PklFunctionLiteralExprImpl(project, parent!!, this)
-    is ParenthesizedExprContext -> PklParenthesizedExprImpl(project, parent!!, this)
-    is QualifiedIdentifierContext -> PklQualifiedIdentifierImpl(project, parent!!, this)
-    is ObjectBodyContext -> PklObjectBodyImpl(project, parent!!, this)
-    is ObjectPropertyContext -> PklObjectPropertyImpl(project, parent!!, this)
-    is ObjectMethodContext -> PklObjectMethodImpl(project, parent!!, this)
-    is ObjectEntryContext -> PklObjectEntryImpl(project, parent!!, this)
-    is MemberPredicateContext -> PklMemberPredicateImpl(project, parent!!, this)
-    is ForGeneratorContext -> PklForGeneratorImpl(project, parent!!, this)
-    is WhenGeneratorContext -> PklWhenGeneratorImpl(project, parent!!, this)
-    is ObjectElementContext -> PklObjectElementImpl(project, parent!!, this)
-    is ObjectSpreadContext -> PklObjectSpreadImpl(project, parent!!, this)
-    is TypeParameterContext -> PklTypeParameterImpl(project, parent!!, this)
-    is TypeParameterListContext -> PklTypeParameterListImpl(project, parent!!, this)
-    is TypeAliasHeaderContext -> PklTypeAliasHeaderImpl(project, parent!!, this)
-    is TypeAliasContext -> PklTypeAliasImpl(project, parent!!, this)
+    // "module" -> PklModuleImpl(this)
+    "moduleHeader" -> PklModuleHeaderImpl(project, parent!!, this)
+    "moduleClause" -> PklModuleClauseImpl(project, parent!!, this)
+    "importClause" -> PklImportImpl(project, parent!!, this)
+    "extendsOrAmendsClause" -> PklModuleExtendsAmendsClauseImpl(project, parent!!, this)
+    "clazz" -> PklClassImpl(project, parent!!, this)
+    "classBody" -> PklClassBodyImpl(project, parent!!, this)
+    // This is kinda of a hack but works because they have the same children
+    "classExtendsClause" -> PklDeclaredTypeImpl(project, parent!!, this)
+    "classProperty" -> PklClassPropertyImpl(project, parent!!, this)
+    "methodHeader" -> PklMethodHeaderImpl(project, parent!!, this)
+    "classMethod" -> PklClassMethodImpl(project, parent!!, this)
+    "parameterList" -> PklParameterListImpl(project, parent!!, this)
+    "argumentList" -> PklArgumentListImpl(project, parent!!, this)
+    "annotation" -> PklAnnotationImpl(project, parent!!, this)
+    "typeAnnotation" -> PklTypeAnnotationImpl(project, parent!!, this)
+    "typedIdentifier" -> PklTypedIdentifierImpl(project, parent!!, this)
+    "type" -> toTypeNode(project, parent)
+    "typeArgumentList" -> PklTypeArgumentListImpl(project, parent!!, this)
+    "thisExpr" -> PklThisExprImpl(project, parent!!, this)
+    "outerExpr" -> PklOuterExprImpl(project, parent!!, this)
+    "moduleExpr" -> PklModuleExprImpl(project, parent!!, this)
+    "nullLiteral" -> PklNullLiteralExprImpl(project, parent!!, this)
+    "trueLiteral" -> PklTrueLiteralExprImpl(project, parent!!, this)
+    "falseLiteral" -> PklFalseLiteralExprImpl(project, parent!!, this)
+    "intLiteral" -> PklIntLiteralExprImpl(project, parent!!, this)
+    "floatLiteral" -> PklFloatLiteralExprImpl(project, parent!!, this)
+    "throwExpr" -> PklThrowExprImpl(project, parent!!, this)
+    "traceExpr" -> PklTraceExprImpl(project, parent!!, this)
+    "importExpr",
+    "importGlobExpr" -> PklImportExprImpl(project, parent!!, this)
+    "readExpr",
+    "readOrNullExpr",
+    "readGlobExpr" -> PklReadExprImpl(project, parent!!, this)
+    "variableExpr" -> PklUnqualifiedAccessExprImpl(project, parent!!, this)
+    "propertyCallExpr" ->
+      when {
+        children[0].type == "super" -> PklSuperAccessExprImpl(project, parent!!, this)
+        else -> PklQualifiedAccessExprImpl(project, parent!!, this)
+      }
+    "methodCallExpr" ->
+      when (children[0].type) {
+        "super" -> PklSuperAccessExprImpl(project, parent!!, this)
+        "identifier" -> PklUnqualifiedAccessExprImpl(project, parent!!, this)
+        else -> PklQualifiedAccessExprImpl(project, parent!!, this)
+      }
+    "slStringLiteral" -> PklSingleLineStringLiteralImpl(project, parent!!, this)
+    "slStringLiteralPart" -> toTerminal(parent!!)
+    "mlStringLiteral" -> PklMultiLineStringLiteralImpl(project, parent!!, this)
+    "mlStringLiteralPart" -> toTerminal(parent!!)
+    "stringConstant" -> PklStringConstantImpl(project, parent!!, this)
+    "newExpr" -> PklNewExprImpl(project, parent!!, this)
+    "objectLiteral",
+    "variableObjectLiteral" -> PklAmendExprImpl(project, parent!!, this)
+    "subscriptExpr" ->
+      when {
+        children[0].type == "super" -> PklSuperSubscriptExprImpl(project, parent!!, this)
+        else -> PklSubscriptExprImpl(project, parent!!, this)
+      }
+    "unaryExpr" ->
+      when (children[0].type) {
+        "-" -> PklUnaryMinusExprImpl(project, parent!!, this)
+        "!" -> PklLogicalNotExprImpl(project, parent!!, this)
+        else -> PklNonNullExprImpl(project, parent!!, this)
+      }
+    "binaryExprRightAssoc" ->
+      when (children[1].type) {
+        "**" -> PklExponentiationExprImpl(project, parent!!, this)
+        "??" -> PklNullCoalesceExprImpl(project, parent!!, this)
+        else -> throw RuntimeException("Unknown binary operator `${children[1].type}`")
+      }
+    "binaryExpr" ->
+      when (children[1].type) {
+        "*",
+        "/",
+        "~/",
+        "%" -> PklMultiplicativeExprImpl(project, parent!!, this)
+        "+",
+        "-" -> PklAdditiveExprImpl(project, parent!!, this)
+        "<",
+        ">",
+        "<=",
+        ">=" -> PklComparisonExprImpl(project, parent!!, this)
+        "==",
+        "!=" -> PklEqualityExprImpl(project, parent!!, this)
+        "&&" -> PklLogicalAndExprImpl(project, parent!!, this)
+        "||" -> PklLogicalOrExprImpl(project, parent!!, this)
+        "|>" -> PklPipeExprImpl(project, parent!!, this)
+        else -> throw RuntimeException("Unknown binary operator `${children[1].type}`")
+      }
+    "isExpr" -> PklTypeTestExprImpl(project, parent!!, this)
+    "asExpr" -> PklTypeTestExprImpl(project, parent!!, this)
+    "ifExpr" -> PklIfExprImpl(project, parent!!, this)
+    "letExpr" -> PklLetExprImpl(project, parent!!, this)
+    "functionLiteral" -> PklFunctionLiteralExprImpl(project, parent!!, this)
+    "parenthesizedExpr" -> PklParenthesizedExprImpl(project, parent!!, this)
+    "qualifiedIdentifier" -> PklQualifiedIdentifierImpl(project, parent!!, this)
+    "objectBody" -> PklObjectBodyImpl(project, parent!!, this)
+    "objectBodyParameters" -> PklObjectBodyParametersImpl(project, parent!!, this)
+    "_objectMember" -> children[0].toNode(project, parent)
+    "objectProperty" -> PklObjectPropertyImpl(project, parent!!, this)
+    "objectMethod" -> PklObjectMethodImpl(project, parent!!, this)
+    "objectEntry" -> PklObjectEntryImpl(project, parent!!, this)
+    "objectElement" -> PklObjectElementImpl(project, parent!!, this)
+    "objectPredicate" -> PklMemberPredicateImpl(project, parent!!, this)
+    "forGenerator" -> PklForGeneratorImpl(project, parent!!, this)
+    "whenGenerator" -> PklWhenGeneratorImpl(project, parent!!, this)
+    "objectSpread" -> PklObjectSpreadImpl(project, parent!!, this)
+    "typeParameterList" -> PklTypeParameterListImpl(project, parent!!, this)
+    "typeParameter" -> PklTypeParameterImpl(project, parent!!, this)
+    "typeAlias" -> PklTypeAliasImpl(project, parent!!, this)
     // is TypeAnnotationContext -> Ty
     // treat modifiers as terminals; matches how we do it in pkl-intellij
-    is ModifierContext -> {
-      val terminalNode =
-        this.CONST()
-          ?: this.ABSTRACT()
-          ?: this.HIDDEN_()
-          ?: this.FIXED()
-          ?: this.EXTERNAL()
-          ?: this.LOCAL()
-          ?: this.OPEN()
-      terminalNode.toTerminal(parent!!)
+    "modifier" -> children[0].toTerminal(parent!!)
+    "identifier" -> toTerminal(parent!!)
+    "docComment" -> toTerminal(parent!!)
+    "escapeSequence" -> toTerminal(parent!!)
+    // just becomes an expression
+    "interpolationExpr" -> children[1].toNode(project, parent)
+    "lineComment",
+    "blockComment" -> null
+    "ERROR" -> PklErrorImpl(project, parent!!, this)
+    else -> {
+      val term = toTerminal(parent!!)
+      term
+        ?: throw RuntimeException(
+          """
+          Unknown node:
+            type: $type
+            text: $text
+        """
+            .trimIndent()
+        )
     }
-    is TerminalNode -> this.toTerminal(parent!!)
-    else -> null
   }
 }

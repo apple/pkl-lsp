@@ -24,8 +24,8 @@ plugins {
 repositories { mavenCentral() }
 
 java {
-  sourceCompatibility = JavaVersion.VERSION_17
-  toolchain { languageVersion = JavaLanguageVersion.of(17) }
+  sourceCompatibility = JavaVersion.VERSION_22
+  toolchain { languageVersion = JavaLanguageVersion.of(22) }
 }
 
 val pklCli: Configuration by configurations.creating
@@ -37,6 +37,7 @@ dependencies {
   implementation(libs.pklCore)
   implementation(libs.lsp4j)
   implementation(libs.kotlinxSerializationJson)
+  implementation(libs.jtreesitter)
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
   testImplementation(libs.assertJ)
   testImplementation(libs.junit.jupiter)
@@ -46,7 +47,12 @@ dependencies {
 val configurePklCliExecutable by
   tasks.registering { doLast { pklCli.singleFile.setExecutable(true) } }
 
-tasks.jar { manifest { attributes += mapOf("Main-Class" to "org.pkl.lsp.cli.Main") } }
+tasks.jar {
+  manifest {
+    attributes +=
+      mapOf("Main-Class" to "org.pkl.lsp.cli.Main", "Enable-Native-Access" to "ALL-UNNAMED")
+  }
+}
 
 application { mainClass.set("org.pkl.lsp.cli.Main") }
 

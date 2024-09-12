@@ -20,6 +20,6 @@ import org.pkl.lsp.Project
 object PklNodeFactory {
   fun createTypeParameter(project: Project, name: String): PklTypeParameter {
     val module = project.virtualFileManager.getEphemeral("class X<$name>").getModule().get()!!
-    return module.classes[0].classHeader.typeParameterList!!.typeParameters[0]
+    return module.classes[0].typeParameterList!!.typeParameters[0]
   }
 }

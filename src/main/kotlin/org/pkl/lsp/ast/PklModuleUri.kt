@@ -16,7 +16,6 @@
 package org.pkl.lsp.ast
 
 import java.nio.file.Path
-import org.antlr.v4.runtime.tree.ParseTree
 import org.pkl.lsp.*
 import org.pkl.lsp.FsFile
 import org.pkl.lsp.HttpsFile
@@ -31,7 +30,7 @@ import org.pkl.lsp.util.GlobResolver
 class PklModuleUriImpl(
   project: Project,
   override val parent: PklNode,
-  override val ctx: ParseTree,
+  override val ctx: TreeSitterNode,
 ) : AbstractPklNode(project, parent, ctx), PklModuleUri {
   override val stringConstant: PklStringConstant by lazy {
     children.firstInstanceOf<PklStringConstant>()!!

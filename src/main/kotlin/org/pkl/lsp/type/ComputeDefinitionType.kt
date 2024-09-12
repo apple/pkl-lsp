@@ -108,19 +108,17 @@ fun PklNode?.computeResolvedImportType(
         else -> Type.Unknown
       }
     }
-    is PklTypedIdentifier -> {
-      val type = typeAnnotation?.type
-      val parameter = parent as PklParameter
+    is PklTypedIdentifier ->
       when {
         type != null -> type.toType(base, bindings, context, preserveUnboundTypeVars)
         else -> { // try to infer identifier type
-          when (val identifierOwner = parameter.parent) {
+          when (val identifierOwner = parent) {
             is PklLetExpr -> identifierOwner.varExpr.computeExprType(base, bindings, context)
             is PklForGenerator -> {
               val iterableType =
                 identifierOwner.iterableExpr.computeExprType(base, bindings, context)
               val iterableClassType = iterableType.toClassType(base, context) ?: return Type.Unknown
-              val keyValueVars = identifierOwner.parameters.mapNotNull { it.typedIdentifier }
+              val keyValueVars = identifierOwner.parameters
               when {
                 keyValueVars.size > 1 && keyValueVars[0] == this -> {
                   when {
@@ -187,7 +185,6 @@ fun PklNode?.computeResolvedImportType(
           }
         }
       }
-    }
     is PklTypeParameter -> Type.Unknown
     else -> Type.Unknown
   }
@@ -206,7 +203,7 @@ private fun getFunctionParameterType(
     is Type.Class -> {
       when {
         functionType.isFunctionType -> {
-          val typedIdents = parameterList.elements.mapNotNull { it.typedIdentifier }
+          val typedIdents = parameterList.elements
           val paramIndex = typedIdents.indexOf(parameter)
           val typeArguments = functionType.typeArguments
           if (paramIndex >= typeArguments.lastIndex) Type.Unknown else typeArguments[paramIndex]

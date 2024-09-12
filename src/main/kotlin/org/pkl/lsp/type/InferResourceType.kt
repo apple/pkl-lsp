@@ -25,10 +25,11 @@ fun inferResourceType(
   base: PklBaseModule,
   context: PklProject?,
 ): Type {
+  // TODO: fix this for tree-sitter
   // note that [resourceUri] could be an interpolated string.
   // we only operate on the first string part.
   val firstChild =
-    resourceUri.parts.firstOrNull()
+    resourceUri.children.firstOrNull()
       ?: return Type.union(
         base.stringType,
         base.resourceType,
