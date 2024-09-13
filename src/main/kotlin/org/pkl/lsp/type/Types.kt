@@ -19,6 +19,8 @@ import java.util.*
 import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.Project
 import org.pkl.lsp.ast.*
+import org.pkl.lsp.documentation.DefaultTypeNameRenderer
+import org.pkl.lsp.documentation.TypeNameRenderer
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.resolvers.ResolveVisitor
 import org.pkl.lsp.unexpectedType
@@ -247,7 +249,7 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
       is Class -> ctx
       is Module -> ctx
       is StringLiteral -> project.pklBaseModule.stringType.getNode(project, context)
-      is Alias -> unaliased(project.pklBaseModule, context).getNode(project, context)
+      is Alias -> ctx
       is Union -> null
       else -> null
     }
@@ -987,6 +989,11 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
       leftType.render(builder, nameRenderer)
       builder.append('|')
       rightType.render(builder, nameRenderer)
+    }
+
+    fun eachElementType(processor: (Type) -> Unit) {
+      if (leftType is Union) leftType.eachElementType(processor) else processor(leftType)
+      if (rightType is Union) rightType.eachElementType(processor) else processor(rightType)
     }
 
     val isUnionOfStringLiterals: Boolean by lazy {

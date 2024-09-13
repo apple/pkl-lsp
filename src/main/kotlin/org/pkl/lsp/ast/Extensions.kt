@@ -18,6 +18,7 @@ package org.pkl.lsp.ast
 import io.github.treesitter.jtreesitter.Node
 import java.net.URI
 import java.net.URLEncoder
+import java.util.*
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import org.eclipse.lsp4j.Location
@@ -216,34 +217,6 @@ private fun PklType?.isRecursive(seen: MutableSet<PklTypeAlias>, context: PklPro
 
 val PklNode.isInPklBaseModule: Boolean
   get() = containingFile === project.stdlib.base
-
-interface TypeNameRenderer {
-  fun render(name: PklTypeName, appendable: Appendable)
-
-  fun render(type: Type.Class, appendable: Appendable)
-
-  fun render(type: Type.Alias, appendable: Appendable)
-
-  fun render(type: Type.Module, appendable: Appendable)
-}
-
-object DefaultTypeNameRenderer : TypeNameRenderer {
-  override fun render(name: PklTypeName, appendable: Appendable) {
-    appendable.append(name.simpleTypeName.identifier?.text)
-  }
-
-  override fun render(type: Type.Class, appendable: Appendable) {
-    appendable.append(type.ctx.name)
-  }
-
-  override fun render(type: Type.Alias, appendable: Appendable) {
-    appendable.append(type.ctx.name)
-  }
-
-  override fun render(type: Type.Module, appendable: Appendable) {
-    appendable.append(type.referenceName)
-  }
-}
 
 val PklModuleMember.owner: PklTypeDefOrModule?
   get() = parentOfTypes(PklClass::class, PklModule::class)
@@ -466,4 +439,48 @@ fun Node.utfAwareText(): String {
   val utf8 = Charsets.UTF_8
   val text = tree.text ?: throw RuntimeException("Syntax tree has no source")
   return String(text.toByteArray(utf8), startByte, endByte - startByte, utf8)
+}
+
+private val quoteCharacters =
+  EnumSet.of(TokenType.SLQuote, TokenType.SLEndQuote, TokenType.MLQuote, TokenType.MLEndQuote)
+
+fun PklStringConstant.contentsSpan(): Span {
+  val characters =
+    terminals
+      .dropWhile { quoteCharacters.contains(it.type) }
+      .dropLastWhile { quoteCharacters.contains(it.type) }
+  val firstSpan = characters.first().span
+  val lastSpan = characters.last().span
+  return Span(firstSpan.beginLine, firstSpan.beginCol, lastSpan.endLine, lastSpan.endCol)
+}
+
+fun PklStringLiteral.contentsSpan(): Span {
+  val stringStart = terminals.first().span
+  val stringEnd = terminals.last().span
+  return Span(stringStart.endLine, stringStart.endCol, stringEnd.beginLine, stringEnd.beginCol)
+}
+
+inline fun PklClass.eachSuperclassOrModule(
+  context: PklProject?,
+  consumer: (PklTypeDefOrModule) -> Unit,
+) {
+  var clazz = superclass(context)
+  var supermostClass = this
+
+  while (clazz != null) {
+    consumer(clazz)
+    supermostClass = clazz
+    clazz = clazz.superclass(context)
+  }
+
+  var module = supermostClass.supermodule(context)
+  while (module != null) {
+    consumer(module)
+    module = module.supermodule(context)
+    if (module == null) {
+      val base = project.pklBaseModule
+      consumer(base.moduleType.ctx)
+      consumer(base.anyType.ctx)
+    }
+  }
 }

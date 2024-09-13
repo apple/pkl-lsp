@@ -23,9 +23,8 @@ import org.eclipse.lsp4j.MarkupContent
 import org.pkl.lsp.Component
 import org.pkl.lsp.Project
 import org.pkl.lsp.ast.*
+import org.pkl.lsp.documentation.toMarkdown
 import org.pkl.lsp.packages.dto.PklProject
-import org.pkl.lsp.resolvers.ResolveVisitors
-import org.pkl.lsp.resolvers.Resolvers
 import org.pkl.lsp.type.*
 
 class HoverFeature(project: Project) : Component(project) {
@@ -74,7 +73,7 @@ class HoverFeature(project: Project) : Component(project) {
         } else null
       }
       is PklQualifiedIdentifier ->
-        when (val par = node.parent) {
+        when (node.parent) {
           // render the module declaration
           is PklModuleClause -> node.enclosingModule?.toMarkdown(originalNode, context)
           else -> null
@@ -88,198 +87,9 @@ class HoverFeature(project: Project) : Component(project) {
         } else null
       }
       is PklTypedIdentifier -> node.toMarkdown(originalNode, context)
-      is PklThisExpr -> node.computeThisType(base, mapOf(), context).toMarkdown(context)
+      is PklThisExpr -> node.computeThisType(base, mapOf(), context).toMarkdown(project, context)
       is PklModuleExpr -> node.enclosingModule?.toMarkdown(originalNode, context)
       else -> null
     }
-  }
-
-  private fun PklNode.render(originalNode: PklNode?, context: PklProject?): String =
-    when (this) {
-      is PklProperty ->
-        buildString {
-          append(modifiers.render())
-          if (isLocal || isFixedOrConst) {
-            append(renderTypeAnnotation(name, type, this@render, originalNode, context))
-          } else {
-            append(name)
-            append(": ")
-            append(type?.render(originalNode, context) ?: "unknown")
-          }
-        }
-      is PklStringLiteralType -> "\"$text\""
-      is PklMethod -> {
-        val modifiers = modifiers.render()
-        modifiers + methodHeader.render(originalNode, context)
-      }
-      is PklMethodHeader ->
-        buildString {
-          append("function ")
-          append(identifier?.text ?: "<method>>")
-          append(typeParameterList?.render(originalNode, context) ?: "")
-          append(parameterList?.render(originalNode, context) ?: "()")
-          val returnTypeStr =
-            if (returnType != null) {
-              returnType!!.render(originalNode, context)
-            } else {
-              val parent = this@render.parent
-              if (parent != null && parent is PklMethod) {
-                val type = parent.body.computeExprType(project.pklBaseModule, mapOf(), context)
-                type.render()
-              } else "unknown"
-            }
-          append(": ")
-          append(returnTypeStr)
-        }
-      is PklParameterList -> {
-        elements.joinToString(", ", prefix = "(", postfix = ")") {
-          it.render(originalNode, context)
-        }
-      }
-      is PklTypeParameterList -> {
-        typeParameters.joinToString(", ", prefix = "<", postfix = ">") {
-          it.render(originalNode, context)
-        }
-      }
-      is PklTypeAnnotation -> ": ${type!!.render(originalNode, context)}"
-      is PklTypedIdentifier ->
-        renderTypeAnnotation(identifier?.text, typeAnnotation?.type, this, originalNode, context)!!
-      is PklTypeParameter -> {
-        val vari = variance?.name?.lowercase()?.let { "$it " } ?: ""
-        "$vari$name"
-      }
-      is PklClass ->
-        buildString {
-          append(modifiers.render())
-          append("class ")
-          append(identifier?.text ?: "<class>")
-          typeParameterList?.let { append(it.render(originalNode, context)) }
-          extends?.let {
-            append(" extends ")
-            append(it.render(originalNode, context))
-          }
-        }
-      is PklModule -> header?.render(originalNode, context) ?: "module $moduleName"
-      is PklModuleHeader ->
-        buildString {
-          append(modifiers.render())
-          append("module ")
-          moduleClause?.let { append(it.render(originalNode, context)) } ?: append("<module>")
-          moduleExtendsAmendsClause?.let {
-            append(if (it.isAmend) " amends " else " extends ")
-            append(it.moduleUri!!.stringConstant.text)
-          }
-        }
-      is PklModuleClause ->
-        buildString { append(moduleName ?: enclosingModule?.moduleName ?: "<module>") }
-      is PklImport ->
-        buildString {
-          if (isGlob) {
-            append("import* ")
-          } else {
-            append("import ")
-          }
-          moduleUri?.stringConstant?.escapedText()?.let { append("\"$it\"") }
-          val definitionType =
-            resolve(context)
-              .computeResolvedImportType(project.pklBaseModule, mapOf(), false, context)
-          append(": ")
-          definitionType.render(this, DefaultTypeNameRenderer)
-        }
-      is PklTypeAlias ->
-        buildString {
-          append(modifiers.render())
-          append("typealias ")
-          append(identifier?.text)
-          typeParameterList?.let { append(it.render(originalNode, context)) }
-        }
-      is PklType -> render()
-      else -> text
-    }
-
-  // render modifiers
-  private fun List<Terminal>?.render(): String {
-    return this?.let { if (isEmpty()) "" else joinToString(" ", postfix = " ") { it.text } } ?: ""
-  }
-
-  private fun renderTypeAnnotation(
-    name: String?,
-    type: PklType?,
-    node: PklNode,
-    originalNode: PklNode?,
-    context: PklProject?,
-  ): String? {
-    if (name == null) return null
-    return buildString {
-      append(name)
-      when {
-        originalNode !== node && originalNode?.isAncestor(node) == false -> {
-          val visitor =
-            ResolveVisitors.typeOfFirstElementNamed(
-              name,
-              null,
-              project.pklBaseModule,
-              isNullSafeAccess = false,
-              preserveUnboundTypeVars = false,
-            )
-          val computedType =
-            Resolvers.resolveUnqualifiedAccess(
-              originalNode,
-              node.computeThisType(project.pklBaseModule, mapOf(), context),
-              true,
-              project.pklBaseModule,
-              mapOf(),
-              visitor,
-              context,
-            )
-          append(": ")
-          if (computedType is Type.Unknown && type != null) {
-            append(type.render())
-          } else {
-            computedType.render(this)
-          }
-        }
-        type != null -> {
-          append(": ")
-          append(type.render(originalNode, context))
-        }
-        else -> {
-          val computedType = node.computeResolvedImportType(project.pklBaseModule, mapOf(), context)
-          append(": ")
-          computedType.render(this)
-        }
-      }
-    }
-  }
-
-  private fun Type.toMarkdown(context: PklProject?): String {
-    val markdown = render()
-    val ctx = getNode(project, context)
-    return when {
-      ctx is PklModule && ctx.header != null -> showDocCommentAndModule(ctx.header!!, markdown)
-      else -> showDocCommentAndModule(ctx, markdown)
-    }
-  }
-
-  private fun PklNode.toMarkdown(originalNode: PklNode?, context: PklProject?): String {
-    val markdown = render(originalNode, context)
-    return when {
-      this is PklModule && header != null -> showDocCommentAndModule(header!!, markdown)
-      else -> showDocCommentAndModule(this, markdown)
-    }
-  }
-
-  private fun showDocCommentAndModule(node: PklNode?, text: String): String {
-    val markdown = "```pkl\n$text\n```"
-    val withDoc =
-      if (node is PklDocCommentOwner) {
-        node.parsedComment?.let { "$markdown\n\n---\n\n$it" } ?: markdown
-      } else markdown
-    val module = (if (node is PklModule) node else node?.enclosingModule)
-    val footer =
-      if (module != null) {
-        "\n\n---\n\nin [${module.moduleName}](${module.getLocationUri(true)})"
-      } else ""
-    return "$withDoc$footer"
   }
 }
