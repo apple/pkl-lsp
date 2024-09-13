@@ -75,4 +75,17 @@ class GoToDefinitionPackagesTest : LSPTestBase() {
     assertThat(resolved).isInstanceOf(PklClassProperty::class.java)
     assertThat(resolved.enclosingModule!!.moduleName).isEqualTo("k8s.api.apps.v1.Deployment")
   }
+
+  @Test
+  fun `resolve glob imports`() {
+    createPklFile(
+      """
+      import* "package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.appEnvCluster@1.0.2#/*.pkl<caret>"
+    """
+        .trimIndent()
+    )
+
+    val resolved = goToDefinition()
+    assertThat(resolved).hasSize(1)
+  }
 }

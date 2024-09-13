@@ -16,10 +16,14 @@
 package org.pkl.lsp.ast
 
 import java.net.URLEncoder
+import java.util.*
+import org.eclipse.lsp4j.Location
 import org.pkl.lsp.*
 import org.pkl.lsp.FsFile
+import org.pkl.lsp.LSPUtil.toRange
 import org.pkl.lsp.StdlibFile
 import org.pkl.lsp.ast.PklModuleUriImpl.Companion.resolve
+import org.pkl.lsp.ast.PklModuleUriImpl.Companion.resolveGlob
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.resolvers.ResolveVisitors
 import org.pkl.lsp.resolvers.Resolvers
@@ -281,7 +285,9 @@ fun PklImportBase.resolveModules(context: PklProject?): List<PklModule> =
   }
 
 fun PklModuleUri.resolveGlob(context: PklProject?): List<PklModule> =
-  TODO("implement") // resolveModuleUriGlob(this)
+  this.stringConstant.escapedText()?.let { text ->
+    resolveGlob(text, text, this, context)?.filter { !it.isDirectory }?.mapNotNull { it.toModule() }
+  } ?: emptyList()
 
 fun PklModuleUri.resolve(context: PklProject?): PklModule? =
   this.stringConstant.escapedText()?.let { text ->
@@ -407,6 +413,9 @@ fun PklNode.toLspURIString(): String {
     }
   }
 }
+
+val PklNode.location: Location
+  get() = Location(toLspURIString(), beginningSpan().toRange())
 
 fun PklNode.toCommandURIString(): String {
   val sp = beginningSpan()

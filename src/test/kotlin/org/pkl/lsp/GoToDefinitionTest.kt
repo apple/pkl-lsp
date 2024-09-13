@@ -177,4 +177,21 @@ class GoToDefinitionTest : LSPTestBase() {
     resolved as PklProperty
     assertThat(resolved.expr!!.text).isEqualTo("\"module level\"")
   }
+
+  @Test
+  fun `resolve glob import`() {
+    createPklFile("foo.pkl", "")
+    createPklFile("bar.pkl", "")
+    createPklFile(
+      """
+      result = import*("*.pkl<caret>")
+    """
+        .trimIndent()
+    )
+    val resolved = goToDefinition()
+    assertThat(resolved).isNotEmpty
+    assertThat(resolved).hasSize(3)
+    assertThat(resolved.map { it.containingFile.name })
+      .hasSameElementsAs(setOf("main.pkl", "foo.pkl", "bar.pkl"))
+  }
 }

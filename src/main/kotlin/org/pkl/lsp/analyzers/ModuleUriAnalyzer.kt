@@ -34,8 +34,12 @@ class ModuleUriAnalyzer(project: Project) : Analyzer(project) {
     val moduleUri = node.moduleUri ?: return true
     val uriStr = moduleUri.stringConstant.escapedText() ?: return false
     val context = node.containingFile.pklProject
+    val isGlob = (node as? PklImportBase)?.isGlob ?: false
+    if (isGlob) {
+      analyzeGlobUri(moduleUri, uriStr, diagnosticsHolder, context)
+      return true
+    }
     val resolved = moduleUri.resolve(context)
-
     if (
       checkDependencyNotation(
         moduleUri,
@@ -56,6 +60,39 @@ class ModuleUriAnalyzer(project: Project) : Analyzer(project) {
     }
     diagnosticsHolder += warn(moduleUri.stringConstant, ErrorMessages.create("cannotResolveImport"))
     return true
+  }
+
+  private fun analyzeGlobUri(
+    element: PklModuleUri,
+    uriText: String,
+    holder: MutableList<PklDiagnostic>,
+    context: PklProject?,
+  ) {
+    val scheme = parseUriOrNull(uriText)?.scheme ?: element.containingFile.uri.scheme
+    if (checkScheme(element, scheme, holder)) {
+      return
+    }
+    if (uriText.startsWith("...")) {
+      holder.add(warn(element.stringConstant, ErrorMessages.create("cannotGlobTripleDots")))
+      return
+    }
+    val resolved = element.resolveGlob(context)
+    if (resolved.isEmpty()) {
+      holder.add(warn(element.stringConstant, ErrorMessages.create("globPatternHasNoMatches")))
+    }
+  }
+
+  private fun checkScheme(
+    element: PklModuleUri,
+    scheme: String,
+    holder: MutableList<PklDiagnostic>,
+  ): Boolean {
+    // only warn on known unglobbable schemes
+    if (scheme == "pkl" || scheme == "http" || scheme == "https") {
+      holder.add(warn(element.stringConstant, "Scheme $scheme is not globbable"))
+      return true
+    }
+    return false
   }
 
   private fun analyzePackageUri(

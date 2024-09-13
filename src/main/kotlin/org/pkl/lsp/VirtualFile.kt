@@ -20,9 +20,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicLong
 import javax.naming.OperationNotSupportedException
-import kotlin.io.path.name
-import kotlin.io.path.nameWithoutExtension
-import kotlin.io.path.readText
+import kotlin.io.path.*
 import org.pkl.core.parser.Parser
 import org.pkl.core.util.IoUtils
 import org.pkl.lsp.ast.PklModule
@@ -75,6 +73,12 @@ interface VirtualFile : ModificationTracker {
   /** Tells if this file is within a package. */
   val `package`: PackageDependency?
 
+  /** Tells if this file is a directory. */
+  val isDirectory: Boolean
+
+  /** Returns the children of this directory, or `null` if this is not a directory. */
+  val children: List<VirtualFile>?
+
   fun parent(): VirtualFile?
 
   fun resolve(path: String): VirtualFile?
@@ -114,6 +118,14 @@ class FsFile(override val path: Path, override val project: Project) : BaseFile(
 
   override val `package`: PackageDependency? = null
 
+  override val isDirectory: Boolean
+    get() = path.isDirectory()
+
+  override val children: List<VirtualFile>?
+    get() =
+      if (!isDirectory) null
+      else path.listDirectoryEntries().mapNotNull { project.virtualFileManager.get(it) }
+
   override fun parent(): VirtualFile? = path.parent?.let { project.virtualFileManager.get(it) }
 
   override fun resolve(path: String): VirtualFile? {
@@ -143,6 +155,12 @@ class StdlibFile(moduleName: String, override val project: Project) : BaseFile()
   override val pklProjectDir: VirtualFile? = null
   override val `package`: PackageDependency? = null
 
+  override val isDirectory: Boolean
+    get() = false
+
+  override val children: List<VirtualFile>?
+    get() = null
+
   override fun parent(): VirtualFile? = null
 
   override fun resolve(path: String): VirtualFile? = null
@@ -165,6 +183,10 @@ class HttpsFile(override val uri: URI, override val project: Project) : BaseFile
   override val pklProject: PklProject? = null
   override val pklProjectDir: VirtualFile? = null
   override val `package`: PackageDependency? = null
+
+  override val isDirectory: Boolean = false
+
+  override val children: List<VirtualFile>? = null
 
   override fun parent(): VirtualFile? {
     val newUri = if (uri.path.endsWith("/")) uri.resolve("..") else uri.resolve(".")
@@ -191,6 +213,14 @@ class JarFile(override val path: Path, override val uri: URI, override val proje
 
   override val pklProject: PklProject? = null
   override val pklProjectDir: VirtualFile? = null
+
+  override val isDirectory: Boolean
+    get() = path.isDirectory()
+
+  override val children: List<VirtualFile>?
+    get() =
+      if (!isDirectory) null
+      else path.listDirectoryEntries().mapNotNull { project.virtualFileManager.get(it) }
 
   override val `package`: PackageDependency?
     get() =
@@ -235,6 +265,8 @@ class EphemeralFile(private val text: String, override val project: Project) : B
   override val path: Path
     get() = throw OperationNotSupportedException()
 
+  override val isDirectory: Boolean = false
+  override val children: List<VirtualFile>? = null
   override val pklProject: PklProject? = null
   override val pklProjectDir: VirtualFile? = null
   override val `package`: PackageDependency? = null

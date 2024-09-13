@@ -75,7 +75,8 @@ class PklProjectManager(project: Project) : Component(project) {
     if (file !is FsFile) null else pklProjects[file.projectKey]
 
   /** Tracks when PklProject files get added or deleted from the workspace. */
-  val addedOrRemovedFilesModificationTracker = SimpleModificationTracker()
+  val addedOrRemovedFilesModificationTracker =
+    project.pklFileTracker.filter { event -> event.files.any { it.path.endsWith("PklProject") } }
 
   /** Tracks when projects get sync'd. */
   val syncTracker = SimpleModificationTracker()
@@ -83,7 +84,6 @@ class PklProjectManager(project: Project) : Component(project) {
   fun initialize(folders: List<Path>?) {
     project.messageBus.subscribe(textDocumentTopic, ::handleTextDocumentEvent)
     project.messageBus.subscribe(workspaceFolderTopic, ::handleWorkspaceFolderEvent)
-    project.messageBus.subscribe(workspaceTopic, ::handleWorkspaceEvent)
     workspaceFolders.clear()
     pklProjects.clear()
     lastPklProjectSyncState.clear()
@@ -206,12 +206,6 @@ class PklProjectManager(project: Project) : Component(project) {
       }
       project.messageBus.emit(projectTopic, ProjectEvent(ProjectEventType.PROJECTS_SYNCED))
     }
-
-  private fun handleWorkspaceEvent(event: WorkspaceEvent) {
-    if (event.files.any { it.path.endsWith("PklProject") }) {
-      addedOrRemovedFilesModificationTracker.increment()
-    }
-  }
 
   private fun doDownloadDependencies(pklProject: PklProject, cacheDir: Path) {
     val packageUris =
