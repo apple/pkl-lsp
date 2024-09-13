@@ -63,9 +63,9 @@ class GoToDefinitionFeature(private val server: PklLSPServer, project: Project) 
 
   private fun resolveModuleUri(
     originalNode: PklStringConstant,
+    parent: PklModuleUriOwner,
     context: PklProject?,
   ): List<LocationLink> {
-    val parent = originalNode.parent as PklModuleUriOwner
     val stringContentsSpan = originalNode.contentsSpan()
     if (parent is PklImportBase && parent.isGlob) {
       val resolved = parent.moduleUri?.resolveGlob(context) ?: return listOf()
@@ -81,8 +81,10 @@ class GoToDefinitionFeature(private val server: PklLSPServer, project: Project) 
     col: Int,
     context: PklProject?,
   ): Either<List<Location>, List<LocationLink>> {
-    if (originalNode is PklStringConstant) {
-      return Either.forRight(resolveModuleUri(originalNode, context))
+    if (originalNode is PklStringConstant && originalNode.parent is PklModuleUriOwner) {
+      return Either.forRight(
+        resolveModuleUri(originalNode, originalNode.parent as PklModuleUriOwner, context)
+      )
     }
     val node =
       originalNode.resolveReference(line, col, context) ?: return Either.forRight(emptyList())
@@ -99,11 +101,7 @@ class GoToDefinitionFeature(private val server: PklLSPServer, project: Project) 
   }
 
   private fun PklNode.toLocationLink(originalSpan: Span): LocationLink {
-    return LocationLink(
-      toLspURIString(),
-      beginningSpan().toRange(),
-      beginningSpan().toRange(),
-      originalSpan.toRange(),
-    )
+    val range = beginningSpan().toRange()
+    return LocationLink(toLspURIString(), range, range, originalSpan.toRange())
   }
 }
