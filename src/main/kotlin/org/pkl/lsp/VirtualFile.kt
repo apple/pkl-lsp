@@ -15,12 +15,15 @@
  */
 package org.pkl.lsp
 
+import java.io.IOException
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.CompletableFuture
 import javax.naming.OperationNotSupportedException
 import kotlin.io.path.*
+import org.pkl.core.module.ModuleKeyFactories.file
+import org.pkl.core.parser.LexParseException
 import org.pkl.core.parser.Parser
 import org.pkl.core.util.IoUtils
 import org.pkl.lsp.ast.PklModule
@@ -56,6 +59,7 @@ interface VirtualFile : ModificationTracker {
   val uri: URI
   val pklAuthority: String
   val project: Project
+  var version: Long?
 
   /**
    * The NIO path backing this file.
@@ -79,19 +83,59 @@ interface VirtualFile : ModificationTracker {
   /** Returns the children of this directory, or `null` if this is not a directory. */
   val children: List<VirtualFile>?
 
+  var contents: String
+
   fun parent(): VirtualFile?
 
   fun resolve(path: String): VirtualFile?
 
-  fun toModule(): PklModule?
-
-  fun contents(): String
+  fun getModule(): CompletableFuture<PklModule?>
 }
 
 sealed class BaseFile : VirtualFile {
-  internal val modificationCount: AtomicLong = AtomicLong(0)
+  override fun getModificationCount(): Long = version ?: -1L
 
-  override fun getModificationCount(): Long = modificationCount.get()
+  override var version: Long? = null
+
+  abstract fun doReadContents(): String
+
+  // If contents have not yet been set, read contents from external source, possibly performing I/O.
+  override var contents: String
+    get() {
+      return myContents ?: doReadContents()
+    }
+    set(text) {
+      myContents = text
+    }
+
+  final override fun getModule(): CompletableFuture<PklModule?> {
+    if (isDirectory) {
+      return CompletableFuture.completedFuture(null)
+    }
+    return project.cachedValuesManager.getCachedValue("VirtualFile($uri)") {
+      CachedValue(CompletableFuture.supplyAsync(::doBuildModule), this)
+    }!!
+  }
+
+  protected val logger by lazy { project.getLogger(this::class) }
+
+  private var myContents: String? = null
+
+  private val parser = Parser()
+
+  private fun doBuildModule(): PklModule? {
+    return try {
+      logger.log("building $uri")
+      val moduleCtx = parser.parseModule(contents)
+      return PklModuleImpl(moduleCtx, this)
+    } catch (e: LexParseException) {
+      logger.warn("Parser Error building $file: ${e.message}")
+      null
+    } catch (e: Exception) {
+      logger.warn("Error building $file: ${e.message} ${e.stackTraceToString()}")
+      null
+    }
+  }
 }
 
 class FsFile(override val path: Path, override val project: Project) : BaseFile() {
@@ -134,14 +178,7 @@ class FsFile(override val path: Path, override val project: Project) : BaseFile(
     else null
   }
 
-  override fun toModule(): PklModule? {
-    // get this module from the cache if possible so changes to it are propagated even
-    // if the file was not saved
-    val builder = project.builder
-    return builder.findModuleInCache(uri) ?: builder.pathToModule(path, this)
-  }
-
-  override fun contents(): String = path.readText()
+  override fun doReadContents(): String = path.readText()
 }
 
 class StdlibFile(moduleName: String, override val project: Project) : BaseFile() {
@@ -165,11 +202,7 @@ class StdlibFile(moduleName: String, override val project: Project) : BaseFile()
 
   override fun resolve(path: String): VirtualFile? = null
 
-  override fun toModule(): PklModule? {
-    return project.stdlib.getModule(name)
-  }
-
-  override fun contents(): String {
+  override fun doReadContents(): String {
     return IoUtils.readClassPathResourceAsString(javaClass, "/org/pkl/core/stdlib/$name.pkl")
   }
 }
@@ -188,6 +221,8 @@ class HttpsFile(override val uri: URI, override val project: Project) : BaseFile
 
   override val children: List<VirtualFile>? = null
 
+  var readError: IOException? = null
+
   override fun parent(): VirtualFile? {
     val newUri = if (uri.path.endsWith("/")) uri.resolve("..") else uri.resolve(".")
     return project.virtualFileManager.get(newUri)
@@ -197,12 +232,8 @@ class HttpsFile(override val uri: URI, override val project: Project) : BaseFile
     return project.virtualFileManager.get(uri.resolve(path))
   }
 
-  override fun toModule(): PklModule? {
-    return project.fileCacheManager.findHttpModule(uri)
-  }
-
-  override fun contents(): String {
-    return project.fileCacheManager.findHttpContent(uri) ?: ""
+  override fun doReadContents(): String {
+    return uri.toURL().readText()
   }
 }
 
@@ -243,22 +274,13 @@ class JarFile(override val path: Path, override val uri: URI, override val proje
   override fun resolve(path: String): VirtualFile? =
     project.virtualFileManager.get(this.path.resolve(path))
 
-  override fun toModule(): PklModule? {
-    val builder = project.builder
-    return builder.findModuleInCache(uri) ?: builder.pathToModule(path, this)
-  }
-
-  override fun contents(): String =
+  override fun doReadContents(): String =
     project.cachedValuesManager.getCachedValue("${javaClass.simpleName}-contents-${uri}") {
       CachedValue(path.readText())
     }!!
 }
 
 class EphemeralFile(private val text: String, override val project: Project) : BaseFile() {
-  companion object {
-    private val parser = Parser()
-  }
-
   override val name: String = "ephemeral"
   override val uri: URI = URI("fake:fake")
   override val pklAuthority: String = "fake"
@@ -275,10 +297,5 @@ class EphemeralFile(private val text: String, override val project: Project) : B
 
   override fun resolve(path: String): VirtualFile? = null
 
-  override fun toModule(): PklModule {
-    val ctx = parser.parseModule(text)
-    return PklModuleImpl(ctx, this)
-  }
-
-  override fun contents(): String = text
+  override fun doReadContents(): String = text
 }

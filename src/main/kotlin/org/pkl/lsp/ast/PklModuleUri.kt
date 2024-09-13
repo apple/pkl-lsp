@@ -106,18 +106,14 @@ class PklModuleUriImpl(
       val targetUri = parseUriOrNull(targetUriStr) ?: return null
 
       return when (targetUri.scheme) {
-        "pkl" -> project.stdlib.getModule(targetUri.schemeSpecificPart)
+        "pkl",
+        "https" -> project.virtualFileManager.get(targetUri)?.getModule()?.get()
         "file" ->
           when {
             // be on the safe side and only follow file: URLs from local files
             sourceFile is FsFile -> {
-              findByAbsolutePath(sourceFile, targetUri.path)
+              findByAbsolutePath(sourceFile, targetUri.path)?.getModule()?.get()
             }
-            else -> null
-          }
-        "https" ->
-          when {
-            targetUri.host != null -> project.fileCacheManager.findHttpModule(targetUri)
             else -> null
           }
         "package" -> {
@@ -127,25 +123,25 @@ class PklModuleUriImpl(
           val vfile =
             getDependencyRoot(project, targetUriStr, enclosingModule, context)
               ?.resolve(targetUri.fragment)
-          vfile?.toModule()
+          vfile?.getModule()?.get()
         }
         // targetUri is a relative URI
         null -> {
           when {
-            sourceFile is HttpsFile -> sourceFile.resolve(targetUriStr)?.toModule()
+            sourceFile is HttpsFile -> sourceFile.resolve(targetUriStr)?.getModule()?.get()
             // dependency notation
             targetUriStr.startsWith("@") -> {
               val root = getDependencyRoot(project, targetUriStr, enclosingModule, context)
               if (root != null) {
                 val resolvedTargetUri =
                   targetUriStr.substringAfter('/', "").ifEmpty {
-                    return root.toModule()
+                    return root.getModule().get()
                   }
-                root.resolve(resolvedTargetUri)?.toModule()
+                root.resolve(resolvedTargetUri)?.getModule()?.get()
               } else null
             }
             sourceFile is FsFile || sourceFile is JarFile ->
-              findOnFileSystem(sourceFile, targetUri.path)
+              findOnFileSystem(sourceFile, targetUri.path)?.getModule()?.get()
             // TODO: handle other types of relative uris
             else -> null
           }
@@ -236,24 +232,23 @@ class PklModuleUriImpl(
       return dependency.getRoot(project)
     }
 
-    private fun findOnFileSystem(sourceFile: VirtualFile, targetPath: String): PklModule? {
+    private fun findOnFileSystem(sourceFile: VirtualFile, targetPath: String): VirtualFile? {
       return when {
         targetPath.startsWith(".../") -> findTripleDotPathOnFileSystem(sourceFile, targetPath)
         targetPath.startsWith("/") -> findByAbsolutePath(sourceFile, targetPath)
-        else -> sourceFile.parent()?.resolve(targetPath)?.toModule()
+        else -> sourceFile.parent()?.resolve(targetPath)
       }
     }
 
-    private fun findByAbsolutePath(sourceFile: VirtualFile, targetPath: String): PklModule? {
+    private fun findByAbsolutePath(sourceFile: VirtualFile, targetPath: String): VirtualFile? {
       val path = Path.of(targetPath)
-      val file = sourceFile.project.virtualFileManager.get(path) ?: return null
-      return sourceFile.project.builder.pathToModule(path, file)
+      return sourceFile.project.virtualFileManager.get(path)
     }
 
     private fun findTripleDotPathOnFileSystem(
       sourceFile: VirtualFile,
       targetPath: String,
-    ): PklModule? {
+    ): VirtualFile? {
       val targetPathAfterTripleDot = targetPath.substring(4)
 
       var currentDir = sourceFile.parent()?.parent()
@@ -263,7 +258,7 @@ class PklModuleUriImpl(
           currentDir = currentDir.parent()
           continue
         }
-        return file.toModule()
+        return file
       }
       return null
     }

@@ -75,7 +75,7 @@ class SettingsManager(project: Project) : Component(project) {
   }
 
   private fun handleTextDocumentEvent(event: TextDocumentEvent) {
-    if (event.type != TextDocumentEventType.OPENED) return
+    if (event !is TextDocumentEvent.Opened) return
     val file = project.virtualFileManager.getFsFile(event.file) ?: return
     initialized.whenComplete { _, _ ->
       if (settings.pklCliPath == null && file.pklProjectDir != null) {

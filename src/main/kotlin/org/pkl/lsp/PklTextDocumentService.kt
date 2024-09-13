@@ -28,58 +28,57 @@ import org.pkl.lsp.services.Topic
 
 val textDocumentTopic = Topic<TextDocumentEvent>("TextDocumentEvent")
 
-data class TextDocumentEvent(val file: URI, val type: TextDocumentEventType)
+sealed interface TextDocumentEvent {
+  val file: URI
 
-enum class TextDocumentEventType {
-  OPENED,
-  CHANGED,
-  CLOSED,
-  SAVED,
+  data class Opened(override val file: URI) : TextDocumentEvent
+
+  data class Closed(override val file: URI) : TextDocumentEvent
+
+  data class Saved(override val file: URI) : TextDocumentEvent
+
+  data class Changed(override val file: URI, val changes: List<TextDocumentContentChangeEvent>) :
+    TextDocumentEvent
 }
 
-class PklTextDocumentService(private val server: PklLSPServer, project: Project) :
-  Component(project), TextDocumentService {
+class PklTextDocumentService(project: Project) : Component(project), TextDocumentService {
 
-  private val hover = HoverFeature(server, project)
-  private val definition = GoToDefinitionFeature(server, project)
-  private val completion = CompletionFeature(server, project)
+  private val hover = HoverFeature(project)
+  private val definition = GoToDefinitionFeature(project)
+  private val completion = CompletionFeature(project)
   private val codeAction = CodeActionFeature(project)
 
   override fun didOpen(params: DidOpenTextDocumentParams) {
     val uri = URI(params.textDocument.uri)
-    project.messageBus.emit(textDocumentTopic, TextDocumentEvent(uri, TextDocumentEventType.OPENED))
-    val vfile = project.virtualFileManager.get(uri) ?: return
-    server.builder().requestBuild(vfile, params.textDocument.text)
+    project.virtualFileManager.get(uri)?.let { file ->
+      file.version = params.textDocument.version.toLong()
+    }
+    project.messageBus.emit(textDocumentTopic, TextDocumentEvent.Opened(uri))
   }
 
   override fun didChange(params: DidChangeTextDocumentParams) {
     val uri = URI(params.textDocument.uri)
+    // update contents first before emitting this message, to ensure that downstream handlers
+    // receive
+    // up-to-date versions of each VirtualFile.
+    project.virtualFileManager.get(uri)?.let { file ->
+      file.contents = replaceContents(file.contents, params.contentChanges)
+      file.version = params.textDocument.version.toLong()
+    }
     project.messageBus.emit(
       textDocumentTopic,
-      TextDocumentEvent(uri, TextDocumentEventType.CHANGED),
+      TextDocumentEvent.Changed(uri, params.contentChanges),
     )
-    val vfile = project.virtualFileManager.get(uri) ?: return
-    server.builder().requestBuild(vfile, params.contentChanges[0].text)
   }
 
   override fun didClose(params: DidCloseTextDocumentParams) {
     val uri = URI(params.textDocument.uri)
-    project.messageBus.emit(textDocumentTopic, TextDocumentEvent(uri, TextDocumentEventType.CLOSED))
+    project.messageBus.emit(textDocumentTopic, TextDocumentEvent.Closed(uri))
   }
 
   override fun didSave(params: DidSaveTextDocumentParams) {
     val uri = URI(params.textDocument.uri)
-    if (!uri.scheme.equals("file")) {
-      logger.warn("Saved non file URI: $uri")
-      return
-    }
-    project.messageBus.emit(textDocumentTopic, TextDocumentEvent(uri, TextDocumentEventType.SAVED))
-    val file = project.virtualFileManager.get(uri)
-    if (file == null) {
-      logger.warn("Got textDocument/didSave for file that doesn't exist: $uri")
-      return
-    }
-    server.builder().requestBuild(file)
+    project.messageBus.emit(textDocumentTopic, TextDocumentEvent.Saved(uri))
   }
 
   override fun hover(params: HoverParams): CompletableFuture<Hover> {
@@ -102,5 +101,22 @@ class PklTextDocumentService(private val server: PklLSPServer, project: Project)
     params: CodeActionParams
   ): CompletableFuture<List<Either<Command, CodeAction>>> {
     return codeAction.onCodeAction(params)
+  }
+
+  private fun replaceContents(
+    contents: String,
+    changes: List<TextDocumentContentChangeEvent>,
+  ): String {
+    var result = contents
+    for (change in changes) {
+      if (change.range == null) {
+        result = change.text
+      } else {
+        val startIndex = result.getIndex(change.range.start)
+        val endIndex = result.getIndex(change.range.end)
+        result = result.replaceRange(startIndex, endIndex, change.text)
+      }
+    }
+    return result
   }
 }

@@ -18,6 +18,7 @@ package org.pkl.lsp
 import java.net.URI
 import java.net.URISyntaxException
 import java.nio.file.Path
+import java.util.concurrent.CompletableFuture
 import java.util.regex.Pattern
 import kotlin.math.max
 import org.eclipse.lsp4j.Position
@@ -130,3 +131,22 @@ val URI.effectiveUri: URI?
       else -> null
     }
   }
+
+val pklCacheDir: Path = Path.of(System.getProperty("user.home")).resolve(".pkl/cache")
+
+fun String.getIndex(position: Position): Int {
+  var currentIndex = 0
+  for ((column, line) in lines().withIndex()) {
+    if (column == position.line) {
+      return currentIndex + position.character
+    }
+    currentIndex += line.length + 1 // + 1 because newline is also a character
+  }
+  throw IllegalArgumentException("Invalid position for contents")
+}
+
+/**
+ * Waits for each future to resolve, and resolves to a list of the resolved values of each future.
+ */
+fun <T> List<CompletableFuture<T>>.sequence(): CompletableFuture<List<T>> =
+  CompletableFuture.allOf(*toTypedArray()).thenApply { map(CompletableFuture<T>::get) }

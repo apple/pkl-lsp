@@ -33,15 +33,12 @@ import org.pkl.lsp.messages.ActionableNotification
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.packages.dto.PklProject.Companion.DerivedProjectMetadata
 import org.pkl.lsp.packages.dto.RemoteDependency
-import org.pkl.lsp.util.FileCacheManager.Companion.pklCacheDir
 import org.pkl.lsp.util.SimpleModificationTracker
 
 val projectTopic = Topic<ProjectEvent>("ProjectEvent")
 
-data class ProjectEvent(val type: ProjectEventType)
-
-enum class ProjectEventType {
-  PROJECTS_SYNCED
+sealed interface ProjectEvent {
+  data object ProjectsSynced : ProjectEvent
 }
 
 class PklProjectManager(project: Project) : Component(project) {
@@ -121,8 +118,9 @@ class PklProjectManager(project: Project) : Component(project) {
         project.languageClient.showMessage(
           MessageParams(MessageType.Info, "Project sync successful")
         )
+        syncTracker.increment()
         if (emitEvents) {
-          project.messageBus.emit(projectTopic, ProjectEvent(ProjectEventType.PROJECTS_SYNCED))
+          project.messageBus.emit(projectTopic, ProjectEvent.ProjectsSynced)
         }
       }
       .exceptionally { err ->
@@ -138,7 +136,6 @@ class PklProjectManager(project: Project) : Component(project) {
           )
         )
       }
-      .whenComplete { _, _ -> syncTracker.increment() }
   }
 
   /** All workspace folders managed by the client. */
@@ -165,7 +162,7 @@ class PklProjectManager(project: Project) : Component(project) {
     val file = project.virtualFileManager.getFsFile(event.file) ?: return
     if (
       file.path.endsWith("PklProject") &&
-        event.type == TextDocumentEventType.SAVED &&
+        event is TextDocumentEvent.Saved &&
         file.pklProject != null &&
         !isPklProjectFileClean(file)
     ) {
@@ -178,9 +175,7 @@ class PklProjectManager(project: Project) : Component(project) {
       )
     }
     if (
-      event.type == TextDocumentEventType.OPENED &&
-        file.pklProjectDir != null &&
-        file.pklProject == null
+      event is TextDocumentEvent.Opened && file.pklProjectDir != null && file.pklProject == null
     ) {
       project.languageClient.sendActionableNotification(
         ActionableNotification(
@@ -204,7 +199,7 @@ class PklProjectManager(project: Project) : Component(project) {
         workspaceFolders.removeIf { it.toUri() == path.toUri() }
         unloadWorkspaceState(path)
       }
-      project.messageBus.emit(projectTopic, ProjectEvent(ProjectEventType.PROJECTS_SYNCED))
+      project.messageBus.emit(projectTopic, ProjectEvent.ProjectsSynced)
     }
 
   private fun doDownloadDependencies(pklProject: PklProject, cacheDir: Path) {
@@ -307,7 +302,7 @@ class PklProjectManager(project: Project) : Component(project) {
         logger.warn(e.stackTraceToString())
       }
     }
-    project.messageBus.emit(projectTopic, ProjectEvent(ProjectEventType.PROJECTS_SYNCED))
+    project.messageBus.emit(projectTopic, ProjectEvent.ProjectsSynced)
   }
 
   private fun loadProjectFromState(pklProjectState: PklProjectState, workspace: Path): PklProject {

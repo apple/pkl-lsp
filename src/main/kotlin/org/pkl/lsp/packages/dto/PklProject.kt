@@ -38,8 +38,7 @@ data class PklProject(val metadata: DerivedProjectMetadata, val projectDeps: Pro
     }
 
     fun loadProjectDeps(file: VirtualFile): ProjectDeps {
-      val contents = file.contents()
-      return parseDeps(contents)
+      return parseDeps(file.contents)
     }
 
     @Serializable

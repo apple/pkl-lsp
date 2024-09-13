@@ -30,7 +30,7 @@ import org.pkl.lsp.ast.isInStdlib
  */
 abstract class Analyzer(project: Project) : Component(project) {
   fun analyze(node: PklNode, diagnosticsHolder: MutableList<PklDiagnostic>) {
-    if (node.isInStdlib()) return
+    if (node.isInStdlib) return
     if (!doAnalyze(node, diagnosticsHolder)) {
       return
     }

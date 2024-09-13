@@ -21,6 +21,11 @@ import org.pkl.lsp.Project
 
 data class CachedValue<T>(val value: T, val dependencies: List<ModificationTracker>) {
   constructor(value: T) : this(value, listOf())
+
+  constructor(
+    value: T,
+    vararg dependencies: ModificationTracker,
+  ) : this(value, dependencies.toList())
 }
 
 class CachedValuesManager(project: Project) : Component(project) {

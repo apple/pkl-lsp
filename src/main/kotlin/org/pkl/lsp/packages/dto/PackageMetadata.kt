@@ -34,7 +34,7 @@ data class PackageMetadata(
     private val json = Json { ignoreUnknownKeys = true }
 
     fun load(input: VirtualFile): PackageMetadata {
-      return parse(input.contents())
+      return parse(input.contents)
     }
 
     fun load(input: Path): PackageMetadata {

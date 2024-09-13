@@ -16,7 +16,6 @@
 package org.pkl.lsp
 
 import java.net.URI
-import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import kotlin.system.exitProcess
@@ -24,7 +23,6 @@ import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.*
-import org.pkl.core.util.IoUtils
 import org.pkl.lsp.packages.dto.PackageUri
 
 class PklLSPServer(val verbose: Boolean) : LanguageServer {
@@ -33,12 +31,8 @@ class PklLSPServer(val verbose: Boolean) : LanguageServer {
   private lateinit var logger: ClientLogger
 
   private val workspaceService: PklWorkspaceService by lazy { PklWorkspaceService(project) }
-  private val textService: PklTextDocumentService by lazy { PklTextDocumentService(this, project) }
+  private val textService: PklTextDocumentService by lazy { PklTextDocumentService(project) }
 
-  private val builder: Builder by lazy { Builder(this, project) }
-
-  private val cacheDir: Path = Files.createTempDirectory("pklLSP")
-  private val stdlibDir = cacheDir.resolve("stdlib")
   private lateinit var clientCapabilities: ClientCapabilities
   private var workspaceFolders: List<WorkspaceFolder>? = null
 
@@ -62,10 +56,6 @@ class PklLSPServer(val verbose: Boolean) : LanguageServer {
               WorkspaceFoldersOptions().apply { changeNotifications = Either.forRight(true) }
           }
       }
-
-    // cache the stdlib, so we can open it in the client
-    CompletableFuture.supplyAsync(::cacheStdlib)
-
     return CompletableFuture.supplyAsync { res }
   }
 
@@ -103,8 +93,6 @@ class PklLSPServer(val verbose: Boolean) : LanguageServer {
     // noop
   }
 
-  fun builder(): Builder = builder
-
   fun client(): PklLanguageClient = client
 
   fun connect(client: PklLanguageClient) {
@@ -118,8 +106,7 @@ class PklLSPServer(val verbose: Boolean) : LanguageServer {
   fun fileContentsRequest(param: TextDocumentIdentifier): CompletableFuture<String> {
     return CompletableFuture.supplyAsync {
       val uri = URI.create(param.uri)
-      logger.log("parsed uri: $uri")
-      project.virtualFileManager.get(uri)?.contents() ?: ""
+      project.virtualFileManager.get(uri)?.contents ?: ""
     }
   }
 
@@ -133,15 +120,6 @@ class PklLSPServer(val verbose: Boolean) : LanguageServer {
   @Suppress("unused")
   @JsonRequest(value = "pkl/syncProjects")
   fun syncProjects(@Suppress("UNUSED_PARAMETER") ignored: Any?): CompletableFuture<Unit> {
-    return project.pklProjectManager.syncProjects()
-  }
-
-  private fun cacheStdlib() {
-    stdlibDir.toFile().mkdirs()
-    for ((name, _) in project.stdlib.allModules()) {
-      val file = stdlibDir.resolve("$name.pkl")
-      val text = IoUtils.readClassPathResourceAsString(javaClass, "/org/pkl/core/stdlib/$name.pkl")
-      Files.writeString(file, text, Charsets.UTF_8)
-    }
+    return project.pklProjectManager.syncProjects(true)
   }
 }

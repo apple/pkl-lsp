@@ -20,20 +20,19 @@ import org.pkl.core.Version
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.type.Type
 
-class PklBaseModule(project: Project) {
-
-  private val baseModule: PklModule = project.stdlib.baseModule()
-  val ctx: PklModule = baseModule
+class PklBaseModule(project: Project) : Component(project) {
+  val module: PklModule
+    get() = project.stdlib.base.getModule().get()!!
 
   val types: Map<String, Type>
-  val methods: Map<String, PklClassMethod>
+  @Suppress("MemberVisibilityCanBePrivate") val methods: Map<String, PklClassMethod>
 
   init {
 
     val types = mutableMapOf<String, Type>()
     val methods = mutableMapOf<String, PklClassMethod>()
 
-    for (member in baseModule.members) {
+    for (member in module.members) {
       when (member) {
         is PklClass ->
           when (val className = member.name) {

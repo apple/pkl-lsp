@@ -15,66 +15,28 @@
  */
 package org.pkl.lsp
 
-import java.io.IOException
 import java.net.URI
-import org.pkl.core.parser.Parser
-import org.pkl.core.util.IoUtils
-import org.pkl.lsp.ast.PklModule
-import org.pkl.lsp.ast.PklModuleImpl
+import java.nio.file.Path
+import kotlin.io.path.extension
+import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.name
 
 class Stdlib(project: Project) : Component(project) {
-  fun baseModule(): PklModule = stdlibModules["base"]!!
-
-  fun getModule(name: String): PklModule? = stdlibModules[name]
-
-  fun allModules(): Map<String, PklModule> = stdlibModules
-
-  private fun loadStdlib() {
-    val parser = Parser()
-    for (name in stdlibModuleNames) {
-      loadStdlibModule(name, parser)
-    }
+  @Suppress("MemberVisibilityCanBePrivate")
+  val files: Map<String, VirtualFile> by lazy {
+    val baseModuleUri = javaClass.getResource("/org/pkl/core/stdlib/base.pkl")!!.toURI()
+    project.virtualFileManager.ensureJarFileSystem(baseModuleUri)
+    val path = Path.of(baseModuleUri)
+    path.parent
+      .listDirectoryEntries()
+      .filter { it.extension == "pkl" && it.name != "package-info.pkl" }
+      .associate { file ->
+        val name = file.name.replace(".pkl", "")
+        logger.log("Found stdlib file: pkl:$name")
+        name to project.virtualFileManager.get(URI("pkl:$name"))!!
+      }
   }
 
-  private fun loadStdlibModule(name: String, parser: Parser) {
-    val text = loadStdlibSource(name)
-    val moduleCtx = parser.parseModule(text)
-    val uri = URI("pkl:$name")
-    val module = PklModuleImpl(moduleCtx, project.virtualFileManager.get(uri)!!)
-    stdlibModules[name] = module
-  }
-
-  @Throws(IOException::class)
-  private fun loadStdlibSource(module: String): String {
-    return IoUtils.readClassPathResourceAsString(javaClass, "/org/pkl/core/stdlib/$module.pkl")
-  }
-
-  private val stdlibModules = mutableMapOf<String, PklModule>()
-
-  private val stdlibModuleNames =
-    listOf(
-      "base",
-      "Benchmark",
-      "DocPackageInfo",
-      "DocsiteInfo",
-      "EvaluatorSettings",
-      "json",
-      "jsonnet",
-      "math",
-      "platform",
-      "Project",
-      "protobuf",
-      "reflect",
-      "release",
-      "semver",
-      "settings",
-      "shell",
-      "test",
-      "xml",
-      "yaml",
-    )
-
-  init {
-    loadStdlib()
-  }
+  val base: VirtualFile
+    get() = files["base"]!!
 }

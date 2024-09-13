@@ -15,11 +15,11 @@
  */
 package org.pkl.lsp.features
 
+import java.net.URI
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.pkl.lsp.Component
-import org.pkl.lsp.PklLSPServer
 import org.pkl.lsp.Project
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.packages.dto.PklProject
@@ -28,19 +28,18 @@ import org.pkl.lsp.type.computeResolvedImportType
 import org.pkl.lsp.type.computeThisType
 import org.pkl.lsp.type.toType
 
-class CompletionFeature(private val server: PklLSPServer, project: Project) : Component(project) {
+class CompletionFeature(project: Project) : Component(project) {
   fun onCompletion(
     params: CompletionParams
   ): CompletableFuture<Either<List<CompletionItem>, CompletionList>> {
     fun run(mod: PklModule?): Either<List<CompletionItem>, CompletionList> {
-      val pklMod =
-        mod
-          ?: (server.builder().lastSuccessfulBuild(params.textDocument.uri)
-            ?: return Either.forLeft(listOf()))
-
+      if (mod == null) {
+        return Either.forLeft(emptyList())
+      }
       val line = params.position.line + 1
       val col = params.position.character
-      val context = pklMod.containingFile.pklProject
+      val context = mod.containingFile.pklProject
+
       @Suppress("WHEN_ENUM_CAN_BE_NULL_IN_JAVA")
       return when (params.context.triggerKind) {
         CompletionTriggerKind.Invoked -> Either.forLeft(listOf())
@@ -48,13 +47,17 @@ class CompletionFeature(private val server: PklLSPServer, project: Project) : Co
         CompletionTriggerKind.TriggerCharacter -> {
           // go two position behind to find the actual node to complete
           val completions =
-            pklMod.findBySpan(line, col)?.resolveCompletion(line, col, context)
+            mod.findBySpan(line, col)?.resolveCompletion(line, col, context)
               ?: return Either.forLeft(listOf())
           return Either.forLeft(completions)
         }
       }
     }
-    return server.builder().runningBuild(params.textDocument.uri).thenApply(::run)
+    val uri = URI(params.textDocument.uri)
+    val file =
+      project.virtualFileManager.get(uri)
+        ?: return CompletableFuture.completedFuture(Either.forLeft(emptyList()))
+    return file.getModule().thenApply(::run)
   }
 
   private fun PklNode.resolveCompletion(
@@ -78,7 +81,7 @@ class CompletionFeature(private val server: PklLSPServer, project: Project) : Co
       is PklFalseLiteralExpr ->
         project.pklBaseModule.booleanType.ctx.complete(showTypes, module, context)
       is PklReadExpr -> project.pklBaseModule.resourceType.ctx.complete(showTypes, module, context)
-      is PklModule -> node.complete(showTypes, module, context)
+      is PklModule -> node.complete(showTypes, module)
       is PklClass -> node.complete(showTypes, module, context)
       is PklClassProperty -> node.complete(showTypes, module, context)
       is PklThisExpr -> {
@@ -89,7 +92,7 @@ class CompletionFeature(private val server: PklLSPServer, project: Project) : Co
           ?.ctx
           ?.complete(showTypes, module, context)
       }
-      is PklModuleExpr -> module?.complete(showTypes, module, context)
+      is PklModuleExpr -> module?.complete(showTypes, module)
       else -> if (this !== node) node.complete(showTypes, module, context) else null
     }
   }
@@ -100,8 +103,8 @@ class CompletionFeature(private val server: PklLSPServer, project: Project) : Co
     context: PklProject?,
   ): List<CompletionItem> =
     when (this) {
-      is PklModule -> complete(showTypes, sourceModule, context)
-      is PklClass -> complete(context)
+      is PklModule -> complete(showTypes, sourceModule)
+      is PklClass -> complete()
       is PklClassProperty -> complete(showTypes, sourceModule, context)
       else -> listOf()
     }
@@ -109,7 +112,6 @@ class CompletionFeature(private val server: PklLSPServer, project: Project) : Co
   private fun PklModule.complete(
     showTypes: Boolean,
     sourceModule: PklModule?,
-    context: PklProject?,
   ): List<CompletionItem> =
     if (showTypes) {
       completeTypes(sourceModule)
@@ -132,7 +134,7 @@ class CompletionFeature(private val server: PklLSPServer, project: Project) : Co
     }
   }
 
-  private fun PklClass.complete(context: PklProject?): List<CompletionItem> = buildList {
+  private fun PklClass.complete(): List<CompletionItem> = buildList {
     addAll(properties.map { it.toCompletionItem() })
     addAll(methods.map { it.toCompletionItem() })
   }
@@ -162,8 +164,8 @@ class CompletionFeature(private val server: PklLSPServer, project: Project) : Co
     context: PklProject?,
   ): List<CompletionItem> {
     return when (this) {
-      is Type.Module -> ctx.complete(showTypes, sourceModule, context)
-      is Type.Class -> ctx.complete(context)
+      is Type.Module -> ctx.complete(showTypes, sourceModule)
+      is Type.Class -> ctx.complete()
       is Type.Union ->
         buildList {
           addAll(leftType.complete(showTypes, sourceModule, context))

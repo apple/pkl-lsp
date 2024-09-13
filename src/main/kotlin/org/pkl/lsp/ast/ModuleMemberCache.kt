@@ -100,7 +100,7 @@ private constructor(
           null -> {
             // has unresolvable amends clause ->
             // has same cached members as pkl.base#Module (but additional dependency)
-            val pklBaseModuleClassCache = module.project.stdlib.baseModule().cache(context)
+            val pklBaseModuleClassCache = module.project.pklBaseModule.module.cache(context)
             ModuleMemberCache(
               module,
               mapOf(),
