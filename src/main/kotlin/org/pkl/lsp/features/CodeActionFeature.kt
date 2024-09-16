@@ -26,17 +26,19 @@ import org.pkl.lsp.LSPUtil.toRange
 import org.pkl.lsp.Project
 
 class CodeActionFeature(project: Project) : Component(project) {
-
   fun onCodeAction(params: CodeActionParams): CompletableFuture<List<Either<Command, CodeAction>>> {
-    return project.builder.runningBuild(params.textDocument.uri).thenApply {
-      val diagnostics =
-        project.builder.diagnosticsCache[URI(params.textDocument.uri)]
-          ?: return@thenApply emptyList<Either<Command, CodeAction>>()
-      diagnostics
-        .filter { it.span.toRange() == params.range }
-        .mapNotNull { diagnostic ->
-          diagnostic.action?.let { Either.forRight(it.toMessage(diagnostic)) }
-        }
+    val uri = URI(params.textDocument.uri)
+    val file =
+      project.virtualFileManager.get(uri) ?: return CompletableFuture.completedFuture(emptyList())
+    return file.getModule().thenApply { module ->
+      if (module == null) listOf()
+      else
+        project.diagnosticsManager
+          .getDiagnostics(module)
+          .filter { it.span.toRange() == params.range }
+          .mapNotNull { diagnostic ->
+            diagnostic.action?.let { Either.forRight(it.toMessage(diagnostic)) }
+          }
     }
   }
 }

@@ -209,7 +209,7 @@ fun PklExpr?.toConstraintExpr(base: PklBaseModule, context: PklProject?): Constr
           val arguments = argumentList?.elements ?: return Error
           when (resolved.parentOfTypes(PklClass::class, PklModule::class, PklObjectMember::class)) {
             is PklObjectMember -> Error
-            base.ctx ->
+            base.module ->
               when (resolved) {
                 base.regexConstructor ->
                   expectOneArg(arguments, base) { arg ->
@@ -355,7 +355,7 @@ sealed class ConstraintValue : ConstraintExpr() {
     }
 
     override fun computeType(base: PklBaseModule, context: PklProject?): Type =
-      Type.Module.create(base.ctx, "base", null)
+      Type.Module.create(base.module, "base", null)
   }
 
   abstract class Bool : ConstraintValue() {

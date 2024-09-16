@@ -22,14 +22,11 @@ import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.full.starProjectedType
 import org.pkl.lsp.services.*
 import org.pkl.lsp.util.CachedValuesManager
-import org.pkl.lsp.util.FileCacheManager
 
 class Project(private val server: PklLSPServer) {
-  val fileCacheManager: FileCacheManager by lazy { FileCacheManager(this) }
+  val stdlib: Stdlib by lazy { Stdlib(this) }
 
   val pklBaseModule: PklBaseModule by lazy { PklBaseModule(this) }
-
-  val stdlib: Stdlib by lazy { Stdlib(this) }
 
   val packageManager: PackageManager by lazy { PackageManager(this) }
 
@@ -45,11 +42,11 @@ class Project(private val server: PklLSPServer) {
 
   val virtualFileManager: VirtualFileManager by lazy { VirtualFileManager(this) }
 
-  val builder: Builder by lazy { server.builder() }
-
   val languageClient: PklLanguageClient by lazy { server.client() }
 
   val pklFileTracker: PklFileTracker by lazy { PklFileTracker(this) }
+
+  val diagnosticsManager: DiagnosticsManager by lazy { DiagnosticsManager(this) }
 
   fun initialize(): CompletableFuture<*> {
     return CompletableFuture.allOf(*myComponents.map { it.initialize() }.toTypedArray())

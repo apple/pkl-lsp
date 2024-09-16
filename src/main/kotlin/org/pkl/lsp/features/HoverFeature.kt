@@ -15,12 +15,12 @@
  */
 package org.pkl.lsp.features
 
+import java.net.URI
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.Hover
 import org.eclipse.lsp4j.HoverParams
 import org.eclipse.lsp4j.MarkupContent
 import org.pkl.lsp.Component
-import org.pkl.lsp.PklLSPServer
 import org.pkl.lsp.Project
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.packages.dto.PklProject
@@ -28,7 +28,7 @@ import org.pkl.lsp.resolvers.ResolveVisitors
 import org.pkl.lsp.resolvers.Resolvers
 import org.pkl.lsp.type.*
 
-class HoverFeature(val server: PklLSPServer, project: Project) : Component(project) {
+class HoverFeature(project: Project) : Component(project) {
   fun onHover(params: HoverParams): CompletableFuture<Hover> {
     fun run(mod: PklModule?): Hover {
       if (mod == null) return Hover(listOf())
@@ -40,7 +40,11 @@ class HoverFeature(val server: PklLSPServer, project: Project) : Component(proje
           ?: return Hover(listOf())
       return Hover(MarkupContent("markdown", hoverText))
     }
-    return server.builder().runningBuild(params.textDocument.uri).thenApply(::run)
+    val uri = URI(params.textDocument.uri)
+    val file =
+      project.virtualFileManager.get(uri)
+        ?: return CompletableFuture.completedFuture(Hover(listOf()))
+    return file.getModule().thenApply(::run)
   }
 
   private fun resolveHover(

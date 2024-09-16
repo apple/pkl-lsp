@@ -22,11 +22,12 @@ import org.pkl.lsp.services.Topic
 
 val workspaceTopic = Topic<WorkspaceEvent>("WorkspaceEvent")
 
-data class WorkspaceEvent(val files: List<URI>, val type: WorkspaceEventType)
+sealed interface WorkspaceEvent {
+  val files: List<URI>
 
-enum class WorkspaceEventType {
-  CREATED,
-  DELETED,
+  data class Created(override val files: List<URI>) : WorkspaceEvent
+
+  data class Deleted(override val files: List<URI>) : WorkspaceEvent
 }
 
 val workspaceConfigurationChangedTopic =
@@ -49,11 +50,11 @@ class PklWorkspaceService(private val project: Project) : WorkspaceService {
 
   override fun didCreateFiles(params: CreateFilesParams) {
     val files = params.files.map { URI(it.uri) }
-    project.messageBus.emit(workspaceTopic, WorkspaceEvent(files, WorkspaceEventType.CREATED))
+    project.messageBus.emit(workspaceTopic, WorkspaceEvent.Created(files))
   }
 
   override fun didDeleteFiles(params: DeleteFilesParams) {
     val files = params.files.map { URI(it.uri) }
-    project.messageBus.emit(workspaceTopic, WorkspaceEvent(files, WorkspaceEventType.DELETED))
+    project.messageBus.emit(workspaceTopic, WorkspaceEvent.Deleted(files))
   }
 }

@@ -18,8 +18,11 @@ package org.pkl.lsp
 import java.net.URI
 import java.net.URISyntaxException
 import java.nio.file.Path
+import java.util.concurrent.CompletableFuture
 import java.util.regex.Pattern
 import kotlin.math.max
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
 import org.pkl.lsp.ast.Span
@@ -130,3 +133,43 @@ val URI.effectiveUri: URI?
       else -> null
     }
   }
+
+val pklCacheDir: Path = Path.of(System.getProperty("user.home")).resolve(".pkl/cache")
+
+fun String.getIndex(position: Position): Int {
+  var currentIndex = 0
+  for ((column, line) in lines().withIndex()) {
+    if (column == position.line) {
+      return currentIndex + position.character
+    }
+    currentIndex += line.length + 1 // + 1 because newline is also a character
+  }
+  throw IllegalArgumentException("Invalid position for contents")
+}
+
+/**
+ * Waits for each future to resolve, and resolves to a list of the resolved values of each future.
+ */
+fun <T> List<CompletableFuture<T>>.sequence(): CompletableFuture<List<T>> =
+  CompletableFuture.allOf(*toTypedArray()).thenApply { map(CompletableFuture<T>::get) }
+
+/**
+ * Run [f] at most every [interval]. Every new call will reset the timer.
+ *
+ * If the duration between now and the last call is less than [interval], returns the previous
+ * result.
+ */
+fun <T> debounce(interval: Duration = 5.seconds, f: () -> T): () -> T {
+  var lastRun: Long? = null
+  var lastResult: T? = null
+  return {
+    val now = System.currentTimeMillis()
+    val lastRunTime = lastRun
+    lastRun = now
+    if (lastRunTime == null || now - lastRunTime > interval.inWholeMilliseconds) {
+      f().also { result -> lastResult = result }
+    } else {
+      lastResult!!
+    }
+  }
+}

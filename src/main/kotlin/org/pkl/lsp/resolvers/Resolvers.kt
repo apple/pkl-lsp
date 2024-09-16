@@ -96,7 +96,7 @@ object Resolvers {
     }
 
     // search pkl.base
-    base.ctx.cache(null).visitTypes(visitor, context)
+    base.module.cache(null).visitTypes(visitor, context)
     return visitor.result
   }
 
@@ -375,10 +375,10 @@ object Resolvers {
 
     // if resolve happens within base module, this is a redundant lookup, but it shouldn't hurt
     if (allowClasses) {
-      if (!base.ctx.cache(null).visitTypeDefsAndProperties(visitor, context))
+      if (!base.module.cache(null).visitTypeDefsAndProperties(visitor, context))
         return visitor.result to LookupMode.BASE
     } else {
-      if (!base.ctx.cache(null).visitProperties(visitor, context))
+      if (!base.module.cache(null).visitProperties(visitor, context))
         return visitor.result to LookupMode.BASE
     }
 
@@ -554,7 +554,7 @@ object Resolvers {
     }
 
     // if resolve happens within base module, this is a redundant lookup, but it shouldn't hurt
-    if (!base.ctx.cache(context).visitMethods(visitor, context))
+    if (!base.module.cache(context).visitMethods(visitor, context))
       return visitor.result to LookupMode.BASE
 
     val myThisType = thisType ?: position.computeThisType(base, bindings, context)

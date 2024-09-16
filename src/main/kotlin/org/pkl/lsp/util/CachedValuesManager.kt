@@ -21,6 +21,11 @@ import org.pkl.lsp.Project
 
 data class CachedValue<T>(val value: T, val dependencies: List<ModificationTracker>) {
   constructor(value: T) : this(value, listOf())
+
+  constructor(
+    value: T,
+    vararg dependencies: ModificationTracker,
+  ) : this(value, dependencies.toList())
 }
 
 class CachedValuesManager(project: Project) : Component(project) {
@@ -55,5 +60,9 @@ class CachedValuesManager(project: Project) : Component(project) {
 
   fun <T> getCachedValue(key: String, provider: () -> CachedValue<T>?): T? {
     return getValue<T>(key)?.value ?: provider()?.also { storeCachedValue(key, it) }?.value
+  }
+
+  fun clearCachedValue(key: String) {
+    cachedValues.remove(key)
   }
 }

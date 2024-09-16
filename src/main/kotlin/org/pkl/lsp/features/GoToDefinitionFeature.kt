@@ -15,6 +15,7 @@
  */
 package org.pkl.lsp.features
 
+import java.net.URI
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.DefinitionParams
@@ -23,14 +24,12 @@ import org.eclipse.lsp4j.LocationLink
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.pkl.lsp.Component
 import org.pkl.lsp.LSPUtil.toRange
-import org.pkl.lsp.PklLSPServer
 import org.pkl.lsp.Project
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.type.computeThisType
 
-class GoToDefinitionFeature(private val server: PklLSPServer, project: Project) :
-  Component(project) {
+class GoToDefinitionFeature(project: Project) : Component(project) {
 
   companion object {
     private val quoteCharacters =
@@ -58,7 +57,11 @@ class GoToDefinitionFeature(private val server: PklLSPServer, project: Project) 
       val node = mod.findBySpan(line, col) ?: return Either.forRight(listOf())
       return resolveDeclarations(node, line, col, context)
     }
-    return server.builder().runningBuild(params.textDocument.uri).thenApply(::run)
+    val uri = URI(params.textDocument.uri)
+    val file =
+      project.virtualFileManager.get(uri)
+        ?: return CompletableFuture.completedFuture(Either.forLeft(emptyList()))
+    return file.getModule().thenApply(::run)
   }
 
   private fun resolveModuleUri(

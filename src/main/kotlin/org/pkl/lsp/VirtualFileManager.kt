@@ -18,20 +18,9 @@ package org.pkl.lsp
 import java.net.URI
 import java.nio.file.*
 import java.util.*
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
 class VirtualFileManager(project: Project) : Component(project) {
-  override fun initialize(): CompletableFuture<*> {
-    project.messageBus.subscribe(textDocumentTopic) { event ->
-      val file = files[event.file] ?: return@subscribe
-      if (event.type == TextDocumentEventType.CHANGED) {
-        file.modificationCount.incrementAndGet()
-      }
-    }
-    return CompletableFuture.completedFuture(Unit)
-  }
-
   private val files: MutableMap<URI, BaseFile> = ConcurrentHashMap()
 
   fun get(path: Path): VirtualFile? {
@@ -66,6 +55,7 @@ class VirtualFileManager(project: Project) : Component(project) {
           ensureJarFileSystem(effectiveUri)
           JarFile(path ?: Path.of(effectiveUri), effectiveUri, project)
         }
+        "https" -> HttpsFile(effectiveUri, project)
         "pkl" -> StdlibFile(effectiveUri.schemeSpecificPart, project)
         else -> throw Exception("Unsupported scheme: ${effectiveUri.scheme}")
       }
@@ -75,7 +65,7 @@ class VirtualFileManager(project: Project) : Component(project) {
   // This is technically a memory leak, albeit a mild one and should be tolerable.
   //
   // For every new package opened, its file system is never closed and kept on heap.
-  private fun ensureJarFileSystem(uri: URI) {
+  fun ensureJarFileSystem(uri: URI) {
     try {
       FileSystems.newFileSystem(uri, HashMap<String, Any>())
     } catch (e: FileSystemAlreadyExistsException) {

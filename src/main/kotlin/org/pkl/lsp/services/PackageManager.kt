@@ -29,7 +29,6 @@ import org.pkl.lsp.packages.dto.PackageUri
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.packages.toDependency
 import org.pkl.lsp.util.CachedValue
-import org.pkl.lsp.util.FileCacheManager.Companion.pklCacheDir
 
 data class PackageLibraryRoots(
   val zipFile: VirtualFile,
@@ -39,10 +38,10 @@ data class PackageLibraryRoots(
 
 val packageTopic = Topic<PackageEvent>("PackageEvent")
 
-data class PackageEvent(val type: PackageEventType, val packageUri: PackageUri)
+sealed interface PackageEvent {
+  val packageUri: PackageUri
 
-enum class PackageEventType {
-  PACKAGE_DOWNLOADED
+  data class PackageDownloaded(override val packageUri: PackageUri) : PackageEvent
 }
 
 class PackageManager(project: Project) : Component(project) {
@@ -116,10 +115,7 @@ class PackageManager(project: Project) : Component(project) {
     return project.pklCli
       .downloadPackage(listOf(packageUri), pklCacheDir)
       .thenApply {
-        project.messageBus.emit(
-          packageTopic,
-          PackageEvent(PackageEventType.PACKAGE_DOWNLOADED, packageUri),
-        )
+        project.messageBus.emit(packageTopic, PackageEvent.PackageDownloaded(packageUri))
       }
       .exceptionally { err ->
         project.languageClient.showMessage(

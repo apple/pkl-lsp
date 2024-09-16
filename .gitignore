@@ -11,3 +11,5 @@ generated
 !.idea/codestyles/
 !.idea/inspectionProfiles/
 !.idea/vcs.xml
+
+.kotlin

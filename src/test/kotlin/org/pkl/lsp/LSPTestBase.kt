@@ -20,7 +20,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.name
 import kotlin.io.path.readText
-import kotlin.io.path.toPath
 import kotlin.io.path.writeText
 import org.eclipse.lsp4j.*
 import org.junit.jupiter.api.AfterEach
@@ -29,7 +28,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.io.TempDir
 import org.pkl.core.parser.Parser
 import org.pkl.lsp.ast.PklModule
-import org.pkl.lsp.ast.PklModuleImpl
 import org.pkl.lsp.ast.PklNode
 import org.pkl.lsp.ast.findBySpan
 
@@ -99,7 +97,6 @@ abstract class LSPTestBase {
     val effectiveContents =
       if (caret == -1) contents else contents.replaceRange(caret, caret + 7, "")
     val file = testProjectDir.resolve(name).also { it.writeText(effectiveContents) }
-    parseAndStoreModule(effectiveContents, file)
     // need to trigger this so the LSP knows about this file.
     server.textDocumentService.didOpen(
       DidOpenTextDocumentParams(file.toTextDocument(effectiveContents))
@@ -142,7 +139,7 @@ abstract class LSPTestBase {
       )
     }
     val currentText = fileInFocus!!.readText()
-    val idx = caretPosition?.let { getIndex(currentText, it) } ?: (currentText.length - 1)
+    val idx = caretPosition?.let { currentText.getIndex(it) } ?: (currentText.length - 1)
     val newText = currentText.replaceRange(idx..idx, text)
     Files.writeString(fileInFocus, newText)
     server.textDocumentService.didChange(
@@ -168,34 +165,13 @@ abstract class LSPTestBase {
     modules[uri]?.let {
       return it
     }
-    return when (uri.scheme) {
-      "pkl" -> fakeProject.stdlib.getModule(uri.schemeSpecificPart)!!.also { modules[uri] = it }
-      "file" -> {
-        val path = uri.toPath()
-        parseAndStoreModule(path.readText(), path)
-      }
-      "jar" -> {
-        val path = uri.toPath()
-        parseAndStoreJar(path.readText(), path)
-      }
-      else -> throw IllegalArgumentException("Received completion for unknown module: $uri")
-    }
+    val file = fakeProject.virtualFileManager.get(uri)!!
+    return file.getModule().get()!!.also { modules[uri] = it }
   }
 
   private fun resolveToRealUri(uri: String): URI =
     if (uri.startsWith("file:/") && !uri.startsWith("file:///")) Path.of(URI(uri)).toUri()
     else fakeProject.virtualFileManager.get(URI(uri))!!.uri
-
-  private fun parseAndStoreModule(contents: String, path: Path): PklModule {
-    val moduleCtx = parser.parseModule(contents)
-    return PklModuleImpl(moduleCtx, FsFile(path, fakeProject)).also { modules[path.toUri()] = it }
-  }
-
-  private fun parseAndStoreJar(contents: String, path: Path): PklModule {
-    val moduleCtx = parser.parseModule(contents)
-    val uri = path.toUri()
-    return PklModuleImpl(moduleCtx, JarFile(path, uri, fakeProject)).also { modules[uri] = it }
-  }
 
   private fun Path.toTextDocument(effectiveContents: String): TextDocumentItem =
     TextDocumentItem(toUri().toString(), "pkl", 0, effectiveContents)
@@ -211,16 +187,5 @@ abstract class LSPTestBase {
       currentPos = nextPos
     }
     throw IllegalArgumentException("Invalid index for contents")
-  }
-
-  private fun getIndex(contents: String, position: Position): Int {
-    var currentIndex = 0
-    for ((column, line) in contents.lines().withIndex()) {
-      if (column == position.line) {
-        return currentIndex + position.character
-      }
-      currentIndex += line.length + 1 // + 1 because newline is also a character
-    }
-    throw IllegalArgumentException("Invalid position for contents")
   }
 }
