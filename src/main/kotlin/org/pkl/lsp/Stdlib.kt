@@ -29,7 +29,7 @@ class Stdlib(project: Project) : Component(project) {
     val path = Path.of(baseModuleUri)
     path.parent
       .listDirectoryEntries()
-      .filter { it.extension == "pkl" && it.name != "package-info.pkl" }
+      .filter { it.extension == "pkl" && it.name != "doc-package-info.pkl" }
       .associate { file ->
         val name = file.name.replace(".pkl", "")
         logger.log("Found stdlib file: pkl:$name")
