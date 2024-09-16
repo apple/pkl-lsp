@@ -23,7 +23,6 @@ import org.eclipse.lsp4j.Location
 import org.eclipse.lsp4j.LocationLink
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.pkl.lsp.Component
-import org.pkl.lsp.LSPUtil.toRange
 import org.pkl.lsp.Project
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.packages.dto.PklProject
@@ -72,10 +71,10 @@ class GoToDefinitionFeature(project: Project) : Component(project) {
     val stringContentsSpan = originalNode.contentsSpan()
     if (parent is PklImportBase && parent.isGlob) {
       val resolved = parent.moduleUri?.resolveGlob(context) ?: return listOf()
-      return resolved.map { it.toLocationLink(stringContentsSpan) }
+      return resolved.map { it.locationLink(stringContentsSpan) }
     }
     val resolved = parent.moduleUri?.resolve(context) ?: return listOf()
-    return listOf(resolved.toLocationLink(stringContentsSpan))
+    return listOf(resolved.locationLink(stringContentsSpan))
   }
 
   private fun resolveDeclarations(
@@ -101,10 +100,5 @@ class GoToDefinitionFeature(project: Project) : Component(project) {
         else -> if (node !== originalNode) listOf(node.location) else emptyList()
       }
     return Either.forLeft(ret)
-  }
-
-  private fun PklNode.toLocationLink(originalSpan: Span): LocationLink {
-    val range = beginningSpan().toRange()
-    return LocationLink(toLspURIString(), range, range, originalSpan.toRange())
   }
 }

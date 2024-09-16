@@ -118,8 +118,9 @@ fun parseUriOrNull(uriStr: String): URI? =
 
 val osName: String by lazy { System.getProperty("os.name") }
 
-fun Path.toUnixPathString() =
-  if (osName.contains("Windows")) toString().replace("\\", "/") else toString()
+val isWindows: Boolean by lazy { osName.contains("Windows") }
+
+fun Path.toUnixPathString() = if (isWindows) toString().replace("\\", "/") else toString()
 
 val URI.effectiveUri: URI?
   get() {

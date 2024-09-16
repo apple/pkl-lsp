@@ -15,8 +15,12 @@
  */
 package org.pkl.lsp.ast
 
+import java.net.URI
 import java.net.URLEncoder
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.buildJsonArray
 import org.eclipse.lsp4j.Location
+import org.eclipse.lsp4j.LocationLink
 import org.pkl.lsp.*
 import org.pkl.lsp.FsFile
 import org.pkl.lsp.LSPUtil.toRange
@@ -401,24 +405,44 @@ fun PklNode.findBySpan(line: Int, col: Int, includeTerminals: Boolean = false): 
   return childHit ?: hit
 }
 
-fun PklNode.toLspURIString(): String {
-  return when (val file = containingFile) {
-    is StdlibFile -> "pkl-lsp://stdlib/${file.name}.pkl"
-    is FsFile -> file.uri.toString()
-    else -> {
-      val uri = file.uri.toString()
-      "pkl-lsp://${file.pklAuthority}/${URLEncoder.encode(uri, Charsets.UTF_8)}"
+val VirtualFile.lspUri
+  get(): URI {
+    return when (this) {
+      is StdlibFile -> URI("pkl-lsp://stdlib/${name}.pkl")
+      is FsFile -> uri
+      else -> {
+        val uri = uri.toString()
+        URI("pkl-lsp://${pklAuthority}/${URLEncoder.encode(uri, Charsets.UTF_8)}")
+      }
     }
   }
-}
 
 val PklNode.location: Location
-  get() = Location(toLspURIString(), beginningSpan().toRange())
+  get() = Location(getLocationUri(forDocs = false).toString(), beginningSpan().toRange())
 
-fun PklNode.toCommandURIString(): String {
-  val sp = beginningSpan()
-  val params = """["${toLspURIString()}",${sp.beginLine},${sp.beginCol}]"""
-  return "command:pkl.open.file?${URLEncoder.encode(params, Charsets.UTF_8)}"
+fun PklNode.locationLink(fromSpan: Span): LocationLink {
+  val range = beginningSpan().toRange()
+  return LocationLink(getLocationUri(forDocs = false).toString(), range, range, fromSpan.toRange())
+}
+
+fun PklNode.getLocationUri(forDocs: Boolean): URI {
+  val useCommandLink = project.clientOptions.renderOpenFileCommandInDocs ?: false
+  val span = beginningSpan()
+  return when {
+    useCommandLink && forDocs -> {
+      val params = buildJsonArray {
+        add(containingFile.lspUri.toString())
+        add(span.beginLine)
+        add(span.beginCol)
+      }
+      URI("command", "pkl.open.file?$params", null)
+    }
+    forDocs -> {
+      val fragment = "L${span.beginLine},C${span.beginCol}"
+      URI("${containingFile.lspUri}#$fragment")
+    }
+    else -> containingFile.lspUri
+  }
 }
 
 // returns the span of this node, ignoring docs and annotations
