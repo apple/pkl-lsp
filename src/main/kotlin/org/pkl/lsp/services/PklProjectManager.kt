@@ -128,7 +128,7 @@ class PklProjectManager(project: Project) : Component(project) {
             MessageType.Error,
             """
         Failed to sync project.
-        
+
         ${err.cause!!.stackTraceToString()}
       """
               .trimIndent(),
@@ -182,6 +182,7 @@ class PklProjectManager(project: Project) : Component(project) {
     }
     if (
       event is TextDocumentEvent.Opened &&
+        file.isInWorkspace &&
         file.pklProjectDir != null &&
         file.pklProject == null &&
         project.settingsManager.settings.pklCliPath != null
@@ -344,4 +345,7 @@ class PklProjectManager(project: Project) : Component(project) {
       evaluatorSettings = metadata.evaluatorSettings,
     )
   }
+
+  private val FsFile.isInWorkspace: Boolean
+    get() = workspaceFolders.any { path.startsWith(it) }
 }
