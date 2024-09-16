@@ -61,4 +61,8 @@ class CachedValuesManager(project: Project) : Component(project) {
   fun <T> getCachedValue(key: String, provider: () -> CachedValue<T>?): T? {
     return getValue<T>(key)?.value ?: provider()?.also { storeCachedValue(key, it) }?.value
   }
+
+  fun clearCachedValue(key: String) {
+    cachedValues.remove(key)
+  }
 }

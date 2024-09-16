@@ -15,7 +15,6 @@
  */
 package org.pkl.lsp
 
-import java.io.IOException
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
@@ -99,6 +98,8 @@ sealed class BaseFile : VirtualFile {
 
   abstract fun doReadContents(): String
 
+  private var readError: Exception? = null
+
   // If contents have not yet been set, read contents from external source, possibly performing I/O.
   override var contents: String
     get() {
@@ -112,12 +113,18 @@ sealed class BaseFile : VirtualFile {
     if (isDirectory) {
       return CompletableFuture.completedFuture(null)
     }
-    return project.cachedValuesManager.getCachedValue("VirtualFile($uri)") {
+    if (readError != null) {
+      project.cachedValuesManager.clearCachedValue(cacheKey)
+    }
+    return project.cachedValuesManager.getCachedValue(cacheKey) {
       CachedValue(CompletableFuture.supplyAsync(::doBuildModule), this)
     }!!
   }
 
   protected val logger by lazy { project.getLogger(this::class) }
+
+  private val cacheKey
+    get() = "VirtualFile($uri)"
 
   private var myContents: String? = null
 
@@ -133,6 +140,7 @@ sealed class BaseFile : VirtualFile {
       null
     } catch (e: Exception) {
       logger.warn("Error building $file: ${e.message} ${e.stackTraceToString()}")
+      readError = e
       null
     }
   }
@@ -221,8 +229,6 @@ class HttpsFile(override val uri: URI, override val project: Project) : BaseFile
 
   override val children: List<VirtualFile>? = null
 
-  var readError: IOException? = null
-
   override fun parent(): VirtualFile? {
     val newUri = if (uri.path.endsWith("/")) uri.resolve("..") else uri.resolve(".")
     return project.virtualFileManager.get(newUri)
@@ -233,7 +239,14 @@ class HttpsFile(override val uri: URI, override val project: Project) : BaseFile
   }
 
   override fun doReadContents(): String {
-    return uri.toURL().readText()
+    return _doReadContents().get()
+  }
+
+  private val _doReadContents = debounce {
+    CompletableFuture.supplyAsync {
+      logger.log("Fetching $uri")
+      uri.toURL().readText()
+    }
   }
 }
 

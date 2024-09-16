@@ -21,6 +21,8 @@ import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import java.util.regex.Pattern
 import kotlin.math.max
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
 import org.pkl.lsp.ast.Span
@@ -150,3 +152,24 @@ fun String.getIndex(position: Position): Int {
  */
 fun <T> List<CompletableFuture<T>>.sequence(): CompletableFuture<List<T>> =
   CompletableFuture.allOf(*toTypedArray()).thenApply { map(CompletableFuture<T>::get) }
+
+/**
+ * Run [f] at most every [interval]. Every new call will reset the timer.
+ *
+ * If the duration between now and the last call is less than [interval], returns the previous
+ * result.
+ */
+fun <T> debounce(interval: Duration = 5.seconds, f: () -> T): () -> T {
+  var lastRun: Long? = null
+  var lastResult: T? = null
+  return {
+    val now = System.currentTimeMillis()
+    val lastRunTime = lastRun
+    lastRun = now
+    if (lastRunTime == null || now - lastRunTime > interval.inWholeMilliseconds) {
+      f().also { result -> lastResult = result }
+    } else {
+      lastResult!!
+    }
+  }
+}
