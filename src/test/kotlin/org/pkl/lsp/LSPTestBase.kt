@@ -26,11 +26,9 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.io.TempDir
-import org.pkl.core.parser.Parser
 import org.pkl.lsp.ast.PklModule
 import org.pkl.lsp.ast.PklNode
 import org.pkl.lsp.ast.findBySpan
-import org.pkl.lsp.ast.*
 import org.pkl.lsp.treesitter.PklParser
 
 abstract class LSPTestBase {

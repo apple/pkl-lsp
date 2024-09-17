@@ -16,11 +16,11 @@
 package org.pkl.lsp
 
 import java.nio.file.Path
+import java.util.concurrent.Executors
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.treesitter.PklParser
-import java.util.concurrent.Executors
 
 class ParserTest {
 
@@ -158,17 +158,21 @@ class ParserTest {
 
     val mod = parse(code)
     val exe = Executors.newSingleThreadExecutor()
-    exe.submit {
-      val prop = mod.children[0]
-      assertThat(prop.text).isEqualTo("foo = 1")
-    }.get()
+    exe
+      .submit {
+        val prop = mod.children[0]
+        assertThat(prop.text).isEqualTo("foo = 1")
+      }
+      .get()
   }
 
   @Test
   fun `Errors become nodes`() {
-    val code = """
+    val code =
+      """
       foo = bar.]
-    """.trimIndent()
+    """
+        .trimIndent()
 
     val mod = parse(code)
     val err = mod.children[1]
@@ -178,11 +182,13 @@ class ParserTest {
 
   @Test
   fun `Doc comments are present in the tree`() {
-    val code = """
+    val code =
+      """
       /// A doc
       /// comment
       foo = 1
-    """.trimIndent()
+    """
+        .trimIndent()
 
     val mod = parse(code)
     val prop = mod.children[0]

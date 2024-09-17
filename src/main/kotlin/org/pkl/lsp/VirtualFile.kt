@@ -23,11 +23,9 @@ import javax.naming.OperationNotSupportedException
 import kotlin.io.path.*
 import org.pkl.core.module.ModuleKeyFactories.file
 import org.pkl.core.parser.LexParseException
-import org.pkl.core.parser.Parser
 import org.pkl.core.util.IoUtils
 import org.pkl.lsp.ast.PklModule
 import org.pkl.lsp.ast.PklModuleImpl
-import org.pkl.lsp.ast.TreeSitterNode
 import org.pkl.lsp.packages.PackageDependency
 import org.pkl.lsp.packages.dto.PackageMetadata
 import org.pkl.lsp.packages.dto.PklProject
@@ -132,12 +130,12 @@ sealed class BaseFile : VirtualFile {
 
   private var myContents: String? = null
 
-  private val parser = Parser()
+  private val parser = PklParser()
 
   private fun doBuildModule(): PklModule? {
     return try {
       logger.log("building $uri")
-      val moduleCtx = parser.parseModule(contents)
+      val moduleCtx = parser.parse(contents, project.astExecutor)
       if (readError != null) {
         readError = null
       }

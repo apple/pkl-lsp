@@ -747,7 +747,8 @@ fun TreeSitterNode.toNode(project: Project, parent: PklNode?): PklNode? {
     // "module" -> PklModuleImpl(this)
     "moduleHeader" -> PklModuleHeaderImpl(project, parent!!, this)
     "moduleClause" -> PklModuleClauseImpl(project, parent!!, this)
-    "importClause" -> PklImportImpl(project, parent!!, this)
+    "importClause",
+    "importGlobClause" -> PklImportImpl(project, parent!!, this)
     "extendsOrAmendsClause" -> PklModuleExtendsAmendsClauseImpl(project, parent!!, this)
     "clazz" -> PklClassImpl(project, parent!!, this)
     "classBody" -> PklClassBodyImpl(project, parent!!, this)
