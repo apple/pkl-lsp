@@ -28,11 +28,7 @@ class PklModuleImpl(override val ctx: TreeSitterNode, override val virtualFile: 
   override val uri: URI
     get() = virtualFile.uri
 
-  override val isAmend: Boolean by lazy {
-    header?.moduleExtendsAmendsClause?.isAmend
-      ?: header?.moduleClause?.moduleExtendsAmendsClause?.isAmend
-      ?: false
-  }
+  override val isAmend: Boolean by lazy { header?.moduleExtendsAmendsClause?.isAmend ?: false }
 
   override val header: PklModuleHeader? by lazy { getChild(PklModuleHeaderImpl::class) }
 
@@ -119,10 +115,6 @@ class PklModuleClauseImpl(
     getChild(PklQualifiedIdentifierImpl::class)
   }
 
-  override val moduleExtendsAmendsClause: PklModuleExtendsAmendsClause? by lazy {
-    getChild(PklModuleExtendsAmendsClauseImpl::class)
-  }
-
   override val modifiers: List<Terminal>? by lazy { terminals.takeWhile { it.isModifier } }
 
   override val shortDisplayName: String? by lazy {
@@ -151,7 +143,7 @@ class PklModuleHeaderImpl(
   }
 
   override val moduleExtendsAmendsClause: PklModuleExtendsAmendsClause? by lazy {
-    moduleClause?.moduleExtendsAmendsClause
+    getChild(PklModuleExtendsAmendsClauseImpl::class)
   }
 
   override val modifiers: List<Terminal> by lazy { moduleClause?.modifiers ?: emptyList() }

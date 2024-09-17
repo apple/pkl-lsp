@@ -164,16 +164,17 @@ class HoverFeature(project: Project) : Component(project) {
         buildString {
           append(modifiers.render())
           append("module ")
-          // can never be null
-          append(moduleClause!!.render(originalNode, context))
-        }
-      is PklModuleClause ->
-        buildString {
-          append(moduleName ?: enclosingModule?.moduleName ?: "<module>")
+          moduleClause?.let {
+            append(it.render(originalNode, context))
+          } ?: append("<module>")
           moduleExtendsAmendsClause?.let {
             append(if (it.isAmend) " amends " else " extends ")
             append(it.moduleUri!!.stringConstant.text)
           }
+        }
+      is PklModuleClause ->
+        buildString {
+          append(moduleName ?: enclosingModule?.moduleName ?: "<module>")
         }
       is PklImport ->
         buildString {

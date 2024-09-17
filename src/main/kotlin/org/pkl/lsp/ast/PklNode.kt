@@ -174,12 +174,11 @@ interface PklModuleHeader : PklNode, ModifierListOwner, PklDocCommentOwner {
   val moduleExtendsAmendsClause: PklModuleExtendsAmendsClause?
 
   val effectiveExtendsOrAmendsCluse: PklModuleExtendsAmendsClause?
-    get() = moduleClause?.moduleExtendsAmendsClause ?: moduleExtendsAmendsClause
+    get() = moduleExtendsAmendsClause
 }
 
 interface PklModuleClause : PklNode, ModifierListOwner {
   val qualifiedIdentifier: PklQualifiedIdentifier?
-  val moduleExtendsAmendsClause: PklModuleExtendsAmendsClause?
   val shortDisplayName: String?
   val moduleName: String?
 }
