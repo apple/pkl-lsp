@@ -114,10 +114,8 @@ abstract class LSPTestBase {
    * resolved nodes.
    */
   protected fun goToDefinition(): List<PklNode> {
-    if (fileInFocus == null)
-      throw IllegalStateException(
-        "No active Pkl module found in editor. Call `createPklFile` first."
-      )
+    ensureActiveFile()
+    ensureCaret()
     val params =
       DefinitionParams(TextDocumentIdentifier(fileInFocus!!.toUri().toString()), caretPosition!!)
     val result = server.textDocumentService.definition(params).get()
@@ -133,12 +131,17 @@ abstract class LSPTestBase {
     }
   }
 
+  /** Issues a hover command on the position underneath the cursor, and returns the hover result. */
+  protected fun getHoverText(): String {
+    ensureActiveFile()
+    ensureCaret()
+    val params =
+      HoverParams(TextDocumentIdentifier(fileInFocus!!.toUri().toString()), caretPosition!!)
+    return server.textDocumentService.hover(params).get().contents.right.value
+  }
+
   protected fun typeText(text: String) {
-    if (fileInFocus == null) {
-      throw IllegalStateException(
-        "No active Pkl module found in editor. Call `createPklFile` first."
-      )
-    }
+    ensureActiveFile()
     val currentText = fileInFocus!!.readText()
     val idx = caretPosition?.let { currentText.getIndex(it) } ?: (currentText.length - 1)
     val newText = currentText.replaceRange(idx..idx, text)
@@ -152,14 +155,22 @@ abstract class LSPTestBase {
   }
 
   protected fun saveFile() {
-    if (fileInFocus == null) {
-      throw IllegalStateException(
-        "No active Pkl module found in editor. Call `createPklFile` first."
-      )
-    }
+    ensureActiveFile()
     server.textDocumentService.didSave(
       DidSaveTextDocumentParams(TextDocumentIdentifier(fileInFocus!!.toUri().toString()))
     )
+  }
+
+  private fun ensureActiveFile() {
+    require(fileInFocus != null) {
+      "No active Pkl module found in editor. Call `createPklFile` first."
+    }
+  }
+
+  private fun ensureCaret() {
+    require(caretPosition != null) {
+      "No caret found! This method needs to have `<caret>` inside a created file"
+    }
   }
 
   private fun getOrInsertModule(uri: URI): PklModule {

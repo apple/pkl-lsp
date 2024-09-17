@@ -19,6 +19,7 @@ import java.net.URI
 import kotlin.reflect.KClass
 import org.pkl.lsp.*
 import org.pkl.lsp.VirtualFile
+import org.pkl.lsp.documentation.DocCommentMemberLinkProcessor
 import org.pkl.lsp.packages.Dependency
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.resolvers.ResolveVisitor
@@ -127,10 +128,15 @@ interface PklDocCommentOwner : PklNode {
       return if (terminal.type == TokenType.DocComment) terminal else null
     }
 
-  val parsedComment: String?
+  private val rawComment: String?
     get() {
       val doc = docComment?.text?.trim() ?: return null
       return doc.lines().joinToString("\n") { it.trimStart().removePrefix("///") }.trimIndent()
+    }
+
+  val parsedComment: String?
+    get() {
+      return rawComment?.let { DocCommentMemberLinkProcessor.process(it, this) }
     }
 
   /**
