@@ -18,10 +18,9 @@ package org.pkl.lsp
 import java.net.URI
 import java.nio.file.*
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
 
 class VirtualFileManager(project: Project) : Component(project) {
-  private val files: MutableMap<URI, BaseFile> = ConcurrentHashMap()
+  private val files: MutableMap<URI, BaseFile> = Collections.synchronizedMap(WeakHashMap())
 
   fun get(path: Path): VirtualFile? {
     return if (!Files.exists(path)) null else get(path.toUri(), path)
