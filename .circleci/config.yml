@@ -7,6 +7,8 @@ jobs:
     steps:
     - checkout
     - run:
+        command: git submodule update --init --recursive
+    - run:
         command: ./gradlew --info --stacktrace -DtestReportsDir=${HOME}/test-results check
     - store_test_results:
         path: ~/test-results

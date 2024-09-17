@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
+
 plugins {
   application
   alias(libs.plugins.kotlin)
@@ -75,6 +77,20 @@ val javaExecutable by
     // uncomment for debugging
     // jvmArgs.addAll("-ea", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
   }
+
+val generateTreeSitterLib by
+  tasks.registering(Exec::class) {
+    // TODO: windows version
+    val os = DefaultNativePlatform.getCurrentOperatingSystem()
+    val libSuffix =
+      when {
+        os.isMacOsX -> "dylib"
+        else -> "so"
+      }
+    commandLine("scripts/generate-tree-sitter-libs.sh", libSuffix)
+  }
+
+tasks.test.configure { dependsOn(generateTreeSitterLib) }
 
 private val licenseHeader =
   """
