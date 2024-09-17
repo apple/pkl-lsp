@@ -9,6 +9,7 @@ cd ..
 
 # generate tree-sitter-pkl lib
 cd tree-sitter-pkl || exit
+npm install
 npm run gen-lib
 rm -rf "../src/main/resources/libtree-sitter-pkl.$1"
 cp "pkl.$1" "../src/main/resources/libtree-sitter-pkl.$1"
