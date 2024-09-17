@@ -13,7 +13,7 @@ jobs:
     - store_test_results:
         path: ~/test-results
     docker:
-    - image: cimg/openjdk:17.0
+    - image: cimg/openjdk:17.0-node
   do-release:
     steps:
     - attach_workspace:

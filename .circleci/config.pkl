@@ -8,7 +8,7 @@ jobs {
   ["build"] {
     docker {
       new {
-        image = "cimg/openjdk:17.0"
+        image = "cimg/openjdk:17.0-node"
       }
     }
     steps {
