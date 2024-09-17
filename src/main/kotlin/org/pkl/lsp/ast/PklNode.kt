@@ -24,6 +24,7 @@ import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.resolvers.ResolveVisitor
 import org.pkl.lsp.type.Type
 import org.pkl.lsp.type.TypeParameterBindings
+import org.pkl.lsp.util.CachedValueDataHolderBase
 
 interface PklNode {
   val project: Project
@@ -650,7 +651,7 @@ abstract class AbstractPklNode(
   override val project: Project,
   override val parent: PklNode?,
   protected open val ctx: TreeSitterNode,
-) : PklNode {
+) : CachedValueDataHolderBase(), PklNode {
   private val childrenByType: Map<KClass<out PklNode>, List<PklNode>> by lazy {
     val self = this
     // use LinkedHashMap to preserve order

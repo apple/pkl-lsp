@@ -28,22 +28,32 @@ data class CachedValue<T>(val value: T, val dependencies: List<ModificationTrack
   ) : this(value, dependencies.toList())
 }
 
-class CachedValuesManager(project: Project) : Component(project) {
-  private val cachedValues: MutableMap<String, Pair<List<Long>, CachedValue<*>>> =
+/** Interface for storing cached values. */
+interface CachedValueDataHolder {
+  val cachedValues: MutableMap<String, Pair<List<Long>, CachedValue<*>>>
+}
+
+abstract class CachedValueDataHolderBase : CachedValueDataHolder {
+  override val cachedValues: MutableMap<String, Pair<List<Long>, CachedValue<*>>> =
+    ConcurrentHashMap()
+}
+
+class CachedValuesManager(project: Project) : Component(project), CachedValueDataHolder {
+  override val cachedValues: MutableMap<String, Pair<List<Long>, CachedValue<*>>> =
     ConcurrentHashMap()
 
   /** Returns the currently cached value, or `null` if the cached value is out of date. */
   @Suppress("UNCHECKED_CAST")
-  private fun <T> getValue(key: String): CachedValue<T>? {
-    val (lastModificationCounts, cachedValue) = cachedValues[key] ?: return null
+  private fun <T> getValue(holder: CachedValueDataHolder, key: String): CachedValue<T>? {
+    val (lastModificationCounts, cachedValue) = holder.cachedValues[key] ?: return null
     if (cachedValue.isUpToDate(lastModificationCounts)) {
       return cachedValue as CachedValue<T>
     }
     return null
   }
 
-  private fun storeCachedValue(key: String, value: CachedValue<*>) {
-    cachedValues[key] = value.dependencies.map { it.getModificationCount() } to value
+  private fun storeCachedValue(holder: CachedValueDataHolder, key: String, value: CachedValue<*>) {
+    holder.cachedValues[key] = value.dependencies.map { it.getModificationCount() } to value
   }
 
   private fun CachedValue<*>.isUpToDate(lastModificationCounts: List<Long>): Boolean {
@@ -58,11 +68,19 @@ class CachedValuesManager(project: Project) : Component(project) {
     return true
   }
 
-  fun <T> getCachedValue(key: String, provider: () -> CachedValue<T>?): T? {
-    return getValue<T>(key)?.value ?: provider()?.also { storeCachedValue(key, it) }?.value
+  fun <T> getCachedValue(
+    holder: CachedValueDataHolder,
+    key: String,
+    provider: () -> CachedValue<T>?,
+  ): T? {
+    return getValue<T>(holder, key)?.value
+      ?: provider()?.also { storeCachedValue(holder, key, it) }?.value
   }
 
-  fun clearCachedValue(key: String) {
-    cachedValues.remove(key)
+  fun <T> getCachedValue(key: String, provider: () -> CachedValue<T>?): T? =
+    getCachedValue(this, key, provider)
+
+  fun clearCachedValue(holder: CachedValueDataHolder, key: String) {
+    holder.cachedValues.remove(key)
   }
 }
