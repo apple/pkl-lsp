@@ -109,11 +109,13 @@ sealed class BaseFile : VirtualFile {
       myContents = text
     }
 
+  @Synchronized
   final override fun getModule(): CompletableFuture<PklModule?> {
     if (isDirectory) {
       return CompletableFuture.completedFuture(null)
     }
     if (readError != null) {
+      readError = null
       project.cachedValuesManager.clearCachedValue(cacheKey)
     }
     return project.cachedValuesManager.getCachedValue(cacheKey) {
@@ -134,6 +136,9 @@ sealed class BaseFile : VirtualFile {
     return try {
       logger.log("building $uri")
       val moduleCtx = parser.parseModule(contents)
+      if (readError != null) {
+        readError = null
+      }
       return PklModuleImpl(moduleCtx, this)
     } catch (e: LexParseException) {
       logger.warn("Parser Error building $file: ${e.message}")
