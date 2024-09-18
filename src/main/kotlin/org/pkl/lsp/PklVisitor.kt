@@ -171,7 +171,7 @@ open class PklVisitor<R> {
     return visitElement(o)
   }
 
-  open fun visitModuleDeclaration(o: PklModuleHeader): R? {
+  open fun visitModuleHeader(o: PklModuleHeader): R? {
     return visitDocCommentOwner(o)
   }
 
@@ -183,7 +183,7 @@ open class PklVisitor<R> {
     return visitElement(o)
   }
 
-  open fun visitModuleHeader(o: PklModuleClause): R? {
+  open fun visitModuleClause(o: PklModuleClause): R? {
     return visitElement(o)
   }
 

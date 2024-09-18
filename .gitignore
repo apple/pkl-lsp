@@ -13,3 +13,8 @@ generated
 !.idea/vcs.xml
 
 .kotlin
+
+# native libraries
+libtree-sitter.*
+libtree-sitter-pkl.*
+src/main/resources/libtree-sitter*

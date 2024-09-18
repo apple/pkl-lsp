@@ -124,7 +124,7 @@ class PklModuleClauseImpl(
   override val moduleName: String? by lazy { qualifiedIdentifier?.fullName }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
-    return visitor.visitModuleHeader(this)
+    return visitor.visitModuleClause(this)
   }
 }
 
@@ -149,7 +149,7 @@ class PklModuleHeaderImpl(
   override val modifiers: List<Terminal> by lazy { moduleClause?.modifiers ?: emptyList() }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
-    return visitor.visitModuleDeclaration(this)
+    return visitor.visitModuleHeader(this)
   }
 }
 
