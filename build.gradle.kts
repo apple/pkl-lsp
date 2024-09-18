@@ -90,8 +90,6 @@ val generateTreeSitterLib by
     commandLine("scripts/generate-tree-sitter-libs.sh", libSuffix)
   }
 
-tasks.test.configure { dependsOn(generateTreeSitterLib) }
-
 private val licenseHeader =
   """
   /**

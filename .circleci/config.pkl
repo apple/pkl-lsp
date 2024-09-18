@@ -17,7 +17,7 @@ jobs {
         command = "git submodule update --init --recursive"
       }
       new RunStep {
-        command = "./gradlew --info --stacktrace -DtestReportsDir=${HOME}/test-results check"
+        command = "./gradlew --info --stacktrace -DtestReportsDir=${HOME}/test-results generateTreeSitterLib check"
       }
       new StoreTestResults { path = "~/test-results" }
     }
