@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
+
 plugins {
   application
   alias(libs.plugins.kotlin)
@@ -24,8 +26,8 @@ plugins {
 repositories { mavenCentral() }
 
 java {
-  sourceCompatibility = JavaVersion.VERSION_17
-  toolchain { languageVersion = JavaLanguageVersion.of(17) }
+  sourceCompatibility = JavaVersion.VERSION_22
+  toolchain { languageVersion = JavaLanguageVersion.of(22) }
 }
 
 val pklCli: Configuration by configurations.creating
@@ -37,6 +39,7 @@ dependencies {
   implementation(libs.pklCore)
   implementation(libs.lsp4j)
   implementation(libs.kotlinxSerializationJson)
+  implementation(libs.jtreesitter)
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
   testImplementation(libs.assertJ)
   testImplementation(libs.junit.jupiter)
@@ -46,7 +49,12 @@ dependencies {
 val configurePklCliExecutable by
   tasks.registering { doLast { pklCli.singleFile.setExecutable(true) } }
 
-tasks.jar { manifest { attributes += mapOf("Main-Class" to "org.pkl.lsp.cli.Main") } }
+tasks.jar {
+  manifest {
+    attributes +=
+      mapOf("Main-Class" to "org.pkl.lsp.cli.Main", "Enable-Native-Access" to "ALL-UNNAMED")
+  }
+}
 
 application { mainClass.set("org.pkl.lsp.cli.Main") }
 
@@ -68,6 +76,18 @@ val javaExecutable by
 
     // uncomment for debugging
     // jvmArgs.addAll("-ea", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
+  }
+
+val generateTreeSitterLib by
+  tasks.registering(Exec::class) {
+    // TODO: windows version
+    val os = DefaultNativePlatform.getCurrentOperatingSystem()
+    val libSuffix =
+      when {
+        os.isMacOsX -> "dylib"
+        else -> "so"
+      }
+    commandLine("scripts/generate-tree-sitter-libs.sh", libSuffix)
   }
 
 private val licenseHeader =

@@ -15,15 +15,13 @@
  */
 package org.pkl.lsp.ast
 
-import org.antlr.v4.runtime.tree.TerminalNode
-import org.pkl.core.parser.antlr.PklParser
 import org.pkl.lsp.PklVisitor
 import org.pkl.lsp.Project
 
 class TerminalImpl(
   project: Project,
   override val parent: PklNode,
-  override val ctx: TerminalNode,
+  override val ctx: TreeSitterNode,
   override val type: TokenType,
 ) : AbstractPklNode(project, parent, ctx), Terminal {
 
@@ -37,114 +35,131 @@ val Terminal.isModifier: Boolean
     return modifierTypes.contains(type)
   }
 
-fun TerminalNode.toTerminal(parent: PklNode): Terminal? {
+fun TreeSitterNode.toTerminal(parent: PklNode): Terminal? {
   val tokenType =
-    when (symbol.type) {
-      PklParser.ABSTRACT -> TokenType.ABSTRACT
-      PklParser.AMENDS -> TokenType.AMENDS
-      PklParser.AS -> TokenType.AS
-      PklParser.CLASS -> TokenType.CLASS
-      PklParser.CONST -> TokenType.CONST
-      PklParser.ELSE -> TokenType.ELSE
-      PklParser.EXTENDS -> TokenType.EXTENDS
-      PklParser.EXTERNAL -> TokenType.EXTERNAL
-      PklParser.FALSE -> TokenType.FALSE
-      PklParser.FIXED -> TokenType.FIXED
-      PklParser.FOR -> TokenType.FOR
-      PklParser.FUNCTION -> TokenType.FUNCTION
-      PklParser.HIDDEN_ -> TokenType.HIDDEN
-      PklParser.IF -> TokenType.IF
-      PklParser.IMPORT -> TokenType.IMPORT
-      PklParser.IMPORT_GLOB -> TokenType.IMPORT_GLOB
-      PklParser.IN -> TokenType.IN
-      PklParser.IS -> TokenType.IS
-      PklParser.LET -> TokenType.LET
-      PklParser.LOCAL -> TokenType.LOCAL
-      PklParser.MODULE -> TokenType.MODULE
-      PklParser.NEW -> TokenType.NEW
-      PklParser.NOTHING -> TokenType.NOTHING
-      PklParser.NULL -> TokenType.NULL
-      PklParser.OPEN -> TokenType.OPEN
-      PklParser.OUT -> TokenType.OUT
-      PklParser.OUTER -> TokenType.OUTER
-      PklParser.READ -> TokenType.READ
-      PklParser.READ_GLOB -> TokenType.READ_GLOB
-      PklParser.READ_OR_NULL -> TokenType.READ_OR_NULL
-      PklParser.SUPER -> TokenType.SUPER
-      PklParser.THIS -> TokenType.THIS
-      PklParser.THROW -> TokenType.THROW
-      PklParser.TRACE -> TokenType.TRACE
-      PklParser.TRUE -> TokenType.TRUE
-      PklParser.TYPE_ALIAS -> TokenType.TYPE_ALIAS
-      PklParser.UNKNOWN -> TokenType.UNKNOWN
-      PklParser.WHEN -> TokenType.WHEN
-      PklParser.PROTECTED -> TokenType.PROTECTED
-      PklParser.OVERRIDE -> TokenType.OVERRIDE
-      PklParser.RECORD -> TokenType.RECORD
-      PklParser.DELETE -> TokenType.DELETE
-      PklParser.CASE -> TokenType.CASE
-      PklParser.SWITCH -> TokenType.SWITCH
-      PklParser.VARARG -> TokenType.VARARG
-      PklParser.LPAREN -> TokenType.LPAREN
-      PklParser.RPAREN -> TokenType.RPAREN
-      PklParser.LBRACE -> TokenType.LBRACE
-      PklParser.RBRACE -> TokenType.RBRACE
-      PklParser.LBRACK -> TokenType.LBRACK
-      PklParser.RBRACK -> TokenType.RBRACK
-      PklParser.LPRED -> TokenType.LPRED
-      PklParser.COMMA -> TokenType.COMMA
-      PklParser.DOT -> TokenType.DOT
-      PklParser.QDOT -> TokenType.QDOT
-      PklParser.COALESCE -> TokenType.COALESCE
-      PklParser.NON_NULL -> TokenType.NON_NULL
-      PklParser.AT -> TokenType.AT
-      PklParser.ASSIGN -> TokenType.ASSIGN
-      PklParser.GT -> TokenType.GT
-      PklParser.LT -> TokenType.LT
-      PklParser.NOT -> TokenType.NOT
-      PklParser.QUESTION -> TokenType.QUESTION
-      PklParser.COLON -> TokenType.COLON
-      PklParser.ARROW -> TokenType.ARROW
-      PklParser.EQUAL -> TokenType.EQUAL
-      PklParser.NOT_EQUAL -> TokenType.NOT_EQUAL
-      PklParser.LTE -> TokenType.LTE
-      PklParser.GTE -> TokenType.GTE
-      PklParser.AND -> TokenType.AND
-      PklParser.OR -> TokenType.OR
-      PklParser.PLUS -> TokenType.PLUS
-      PklParser.MINUS -> TokenType.MINUS
-      PklParser.POW -> TokenType.POW
-      PklParser.STAR -> TokenType.STAR
-      PklParser.DIV -> TokenType.DIV
-      PklParser.INT_DIV -> TokenType.INT_DIV
-      PklParser.MOD -> TokenType.MOD
-      PklParser.UNION -> TokenType.UNION
-      PklParser.PIPE -> TokenType.PIPE
-      PklParser.SPREAD -> TokenType.SPREAD
-      PklParser.QSPREAD -> TokenType.QSPREAD
-      PklParser.UNDERSCORE -> TokenType.UNDERSCORE
-      PklParser.SLQuote -> TokenType.SLQuote
-      PklParser.MLQuote -> TokenType.MLQuote
-      PklParser.IntLiteral -> TokenType.IntLiteral
-      PklParser.FloatLiteral -> TokenType.FloatLiteral
-      PklParser.Identifier -> TokenType.Identifier
-      PklParser.NewlineSemicolon -> TokenType.NewlineSemicolon
-      PklParser.Whitespace -> TokenType.Whitespace
-      PklParser.DocComment -> TokenType.DocComment
-      PklParser.BlockComment -> TokenType.BlockComment
-      PklParser.LineComment -> TokenType.LineComment
-      PklParser.ShebangComment -> TokenType.ShebangComment
-      PklParser.SLEndQuote -> TokenType.SLEndQuote
-      PklParser.SLInterpolation -> TokenType.SLInterpolation
-      PklParser.SLUnicodeEscape -> TokenType.SLUnicodeEscape
-      PklParser.SLCharacterEscape -> TokenType.SLCharacterEscape
-      PklParser.SLCharacters -> TokenType.SLCharacters
-      PklParser.MLEndQuote -> TokenType.MLEndQuote
-      PklParser.MLInterpolation -> TokenType.MLInterpolation
-      PklParser.MLUnicodeEscape -> TokenType.MLUnicodeEscape
-      PklParser.MLCharacterEscape -> TokenType.MLCharacterEscape
-      PklParser.MLNewline -> TokenType.MLNewline
-      PklParser.MLCharacters -> TokenType.MLCharacters
+    when (type) {
+      "abstract" -> TokenType.ABSTRACT
+      "amends" -> TokenType.AMENDS
+      "as" -> TokenType.AS
+      "class" -> TokenType.CLASS
+      "const" -> TokenType.CONST
+      "else" -> TokenType.ELSE
+      "extends" -> TokenType.EXTENDS
+      "external" -> TokenType.EXTERNAL
+      "false" -> TokenType.FALSE
+      "fixed" -> TokenType.FIXED
+      "for" -> TokenType.FOR
+      "function" -> TokenType.FUNCTION
+      "hidden" -> TokenType.HIDDEN
+      "if" -> TokenType.IF
+      "import" -> TokenType.IMPORT
+      "import*" -> TokenType.IMPORT_GLOB
+      "in" -> TokenType.IN
+      "is" -> TokenType.IS
+      "let" -> TokenType.LET
+      "local" -> TokenType.LOCAL
+      "module" -> TokenType.MODULE
+      "new" -> TokenType.NEW
+      "nothing" -> TokenType.NOTHING
+      "null" -> TokenType.NULL
+      "open" -> TokenType.OPEN
+      "out" -> TokenType.OUT
+      "outer" -> TokenType.OUTER
+      "read" -> TokenType.READ
+      "read*" -> TokenType.READ_GLOB
+      "read?" -> TokenType.READ_OR_NULL
+      "super" -> TokenType.SUPER
+      "this" -> TokenType.THIS
+      "throw" -> TokenType.THROW
+      "trace" -> TokenType.TRACE
+      "true" -> TokenType.TRUE
+      "typealias" -> TokenType.TYPE_ALIAS
+      "unknown" -> TokenType.UNKNOWN
+      "when" -> TokenType.WHEN
+      // TODO: these terminal do not exist in tree-sitter
+      //      PklParser.PROTECTED -> TokenType.PROTECTED
+      //      PklParser.OVERRIDE -> TokenType.OVERRIDE
+      //      PklParser.RECORD -> TokenType.RECORD
+      //      PklParser.DELETE -> TokenType.DELETE
+      //      PklParser.CASE -> TokenType.CASE
+      //      PklParser.SWITCH -> TokenType.SWITCH
+      //      PklParser.VARARG -> TokenType.VARARG
+      "(" -> TokenType.LPAREN
+      ")" -> TokenType.RPAREN
+      "{" -> TokenType.LBRACE
+      "}" -> TokenType.RBRACE
+      "[" -> TokenType.LBRACK
+      "]" -> TokenType.RBRACK
+      "[[" -> TokenType.LPRED
+      "]]" -> TokenType.RPRED
+      "," -> TokenType.COMMA
+      "." -> TokenType.DOT
+      "?." -> TokenType.QDOT
+      "??" -> TokenType.COALESCE
+      "!!" -> TokenType.NON_NULL
+      "@" -> TokenType.AT
+      "=" -> TokenType.ASSIGN
+      ">" -> TokenType.GT
+      "<" -> TokenType.LT
+      "!" -> TokenType.NOT
+      "?" -> TokenType.QUESTION
+      ":" -> TokenType.COLON
+      "->" -> TokenType.ARROW
+      "==" -> TokenType.EQUAL
+      "!=" -> TokenType.NOT_EQUAL
+      "<=" -> TokenType.LTE
+      ">=" -> TokenType.GTE
+      "&&" -> TokenType.AND
+      "||" -> TokenType.OR
+      "+" -> TokenType.PLUS
+      "-" -> TokenType.MINUS
+      "**" -> TokenType.POW
+      "*" -> TokenType.STAR
+      "/" -> TokenType.DIV
+      "~/" -> TokenType.INT_DIV
+      "%" -> TokenType.MOD
+      "|" -> TokenType.UNION
+      "|>" -> TokenType.PIPE
+      "..." -> TokenType.SPREAD
+      "...?" -> TokenType.QSPREAD
+      // TODO: tree sitter doesn't support `_` yet
+      "_" -> TokenType.UNDERSCORE
+      "#\"" -> TokenType.SLQuote
+      "##\"" -> TokenType.SLQuote
+      "###\"" -> TokenType.SLQuote
+      "####\"" -> TokenType.SLQuote
+      "#####\"" -> TokenType.SLQuote
+      "\"" -> TokenType.SLEndQuote
+      "\"#" -> TokenType.SLEndQuote
+      "\"##" -> TokenType.SLEndQuote
+      "\"###" -> TokenType.SLEndQuote
+      "\"####" -> TokenType.SLEndQuote
+      "\"#####" -> TokenType.SLEndQuote
+      "#\"\"\"" -> TokenType.MLQuote
+      "##\"\"\"" -> TokenType.MLQuote
+      "###\"\"\"" -> TokenType.MLQuote
+      "####\"\"\"" -> TokenType.MLQuote
+      "#####\"\"\"" -> TokenType.MLQuote
+      "\"\"\"" -> TokenType.MLEndQuote
+      "\"\"\"#" -> TokenType.MLEndQuote
+      "\"\"\"##" -> TokenType.MLEndQuote
+      "\"\"\"###" -> TokenType.MLEndQuote
+      "\"\"\"####" -> TokenType.MLEndQuote
+      "\"\"\"#####" -> TokenType.MLEndQuote
+      "slStringLiteralPart" -> TokenType.SLCharacters
+      "mlStringLiteralPart" -> TokenType.MLCharacters
+      "identifier" -> TokenType.Identifier
+      "docComment" -> TokenType.DocComment
+      "escapeSequence" -> TokenType.CharacterEscape
+      // TODO: see if we need these
+      //      PklParser.NewlineSemicolon -> TokenType.NewlineSemicolon
+      //      PklParser.Whitespace -> TokenType.Whitespace
+      //      PklParser.BlockComment -> TokenType.BlockComment
+      //      PklParser.LineComment -> TokenType.LineComment
+      //      PklParser.ShebangComment -> TokenType.ShebangComment
+      //      PklParser.SLInterpolation -> TokenType.SLInterpolation
+      //      PklParser.MLInterpolation -> TokenType.MLInterpolation
+      //      PklParser.MLNewline -> TokenType.MLNewline
       else -> return null
     }
   return TerminalImpl(parent.project, parent, this, tokenType)

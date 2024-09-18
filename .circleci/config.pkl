@@ -8,13 +8,18 @@ jobs {
   ["build"] {
     docker {
       new {
-        image = "cimg/openjdk:17.0"
+        image = "cimg/openjdk:21.0-node"
       }
     }
     steps {
       "checkout"
       new RunStep {
-        command = "./gradlew --info --stacktrace -DtestReportsDir=${HOME}/test-results check"
+        command = "git submodule update --init --recursive"
+      }
+      new RunStep {
+        command = """
+          LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:." ./gradlew --info --stacktrace -DtestReportsDir="${HOME}/test-results" generateTreeSitterLib check
+          """
       }
       new StoreTestResults { path = "~/test-results" }
     }

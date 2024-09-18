@@ -41,7 +41,7 @@ class PklBaseModule(project: Project) : Component(project) {
             "Class",
             "TypeAlias" -> {
               val typeParameters =
-                member.classHeader.typeParameterList?.typeParameters
+                member.typeParameterList?.typeParameters
                   ?: listOf(PklNodeFactory.createTypeParameter(project, "Type"))
               types[className] = Type.Class(member, listOf(), listOf(), typeParameters)
             }

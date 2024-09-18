@@ -15,6 +15,8 @@
  */
 package org.pkl.lsp.ast
 
+import io.github.treesitter.jtreesitter.Range
+
 data class Span(val beginLine: Int, val beginCol: Int, val endLine: Int, val endCol: Int) {
   override fun toString(): String {
     return "($beginLine:$beginCol - $endLine:$endCol)"
@@ -37,5 +39,11 @@ data class Span(val beginLine: Int, val beginCol: Int, val endLine: Int, val end
 
   companion object {
     fun from(s1: Span, s2: Span): Span = Span(s1.beginLine, s1.beginCol, s2.endLine, s2.endCol)
+
+    fun fromRange(range: Range): Span {
+      val p1 = range.startPoint
+      val p2 = range.endPoint
+      return Span(p1.row + 1, p1.column + 1, p2.row + 1, p2.column + 1)
+    }
   }
 }

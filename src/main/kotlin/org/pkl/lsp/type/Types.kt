@@ -477,7 +477,7 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
     // enables the illusion that pkl.base#Class and pkl.base#TypeAlias
     // have a type parameter even though they currently don't
     private val typeParameters: List<PklTypeParameter> =
-      ctx.classHeader.typeParameterList?.typeParameters ?: listOf(),
+      ctx.typeParameterList?.typeParameters ?: listOf(),
   ) : Type(constraints) {
     val typeArguments: List<Type> =
       when {
@@ -691,7 +691,7 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
     }
 
     private val typeParameters: List<PklTypeParameter>
-      get() = ctx.typeAliasHeader.typeParameterList?.typeParameters ?: listOf()
+      get() = ctx.typeParameterList?.typeParameters ?: listOf()
 
     val typeArguments: List<Type> =
       when {

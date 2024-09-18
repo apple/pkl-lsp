@@ -38,7 +38,7 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
       node !is ModifierListOwner ||
         node.modifiers == null ||
         node is PklModule ||
-        node is PklModuleDeclaration
+        node is PklModuleHeader
     ) {
       return true
     }
@@ -89,7 +89,7 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
 
     val (description, applicableModifiers) =
       when (node) {
-        is PklModuleDeclaration ->
+        is PklModuleHeader ->
           if (node.isAmend) "amending modules" to AMENDING_MODULE_MODIFIERS
           else "modules" to MODULE_MODIFIERS
         is PklClass -> "classes" to CLASS_MODIFIERS
