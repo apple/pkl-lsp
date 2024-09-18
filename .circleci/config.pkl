@@ -18,7 +18,7 @@ jobs {
       }
       new RunStep {
         command = """
-          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. && ./gradlew --info --stacktrace -DtestReportsDir=${HOME}/test-results generateTreeSitterLib check
+          LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:." ./gradlew --info --stacktrace -DtestReportsDir="${HOME}/test-results" generateTreeSitterLib check
           """
       }
       new StoreTestResults { path = "~/test-results" }
