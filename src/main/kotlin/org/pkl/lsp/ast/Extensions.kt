@@ -174,12 +174,10 @@ private fun PklNode.getEscapedText(): String? = buildString {
         val text = terminal.text
         if (text.contains("u{")) {
           val index = text.indexOf('{') + 1
-          if (index != -1) {
-            val hexString = text.substring(index, text.length - 1)
-            try {
-              append(Character.toChars(Integer.parseInt(hexString, 16)))
-            } catch (ignored: NumberFormatException) {} catch (ignored: IllegalArgumentException) {}
-          }
+          val hexString = text.substring(index, text.length - 1)
+          try {
+            append(Character.toChars(Integer.parseInt(hexString, 16)))
+          } catch (ignored: NumberFormatException) {} catch (ignored: IllegalArgumentException) {}
         } else {
           when (text[text.lastIndex]) {
             'n' -> append('\n')
