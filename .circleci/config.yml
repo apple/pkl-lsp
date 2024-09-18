@@ -9,11 +9,11 @@ jobs:
     - run:
         command: git submodule update --init --recursive
     - run:
-        command: ./gradlew --info --stacktrace -DtestReportsDir=${HOME}/test-results generateTreeSitterLib check
+        command: export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. && ./gradlew --info --stacktrace -DtestReportsDir=${HOME}/test-results generateTreeSitterLib check
     - store_test_results:
         path: ~/test-results
     docker:
-    - image: cimg/openjdk:17.0-node
+    - image: cimg/openjdk:21.0-node
   do-release:
     steps:
     - attach_workspace:
