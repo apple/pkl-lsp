@@ -297,7 +297,7 @@ object Resolvers {
               if (!visitor.visitIfNotNull(member.name, member, bindings, context))
                 return visitor.result to LookupMode.LEXICAL
             }
-            element.parameters.parameters.let { parameterList ->
+            element.parameters?.elements?.let { parameterList ->
               for (parameter in parameterList) {
                 if (
                   !visitor.visitIfNotNull(parameter.identifier?.text, parameter, bindings, context)

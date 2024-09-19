@@ -231,10 +231,6 @@ open class PklVisitor<R> {
     return visitElement(o)
   }
 
-  open fun visitObjectBodyParameters(o: PklObjectBodyParameters): R? {
-    return visitElement(o)
-  }
-
   open fun visitObjectBodyOwner(o: PklObjectBodyOwner): R? {
     return visitElement(o)
   }
