@@ -13,12 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
+import com.github.gradle.node.npm.task.NpmInstallTask
+import com.github.gradle.node.task.NodeTask
+import org.gradle.internal.extensions.stdlib.capitalized
+import org.gradle.internal.os.OperatingSystem
+import org.jetbrains.kotlin.gradle.internal.ensureParentDirsCreated
 
 plugins {
   application
   alias(libs.plugins.kotlin)
   alias(libs.plugins.kotlinSerialization)
+  alias(libs.plugins.nodeGradle)
   alias(libs.plugins.shadow)
   alias(libs.plugins.spotless)
 }
@@ -32,6 +37,28 @@ java {
 
 val pklCli: Configuration by configurations.creating
 
+val osName
+  get(): String {
+    val os = OperatingSystem.current()
+    return when {
+      os.isMacOsX -> "macos"
+      os.isLinux -> "linux"
+      os.isWindows -> "windows"
+      else -> throw RuntimeException("OS ${os.name} is not supported")
+    }
+  }
+
+/** Same logic as [org.gradle.internal.os.OperatingSystem#arch], which is protected. */
+val arch: String
+  get() {
+    return when (val arch = System.getProperty("os.arch")) {
+      "x86" -> "i386"
+      "x86_64" -> "amd64"
+      "powerpc" -> "ppc"
+      else -> arch
+    }
+  }
+
 dependencies {
   implementation(kotlin("reflect"))
   implementation(libs.antlr)
@@ -43,7 +70,7 @@ dependencies {
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
   testImplementation(libs.assertJ)
   testImplementation(libs.junit.jupiter)
-  pklCli(libs.pklCli)
+  pklCli("org.pkl-lang:pkl-cli-$osName-$arch:${libs.versions.pkl.get()}")
 }
 
 val configurePklCliExecutable by
@@ -61,6 +88,7 @@ application { mainClass.set("org.pkl.lsp.cli.Main") }
 tasks.test {
   dependsOn(configurePklCliExecutable)
   systemProperties["pklExecutable"] = pklCli.singleFile.absolutePath
+  systemProperties["java.library.path"] = nativeLibDir.get().asFile.absolutePath
   useJUnitPlatform()
   System.getProperty("testReportsDir")?.let { reportsDir ->
     reports.junitXml.outputLocation.set(file(reportsDir).resolve(project.name).resolve(name))
@@ -78,17 +106,123 @@ val javaExecutable by
     // jvmArgs.addAll("-ea", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
   }
 
-val generateTreeSitterLib by
-  tasks.registering(Exec::class) {
-    // TODO: windows version
-    val os = DefaultNativePlatform.getCurrentOperatingSystem()
-    val libSuffix =
-      when {
-        os.isMacOsX -> "dylib"
-        else -> "so"
+val treeSitterPklRepo = layout.buildDirectory.dir("repos/tree-sitter-pkl")
+val treeSitterRepo = layout.buildDirectory.dir("repos/tree-sitter")
+
+node {
+  version = libs.versions.node
+  nodeProjectDir = treeSitterPklRepo
+  download = true
+}
+
+private val nativeLibDir = layout.buildDirectory.dir("native-lib")
+
+fun configureRepo(
+  repo: String,
+  simpleRepoName: String,
+  gitTagOrCommit: Provider<String>,
+  repoDir: Provider<Directory>,
+): TaskProvider<Task> {
+  val versionFile = layout.buildDirectory.file("tmp/repos/$simpleRepoName")
+  val taskSuffix = simpleRepoName.capitalized() + "Repo"
+
+  val cloneTask =
+    tasks.register("clone$taskSuffix", Exec::class) {
+      outputs.dir(repoDir)
+      onlyIf { !repoDir.get().asFile.resolve(".git").exists() }
+      commandLine("git", "clone", repo, repoDir.get().asFile)
+    }
+
+  val updateTask =
+    tasks.register("update$taskSuffix") {
+      outputs.dir(repoDir)
+      outputs.upToDateWhen {
+        versionFile.get().asFile.let { it.exists() && it.readText() == gitTagOrCommit.get() }
       }
-    commandLine("scripts/generate-tree-sitter-libs.sh", libSuffix)
+      doLast {
+        exec {
+          workingDir = repoDir.get().asFile
+          commandLine("git", "fetch", "--tags", "origin")
+        }
+        exec {
+          workingDir = repoDir.get().asFile
+          commandLine("git", "checkout", "-f", gitTagOrCommit.get())
+        }
+      }
+    }
+
+  return tasks.register("setup$taskSuffix") {
+    dependsOn(cloneTask)
+    dependsOn(updateTask)
+    outputs.dir(repoDir)
+    doLast {
+      versionFile.get().asFile.let { file ->
+        file.ensureParentDirsCreated()
+        file.writeText(gitTagOrCommit.get())
+      }
+    }
   }
+}
+
+val setupTreeSitterRepo =
+  configureRepo(
+    "git@github.com:tree-sitter/tree-sitter",
+    "treeSitter",
+    libs.versions.treeSitterRepo,
+    treeSitterRepo,
+  )
+
+val setupTreeSitterPklRepo =
+  configureRepo(
+    "git@github.com:apple/tree-sitter-pkl",
+    "treeSitterPkl",
+    libs.versions.treeSitterPklRepo,
+    treeSitterPklRepo,
+  )
+
+val makeTreeSitterLib by
+  tasks.registering(Exec::class) {
+    dependsOn(setupTreeSitterRepo)
+    workingDir = treeSitterRepo.get().asFile
+    inputs.dir(workingDir)
+
+    val libraryName = System.mapLibraryName("tree-sitter")
+    commandLine("make", libraryName)
+
+    val outputFile = nativeLibDir.map { it.file(libraryName) }
+    outputs.file(outputFile)
+
+    doLast { workingDir.resolve(libraryName).renameTo(outputFile.get().asFile) }
+  }
+
+val npmInstallTreeSitter by
+  tasks.registering(NpmInstallTask::class) {
+    dependsOn(setupTreeSitterPklRepo)
+    doFirst { workingDir = treeSitterPklRepo.get().asFile }
+  }
+
+val makeTreeSitterPklLib by
+  tasks.registering(NodeTask::class) {
+    dependsOn(npmInstallTreeSitter)
+    inputs.dir(treeSitterPklRepo)
+    doFirst { workingDir = treeSitterPklRepo.get().asFile }
+
+    val libraryName = System.mapLibraryName("tree-sitter-pkl")
+
+    val outputFile = nativeLibDir.map { it.file(libraryName) }
+
+    script.set(treeSitterPklRepo.get().asFile.resolve("node_modules/.bin/tree-sitter"))
+    args = listOf("build", "--output", outputFile.get().asFile.absolutePath)
+
+    outputs.file(outputFile)
+  }
+
+tasks.processResources {
+  dependsOn(makeTreeSitterLib)
+  dependsOn(makeTreeSitterPklLib)
+}
+
+sourceSets { main { resources { srcDirs(nativeLibDir) } } }
 
 private val licenseHeader =
   """
