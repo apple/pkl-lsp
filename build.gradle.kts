@@ -65,7 +65,6 @@ application { mainClass.set("org.pkl.lsp.cli.Main") }
 tasks.test {
   dependsOn(configurePklCliExecutable)
   systemProperties["pklExecutable"] = pklCli.singleFile.absolutePath
-  jvmArgs("-Djava.library.path=${nativeLibDir.get().asFile.absolutePath}")
   useJUnitPlatform()
   System.getProperty("testReportsDir")?.let { reportsDir ->
     reports.junitXml.outputLocation.set(file(reportsDir).resolve(project.name).resolve(name))
