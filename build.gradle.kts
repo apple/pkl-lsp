@@ -16,6 +16,7 @@
 import com.github.gradle.node.npm.task.NpmInstallTask
 import com.github.gradle.node.task.NodeTask
 import org.gradle.internal.extensions.stdlib.capitalized
+import org.gradle.internal.os.OperatingSystem
 import org.jetbrains.kotlin.gradle.internal.ensureParentDirsCreated
 
 plugins {
@@ -36,6 +37,28 @@ java {
 
 val pklCli: Configuration by configurations.creating
 
+val osName
+  get(): String {
+    val os = OperatingSystem.current()
+    return when {
+      os.isMacOsX -> "macos"
+      os.isLinux -> "linux"
+      os.isWindows -> "windows"
+      else -> throw RuntimeException("OS ${os.name} is not supported")
+    }
+  }
+
+/** Same logic as [org.gradle.internal.os.OperatingSystem#arch], which is protected. */
+val arch: String
+  get() {
+    return when (val arch = System.getProperty("os.arch")) {
+      "x86" -> "i386"
+      "x86_64" -> "amd64"
+      "powerpc" -> "ppc"
+      else -> arch
+    }
+  }
+
 dependencies {
   implementation(kotlin("reflect"))
   implementation(libs.antlr)
@@ -47,7 +70,7 @@ dependencies {
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
   testImplementation(libs.assertJ)
   testImplementation(libs.junit.jupiter)
-  pklCli(libs.pklCli)
+  pklCli("org.pkl-lang:pkl-cli-$osName-$arch:${libs.versions.pkl.get()}")
 }
 
 val configurePklCliExecutable by
@@ -65,6 +88,7 @@ application { mainClass.set("org.pkl.lsp.cli.Main") }
 tasks.test {
   dependsOn(configurePklCliExecutable)
   systemProperties["pklExecutable"] = pklCli.singleFile.absolutePath
+  systemProperties["java.library.path"] = nativeLibDir.get().asFile.absolutePath
   useJUnitPlatform()
   System.getProperty("testReportsDir")?.let { reportsDir ->
     reports.junitXml.outputLocation.set(file(reportsDir).resolve(project.name).resolve(name))
@@ -113,13 +137,7 @@ fun configureRepo(
     tasks.register("update$taskSuffix") {
       outputs.dir(repoDir)
       outputs.upToDateWhen {
-        versionFile.get().asFile.let { file ->
-          if (!file.exists()) {
-            false
-          } else {
-            file.readText() == gitTagOrCommit.get()
-          }
-        }
+        versionFile.get().asFile.let { it.exists() && it.readText() == gitTagOrCommit.get() }
       }
       doLast {
         exec {
@@ -128,7 +146,7 @@ fun configureRepo(
         }
         exec {
           workingDir = repoDir.get().asFile
-          commandLine("git", "checkout", gitTagOrCommit.get())
+          commandLine("git", "checkout", "-f", gitTagOrCommit.get())
         }
       }
     }

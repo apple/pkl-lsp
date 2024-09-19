@@ -14,7 +14,7 @@ pkl = "0.26.3"
 shadowPlugin = "8.1.1"
 spotless = "6.21.0"
 treeSitterRepo = "v0.23.0" # git tag name
-treeSitterPklRepo = "generate-grammar" # TODO switch to tag
+treeSitterPklRepo = "b867391" # TODO switch to tag
 
 [libraries]
 antlr = { group = "com.tunnelvisionlabs", name = "antlr4", version.ref = "antlr" }
@@ -24,7 +24,6 @@ jtreesitter = { group = "io.github.tree-sitter", name = "jtreesitter", version.r
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
 kotlinxSerializationJson = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx" }
 lsp4j = { group = "org.eclipse.lsp4j", name = "org.eclipse.lsp4j", version.ref = "lsp4j" }
-pklCli = { group = "org.pkl-lang", name = "pkl-cli-java", version.ref = "pkl" }
 pklCore = { group = "org.pkl-lang", name = "pkl-core", version.ref = "pkl" }
 
 [plugins]
