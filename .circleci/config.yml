@@ -7,7 +7,7 @@ jobs:
     steps:
     - checkout
     - run:
-        command: LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:." ./gradlew --info --stacktrace -DtestReportsDir="${HOME}/test-results" check
+        command: ./gradlew --info --stacktrace -DtestReportsDir="${HOME}/test-results" check
     - store_test_results:
         path: ~/test-results
     docker:
