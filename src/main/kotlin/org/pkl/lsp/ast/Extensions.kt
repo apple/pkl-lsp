@@ -441,17 +441,10 @@ fun Node.utfAwareText(): String {
   return String(text.toByteArray(utf8), startByte, endByte - startByte, utf8)
 }
 
-private val quoteCharacters =
-  EnumSet.of(TokenType.SLQuote, TokenType.SLEndQuote, TokenType.MLQuote, TokenType.MLEndQuote)
-
 fun PklStringConstant.contentsSpan(): Span {
-  val characters =
-    terminals
-      .dropWhile { quoteCharacters.contains(it.type) }
-      .dropLastWhile { quoteCharacters.contains(it.type) }
-  val firstSpan = characters.first().span
-  val lastSpan = characters.last().span
-  return Span(firstSpan.beginLine, firstSpan.beginCol, lastSpan.endLine, lastSpan.endCol)
+  val stringStart = terminals.first().span
+  val stringEnd = terminals.last().span
+  return Span(stringStart.endLine, stringStart.endCol, stringEnd.beginLine, stringEnd.beginCol)
 }
 
 fun PklStringLiteral.contentsSpan(): Span {
