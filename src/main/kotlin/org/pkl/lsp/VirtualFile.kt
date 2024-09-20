@@ -61,6 +61,13 @@ interface VirtualFile : ModificationTracker {
   var version: Long?
 
   /**
+   * The root file of this VirtualFile's file system.
+   *
+   * May throw [OperationNotSupportedException] if this file cannot be converted to a [Path].
+   */
+  val root: VirtualFile?
+
+  /**
    * The NIO path backing this file.
    *
    * May throw [OperationNotSupportedException] if this file cannot be converted to a [Path].
@@ -95,6 +102,9 @@ sealed class BaseFile : VirtualFile {
   override fun getModificationCount(): Long = version ?: -1L
 
   override var version: Long? = null
+
+  final override val root: VirtualFile?
+    get() = project.virtualFileManager.get(path.root)
 
   abstract fun doReadContents(): String
 

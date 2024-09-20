@@ -15,8 +15,11 @@
  */
 package org.pkl.lsp
 
+import com.google.gson.Gson
+import java.math.BigInteger
 import java.net.URI
 import java.net.URISyntaxException
+import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import java.util.regex.Pattern
@@ -25,6 +28,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
+import org.pkl.core.util.IoUtils.encodePath
 import org.pkl.lsp.ast.Span
 
 private const val SIGNIFICAND_MASK = 0x000fffffffffffffL
@@ -135,8 +139,6 @@ val URI.effectiveUri: URI?
     }
   }
 
-val pklCacheDir: Path = Path.of(System.getProperty("user.home")).resolve(".pkl/cache")
-
 fun String.getIndex(position: Position): Int {
   var currentIndex = 0
   for ((column, line) in lines().withIndex()) {
@@ -174,3 +176,116 @@ fun <T> debounce(interval: Duration = 5.seconds, f: () -> T): () -> T {
     }
   }
 }
+
+interface CacheDir {
+  val file: Path
+
+  fun resolve(path: String): Path?
+}
+
+data class Package2CacheDir(override val file: Path) : CacheDir {
+  override fun resolve(path: String): Path? {
+    return file.resolve(encodePath(path)).let { resolved ->
+      if (Files.exists(resolved)) resolved else null
+    }
+  }
+}
+
+data class Package1CacheDir(override val file: Path) : CacheDir {
+  override fun resolve(path: String): Path? {
+    return file.resolve(path).let { resolved -> if (Files.exists(resolved)) resolved else null }
+  }
+}
+
+val pklCacheDir: Path = Path.of(System.getProperty("user.home")).resolve(".pkl/cache")
+
+val packages2CacheDir: CacheDir
+  get() = Package2CacheDir(pklCacheDir.resolve("package-2"))
+
+val packages1CacheDir: CacheDir
+  get() = Package1CacheDir(pklCacheDir.resolve("package-1"))
+
+/**
+ * Windows reserves characters `<>:"\|?*` in filenames.
+ *
+ * For any such characters, enclose their decimal character code with parentheses. Verbatim `(` is
+ * encoded as `((`.
+ *
+ * This code is copied from `org.pkl.core.util.IoUtils.encodePath()`.
+ */
+fun encodePath(path: String): String {
+  if (path.isEmpty()) return path
+  return buildString {
+    for (i in path.indices) {
+      when (val character = path[i]) {
+        '<',
+        '>',
+        ':',
+        '"',
+        '\\',
+        '|',
+        '?',
+        '*' -> {
+          append('(')
+          append(BigInteger(byteArrayOf(character.code.toByte())).toString(16))
+          append(")")
+        }
+        '(' -> append("((")
+        else -> append(path[i])
+      }
+    }
+  }
+}
+
+/** Decodes a path encoded with [encodePath]. */
+fun decodePath(path: String): String {
+  if (path.isEmpty()) return path
+  return buildString {
+    var i = 0
+    while (i < path.length) {
+      val character = path[i]
+      if (character == '(') {
+        require(i != path.length - 1) { "Invalid path encoding: $path" }
+        i++
+        var nextCharacter = path[i]
+        if (nextCharacter == '(') {
+          append('(')
+          i++
+          continue
+        }
+        require(nextCharacter != ')') { "Invalid path encoding: $path" }
+        val codePointBuilder = StringBuilder()
+        while (nextCharacter != ')') {
+          when (nextCharacter) {
+            '0',
+            '1',
+            '2',
+            '3',
+            '4',
+            '5',
+            '6',
+            '7',
+            '8',
+            '9',
+            'a',
+            'b',
+            'c',
+            'd',
+            'e',
+            'f' -> codePointBuilder.append(nextCharacter)
+            else -> throw IllegalArgumentException("Invalid path encoding: $path")
+          }
+          i++
+          require(i != path.length) { "Invalid path encoding: $path" }
+          nextCharacter = path[i]
+        }
+        append(codePointBuilder.toString().toInt(16).toChar())
+      } else {
+        append(character)
+      }
+      i++
+    }
+  }
+}
+
+val gson: Gson = Gson()

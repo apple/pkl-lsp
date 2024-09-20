@@ -97,6 +97,12 @@ class PklTextDocumentService(project: Project) : Component(project), TextDocumen
     return completion.onCompletion(params)
   }
 
+  override fun resolveCompletionItem(
+    unresolved: CompletionItem
+  ): CompletableFuture<CompletionItem> {
+    return completion.resolveCompletionItem(unresolved)
+  }
+
   override fun codeAction(
     params: CodeActionParams
   ): CompletableFuture<List<Either<Command, CodeAction>>> {

@@ -131,6 +131,13 @@ interface PklDocCommentOwner : PklNode {
       val doc = docComment?.text?.trim() ?: return null
       return doc.lines().joinToString("\n") { it.trimStart().removePrefix("///") }.trimIndent()
     }
+
+  /**
+   * Returns the documentation comment of this member. For properties and methods, if this member
+   * does not have a documentation comment, returns the documentation comment of the nearest
+   * documented ancestor, if any.
+   */
+  fun effectiveDocComment(context: PklProject?): String? = parsedComment
 }
 
 sealed interface PklNavigableElement : PklNode
@@ -253,15 +260,14 @@ interface PklClassProperty : PklProperty, PklModuleMember, PklClassMember, PklTy
 interface PklMethod : PklNavigableElement, ModifierListOwner {
   val methodHeader: PklMethodHeader
   val body: PklExpr
+  val name: String
 }
 
 interface PklClassMethod : PklMethod, PklModuleMember, PklClassMember {
   val annotations: List<PklAnnotation>
 }
 
-interface PklObjectMethod : PklMethod, PklObjectMember {
-  val name: String
-}
+interface PklObjectMethod : PklMethod, PklObjectMember
 
 sealed interface PklObjectMember : PklNode
 
@@ -391,11 +397,13 @@ interface PklReadExpr : PklExpr {
   val isGlob: Boolean
 }
 
-interface PklSingleLineStringLiteral : PklExpr {
+interface PklStringLiteral : PklExpr
+
+interface PklSingleLineStringLiteral : PklStringLiteral {
   val exprs: List<PklExpr>
 }
 
-interface PklMultiLineStringLiteral : PklExpr {
+interface PklMultiLineStringLiteral : PklStringLiteral {
   val exprs: List<PklExpr>
 }
 

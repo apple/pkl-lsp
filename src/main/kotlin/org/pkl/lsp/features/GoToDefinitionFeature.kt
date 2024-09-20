@@ -29,22 +29,6 @@ import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.type.computeThisType
 
 class GoToDefinitionFeature(project: Project) : Component(project) {
-
-  companion object {
-    private val quoteCharacters =
-      EnumSet.of(TokenType.SLQuote, TokenType.SLEndQuote, TokenType.MLQuote, TokenType.MLEndQuote)
-
-    private fun PklStringConstant.contentsSpan(): Span {
-      val characters =
-        terminals
-          .dropWhile { quoteCharacters.contains(it.type) }
-          .dropLastWhile { quoteCharacters.contains(it.type) }
-      val firstSpan = characters.first().span
-      val lastSpan = characters.last().span
-      return Span(firstSpan.beginLine, firstSpan.beginCol, lastSpan.endLine, lastSpan.endCol)
-    }
-  }
-
   fun onGoToDefinition(
     params: DefinitionParams
   ): CompletableFuture<Either<List<Location>, List<LocationLink>>> {

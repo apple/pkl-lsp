@@ -16,6 +16,11 @@
 package org.pkl.lsp.resolvers
 
 import kotlin.math.min
+import org.eclipse.lsp4j.CompletionItem
+import org.eclipse.lsp4j.CompletionItemKind
+import org.eclipse.lsp4j.InsertTextFormat
+import org.eclipse.lsp4j.MarkupContent
+import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.packages.dto.PklProject
@@ -420,6 +425,133 @@ object ResolveVisitors {
       override val exactName: String
         get() = expectedName
     }
+
+  fun completionItems(base: PklBaseModule): ResolveVisitor<List<CompletionItem>> {
+    return object : ResolveVisitor<List<CompletionItem>> {
+      override fun visit(
+        name: String,
+        element: PklNode,
+        bindings: TypeParameterBindings,
+        context: PklProject?,
+      ): Boolean {
+        when (element) {
+          is PklImport ->
+            element.memberName?.let { importName ->
+              val item =
+                CompletionItem(importName).apply {
+                  kind = CompletionItemKind.Module
+                  detail = base.moduleType.render()
+                }
+              result.add(item)
+            }
+          is PklTypeParameter ->
+            if (bindings.contains(element)) {
+              for (definition in toDefinitions(element, base, bindings)) {
+                visit(name, definition, mapOf(), context)
+              }
+            }
+          is PklNavigableElement -> {
+            result.add(element.complete())
+          }
+          is PklExpr -> {}
+          else -> throw AssertionError("Unexpected type: ${element::class.java.typeName ?: "null"}")
+        }
+        return true
+      }
+
+      private fun PklNavigableElement.complete(): CompletionItem {
+        return when (this) {
+          is PklClassMethod -> toCompletionItem()
+          is PklMethod -> toCompletionItem()
+          is PklClassProperty -> toCompletionItem()
+          is PklClass -> toCompletionItem()
+          is PklTypeAlias -> toCompletionItem()
+          is PklObjectProperty -> toCompletionItem()
+          is PklTypeParameter,
+          is PklModule,
+          is PklTypedIdentifier -> throw AssertionError("Unreachable")
+        }
+      }
+
+      private fun PklProperty.toCompletionItem(): CompletionItem {
+        val item = CompletionItem(name)
+        item.kind = CompletionItemKind.Field
+        item.detail = type?.render() ?: "unknown"
+        if (this is PklClassProperty) {
+          item.documentation = getDoc(this, containingFile.pklProject)
+        }
+        return item
+      }
+
+      private fun PklMethod.toCompletionItem(): CompletionItem {
+        val item = CompletionItem()
+        val pars = methodHeader.parameterList?.elements ?: listOf()
+        val strPars =
+          pars
+            .mapIndexed { index, par ->
+              val name = par.identifier?.text ?: "par"
+              "\${${index + 1}:$name}"
+            }
+            .joinToString(", ")
+
+        val parTypes = pars.joinToString(", ") { it.typeAnnotation?.type?.render() ?: "unknown" }
+        val retType = methodHeader.returnType?.render() ?: "unknown"
+
+        item.label = "$name($parTypes)"
+        item.insertText = "$name($strPars)"
+        item.insertTextFormat = InsertTextFormat.Snippet
+        item.kind = CompletionItemKind.Method
+        item.detail = retType
+        if (this is PklClassMethod) {
+          item.documentation = getDoc(this, containingFile.pklProject)
+        }
+        return item
+      }
+
+      private fun PklTypeDef.toCompletionItem(): CompletionItem {
+        val item = CompletionItem(name)
+        item.kind = CompletionItemKind.Class
+        item.detail =
+          when (this) {
+            is PklTypeAlias -> type.render()
+            is PklClass -> render()
+          }
+        item.documentation = getDoc(this, containingFile.pklProject)
+        return item
+      }
+
+      private fun PklClass.render(): String {
+        return buildString {
+          if (modifiers != null) {
+            append(modifiers!!.joinToString(" ", postfix = " ") { it.text })
+          }
+          append(identifier?.text ?: "<class>")
+          if (extends != null) {
+            append(' ')
+            append(extends!!.render())
+          }
+        }
+      }
+
+      private fun toDefinitions(
+        typeParameter: PklTypeParameter,
+        base: PklBaseModule,
+        bindings: TypeParameterBindings,
+      ): List<PklNavigableElement> {
+        val type = bindings[typeParameter] ?: Type.Unknown
+        return type.resolveToDefinitions(base)
+      }
+
+      private fun getDoc(
+        node: PklDocCommentOwner,
+        context: PklProject?,
+      ): Either<String, MarkupContent> {
+        return Either.forRight(MarkupContent("markdown", node.effectiveDocComment(context) ?: ""))
+      }
+
+      override val result: MutableList<CompletionItem> = mutableListOf()
+    }
+  }
 
   private fun toDefinitions(
     typeParameter: PklTypeParameter,

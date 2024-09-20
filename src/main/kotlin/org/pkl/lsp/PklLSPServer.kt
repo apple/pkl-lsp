@@ -57,7 +57,13 @@ class PklLSPServer(val verbose: Boolean) : LanguageServer {
         // go to definition capability
         capabilities.definitionProvider = Either.forLeft(true)
         // auto completion capability
-        capabilities.completionProvider = CompletionOptions(false, listOf("."))
+        capabilities.completionProvider =
+          CompletionOptions(
+            true,
+            listOf(".", "/", "\"", ":") +
+              CharRange('a', 'z').map { it.toString() } +
+              CharRange('A', 'Z').map { it.toString() },
+          )
         capabilities.setCodeActionProvider(CodeActionOptions(listOf(CodeActionKind.QuickFix)))
         capabilities.workspace =
           WorkspaceServerCapabilities().apply {

@@ -68,6 +68,26 @@ class PklClassPropertyImpl(
       }
     }
   }
+
+  @Suppress("DuplicatedCode")
+  override fun effectiveDocComment(context: PklProject?): String? {
+    if (parsedComment != null) return parsedComment
+    val clazz = parentOfType<PklClass>() ?: return null
+    clazz.eachSuperclassOrModule(context) { typeDef ->
+      when (typeDef) {
+        is PklClass ->
+          typeDef.cache(context).properties[name]?.parsedComment?.let {
+            return it
+          }
+        is PklModule ->
+          typeDef.cache(context).properties[name]?.parsedComment?.let {
+            return it
+          }
+        else -> {}
+      }
+    }
+    return null
+  }
 }
 
 class PklClassMethodImpl(
@@ -89,6 +109,26 @@ class PklClassMethodImpl(
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitClassMethod(this)
+  }
+
+  @Suppress("DuplicatedCode")
+  override fun effectiveDocComment(context: PklProject?): String? {
+    if (parsedComment != null) return parsedComment
+    val clazz = parentOfType<PklClass>() ?: return null
+    clazz.eachSuperclassOrModule(context) { typeDef ->
+      when (typeDef) {
+        is PklClass ->
+          typeDef.cache(context).methods[name]?.parsedComment?.let {
+            return it
+          }
+        is PklModule ->
+          typeDef.cache(context).methods[name]?.parsedComment?.let {
+            return it
+          }
+        else -> {}
+      }
+    }
+    return null
   }
 }
 

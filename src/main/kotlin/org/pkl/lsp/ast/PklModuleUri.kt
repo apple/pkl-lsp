@@ -215,7 +215,7 @@ class PklModuleUriImpl(
       }
     }
 
-    private fun getDependencyRoot(
+    fun getDependencyRoot(
       project: Project,
       targetUriStr: String,
       enclosingModule: PklModule?,
