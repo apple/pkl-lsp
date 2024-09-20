@@ -41,8 +41,7 @@ class StringLiteralTypeCompletionProvider(project: Project) :
   }
 
   // only handle completions for single line string literals (multiline string literals are harder
-  // to insert, not
-  // likely to be used for enum members
+  // to insert, not likely to be used for enum members
   private fun getStringLiteral(node: PklNode): PklSingleLineStringLiteral? {
     return node as? PklSingleLineStringLiteral
       ?: node.parentOfTypes(

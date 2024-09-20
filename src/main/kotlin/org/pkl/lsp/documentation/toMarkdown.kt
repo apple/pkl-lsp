@@ -36,12 +36,7 @@ fun PklNode.toMarkdown(originalNode: PklNode?, context: PklProject?): String {
 fun Type.toMarkdown(project: Project, context: PklProject?): String {
   val markdown = render()
   val ctx = getNode(project, context)
-  showDocCommentAndModule(ctx, markdown, context)
-  return when {
-    ctx is PklModule && ctx.header != null ->
-      showDocCommentAndModule(ctx.header!!, markdown, context)
-    else -> showDocCommentAndModule(ctx, markdown, context)
-  }
+  return showDocCommentAndModule((ctx as? PklModule)?.header ?: ctx, markdown, context)
 }
 
 private fun PklNode.doRenderMarkdown(originalNode: PklNode?, context: PklProject?): String =
@@ -65,7 +60,7 @@ private fun PklNode.doRenderMarkdown(originalNode: PklNode?, context: PklProject
     is PklMethodHeader ->
       buildString {
         append("function ")
-        append(identifier?.text ?: "<method>>")
+        append(identifier?.text ?: "<method>")
         append(typeParameterList?.doRenderMarkdown(originalNode, context) ?: "")
         append(parameterList?.doRenderMarkdown(originalNode, context) ?: "()")
         val returnTypeStr =
