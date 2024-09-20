@@ -100,7 +100,7 @@ class PklMethodHeaderImpl(
   override val parameterList: PklParameterList? by lazy { getChild(PklParameterListImpl::class) }
 
   override val typeParameterList: PklTypeParameterList? by lazy {
-    getChild(PklTypeParameterList::class)
+    getChild(PklTypeParameterListImpl::class)
   }
 
   override val modifiers: List<Terminal> by lazy { terminals.takeWhile { it.isModifier } }
@@ -133,8 +133,8 @@ class PklObjectBodyImpl(
   override val parent: PklNode,
   override val ctx: TreeSitterNode,
 ) : AbstractPklNode(project, parent, ctx), PklObjectBody {
-  override val parameters: PklObjectBodyParameters by lazy {
-    children.firstInstanceOf<PklObjectBodyParameters>()!!
+  override val parameters: PklParameterList? by lazy {
+    children.firstInstanceOf<PklParameterList>()
   }
 
   override val members: List<PklObjectMember> by lazy {
@@ -151,20 +151,6 @@ class PklObjectBodyImpl(
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitObjectBody(this)
-  }
-}
-
-class PklObjectBodyParametersImpl(
-  override val project: Project,
-  override val parent: PklNode,
-  override val ctx: TreeSitterNode,
-) : AbstractPklNode(project, parent, ctx), PklObjectBodyParameters {
-  override val parameters: List<PklTypedIdentifier> by lazy {
-    children.filterIsInstance<PklTypedIdentifier>()
-  }
-
-  override fun <R> accept(visitor: PklVisitor<R>): R? {
-    return visitor.visitObjectBodyParameters(this)
   }
 }
 

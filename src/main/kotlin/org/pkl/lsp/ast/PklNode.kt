@@ -312,17 +312,13 @@ sealed interface PklObjectBodyOwner : PklNode {
 }
 
 interface PklObjectBody : PklNode {
-  val parameters: PklObjectBodyParameters
+  val parameters: PklParameterList?
 
   val members: List<PklObjectMember>
 
   val properties: List<PklObjectProperty>
 
   val methods: List<PklObjectMethod>
-}
-
-interface PklObjectBodyParameters : PklNode {
-  val parameters: List<PklTypedIdentifier>
 }
 
 interface PklTypeParameterList : PklNode {
@@ -842,7 +838,7 @@ fun TreeSitterNode.toNode(project: Project, parent: PklNode?): PklNode? {
     "parenthesizedExpr" -> PklParenthesizedExprImpl(project, parent!!, this)
     "qualifiedIdentifier" -> PklQualifiedIdentifierImpl(project, parent!!, this)
     "objectBody" -> PklObjectBodyImpl(project, parent!!, this)
-    "objectBodyParameters" -> PklObjectBodyParametersImpl(project, parent!!, this)
+    "objectBodyParameters" -> PklParameterListImpl(project, parent!!, this)
     "_objectMember" -> children[0].toNode(project, parent)
     "objectProperty" -> PklObjectPropertyImpl(project, parent!!, this)
     "objectMethod" -> PklObjectMethodImpl(project, parent!!, this)
