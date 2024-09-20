@@ -20,12 +20,11 @@ import java.util.concurrent.Executors
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.pkl.lsp.ast.*
-import org.pkl.lsp.treesitter.PklParser
 
 class ParserTest {
 
-  private val parser = PklParser()
   private val project = Project(PklLSPServer(true))
+  private val parser = project.pklParser
 
   @Test
   fun `parse types`() {
@@ -198,7 +197,7 @@ class ParserTest {
   }
 
   private fun parse(text: String): PklModule {
-    val node = parser.parse(text, project.astExecutor)
+    val node = parser.parse(text)
     return PklModuleImpl(node, FsFile(Path.of("."), project))
   }
 }

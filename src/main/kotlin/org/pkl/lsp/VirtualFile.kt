@@ -30,7 +30,6 @@ import org.pkl.lsp.packages.PackageDependency
 import org.pkl.lsp.packages.dto.PackageMetadata
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.services.PklProjectManager.Companion.PKL_PROJECT_FILENAME
-import org.pkl.lsp.treesitter.PklParser
 import org.pkl.lsp.util.CachedValue
 import org.pkl.lsp.util.ModificationTracker
 
@@ -140,12 +139,10 @@ sealed class BaseFile : VirtualFile {
 
   private var myContents: String? = null
 
-  private val parser = PklParser()
-
   private fun doBuildModule(): PklModule? {
     return try {
       logger.log("building $uri")
-      val moduleCtx = parser.parse(contents, project.astExecutor)
+      val moduleCtx = project.pklParser.parse(contents)
       if (readError != null) {
         readError = null
       }

@@ -15,16 +15,10 @@
  */
 package org.pkl.lsp.treesitter
 
-import java.lang.foreign.Arena
-import java.lang.foreign.FunctionDescriptor
-import java.lang.foreign.Linker
-import java.lang.foreign.MemoryLayout
-import java.lang.foreign.MemorySegment
-import java.lang.foreign.SymbolLookup
-import java.lang.foreign.ValueLayout
+import java.lang.foreign.*
+import org.pkl.lsp.treesitter.NativeLibraries.treeSitterPkl
 
 class TreeSitterPkl {
-
   companion object {
     @JvmStatic
     private val VOID_PTR: ValueLayout =
@@ -46,9 +40,10 @@ class TreeSitterPkl {
   }
 
   private val arena: Arena = Arena.ofAuto()
-  private val library: String = System.mapLibraryName("tree-sitter-pkl")
-  private val symbols: SymbolLookup =
-    SymbolLookup.libraryLookup(library, arena).or(SymbolLookup.loaderLookup())
+
+  private val symbols: SymbolLookup
+    get() =
+      SymbolLookup.libraryLookup(treeSitterPkl.libraryPath, arena).or(SymbolLookup.loaderLookup())
 
   @Suppress("SameParameterValue")
   private fun call(name: String): MemorySegment {

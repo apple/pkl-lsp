@@ -15,7 +15,7 @@ jobs {
       "checkout"
       new RunStep {
         command = """
-          LD_LIBRARY_PATH=build/native-lib/ ./gradlew --info --stacktrace -DtestReportsDir="${HOME}/test-results" check
+          ./gradlew --info --stacktrace -DtestReportsDir="${HOME}/test-results" check
           """
       }
       new StoreTestResults { path = "~/test-results" }
