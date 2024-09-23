@@ -200,15 +200,33 @@ private fun renderTypeAnnotation(
 }
 
 private fun showDocCommentAndModule(node: PklNode?, text: String, context: PklProject?): String {
-  val markdown = "```pkl\n$text\n```"
-  val withDoc =
+  return buildString {
+    append(
+      """
+      ```pkl
+      $text
+      ```
+      """
+        .trimIndent()
+    )
     if (node is PklDocCommentOwner) {
-      node.effectiveDocComment(context)?.let { "$markdown\n\n---\n\n$it" } ?: markdown
-    } else markdown
-  val module = (if (node is PklModule) node else node?.enclosingModule)
-  val footer =
+      node.effectiveDocComment(context)?.let { comment ->
+        appendLine()
+        appendLine()
+        append("---")
+        appendLine()
+        appendLine()
+        append(comment)
+      }
+    }
+    val module = (if (node is PklModule) node else node?.enclosingModule)
     if (module != null) {
-      "\n\n---\n\nin [${module.moduleName}](${module.getLocationUri(true)})"
-    } else ""
-  return "$withDoc$footer"
+      appendLine()
+      appendLine()
+      append("---")
+      appendLine()
+      appendLine()
+      append("in [${module.moduleName}](${module.getLocationUri(forDocs = true)})")
+    }
+  }
 }
