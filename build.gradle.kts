@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import com.github.gradle.node.npm.task.NpmInstallTask
-import com.github.gradle.node.task.NodeTask
+import kotlin.io.path.absolutePathString
 import org.apache.tools.ant.filters.ReplaceTokens
 import org.gradle.internal.extensions.stdlib.capitalized
 import org.gradle.internal.os.OperatingSystem
@@ -23,9 +22,9 @@ import org.jetbrains.kotlin.gradle.internal.ensureParentDirsCreated
 plugins {
   application
   idea
+  zig
   alias(libs.plugins.kotlin)
   alias(libs.plugins.kotlinSerialization)
-  alias(libs.plugins.nodeGradle)
   alias(libs.plugins.shadow)
   alias(libs.plugins.spotless)
 }
@@ -41,34 +40,10 @@ val pklCli: Configuration by configurations.creating
 
 val jtreeSitterSources: Configuration by configurations.creating
 
-val buildInfo = extensions.create<BuildInfo>("buildInfo", project)
-
 val jsitterMonkeyPatchSourceDir = layout.buildDirectory.dir("generated/libs/jtreesitter")
 val nativeLibDir = layout.buildDirectory.dir("generated/libs/native/")
 val treeSitterPklRepoDir = layout.buildDirectory.dir("repos/tree-sitter-pkl")
 val treeSitterRepoDir = layout.buildDirectory.dir("repos/tree-sitter")
-
-val osName
-  get(): String {
-    val os = OperatingSystem.current()
-    return when {
-      os.isMacOsX -> "macos"
-      os.isLinux -> "linux"
-      os.isWindows -> "windows"
-      else -> throw RuntimeException("OS ${os.name} is not supported")
-    }
-  }
-
-/** Same logic as [org.gradle.internal.os.OperatingSystem#arch], which is protected. */
-val arch: String
-  get() {
-    return when (val arch = System.getProperty("os.arch")) {
-      "x86" -> "i386"
-      "x86_64" -> "amd64"
-      "powerpc" -> "ppc"
-      else -> arch
-    }
-  }
 
 dependencies {
   implementation(kotlin("reflect"))
@@ -82,7 +57,9 @@ dependencies {
   testImplementation(libs.assertJ)
   testImplementation(libs.junit.jupiter)
   jtreeSitterSources(variantOf(libs.jtreesitter) { classifier("sources") })
-  pklCli("org.pkl-lang:pkl-cli-$osName-$arch:${libs.versions.pkl.get()}")
+  pklCli(
+    "org.pkl-lang:pkl-cli-${buildInfo.os.canonicalName}-${buildInfo.arch.name}:${libs.versions.pkl.get()}"
+  )
 }
 
 idea { module { generatedSourceDirs.add(jsitterMonkeyPatchSourceDir.get().asFile) } }
@@ -149,12 +126,6 @@ val javaExecutable by
     // jvmArgs.addAll("-ea", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
   }
 
-node {
-  version = libs.versions.node
-  nodeProjectDir = treeSitterPklRepoDir
-  download = true
-}
-
 fun configureRepo(
   repo: String,
   simpleRepoName: String,
@@ -218,54 +189,121 @@ val setupTreeSitterPklRepo =
     treeSitterPklRepoDir,
   )
 
+val oses by lazy {
+  val macos = OperatingSystem.forName("osx")
+  val linux = OperatingSystem.forName("linux")
+  val windows = OperatingSystem.forName("windows")
+  listOf(macos, linux, windows)
+}
+
+val architectures = listOf(Architecture.Amd64, Architecture.Aarch64)
+
+val makeTreeSitterTasks: List<TaskProvider<*>> = buildList {
+  for (os in oses) {
+    for (arch in architectures) {
+      val task =
+        tasks.register(
+          "makeTreeSitter${os.canonicalName.capitalized()}${arch.name.capitalized()}",
+          Exec::class.java,
+        ) {
+          workingDir = treeSitterRepoDir.get().asFile
+          dependsOn(setupTreeSitterRepo)
+
+          configureCompile(
+            os = os,
+            arch = arch,
+            libraryName = "tree-sitter",
+            includes = listOf("lib/include", "lib/src"),
+            sources = listOf("lib/src/lib.c"),
+          )
+        }
+      add(task)
+    }
+  }
+}
+
+val makeTreeSitter by tasks.registering { dependsOn(*makeTreeSitterTasks.toTypedArray()) }
+
+val makeTreeSitterPklTasks: List<TaskProvider<*>> = buildList {
+  for (os in oses) {
+    for (arch in architectures) {
+      val task =
+        tasks.register(
+          "makeTreeSitterPkl${os.canonicalName.capitalized()}${arch.name.capitalized()}",
+          Exec::class.java,
+        ) {
+          dependsOn(setupTreeSitterPklRepo)
+          workingDir = treeSitterPklRepoDir.get().asFile
+
+          configureCompile(
+            os = os,
+            arch = arch,
+            libraryName = "tree-sitter-pkl",
+            includes = listOf("src"),
+            sources = listOf("src/parser.c", "src/scanner.c"),
+          )
+        }
+      add(task)
+    }
+  }
+}
+
+val makeTreeSitterPkl by tasks.registering { dependsOn(*makeTreeSitterPklTasks.toTypedArray()) }
+
 // Keep in sync with `org.pkl.lsp.treesitter.NativeLibrary.getResourcePath`
-private fun resourceLibraryPath(libraryName: String) =
-  "NATIVE/org/pkl/lsp/treesitter/$osName-$arch/$libraryName"
+private fun resourceLibraryPath(os: OperatingSystem, arch: Architecture, libraryName: String) =
+  "NATIVE/org/pkl/lsp/treesitter/${os.canonicalName}-${arch.name}/${os.getSharedLibraryName(libraryName)}"
 
-val makeTreeSitterLib by
-  tasks.registering(Exec::class) {
-    dependsOn(setupTreeSitterRepo)
-    workingDir = treeSitterRepoDir.get().asFile
-    inputs.dir(workingDir)
+private fun Exec.configureCompile(
+  os: OperatingSystem,
+  arch: Architecture,
+  libraryName: String,
+  includes: List<String>,
+  sources: List<String>,
+) {
+  group = "build"
 
-    val libraryName = System.mapLibraryName("tree-sitter")
-    commandLine("make", libraryName)
+  dependsOn(tasks.named("installZig"))
 
-    val outputFile = nativeLibDir.map { it.file(resourceLibraryPath(libraryName)) }
-    outputs.file(outputFile)
-
-    doLast { workingDir.resolve(libraryName).renameTo(outputFile.get().asFile) }
+  val outputFile = nativeLibDir.map { it.file(resourceLibraryPath(os, arch, libraryName)) }
+  outputs.file(outputFile)
+  for (dir in includes) {
+    inputs.dir(workingDir.resolve(dir))
+  }
+  for (file in sources) {
+    inputs.file(workingDir.resolve(file))
   }
 
-val npmInstallTreeSitter by
-  tasks.registering(NpmInstallTask::class) {
-    dependsOn(setupTreeSitterPklRepo)
-    doFirst { workingDir = treeSitterPklRepoDir.get().asFile }
-  }
-
-val makeTreeSitterPklLib by
-  tasks.registering(NodeTask::class) {
-    dependsOn(npmInstallTreeSitter)
-    inputs.dir(treeSitterPklRepoDir)
-    doFirst { workingDir = treeSitterPklRepoDir.get().asFile }
-
-    val libraryName = System.mapLibraryName("tree-sitter-pkl")
-
-    val outputFile = nativeLibDir.map { it.file(resourceLibraryPath(libraryName)) }
-
-    script.set(treeSitterPklRepoDir.get().asFile.resolve("node_modules/.bin/tree-sitter"))
-    args = listOf("build", "--output", outputFile.get().asFile.absolutePath)
-
-    outputs.file(outputFile)
-  }
+  executable = buildInfo.zig.executable.absolutePathString()
+  argumentProviders.add(
+    CommandLineArgumentProvider {
+      buildList {
+        add("cc")
+        add("-Dtarget=${arch.cName}-${os.canonicalName}")
+        for (include in includes) {
+          add("-I./$include")
+        }
+        for (source in sources) {
+          add(source)
+        }
+        if (buildInfo.isReleaseBuild) {
+          add("-O3")
+        } else {
+          add("-O0")
+        }
+        add("-std=c11")
+        add("-shared")
+        add("-fPIC")
+        add("-o")
+        add(outputFile.get().asFile.absolutePath)
+      }
+    }
+  )
+}
 
 tasks.processResources {
-  dependsOn(makeTreeSitterLib)
-  dependsOn(makeTreeSitterPklLib)
-  // tree-sitter's CLI always generates debug symbols when on version 0.22.
-  // we can remove this when tree-sitter-pkl upgrades the tree-sitter-cli dependency to 0.23 or
-  // newer.
-  exclude("**/*.dSYM/**")
+  dependsOn(makeTreeSitter)
+  dependsOn(makeTreeSitterPkl)
   filesMatching("org/pkl/lsp/Release.properties") {
     filter<ReplaceTokens>(
       "tokens" to

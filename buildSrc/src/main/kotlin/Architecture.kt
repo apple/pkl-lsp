@@ -13,6 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-plugins { `kotlin-dsl` }
+@file:Suppress("MemberVisibilityCanBePrivate")
 
-dependencies { implementation(libs.downloadTaskPlugin) }
+sealed class Architecture(
+  /** The arch name that we use in our own distributions. */
+  val name: String,
+  /** The arch name used by the zig C compiler. */
+  val cName: String,
+) {
+  object Amd64 : Architecture("amd64", "x86_64")
+  object Aarch64 : Architecture("aarch64", "aarch64")
+}

@@ -13,6 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-plugins { `kotlin-dsl` }
+import org.gradle.internal.os.OperatingSystem
 
-dependencies { implementation(libs.downloadTaskPlugin) }
+val OperatingSystem.canonicalName get() = when {
+  isMacOsX -> "macos"
+  isWindows -> "windows"
+  isLinux -> "linux"
+  else -> throw RuntimeException("Unsupported OS: $name")
+}
