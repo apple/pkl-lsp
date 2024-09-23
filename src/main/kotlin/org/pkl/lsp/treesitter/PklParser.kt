@@ -20,12 +20,16 @@ import io.github.treesitter.jtreesitter.Language
 import io.github.treesitter.jtreesitter.Parser
 import io.github.treesitter.jtreesitter.Tree
 import java.util.concurrent.Callable
-import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import org.pkl.lsp.Component
+import org.pkl.lsp.Project
 import org.pkl.lsp.ast.TreeSitterNode
 
 /** A Pkl parser using tree-sitter-pkl */
-class PklParser {
-  fun parse(text: String, executor: ExecutorService, oldAst: Tree? = null): TreeSitterNode {
+class PklParser(project: Project) : Component(project) {
+  private val executor by lazy { Executors.newSingleThreadExecutor() }
+
+  fun parse(text: String, oldAst: Tree? = null): TreeSitterNode {
     return executor
       .submit(
         Callable {

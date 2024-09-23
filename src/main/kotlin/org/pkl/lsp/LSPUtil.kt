@@ -197,7 +197,10 @@ data class Package1CacheDir(override val file: Path) : CacheDir {
   }
 }
 
-val pklCacheDir: Path = Path.of(System.getProperty("user.home")).resolve(".pkl/cache")
+val homeDir: Path
+  get() = Path.of(System.getProperty("user.home") ?: throw AssertionError("Cannot find home dir"))
+
+val pklCacheDir: Path = homeDir.resolve(".pkl/cache")
 
 val packages2CacheDir: CacheDir
   get() = Package2CacheDir(pklCacheDir.resolve("package-2"))

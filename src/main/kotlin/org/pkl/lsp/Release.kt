@@ -31,4 +31,8 @@ object Release {
   }
 
   val version: String by lazy { properties.getProperty("version") ?: "unknown" }
+
+  val treeSitterVersion: String by lazy { properties.getProperty("treeSitterVersion") }
+
+  val treeSitterPklVersion: String by lazy { properties.getProperty("treeSitterPklVersion") }
 }

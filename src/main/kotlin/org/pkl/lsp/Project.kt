@@ -16,13 +16,12 @@
 package org.pkl.lsp
 
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.full.starProjectedType
 import org.pkl.lsp.services.*
+import org.pkl.lsp.treesitter.PklParser
 import org.pkl.lsp.util.CachedValuesManager
 
 class Project(private val server: PklLSPServer) {
@@ -54,8 +53,7 @@ class Project(private val server: PklLSPServer) {
 
   val clientCapabilities: PklClientCapabilities by lazy { server.clientCapabilities }
 
-  // The thread where all tree-sitter allocations happen
-  val astExecutor: ExecutorService by lazy { Executors.newSingleThreadExecutor() }
+  val pklParser: PklParser by lazy { PklParser(this) }
 
   fun initialize(): CompletableFuture<*> {
     return CompletableFuture.allOf(*myComponents.map { it.initialize() }.toTypedArray())

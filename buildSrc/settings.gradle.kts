@@ -13,10 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:JvmName("Main")
+@file:Suppress("UnstableApiUsage")
 
-package org.pkl.lsp.cli
+rootProject.name = "buildSrc"
 
-internal fun main(args: Array<String>) {
-  LspCommand().main(args)
+pluginManagement {
+  repositories {
+    mavenCentral()
+    gradlePluginPortal()
+  }
+}
+
+// makes ~/.gradle/init.gradle unnecessary and ~/.gradle/gradle.properties optional
+dependencyResolutionManagement {
+  // use same version catalog as main build
+  versionCatalogs { register("libs") { from(files("../gradle/libs.versions.toml")) } }
+
+  repositories {
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    mavenCentral()
+    gradlePluginPortal()
+  }
 }

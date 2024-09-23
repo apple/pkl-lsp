@@ -15,12 +15,14 @@
  */
 import com.github.gradle.node.npm.task.NpmInstallTask
 import com.github.gradle.node.task.NodeTask
+import org.apache.tools.ant.filters.ReplaceTokens
 import org.gradle.internal.extensions.stdlib.capitalized
 import org.gradle.internal.os.OperatingSystem
 import org.jetbrains.kotlin.gradle.internal.ensureParentDirsCreated
 
 plugins {
   application
+  idea
   alias(libs.plugins.kotlin)
   alias(libs.plugins.kotlinSerialization)
   alias(libs.plugins.nodeGradle)
@@ -36,6 +38,15 @@ java {
 }
 
 val pklCli: Configuration by configurations.creating
+
+val jtreeSitterSources: Configuration by configurations.creating
+
+val buildInfo = extensions.create<BuildInfo>("buildInfo", project)
+
+val jsitterMonkeyPatchSourceDir = layout.buildDirectory.dir("generated/libs/jtreesitter")
+val nativeLibDir = layout.buildDirectory.dir("generated/libs/native/")
+val treeSitterPklRepoDir = layout.buildDirectory.dir("repos/tree-sitter-pkl")
+val treeSitterRepoDir = layout.buildDirectory.dir("repos/tree-sitter")
 
 val osName
   get(): String {
@@ -70,8 +81,40 @@ dependencies {
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
   testImplementation(libs.assertJ)
   testImplementation(libs.junit.jupiter)
+  jtreeSitterSources(variantOf(libs.jtreesitter) { classifier("sources") })
   pklCli("org.pkl-lang:pkl-cli-$osName-$arch:${libs.versions.pkl.get()}")
 }
+
+idea { module { generatedSourceDirs.add(jsitterMonkeyPatchSourceDir.get().asFile) } }
+
+/**
+ * jtreesitter expects the tree-sitter library to exist in system dirs, or to be provided through
+ * `java.library.path`.
+ *
+ * This patches its source code so that we can control exactly where the tree-sitter library
+ * resides.
+ */
+val monkeyPatchTreeSitter by
+  tasks.registering(Copy::class) {
+    from(zipTree(jtreeSitterSources.singleFile)) {
+      include("**/TreeSitter.java")
+      filter { line ->
+        when {
+          line.contains("static final SymbolLookup") ->
+            "static final SymbolLookup SYMBOL_LOOKUP = SymbolLookup.libraryLookup(NativeLibraries.getTreeSitter().getLibraryPath(), LIBRARY_ARENA)"
+          line.contains("package io.github.treesitter.jtreesitter.internal;") ->
+            """
+            $line
+            
+            import org.pkl.lsp.treesitter.NativeLibraries;
+          """
+              .trimIndent()
+          else -> line
+        }
+      }
+    }
+    into(jsitterMonkeyPatchSourceDir)
+  }
 
 val configurePklCliExecutable by
   tasks.registering { doLast { pklCli.singleFile.setExecutable(true) } }
@@ -106,16 +149,11 @@ val javaExecutable by
     // jvmArgs.addAll("-ea", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
   }
 
-val treeSitterPklRepo = layout.buildDirectory.dir("repos/tree-sitter-pkl")
-val treeSitterRepo = layout.buildDirectory.dir("repos/tree-sitter")
-
 node {
   version = libs.versions.node
-  nodeProjectDir = treeSitterPklRepo
+  nodeProjectDir = treeSitterPklRepoDir
   download = true
 }
-
-private val nativeLibDir = layout.buildDirectory.dir("native-lib")
 
 fun configureRepo(
   repo: String,
@@ -136,9 +174,6 @@ fun configureRepo(
   val updateTask =
     tasks.register("update$taskSuffix") {
       outputs.dir(repoDir)
-      outputs.upToDateWhen {
-        versionFile.get().asFile.let { it.exists() && it.readText() == gitTagOrCommit.get() }
-      }
       doLast {
         exec {
           workingDir = repoDir.get().asFile
@@ -155,6 +190,9 @@ fun configureRepo(
     dependsOn(cloneTask)
     dependsOn(updateTask)
     outputs.dir(repoDir)
+    outputs.upToDateWhen {
+      versionFile.get().asFile.let { it.exists() && it.readText() == gitTagOrCommit.get() }
+    }
     doLast {
       versionFile.get().asFile.let { file ->
         file.ensureParentDirsCreated()
@@ -169,7 +207,7 @@ val setupTreeSitterRepo =
     "git@github.com:tree-sitter/tree-sitter",
     "treeSitter",
     libs.versions.treeSitterRepo,
-    treeSitterRepo,
+    treeSitterRepoDir,
   )
 
 val setupTreeSitterPklRepo =
@@ -177,19 +215,23 @@ val setupTreeSitterPklRepo =
     "git@github.com:apple/tree-sitter-pkl",
     "treeSitterPkl",
     libs.versions.treeSitterPklRepo,
-    treeSitterPklRepo,
+    treeSitterPklRepoDir,
   )
+
+// Keep in sync with `org.pkl.lsp.treesitter.NativeLibrary.getResourcePath`
+private fun resourceLibraryPath(libraryName: String) =
+  "NATIVE/org/pkl/lsp/treesitter/$osName-$arch/$libraryName"
 
 val makeTreeSitterLib by
   tasks.registering(Exec::class) {
     dependsOn(setupTreeSitterRepo)
-    workingDir = treeSitterRepo.get().asFile
+    workingDir = treeSitterRepoDir.get().asFile
     inputs.dir(workingDir)
 
     val libraryName = System.mapLibraryName("tree-sitter")
     commandLine("make", libraryName)
 
-    val outputFile = nativeLibDir.map { it.file(libraryName) }
+    val outputFile = nativeLibDir.map { it.file(resourceLibraryPath(libraryName)) }
     outputs.file(outputFile)
 
     doLast { workingDir.resolve(libraryName).renameTo(outputFile.get().asFile) }
@@ -198,20 +240,20 @@ val makeTreeSitterLib by
 val npmInstallTreeSitter by
   tasks.registering(NpmInstallTask::class) {
     dependsOn(setupTreeSitterPklRepo)
-    doFirst { workingDir = treeSitterPklRepo.get().asFile }
+    doFirst { workingDir = treeSitterPklRepoDir.get().asFile }
   }
 
 val makeTreeSitterPklLib by
   tasks.registering(NodeTask::class) {
     dependsOn(npmInstallTreeSitter)
-    inputs.dir(treeSitterPklRepo)
-    doFirst { workingDir = treeSitterPklRepo.get().asFile }
+    inputs.dir(treeSitterPklRepoDir)
+    doFirst { workingDir = treeSitterPklRepoDir.get().asFile }
 
     val libraryName = System.mapLibraryName("tree-sitter-pkl")
 
-    val outputFile = nativeLibDir.map { it.file(libraryName) }
+    val outputFile = nativeLibDir.map { it.file(resourceLibraryPath(libraryName)) }
 
-    script.set(treeSitterPklRepo.get().asFile.resolve("node_modules/.bin/tree-sitter"))
+    script.set(treeSitterPklRepoDir.get().asFile.resolve("node_modules/.bin/tree-sitter"))
     args = listOf("build", "--output", outputFile.get().asFile.absolutePath)
 
     outputs.file(outputFile)
@@ -220,9 +262,30 @@ val makeTreeSitterPklLib by
 tasks.processResources {
   dependsOn(makeTreeSitterLib)
   dependsOn(makeTreeSitterPklLib)
+  // tree-sitter's CLI always generates debug symbols when on version 0.22.
+  // we can remove this when tree-sitter-pkl upgrades the tree-sitter-cli dependency to 0.23 or
+  // newer.
+  exclude("**/*.dSYM/**")
+  filesMatching("org/pkl/lsp/Release.properties") {
+    filter<ReplaceTokens>(
+      "tokens" to
+        mapOf(
+          "version" to buildInfo.pklLspVersion,
+          "treeSitterVersion" to libs.versions.treeSitterRepo.get(),
+          "treeSitterPklVersion" to libs.versions.treeSitterPklRepo.get(),
+        )
+    )
+  }
 }
 
-sourceSets { main { resources { srcDirs(nativeLibDir) } } }
+tasks.compileKotlin { dependsOn(monkeyPatchTreeSitter) }
+
+sourceSets {
+  main {
+    java { srcDirs(jsitterMonkeyPatchSourceDir) }
+    resources { srcDirs(nativeLibDir) }
+  }
+}
 
 private val licenseHeader =
   """
@@ -254,41 +317,5 @@ spotless {
   kotlin {
     ktfmt(libs.versions.ktfmt.get()).googleStyle()
     licenseHeader(licenseHeader)
-  }
-}
-
-/**
- * Builds a self-contained Pkl LSP CLI Jar that is directly executable on *nix and executable with
- * `java -jar` on Windows.
- *
- * For direct execution, the `java` command must be on the PATH.
- *
- * https://skife.org/java/unix/2011/06/20/really_executable_jars.html
- */
-abstract class ExecutableJar : DefaultTask() {
-  @get:InputFile abstract val inJar: RegularFileProperty
-
-  @get:OutputFile abstract val outJar: RegularFileProperty
-
-  @get:Input abstract val jvmArgs: ListProperty<String>
-
-  @TaskAction
-  fun buildJar() {
-    val inFile = inJar.get().asFile
-    val outFile = outJar.get().asFile
-    val escapedJvmArgs = jvmArgs.get().joinToString(separator = " ") { "\"$it\"" }
-    val startScript =
-      """
-            #!/bin/sh
-            exec java $escapedJvmArgs -jar $0 "$@"
-            """
-        .trimIndent() + "\n\n\n"
-    outFile.outputStream().use { outStream ->
-      startScript.byteInputStream().use { it.copyTo(outStream) }
-      inFile.inputStream().use { it.copyTo(outStream) }
-    }
-
-    // chmod a+x
-    outFile.setExecutable(true, false)
   }
 }
