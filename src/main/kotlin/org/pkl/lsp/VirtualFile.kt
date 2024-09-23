@@ -32,6 +32,8 @@ import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.services.PklProjectManager.Companion.PKL_PROJECT_FILENAME
 import org.pkl.lsp.treesitter.PklParser
 import org.pkl.lsp.util.CachedValue
+import org.pkl.lsp.util.CachedValueDataHolder
+import org.pkl.lsp.util.CachedValueDataHolderBase
 import org.pkl.lsp.util.ModificationTracker
 
 enum class Origin {
@@ -53,7 +55,7 @@ enum class Origin {
   }
 }
 
-interface VirtualFile : ModificationTracker {
+interface VirtualFile : ModificationTracker, CachedValueDataHolder {
   val name: String
   val uri: URI
   val pklAuthority: String
@@ -98,7 +100,7 @@ interface VirtualFile : ModificationTracker {
   fun getModule(): CompletableFuture<PklModule?>
 }
 
-sealed class BaseFile : VirtualFile {
+sealed class BaseFile : VirtualFile, CachedValueDataHolderBase() {
   override fun getModificationCount(): Long = version ?: -1L
 
   override var version: Long? = null
@@ -126,9 +128,9 @@ sealed class BaseFile : VirtualFile {
     }
     if (readError != null) {
       readError = null
-      project.cachedValuesManager.clearCachedValue(cacheKey)
+      project.cachedValuesManager.clearCachedValue(this, cacheKey)
     }
-    return project.cachedValuesManager.getCachedValue(cacheKey) {
+    return project.cachedValuesManager.getCachedValue(this, cacheKey) {
       CachedValue(CompletableFuture.supplyAsync(::doBuildModule), this)
     }!!
   }
@@ -168,7 +170,7 @@ class FsFile(override val path: Path, override val project: Project) : BaseFile(
 
   override val pklProjectDir: VirtualFile?
     get() =
-      project.cachedValuesManager.getCachedValue("FsFile.getProjectDir($path)") {
+      project.cachedValuesManager.getCachedValue(this, "FsFile.getProjectDir($path)") {
         val dependency = project.pklProjectManager.addedOrRemovedFilesModificationTracker
         var dir = if (Files.isDirectory(path)) this else parent()
         while (dir != null) {
@@ -283,7 +285,7 @@ class JarFile(override val path: Path, override val uri: URI, override val proje
 
   override val `package`: PackageDependency?
     get() =
-      project.cachedValuesManager.getCachedValue("JarFile.package(${uri})") {
+      project.cachedValuesManager.getCachedValue(this, "JarFile.package(${uri})") {
         val jarFile: Path = Path.of(URI(uri.toString().drop(4).substringBefore("!/")))
         val jsonFile =
           jarFile.parent.resolve(jarFile.nameWithoutExtension + ".json")
@@ -303,7 +305,7 @@ class JarFile(override val path: Path, override val uri: URI, override val proje
     project.virtualFileManager.get(this.path.resolve(path))
 
   override fun doReadContents(): String =
-    project.cachedValuesManager.getCachedValue("${javaClass.simpleName}-contents-${uri}") {
+    project.cachedValuesManager.getCachedValue(this, "${javaClass.simpleName}-contents-${uri}") {
       CachedValue(path.readText())
     }!!
 }

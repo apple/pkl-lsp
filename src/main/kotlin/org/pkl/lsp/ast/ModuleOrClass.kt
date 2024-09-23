@@ -51,7 +51,8 @@ class PklModuleImpl(override val ctx: TreeSitterNode, override val virtualFile: 
 
   override fun cache(context: PklProject?): ModuleMemberCache =
     project.cachedValuesManager.getCachedValue(
-      "PklModule.cache(${virtualFile.uri}, ${context?.projectDir}}"
+      this,
+      "PklModule.cache(${virtualFile.uri}, ${context?.projectDir}}",
     ) {
       val cache = ModuleMemberCache.create(this, context)
       CachedValue(cache, cache.dependencies + project.pklProjectManager.syncTracker)
