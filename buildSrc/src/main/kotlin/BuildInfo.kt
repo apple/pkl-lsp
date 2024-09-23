@@ -19,6 +19,7 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.VersionCatalog
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.kotlin.dsl.getByType
+import org.gradle.internal.os.OperatingSystem
 
 // `buildInfo` in main build scripts
 // `project.extensions.getByType<BuildInfo>()` in precompiled script plugins
@@ -27,8 +28,8 @@ open class BuildInfo(project: Project) {
 
   val isReleaseBuild: Boolean by lazy { java.lang.Boolean.getBoolean("releaseBuild") }
 
-  val os: org.gradle.internal.os.OperatingSystem by lazy {
-    org.gradle.internal.os.OperatingSystem.current()
+  val os: OperatingSystem by lazy {
+    OperatingSystem.current()
   }
 
   // could be `commitId: Provider<String> = project.provider { ... }`
