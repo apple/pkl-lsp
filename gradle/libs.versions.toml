@@ -2,24 +2,32 @@
 assertj = "3.26.3"
 antlr = "4.+"
 clikt = "4.4.0"
+downloadTaskPlugin = "5.6.0"
 jtreesitter = "0.23.1"
 junit-jupiter = "5.10.2"
 kotlin = "2.0.0"
 kotlinx = "1.7.1"
 ktfmt = "0.51"
 lsp4j = "0.23.1"
-node = "20.10.0"
-nodeGradle = "3.2.0"
 pkl = "0.26.3"
 shadowPlugin = "8.1.1"
 spotless = "6.21.0"
 treeSitterRepo = "v0.23.0" # git tag name
 treeSitterPklRepo = "b867391" # TODO switch to tag
+zig = "0.13.0" # used for cross-compiling tree-sitter libs
+
+# Only need checksums for distributions that we might run builds on.
+# Computed with `curl -s <DOWNLOAD_URL> | shasum -a 256`.
+# Download links found here: https://ziglang.org/download/
+zigSha256-macos-aarch64 = "46fae219656545dfaf4dce12fb4e8685cec5b51d721beee9389ab4194d43394c"
+zigSha256-linux-amd64 = "d45312e61ebcc48032b77bc4cf7fd6915c11fa16e4aad116b66c9468211230ea"
+zigSha256-windows-amd64 = "d859994725ef9402381e557c60bb57497215682e355204d754ee3df75ee3c158"
 
 [libraries]
 antlr = { group = "com.tunnelvisionlabs", name = "antlr4", version.ref = "antlr" }
 assertJ = { group = "org.assertj", name = "assertj-core", version.ref = "assertj" }
 clikt = { group = "com.github.ajalt.clikt", name = "clikt", version.ref = "clikt" }
+downloadTaskPlugin = { group = "de.undercouch", name = "gradle-download-task", version.ref = "downloadTaskPlugin" }
 jtreesitter = { group = "io.github.tree-sitter", name = "jtreesitter", version.ref = "jtreesitter" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
 kotlinxSerializationJson = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx" }
@@ -29,6 +37,5 @@ pklCore = { group = "org.pkl-lang", name = "pkl-core", version.ref = "pkl" }
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-nodeGradle = { id = "com.github.node-gradle.node", version.ref = "nodeGradle" }
 shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadowPlugin" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
