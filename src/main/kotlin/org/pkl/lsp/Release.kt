@@ -16,7 +16,6 @@
 package org.pkl.lsp
 
 import java.util.*
-import org.pkl.core.Release
 
 object Release {
   private val properties: Properties by lazy {

@@ -72,7 +72,6 @@ val arch: String
 
 dependencies {
   implementation(kotlin("reflect"))
-  implementation(libs.antlr)
   implementation(libs.clikt)
   implementation(libs.pklCore)
   implementation(libs.lsp4j)

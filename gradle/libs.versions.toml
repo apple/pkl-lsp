@@ -1,6 +1,5 @@
 [versions]
 assertj = "3.26.3"
-antlr = "4.+"
 clikt = "4.4.0"
 jtreesitter = "0.23.1"
 junit-jupiter = "5.10.2"
@@ -17,7 +16,6 @@ treeSitterRepo = "v0.23.0" # git tag name
 treeSitterPklRepo = "b867391" # TODO switch to tag
 
 [libraries]
-antlr = { group = "com.tunnelvisionlabs", name = "antlr4", version.ref = "antlr" }
 assertJ = { group = "org.assertj", name = "assertj-core", version.ref = "assertj" }
 clikt = { group = "com.github.ajalt.clikt", name = "clikt", version.ref = "clikt" }
 jtreesitter = { group = "io.github.tree-sitter", name = "jtreesitter", version.ref = "jtreesitter" }

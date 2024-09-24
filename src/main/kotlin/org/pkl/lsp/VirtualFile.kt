@@ -22,7 +22,6 @@ import java.util.concurrent.CompletableFuture
 import javax.naming.OperationNotSupportedException
 import kotlin.io.path.*
 import org.pkl.core.module.ModuleKeyFactories.file
-import org.pkl.core.parser.LexParseException
 import org.pkl.core.util.IoUtils
 import org.pkl.lsp.ast.PklModule
 import org.pkl.lsp.ast.PklModuleImpl
@@ -149,9 +148,6 @@ sealed class BaseFile : VirtualFile, CachedValueDataHolderBase() {
         readError = null
       }
       return PklModuleImpl(moduleCtx, this)
-    } catch (e: LexParseException) {
-      logger.warn("Parser Error building $file: ${e.message}")
-      null
     } catch (e: Exception) {
       logger.warn("Error building $file: ${e.message} ${e.stackTraceToString()}")
       readError = e
