@@ -28,7 +28,6 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
-import org.pkl.core.util.IoUtils.encodePath
 import org.pkl.lsp.ast.Span
 
 private const val SIGNIFICAND_MASK = 0x000fffffffffffffL

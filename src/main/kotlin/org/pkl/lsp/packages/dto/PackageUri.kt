@@ -25,7 +25,7 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import org.pkl.core.util.IoUtils.encodePath
+import org.pkl.lsp.encodePath
 import org.pkl.lsp.packages.PackageDependency
 
 @Suppress("PROVIDED_RUNTIME_TOO_LOW")

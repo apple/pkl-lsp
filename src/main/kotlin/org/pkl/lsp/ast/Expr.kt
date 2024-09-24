@@ -15,7 +15,6 @@
  */
 package org.pkl.lsp.ast
 
-import org.pkl.core.parser.antlr.PklParser.*
 import org.pkl.lsp.*
 import org.pkl.lsp.LSPUtil.firstInstanceOf
 import org.pkl.lsp.packages.dto.PklProject
