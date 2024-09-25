@@ -17,7 +17,6 @@ import kotlin.io.path.absolutePathString
 import org.apache.tools.ant.filters.ReplaceTokens
 import org.gradle.internal.extensions.stdlib.capitalized
 import org.gradle.internal.os.OperatingSystem
-import org.jetbrains.kotlin.gradle.internal.ensureParentDirsCreated
 
 plugins {
   application
@@ -131,7 +130,6 @@ fun configureRepo(
   gitTagOrCommit: Provider<String>,
   repoDir: Provider<Directory>,
 ): TaskProvider<Task> {
-  val versionFile = layout.buildDirectory.file("tmp/repos/$simpleRepoName")
   val taskSuffix = simpleRepoName.capitalized() + "Repo"
 
   val cloneTask =
@@ -144,6 +142,8 @@ fun configureRepo(
   val updateTask =
     tasks.register("update$taskSuffix") {
       outputs.dir(repoDir)
+      dependsOn(cloneTask)
+      inputs.property("gitTagOrCommit", gitTagOrCommit)
       doLast {
         exec {
           workingDir = repoDir.get().asFile
@@ -157,18 +157,8 @@ fun configureRepo(
     }
 
   return tasks.register("setup$taskSuffix") {
-    dependsOn(cloneTask)
     dependsOn(updateTask)
     outputs.dir(repoDir)
-    outputs.upToDateWhen {
-      versionFile.get().asFile.let { it.exists() && it.readText() == gitTagOrCommit.get() }
-    }
-    doLast {
-      versionFile.get().asFile.let { file ->
-        file.ensureParentDirsCreated()
-        file.writeText(gitTagOrCommit.get())
-      }
-    }
   }
 }
 
