@@ -426,10 +426,7 @@ object ResolveVisitors {
         get() = expectedName
     }
 
-  fun completionItems(
-    base: PklBaseModule,
-    prefix: String? = null,
-  ): ResolveVisitor<Set<CompletionItem>> {
+  fun completionItems(base: PklBaseModule): ResolveVisitor<Set<CompletionItem>> {
     return object : ResolveVisitor<Set<CompletionItem>> {
       override fun visit(
         name: String,
@@ -437,8 +434,6 @@ object ResolveVisitors {
         bindings: TypeParameterBindings,
         context: PklProject?,
       ): Boolean {
-        if (prefix != null && !name.startsWith(prefix)) return true
-
         when (element) {
           is PklImport ->
             element.memberName?.let { importName ->
