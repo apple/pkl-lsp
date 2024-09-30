@@ -196,6 +196,41 @@ class ParserTest {
     assertThat(prop.parsedComment).isEqualTo("A doc\ncomment")
   }
 
+  @Test
+  fun `Nested comments inside binary expression are parsed correctly`() {
+    val code =
+      """
+      something = one
+        || two
+        // comment here
+        || three
+    """
+        .trimIndent()
+
+    val mod = parse(code)
+    val prop = mod.children[0]
+    assertThat(prop).isInstanceOf(PklClassProperty::class.java)
+    prop as PklClassProperty
+    assertThat(prop.type).isNull()
+  }
+
+  @Test
+  fun `Nested error inside binary expression are parsed correctly`() {
+    val code =
+      """
+      something = one
+        || bar.]
+        || three
+    """
+        .trimIndent()
+
+    val mod = parse(code)
+    val prop = mod.children[0]
+    assertThat(prop).isInstanceOf(PklClassProperty::class.java)
+    prop as PklClassProperty
+    assertThat(prop.type).isNull()
+  }
+
   private fun parse(text: String): PklModule {
     val node = parser.parse(text)
     return PklModuleImpl(node, FsFile(Path.of("."), project))
