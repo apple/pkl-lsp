@@ -209,13 +209,13 @@ class ParserTest {
 
     val mod = parse(code)
     val prop = mod.children[0]
-    assertThat(prop).isInstanceOf(PklClassProperty::class.java)
-    prop as PklClassProperty
-    assertThat(prop.type).isNull()
+    assertThat(prop)
+        .isInstanceOf(PklClassProperty::class.java)
+        .hasFieldOrPropertyWithValue("type", null)
   }
 
   @Test
-  fun `Nested error inside binary expression are parsed correctly`() {
+  fun `Nested errors inside binary expression are parsed correctly`() {
     val code =
       """
       something = one
@@ -226,9 +226,9 @@ class ParserTest {
 
     val mod = parse(code)
     val prop = mod.children[0]
-    assertThat(prop).isInstanceOf(PklClassProperty::class.java)
-    prop as PklClassProperty
-    assertThat(prop.type).isNull()
+    assertThat(prop)
+        .isInstanceOf(PklClassProperty::class.java)
+        .hasFieldOrPropertyWithValue("type", null)
   }
 
   private fun parse(text: String): PklModule {
