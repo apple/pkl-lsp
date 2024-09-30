@@ -196,6 +196,28 @@ class ParserTest {
     assertThat(prop.parsedComment).isEqualTo("A doc\ncomment")
   }
 
+  @Test
+  fun `when generators`() {
+    val code =
+      """
+      foo {
+        when (true) {
+          bar = 1
+        } else {
+          bar = 2
+        }
+      }
+    """
+        .trimIndent()
+    val mod = parse(code)
+    val prop = mod.children[0]
+    assertThat(prop).isInstanceOf(PklClassProperty::class.java)
+    prop as PklClassProperty
+    val whenGenerator = prop.objectBody!!.members.first() as PklWhenGenerator
+    assertThat(whenGenerator.thenBody).isNotNull
+    assertThat(whenGenerator.elseBody).isNotNull
+  }
+
   private fun parse(text: String): PklModule {
     val node = parser.parse(text)
     return PklModuleImpl(node, FsFile(Path.of("."), project))
