@@ -60,21 +60,11 @@ open class BuildInfo(val project: Project) {
     }
   }
 
-  val commitish: String by lazy { if (isReleaseBuild) project.version.toString() else commitId }
-
   val pklLspVersion: String by lazy {
     if (isReleaseBuild) {
       project.version.toString()
     } else {
       project.version.toString().replace("-SNAPSHOT", "-dev+$commitId")
-    }
-  }
-
-  val pklLspVersionNonUnique: String by lazy {
-    if (isReleaseBuild) {
-      project.version.toString()
-    } else {
-      project.version.toString().replace("-SNAPSHOT", "-dev")
     }
   }
 
@@ -88,7 +78,7 @@ open class BuildInfo(val project: Project) {
   inner class Zig {
     val version: String get() = libs.findVersion("zig").get().toString()
 
-    val installDir: Path get() = project.projectDir.toPath().resolve(".gradle/zig/zig-$version")
+    val installDir: Path get() = project.projectDir.toPath().resolve(".gradle/zig/zig-${os.canonicalName}-${arch.name}-$version")
 
     val executable: Path get() = installDir.resolve(if (os.isWindows) "zig.exe" else "zig")
   }

@@ -8,6 +8,7 @@ kotlin = "2.0.0"
 kotlinx = "1.7.1"
 ktfmt = "0.51"
 lsp4j = "0.23.1"
+nexusPublishPlugin = "2.0.0"
 pkl = "0.26.3"
 shadowPlugin = "8.1.1"
 spotless = "6.21.0"
@@ -21,6 +22,7 @@ zig = "0.13.0" # used for cross-compiling tree-sitter libs
 zigSha256-macos-aarch64 = "46fae219656545dfaf4dce12fb4e8685cec5b51d721beee9389ab4194d43394c"
 zigSha256-linux-amd64 = "d45312e61ebcc48032b77bc4cf7fd6915c11fa16e4aad116b66c9468211230ea"
 zigSha256-windows-amd64 = "d859994725ef9402381e557c60bb57497215682e355204d754ee3df75ee3c158"
+zigSha256-linux-aarch64 = "041ac42323837eb5624068acd8b00cd5777dac4cf91179e8dad7a7e90dd0c556"
 
 [libraries]
 assertJ = { group = "org.assertj", name = "assertj-core", version.ref = "assertj" }
@@ -38,3 +40,4 @@ kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadowPlugin" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+nexusPublish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexusPublishPlugin" }
