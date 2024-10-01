@@ -8,10 +8,57 @@ jobs:
     - checkout
     - run:
         command: ./gradlew --info --stacktrace -DtestReportsDir="${HOME}/test-results" check
+    - persist_to_workspace:
+        root: '.'
+        paths:
+        - build/libs/
     - store_test_results:
         path: ~/test-results
     docker:
     - image: cimg/openjdk:21.0
+  build-release:
+    steps:
+    - checkout
+    - run:
+        command: ./gradlew --info --stacktrace -DtestReportsDir="${HOME}/test-results" -DreleaseBuild=true check
+    - persist_to_workspace:
+        root: '.'
+        paths:
+        - build/libs/
+    - store_test_results:
+        path: ~/test-results
+    docker:
+    - image: cimg/openjdk:21.0
+  test-linux:
+    steps:
+    - checkout
+    - attach_workspace:
+        at: '.'
+    - run:
+        command: ./gradlew --info --stacktrace verifyDistribution
+    docker:
+    - image: cimg/openjdk:21.0
+  test-macos:
+    steps:
+    - checkout
+    - attach_workspace:
+        at: '.'
+    - run:
+        command: ./gradlew --info --stacktrace verifyDistribution
+    resource_class: macos.m1.large.gen1
+    macos:
+      xcode: 15.3.0
+  test-windows:
+    shell: bash.exe
+    steps:
+    - checkout
+    - attach_workspace:
+        at: '.'
+    - run:
+        command: ./gradlew --info --stacktrace verifyDistribution
+    resource_class: windows.large
+    machine:
+      image: windows-server-2022-gui:current
   do-release:
     steps:
     - attach_workspace:
@@ -31,6 +78,18 @@ workflows:
     - build:
         requires:
         - hold
+    - test-linux:
+        requires:
+        - build
+        - hold
+    - test-macos:
+        requires:
+        - build
+        - hold
+    - test-windows:
+        requires:
+        - build
+        - hold
     when:
       matches:
         value: << pipeline.git.branch >>
@@ -38,7 +97,34 @@ workflows:
   main:
     jobs:
     - build
+    - test-linux:
+        requires:
+        - build
+    - test-macos:
+        requires:
+        - build
+    - test-windows:
+        requires:
+        - build
     when:
       equal:
       - main
       - << pipeline.git.branch >>
+  ci-setup:
+    jobs:
+    - build:
+        requires:
+        - approval
+    - test-linux:
+        requires:
+        - build
+    - test-macos:
+        requires:
+        - build
+    - test-windows:
+        requires:
+        - build
+    when:
+      equal:
+      - << pipeline.git.branch >>
+      - main

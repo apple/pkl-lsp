@@ -1,25 +1,119 @@
 amends "package://pkg.pkl-lang.org/pkl-project-commons/pkl.impl.circleci@1.1.1#/PklCI.pkl"
 
-prb = buildWorkflow
+prb {
+  jobs {
+    "build"
+    ...verifyJobs
+  }
+}
 
-main = buildWorkflow
+local verifyJobs: Listing<Mapping<String, WorkflowJob>> = new {
+  for (os in List("linux", "macos", "windows")) {
+    new {
+      ["test-\(os)"] {
+        requires {
+          "build"
+        }
+      }
+    }
+  }
+}
+
+main {
+  jobs {
+    "build"
+    ...verifyJobs
+  }
+}
+
+circleCi {
+  workflows {
+    ["ci-setup"] {
+      jobs {
+        new {
+          ["build"] {
+            requires {
+              "approval"
+            }
+          }
+        }
+        ...verifyJobs
+      }
+      `when` {
+        equal {
+          "<< pipeline.git.branch >>"
+          "main"
+        }
+      }
+    }
+  }
+}
+
+local verifyJob: Job = new {
+  steps {
+    "checkout"
+    new AttachWorkspaceStep { at = "." }
+    new RunStep {
+      command = """
+        ./gradlew --info --stacktrace verifyDistribution
+        """
+    }
+  }
+}
+
+local function buildJob(isRelease: Boolean): Job = new {
+  docker {
+    new {
+      image = "cimg/openjdk:21.0"
+    }
+  }
+  steps {
+    "checkout"
+    new RunStep {
+      local args: Listing<String> = new {
+        "--info"
+        "--stacktrace"
+        #"-DtestReportsDir="${HOME}/test-results""#
+        when (isRelease) {
+          "-DreleaseBuild=true"
+        }
+      }
+      command = """
+        ./gradlew \(args.join(" ")) check
+        """
+    }
+    new PersistToWorkspaceStep {
+      root = "."
+      paths {
+        "build/libs/"
+      }
+    }
+    new StoreTestResults { path = "~/test-results" }
+  }
+}
 
 jobs {
-  ["build"] {
+  ["build"] = buildJob(false)
+  ["build-release"] = buildJob(true)
+  ["test-linux"] = (verifyJob) {
     docker {
       new {
         image = "cimg/openjdk:21.0"
       }
     }
-    steps {
-      "checkout"
-      new RunStep {
-        command = """
-          ./gradlew --info --stacktrace -DtestReportsDir="${HOME}/test-results" check
-          """
-      }
-      new StoreTestResults { path = "~/test-results" }
+  }
+  ["test-macos"] = (verifyJob) {
+    macos {
+      xcode = "15.3.0"
     }
+    resource_class = "macos.m1.large.gen1"
+  }
+  ["test-windows"] = (verifyJob) {
+    machine {
+      image = "windows-server-2022-gui:current"
+    }
+    resource_class = "windows.large"
+    shell = "bash.exe"
   }
   ["do-release"] {
     docker {

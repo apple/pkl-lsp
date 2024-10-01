@@ -39,6 +39,8 @@ val pklCli: Configuration by configurations.creating
 
 val jtreeSitterSources: Configuration by configurations.creating
 
+val stagedShadowJar: Configuration by configurations.creating
+
 val jsitterMonkeyPatchSourceDir = layout.buildDirectory.dir("generated/libs/jtreesitter")
 val nativeLibDir = layout.buildDirectory.dir("generated/libs/native/")
 val treeSitterPklRepoDir = layout.buildDirectory.dir("repos/tree-sitter-pkl")
@@ -54,6 +56,7 @@ dependencies {
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
   testImplementation(libs.assertJ)
   testImplementation(libs.junit.jupiter)
+  stagedShadowJar(layout.buildDirectory.files("libs/pkl-lsp-${project.version}.jar"))
   jtreeSitterSources(variantOf(libs.jtreesitter) { classifier("sources") })
   pklCli(
     "org.pkl-lang:pkl-cli-${buildInfo.os.canonicalName}-${buildInfo.arch.name}:${libs.versions.pkl.get()}"
@@ -113,16 +116,9 @@ tasks.test {
   }
 }
 
-tasks.shadowJar { archiveFileName.set("pkl-lsp") }
-
-val javaExecutable by
-  tasks.registering(ExecutableJar::class) {
-    inJar.set(tasks.shadowJar.flatMap { it.archiveFile })
-    outJar.set(layout.buildDirectory.file("executable/pkl-lsp"))
-
-    // uncomment for debugging
-    // jvmArgs.addAll("-ea", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
-  }
+tasks.shadowJar {
+  archiveClassifier = null
+}
 
 fun configureRepo(
   repo: String,
@@ -306,6 +302,22 @@ tasks.processResources {
 }
 
 tasks.compileKotlin { dependsOn(monkeyPatchTreeSitter) }
+
+// verify the built distribution in different OSes.
+val verifyDistribution by tasks.registering(Test::class) {
+  dependsOn(configurePklCliExecutable)
+
+  testClassesDirs = tasks.test.get().testClassesDirs
+  classpath = sourceSets.test.get().output +
+      stagedShadowJar +
+      (configurations.testRuntimeClasspath.get() - configurations.runtimeClasspath.get())
+
+  systemProperties["pklExecutable"] = pklCli.singleFile.absolutePath
+  useJUnitPlatform()
+  System.getProperty("testReportsDir")?.let { reportsDir ->
+    reports.junitXml.outputLocation.set(file(reportsDir).resolve(project.name).resolve(name))
+  }
+}
 
 sourceSets {
   main {
