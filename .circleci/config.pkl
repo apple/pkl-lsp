@@ -30,19 +30,13 @@ circleCi {
   workflows {
     ["ci-setup"] {
       jobs {
-        new {
-          ["build"] {
-            requires {
-              "approval"
-            }
-          }
-        }
+        "build"
         ...verifyJobs
       }
       `when` {
         equal {
           "<< pipeline.git.branch >>"
-          "main"
+          "ci-setup"
         }
       }
     }
@@ -55,9 +49,10 @@ local verifyJob: Job = new {
     new AttachWorkspaceStep { at = "." }
     new RunStep {
       command = """
-        ./gradlew --info --stacktrace verifyDistribution
+        ./gradlew --info --stacktrace -DtestReportsDir="${HOME}/test-results" verifyDistribution
         """
     }
+    new StoreTestResults { path = "~/test-results" }
   }
 }
 
@@ -79,7 +74,7 @@ local function buildJob(isRelease: Boolean): Job = new {
         }
       }
       command = """
-        ./gradlew \(args.join(" ")) check
+        ./gradlew \(args.join(" ")) check shadowJar
         """
     }
     new PersistToWorkspaceStep {

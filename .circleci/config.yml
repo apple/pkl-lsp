@@ -7,7 +7,7 @@ jobs:
     steps:
     - checkout
     - run:
-        command: ./gradlew --info --stacktrace -DtestReportsDir="${HOME}/test-results" check
+        command: ./gradlew --info --stacktrace -DtestReportsDir="${HOME}/test-results" check shadowJar
     - persist_to_workspace:
         root: '.'
         paths:
@@ -20,7 +20,7 @@ jobs:
     steps:
     - checkout
     - run:
-        command: ./gradlew --info --stacktrace -DtestReportsDir="${HOME}/test-results" -DreleaseBuild=true check
+        command: ./gradlew --info --stacktrace -DtestReportsDir="${HOME}/test-results" -DreleaseBuild=true check shadowJar
     - persist_to_workspace:
         root: '.'
         paths:
@@ -35,7 +35,9 @@ jobs:
     - attach_workspace:
         at: '.'
     - run:
-        command: ./gradlew --info --stacktrace verifyDistribution
+        command: ./gradlew --info --stacktrace -DtestReportsDir="${HOME}/test-results" verifyDistribution
+    - store_test_results:
+        path: ~/test-results
     docker:
     - image: cimg/openjdk:21.0
   test-macos:
@@ -44,7 +46,9 @@ jobs:
     - attach_workspace:
         at: '.'
     - run:
-        command: ./gradlew --info --stacktrace verifyDistribution
+        command: ./gradlew --info --stacktrace -DtestReportsDir="${HOME}/test-results" verifyDistribution
+    - store_test_results:
+        path: ~/test-results
     resource_class: macos.m1.large.gen1
     macos:
       xcode: 15.3.0
@@ -55,7 +59,9 @@ jobs:
     - attach_workspace:
         at: '.'
     - run:
-        command: ./gradlew --info --stacktrace verifyDistribution
+        command: ./gradlew --info --stacktrace -DtestReportsDir="${HOME}/test-results" verifyDistribution
+    - store_test_results:
+        path: ~/test-results
     resource_class: windows.large
     machine:
       image: windows-server-2022-gui:current
@@ -112,9 +118,7 @@ workflows:
       - << pipeline.git.branch >>
   ci-setup:
     jobs:
-    - build:
-        requires:
-        - approval
+    - build
     - test-linux:
         requires:
         - build
@@ -127,4 +131,4 @@ workflows:
     when:
       equal:
       - << pipeline.git.branch >>
-      - main
+      - ci-setup

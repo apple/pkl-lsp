@@ -116,9 +116,7 @@ tasks.test {
   }
 }
 
-tasks.shadowJar {
-  archiveClassifier = null
-}
+tasks.shadowJar { archiveClassifier = null }
 
 fun configureRepo(
   repo: String,
@@ -304,20 +302,22 @@ tasks.processResources {
 tasks.compileKotlin { dependsOn(monkeyPatchTreeSitter) }
 
 // verify the built distribution in different OSes.
-val verifyDistribution by tasks.registering(Test::class) {
-  dependsOn(configurePklCliExecutable)
+val verifyDistribution by
+  tasks.registering(Test::class) {
+    dependsOn(configurePklCliExecutable)
 
-  testClassesDirs = tasks.test.get().testClassesDirs
-  classpath = sourceSets.test.get().output +
-      stagedShadowJar +
-      (configurations.testRuntimeClasspath.get() - configurations.runtimeClasspath.get())
+    testClassesDirs = tasks.test.get().testClassesDirs
+    classpath =
+      sourceSets.test.get().output +
+        stagedShadowJar +
+        (configurations.testRuntimeClasspath.get() - configurations.runtimeClasspath.get())
 
-  systemProperties["pklExecutable"] = pklCli.singleFile.absolutePath
-  useJUnitPlatform()
-  System.getProperty("testReportsDir")?.let { reportsDir ->
-    reports.junitXml.outputLocation.set(file(reportsDir).resolve(project.name).resolve(name))
+    systemProperties["pklExecutable"] = pklCli.singleFile.absolutePath
+    useJUnitPlatform()
+    System.getProperty("testReportsDir")?.let { reportsDir ->
+      reports.junitXml.outputLocation.set(file(reportsDir).resolve(project.name).resolve(name))
+    }
   }
-}
 
 sourceSets {
   main {
