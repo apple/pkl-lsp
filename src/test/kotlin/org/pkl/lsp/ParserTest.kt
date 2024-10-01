@@ -212,8 +212,8 @@ class ParserTest {
     val mod = parse(code)
     val prop = mod.children[0]
     assertThat(prop)
-        .isInstanceOf(PklClassProperty::class.java)
-        .hasFieldOrPropertyWithValue("type", null)
+      .isInstanceOf(PklClassProperty::class.java)
+      .hasFieldOrPropertyWithValue("type", null)
   }
 
   @Test
@@ -229,8 +229,8 @@ class ParserTest {
     val mod = parse(code)
     val prop = mod.children[0]
     assertThat(prop)
-        .isInstanceOf(PklClassProperty::class.java)
-        .hasFieldOrPropertyWithValue("type", null)
+      .isInstanceOf(PklClassProperty::class.java)
+      .hasFieldOrPropertyWithValue("type", null)
   }
 
   private fun parse(text: String): PklModule {
