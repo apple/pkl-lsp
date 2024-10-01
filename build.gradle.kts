@@ -56,7 +56,8 @@ dependencies {
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
   testImplementation(libs.assertJ)
   testImplementation(libs.junit.jupiter)
-  stagedShadowJar(layout.buildDirectory.files("libs/pkl-lsp-${project.version}.jar"))
+  // comes from the attached workspace in CircleCI
+  stagedShadowJar(tasks.shadowJar.get().outputs.files)
   jtreeSitterSources(variantOf(libs.jtreesitter) { classifier("sources") })
   pklCli(
     "org.pkl-lang:pkl-cli-${buildInfo.os.canonicalName}-${buildInfo.arch.name}:${libs.versions.pkl.get()}"
@@ -262,7 +263,8 @@ private fun Exec.configureCompile(
     CommandLineArgumentProvider {
       buildList {
         add("cc")
-        add("-Dtarget=${arch.cName}-${os.canonicalName}")
+        add("-target")
+        add("${arch.cName}-${os.canonicalName}")
         for (include in includes) {
           add("-I./$include")
         }

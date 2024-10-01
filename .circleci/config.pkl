@@ -127,9 +127,3 @@ jobs {
     }
   }
 }
-
-local buildWorkflow = new Workflow {
-  jobs {
-    "build"
-  }
-}
