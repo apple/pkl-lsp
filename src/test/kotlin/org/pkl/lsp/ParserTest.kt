@@ -204,6 +204,8 @@ class ParserTest {
         || two
         // comment here
         || three
+        /* block comment here */
+        || four
     """
         .trimIndent()
 
