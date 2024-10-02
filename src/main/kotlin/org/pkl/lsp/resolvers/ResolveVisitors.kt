@@ -426,8 +426,8 @@ object ResolveVisitors {
         get() = expectedName
     }
 
-  fun completionItems(base: PklBaseModule): ResolveVisitor<List<CompletionItem>> {
-    return object : ResolveVisitor<List<CompletionItem>> {
+  fun completionItems(base: PklBaseModule): ResolveVisitor<Set<CompletionItem>> {
+    return object : ResolveVisitor<Set<CompletionItem>> {
       override fun visit(
         name: String,
         element: PklNode,
@@ -467,9 +467,9 @@ object ResolveVisitors {
           is PklClass -> toCompletionItem()
           is PklTypeAlias -> toCompletionItem()
           is PklObjectProperty -> toCompletionItem()
+          is PklTypedIdentifier -> toCompletionItem()
           is PklTypeParameter,
-          is PklModule,
-          is PklTypedIdentifier -> throw AssertionError("Unreachable")
+          is PklModule -> throw AssertionError("Unreachable")
         }
       }
 
@@ -520,6 +520,13 @@ object ResolveVisitors {
         return item
       }
 
+      private fun PklTypedIdentifier.toCompletionItem(): CompletionItem {
+        val item = CompletionItem(identifier?.text ?: "<name>")
+        item.kind = CompletionItemKind.Variable
+        item.detail = type?.render() ?: Type.Unknown.render()
+        return item
+      }
+
       private fun PklClass.render(): String {
         return buildString {
           if (modifiers != null) {
@@ -549,7 +556,7 @@ object ResolveVisitors {
         return Either.forRight(MarkupContent("markdown", node.effectiveDocComment(context) ?: ""))
       }
 
-      override val result: MutableList<CompletionItem> = mutableListOf()
+      override val result: MutableSet<CompletionItem> = mutableSetOf()
     }
   }
 

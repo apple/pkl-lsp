@@ -22,16 +22,14 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.pkl.lsp.Component
 import org.pkl.lsp.Project
 import org.pkl.lsp.ast.*
-import org.pkl.lsp.completion.CompletionProvider
-import org.pkl.lsp.completion.ModuleUriCompletionProvider
-import org.pkl.lsp.completion.QualifiedAccessCompletionProvider
-import org.pkl.lsp.completion.StringLiteralTypeCompletionProvider
+import org.pkl.lsp.completion.*
 
 class CompletionFeature(project: Project) : Component(project) {
   private val completionProviders: List<CompletionProvider> =
     listOf(
       ModuleUriCompletionProvider(project, false),
       QualifiedAccessCompletionProvider(project),
+      UnqualifiedAccessCompletionProvider(project),
       StringLiteralTypeCompletionProvider(project),
     )
 

@@ -21,6 +21,7 @@ import java.net.URI
 import java.net.URISyntaxException
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.regex.Pattern
 import kotlin.math.max
@@ -206,6 +207,8 @@ val packages2CacheDir: CacheDir
 
 val packages1CacheDir: CacheDir
   get() = Package1CacheDir(pklCacheDir.resolve("package-1"))
+
+fun String.decapitalized() = replaceFirstChar { it.lowercase(Locale.getDefault()) }
 
 /**
  * Windows reserves characters `<>:"\|?*` in filenames.
