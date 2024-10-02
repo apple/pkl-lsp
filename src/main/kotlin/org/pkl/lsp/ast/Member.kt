@@ -293,11 +293,11 @@ class PklWhenGeneratorImpl(
   override val parent: PklNode,
   override val ctx: TreeSitterNode,
 ) : AbstractPklNode(project, parent, ctx), PklWhenGenerator {
-  private val bodies by lazy { children.filterIsInstance<PklObjectBody>() }
+  private val bodies by lazy { getChildren(PklObjectBodyImpl::class) }
+
   override val conditionExpr: PklExpr? by lazy { children.firstInstanceOf<PklExpr>() }
-  override val thenBody: PklObjectBody? by lazy { bodies.firstOrNull() }
-  // TODO: tree-sitter doesn't support else clauses yet
-  override val elseBody: PklObjectBody? by lazy { if (bodies.size < 2) null else bodies.last() }
+  override val thenBody: PklObjectBody? by lazy { bodies?.firstOrNull() }
+  override val elseBody: PklObjectBody? by lazy { bodies?.getOrNull(1) }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitWhenGenerator(this)

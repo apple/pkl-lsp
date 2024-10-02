@@ -733,21 +733,22 @@ fun List<TreeSitterNode>.toNode(project: Project, parent: PklNode?, idx: Int): P
 }
 
 private fun TreeSitterNode.toTypeNode(project: Project, parent: PklNode?): PklNode? {
-  return when {
-    text == "unknown" -> PklUnknownTypeImpl(project, parent!!, this)
-    text == "nothing" -> PklNothingTypeImpl(project, parent!!, this)
-    text == "module" -> PklModuleTypeImpl(project, parent!!, this)
-    childCount <= 0 -> null
-    children[0].type == "stringConstant" -> PklStringLiteralTypeImpl(project, parent!!, this)
-    children[0].type == "qualifiedIdentifier" -> PklDeclaredTypeImpl(project, parent!!, this)
-    children[0].type == "(" && childCount == 3 -> PklParenthesizedTypeImpl(project, parent!!, this)
-    children[0].type == "(" -> PklFunctionTypeImpl(project, parent!!, this)
+  if (childCount <= 0) return null
+  val childType = children.single()
+  return when (childType.type) {
+    "unknownType" -> PklUnknownTypeImpl(project, parent!!, childType)
+    "nothingType" -> PklNothingTypeImpl(project, parent!!, childType)
+    "moduleType" -> PklModuleTypeImpl(project, parent!!, childType)
+    "stringLiteralType" -> PklStringLiteralTypeImpl(project, parent!!, childType)
+    "declaredType" -> PklDeclaredTypeImpl(project, parent!!, childType)
+    "parenthesizedType" -> PklParenthesizedTypeImpl(project, parent!!, childType)
+    "functionLiteralType" -> PklFunctionTypeImpl(project, parent!!, childType)
     // TODO: for pkl-tree-sitter `*Foo` alone is a valid type
-    children[0].type == "*" -> PklDefaultUnionTypeImpl(project, parent!!, this)
-    children.last().type == "?" -> PklNullableTypeImpl(project, parent!!, this)
-    childCount == 3 && children[1].type == "|" -> PklUnionTypeImpl(project, parent!!, this)
-    children[1].type == "(" -> PklConstrainedTypeImpl(project, parent!!, this)
-    else -> null
+    "unionDefaultType" -> PklDefaultUnionTypeImpl(project, parent!!, childType)
+    "nullableType" -> PklNullableTypeImpl(project, parent!!, childType)
+    "unionType" -> PklUnionTypeImpl(project, parent!!, childType)
+    "constrainedType" -> PklConstrainedTypeImpl(project, parent!!, childType)
+    else -> throw AssertionError("Unexpected type: ${childType.type}")
   }
 }
 

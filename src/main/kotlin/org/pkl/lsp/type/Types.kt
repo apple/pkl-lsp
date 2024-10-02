@@ -25,6 +25,15 @@ import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.resolvers.ResolveVisitor
 import org.pkl.lsp.unexpectedType
 
+/**
+ * A type whose names have been resolved to their definitions.
+ *
+ * [nullable] types are represented as [Union] types. Function types are represented as the
+ * corresponding [Class] types (but [render]ed as function types).
+ *
+ * [equals] is defined as *structural* equality and equivalence of referenced PklNodes; constraints
+ * are not taken into account. To test for type equivalence, use [isEquivalentTo].
+ */
 sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
   companion object {
     fun alias(

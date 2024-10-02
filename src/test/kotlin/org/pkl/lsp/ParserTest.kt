@@ -31,23 +31,23 @@ class ParserTest {
     val code =
       """
         tunknown: unknown
-        
+
         tnothing: nothing
-        
+
         tmodule: module
-        
+
         tstr: "foo"
-        
+
         tqual: Mapping<Int, String>
-        
+
         tpar: (String)
-        
+
         tnull: Int?
-        
+
         tconst: String(!isEmpty, !isBlank)
-        
+
         tunion: Int|*String
-        
+
         tfun: (Int, Int) -> String
         """
         .trimIndent()
@@ -112,9 +112,9 @@ class ParserTest {
       """
       // a©
       const `fo©o` = 1
-      
+
       bar = 3
-      
+
     """
         .trimIndent()
 
@@ -130,7 +130,7 @@ class ParserTest {
     val code =
       """
       foo = "my \n \u{32} string"
-      
+
       bar = "my \(inter) string"
     """
         .trimIndent()
@@ -197,6 +197,28 @@ class ParserTest {
   }
 
   @Test
+  fun `when generators`() {
+    val code =
+      """
+      foo {
+        when (true) {
+          bar = 1
+        } else {
+          bar = 2
+        }
+      }
+    """
+        .trimIndent()
+    val mod = parse(code)
+    val prop = mod.children[0]
+    assertThat(prop).isInstanceOf(PklClassProperty::class.java)
+    prop as PklClassProperty
+    val whenGenerator = prop.objectBody!!.members.first() as PklWhenGenerator
+    assertThat(whenGenerator.thenBody).isNotNull
+    assertThat(whenGenerator.elseBody).isNotNull
+  }
+
+  @Test
   fun `Nested comments inside binary expression are parsed correctly`() {
     val code =
       """
@@ -231,7 +253,6 @@ class ParserTest {
     assertThat(prop)
       .isInstanceOf(PklClassProperty::class.java)
       .hasFieldOrPropertyWithValue("type", null)
-  }
 
   private fun parse(text: String): PklModule {
     val node = parser.parse(text)

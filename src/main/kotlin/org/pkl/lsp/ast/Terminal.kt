@@ -151,9 +151,9 @@ fun TreeSitterNode.toTerminal(parent: PklNode): Terminal? {
       "identifier" -> TokenType.Identifier
       "docComment" -> TokenType.DocComment
       "escapeSequence" -> TokenType.CharacterEscape
+      "\n" -> TokenType.Whitespace
       // TODO: see if we need these
       //      PklParser.NewlineSemicolon -> TokenType.NewlineSemicolon
-      //      PklParser.Whitespace -> TokenType.Whitespace
       //      PklParser.BlockComment -> TokenType.BlockComment
       //      PklParser.LineComment -> TokenType.LineComment
       //      PklParser.ShebangComment -> TokenType.ShebangComment
