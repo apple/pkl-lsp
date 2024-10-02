@@ -31,23 +31,23 @@ class ParserTest {
     val code =
       """
         tunknown: unknown
-
+        
         tnothing: nothing
-
+        
         tmodule: module
-
+        
         tstr: "foo"
-
+        
         tqual: Mapping<Int, String>
-
+        
         tpar: (String)
-
+        
         tnull: Int?
-
+        
         tconst: String(!isEmpty, !isBlank)
-
+        
         tunion: Int|*String
-
+        
         tfun: (Int, Int) -> String
         """
         .trimIndent()
@@ -112,7 +112,7 @@ class ParserTest {
       """
       // a©
       const `fo©o` = 1
-
+      
       bar = 3
 
     """
@@ -130,7 +130,7 @@ class ParserTest {
     val code =
       """
       foo = "my \n \u{32} string"
-
+      
       bar = "my \(inter) string"
     """
         .trimIndent()
@@ -253,6 +253,7 @@ class ParserTest {
     assertThat(prop)
       .isInstanceOf(PklClassProperty::class.java)
       .hasFieldOrPropertyWithValue("type", null)
+  }
 
   private fun parse(text: String): PklModule {
     val node = parser.parse(text)
