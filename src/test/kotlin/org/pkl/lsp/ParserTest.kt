@@ -114,7 +114,7 @@ class ParserTest {
       const `fo©o` = 1
       
       bar = 3
-
+      
     """
         .trimIndent()
 
