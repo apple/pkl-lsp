@@ -264,7 +264,9 @@ private fun Exec.configureCompile(
       buildList {
         add("cc")
         add("-target")
-        add("${arch.cName}-${os.canonicalName}")
+        val targetFlagValue =
+          "${arch.cName}-${os.canonicalName}".let { if (os.isLinux) "$it-gnu" else it }
+        add(targetFlagValue)
         for (include in includes) {
           add("-I./$include")
         }
