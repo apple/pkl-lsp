@@ -35,8 +35,9 @@ data class NativeLibrary(val name: String, val version: String) {
   private val resourcePath: Path by lazy {
     // keep in sync with `resourceLibraryPath` in build.gradle.kts
     val path = "/NATIVE/org/pkl/lsp/treesitter/${OS.name}-${OS.arch}/$systemLibraryName"
-    NativeLibrary::class.java.getResource(path)?.toURI()?.toPath()
-      ?: throw AssertionError("Cannot find resource in classpath: $path")
+    NativeLibrary::class.java.getResource(path)?.toURI()?.toPath().also {
+      println("Using $it as my native library")
+    } ?: throw AssertionError("Cannot find resource in classpath: $path")
   }
 
   private val storedLibraryPath: Path by lazy {
