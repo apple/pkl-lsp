@@ -139,16 +139,16 @@ fun configureRepo(
       outputs.dir(repoDir)
       dependsOn(cloneTask)
       inputs.property("gitTagOrCommit", gitTagOrCommit)
-      //      doLast {
-      //        exec {
-      //          workingDir = repoDir.get().asFile
-      //          commandLine("git", "fetch", "--tags", "origin")
-      //        }
-      //        exec {
-      //          workingDir = repoDir.get().asFile
-      //          commandLine("git", "checkout", "-f", gitTagOrCommit.get())
-      //        }
-      //      }
+      doLast {
+        exec {
+          workingDir = repoDir.get().asFile
+          commandLine("git", "fetch", "--tags", "origin")
+        }
+        exec {
+          workingDir = repoDir.get().asFile
+          commandLine("git", "checkout", "-f", gitTagOrCommit.get())
+        }
+      }
     }
 
   return tasks.register("setup$taskSuffix") {
@@ -263,13 +263,10 @@ private fun Exec.configureCompile(
     CommandLineArgumentProvider {
       buildList {
         add("cc")
-//        add("-target")
-//        val targetFlagValue =
-//          //          if (os.isLinux && arch == Architecture.Amd64)
-//          //            "${arch.cName}-unknown-${os.canonicalName}-musl"
-//          //          else
-//          "${arch.cName}-${os.canonicalName}"
-//        add(targetFlagValue)
+        add("-target")
+        val targetFlagValue =
+          if (os.isLinux) "${arch.cName}-linux-gnu" else "${arch.cName}-${os.canonicalName}"
+        add(targetFlagValue)
         for (include in includes) {
           add("-I./$include")
         }
