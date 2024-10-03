@@ -38,12 +38,32 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
     params: CompletionParams,
     collector: MutableList<CompletionItem>,
   ) {
+    getCompletions(node, params, collector, reparsed = false)
+  }
+
+  private fun getCompletions(
+    node: PklNode,
+    params: CompletionParams,
+    collector: MutableList<CompletionItem>,
+    reparsed: Boolean,
+  ) {
     val line = params.position.line + 1
     val column = params.position.character + 1
     val context = node.containingFile.pklProject
     val base = project.pklBaseModule
-    val actualNode =
-      node.enclosingModule?.findBySpan(line, column) as? PklUnqualifiedAccessExpr ?: return
+    val actualNode = node.enclosingModule?.findBySpan(line, column) ?: return
+    if (actualNode !is PklUnqualifiedAccessExpr) {
+      // user didn't type any identifier, we have to reparse
+      if (reparsed) return // prevent stack overflow
+      val editedSource =
+        editSource(node.source, params.position.line, params.position.character, "a")
+      // dispose of the newly parsed node after use
+      project.pklParser.parse(editedSource).use { tsnode ->
+        val mod = PklModuleImpl(tsnode, node.containingFile)
+        getCompletions(mod, params, collector, reparsed = true)
+      }
+      return
+    }
     val thisType = node.computeThisType(base, mapOf(), context)
 
     if (thisType == Type.Unknown) return
@@ -216,6 +236,18 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
     val expr = node.parentOfType<PklExpr>() ?: return false
     val type = expr.inferExprTypeFromContext(base, mapOf(), context)
     return isClassOrTypeAlias(type)
+  }
+
+  private fun editSource(source: String, line: Int, col: Int, edit: String): String {
+    return source
+      .lines()
+      .mapIndexed { i, txt ->
+        if (i == line) {
+          val end = col.coerceAtMost(txt.length)
+          txt.substring(0, end) + edit + txt.substring(end)
+        } else txt
+      }
+      .joinToString("\n")
   }
 
   companion object {

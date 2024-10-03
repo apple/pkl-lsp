@@ -34,6 +34,8 @@ class TreeSitterNode(private val ctx: Node, private val executor: ExecutorServic
 
   val range: Range by lazy { call { ctx.range } }
 
+  val source: String by lazy { call { ctx.tree.text } }
+
   val children: List<TreeSitterNode> by lazy {
     call { ctx.children.map { TreeSitterNode(it, executor) } }
   }
