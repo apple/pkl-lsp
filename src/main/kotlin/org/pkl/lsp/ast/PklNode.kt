@@ -824,37 +824,50 @@ fun TreeSitterNode.toNode(project: Project, parent: PklNode?): PklNode? {
         "!" -> PklLogicalNotExprImpl(project, parent!!, this)
         else -> PklNonNullExprImpl(project, parent!!, this)
       }
-    "binaryExprRightAssoc" ->
-      when (children[1].type) {
-        "**" -> PklExponentiationExprImpl(project, parent!!, this)
-        "??" -> PklNullCoalesceExprImpl(project, parent!!, this)
-        "lineComment",
-        "blockComment" -> null
-        "ERROR" -> PklErrorImpl(project, parent!!, this)
-        else -> throw RuntimeException("Unknown binary operator `${children[1].type}`")
-      }
-    "binaryExpr" ->
-      when (children[1].type) {
+    "binaryExprRightAssoc",
+    "binaryExpr" -> {
+      val binOps =
+        setOf(
+          "*",
+          "/",
+          "~/",
+          "%",
+          "+",
+          "-",
+          "<",
+          ">",
+          "<=",
+          ">=",
+          "==",
+          "!=",
+          "&&",
+          "||",
+          "|>",
+          "**",
+          "??",
+        )
+      val operator = children.find { it.type in binOps }
+      when (operator?.type) {
         "*",
         "/",
         "~/",
-        "%" -> PklMultiplicativeExprImpl(project, parent!!, this)
+        "%" -> PklMultiplicativeExprImpl(project, parent!!, this, operator)
         "+",
-        "-" -> PklAdditiveExprImpl(project, parent!!, this)
+        "-" -> PklAdditiveExprImpl(project, parent!!, this, operator)
         "<",
         ">",
         "<=",
-        ">=" -> PklComparisonExprImpl(project, parent!!, this)
+        ">=" -> PklComparisonExprImpl(project, parent!!, this, operator)
         "==",
-        "!=" -> PklEqualityExprImpl(project, parent!!, this)
-        "&&" -> PklLogicalAndExprImpl(project, parent!!, this)
-        "||" -> PklLogicalOrExprImpl(project, parent!!, this)
-        "|>" -> PklPipeExprImpl(project, parent!!, this)
-        "lineComment",
-        "blockComment" -> null
-        "ERROR" -> PklErrorImpl(project, parent!!, this)
-        else -> throw RuntimeException("Unknown binary operator `${children[1].type}`")
+        "!=" -> PklEqualityExprImpl(project, parent!!, this, operator)
+        "&&" -> PklLogicalAndExprImpl(project, parent!!, this, operator)
+        "||" -> PklLogicalOrExprImpl(project, parent!!, this, operator)
+        "|>" -> PklPipeExprImpl(project, parent!!, this, operator)
+        "**" -> PklExponentiationExprImpl(project, parent!!, this, operator)
+        "??" -> PklNullCoalesceExprImpl(project, parent!!, this, operator)
+        else -> throw RuntimeException("Unknown binary operator in expr `$text`")
       }
+    }
     "isExpr" -> PklTypeTestExprImpl(project, parent!!, this)
     "asExpr" -> PklTypeTestExprImpl(project, parent!!, this)
     "ifExpr" -> PklIfExprImpl(project, parent!!, this)

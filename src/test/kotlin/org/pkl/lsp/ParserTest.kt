@@ -222,37 +222,68 @@ class ParserTest {
   fun `Nested comments inside binary expression are parsed correctly`() {
     val code =
       """
-      something = one
-        || two
+      prop1 = one
         // comment here
-        || three
-        /* block comment here */
-        || four
+        || two
+
+      prop2 = one /* comment */ && two
+      
+      prop3 = one
+        // comment
+        ?? two
     """
         .trimIndent()
 
     val mod = parse(code)
-    val prop = mod.children[0]
-    assertThat(prop)
-      .isInstanceOf(PklClassProperty::class.java)
-      .hasFieldOrPropertyWithValue("type", null)
+    val expr = assertClassPropertyExpr(mod.children[0])
+    assertThat(expr).isInstanceOf(PklLogicalOrExpr::class.java)
+    expr as PklLogicalOrExpr
+    assertThat(expr.leftExpr).isInstanceOf(PklUnqualifiedAccessExpr::class.java)
+    assertThat(expr.rightExpr).isInstanceOf(PklUnqualifiedAccessExpr::class.java)
+    assertThat(expr.operator.type).isEqualTo(TokenType.OR)
+
+    val expr2 = assertClassPropertyExpr(mod.children[1])
+    assertThat(expr2).isInstanceOf(PklLogicalAndExpr::class.java)
+    expr2 as PklLogicalAndExpr
+    assertThat(expr2.leftExpr).isInstanceOf(PklUnqualifiedAccessExpr::class.java)
+    assertThat(expr2.rightExpr).isInstanceOf(PklUnqualifiedAccessExpr::class.java)
+    assertThat(expr2.operator.type).isEqualTo(TokenType.AND)
+
+    val expr3 = assertClassPropertyExpr(mod.children[2])
+    assertThat(expr3).isInstanceOf(PklNullCoalesceExpr::class.java)
+    expr3 as PklNullCoalesceExpr
+    assertThat(expr3.leftExpr).isInstanceOf(PklUnqualifiedAccessExpr::class.java)
+    assertThat(expr3.rightExpr).isInstanceOf(PklUnqualifiedAccessExpr::class.java)
+    assertThat(expr3.operator.type).isEqualTo(TokenType.COALESCE)
   }
 
   @Test
   fun `Nested errors inside binary expression are parsed correctly`() {
     val code =
       """
-      something = one
-        || bar.]
-        || three
+      prop1 = one.]
+        || two
     """
         .trimIndent()
 
     val mod = parse(code)
     val prop = mod.children[0]
-    assertThat(prop)
-      .isInstanceOf(PklClassProperty::class.java)
-      .hasFieldOrPropertyWithValue("type", null)
+    val expr = assertClassPropertyExpr(prop)
+    assertThat(expr).isInstanceOf(PklLogicalOrExpr::class.java)
+    expr as PklLogicalOrExpr
+    assertThat(expr.leftExpr).isInstanceOf(PklUnqualifiedAccessExpr::class.java)
+    assertThat(expr.rightExpr).isInstanceOf(PklUnqualifiedAccessExpr::class.java)
+    assertThat(expr.operator.type).isEqualTo(TokenType.OR)
+    val err = expr.children.find { it is PklError } as? PklError
+    assertThat(err).isNotNull
+    assertThat(err!!.text).isEqualTo(".]")
+  }
+
+  private fun assertClassPropertyExpr(node: PklNode): PklExpr {
+    assertThat(node).isInstanceOf(PklClassProperty::class.java)
+    val expr = (node as PklClassProperty).expr
+    assertThat(expr).isNotNull
+    return expr!!
   }
 
   private fun parse(text: String): PklModule {
