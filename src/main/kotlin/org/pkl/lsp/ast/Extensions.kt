@@ -18,7 +18,6 @@ package org.pkl.lsp.ast
 import io.github.treesitter.jtreesitter.Node
 import java.net.URI
 import java.net.URLEncoder
-import java.util.*
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import org.eclipse.lsp4j.Location

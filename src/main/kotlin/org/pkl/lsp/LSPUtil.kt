@@ -294,3 +294,13 @@ fun decodePath(path: String): String {
 }
 
 val gson: Gson = Gson()
+
+fun editSource(source: String, line: Int, col: Int, edit: String): String {
+  val lines = source.lineSequence().toMutableList()
+  if (lines.size <= line) return source
+
+  val txt = lines[line]
+  val end = col.coerceAtMost(txt.length)
+  lines[line] = txt.substring(0, end) + edit + txt.substring(end)
+  return lines.joinToString("\n")
+}

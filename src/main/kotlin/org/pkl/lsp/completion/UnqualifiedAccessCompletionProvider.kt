@@ -23,6 +23,7 @@ import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.Project
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.decapitalized
+import org.pkl.lsp.editSource
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.resolvers.ResolveVisitors
 import org.pkl.lsp.resolvers.Resolvers
@@ -38,12 +39,32 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
     params: CompletionParams,
     collector: MutableList<CompletionItem>,
   ) {
+    getCompletions(node, params, collector, reparsed = false)
+  }
+
+  private fun getCompletions(
+    node: PklNode,
+    params: CompletionParams,
+    collector: MutableList<CompletionItem>,
+    reparsed: Boolean,
+  ) {
     val line = params.position.line + 1
     val column = params.position.character + 1
     val context = node.containingFile.pklProject
     val base = project.pklBaseModule
-    val actualNode =
-      node.enclosingModule?.findBySpan(line, column) as? PklUnqualifiedAccessExpr ?: return
+    val actualNode = node.enclosingModule?.findBySpan(line, column) ?: return
+    if (actualNode !is PklUnqualifiedAccessExpr) {
+      // user didn't type any identifier, we have to reparse
+      if (reparsed) return // prevent stack overflow
+      val editedSource =
+        editSource(node.source, params.position.line, params.position.character, "a")
+      // dispose of the newly parsed node after use
+      project.pklParser.parse(editedSource).use { tsnode ->
+        val mod = PklModuleImpl(tsnode, node.containingFile)
+        getCompletions(mod, params, collector, reparsed = true)
+      }
+      return
+    }
     val thisType = node.computeThisType(base, mapOf(), context)
 
     if (thisType == Type.Unknown) return

@@ -39,6 +39,7 @@ interface PklNode {
   val text: String
   /** True if tree-sitter inserted this node. */
   val isMissing: Boolean
+  val source: String
 
   fun <R> accept(visitor: PklVisitor<R>): R?
 
@@ -703,6 +704,8 @@ abstract class AbstractPklNode(
   override val text: String by lazy { ctx.text }
 
   override val isMissing: Boolean by lazy { ctx.isMissing }
+
+  override val source: String by lazy { ctx.source }
 
   override fun hashCode(): Int {
     return ctx.hashCode()
