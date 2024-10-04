@@ -23,6 +23,7 @@ import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.Project
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.decapitalized
+import org.pkl.lsp.editSource
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.resolvers.ResolveVisitors
 import org.pkl.lsp.resolvers.Resolvers
@@ -236,18 +237,6 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
     val expr = node.parentOfType<PklExpr>() ?: return false
     val type = expr.inferExprTypeFromContext(base, mapOf(), context)
     return isClassOrTypeAlias(type)
-  }
-
-  private fun editSource(source: String, line: Int, col: Int, edit: String): String {
-    return source
-      .lines()
-      .mapIndexed { i, txt ->
-        if (i == line) {
-          val end = col.coerceAtMost(txt.length)
-          txt.substring(0, end) + edit + txt.substring(end)
-        } else txt
-      }
-      .joinToString("\n")
   }
 
   companion object {
