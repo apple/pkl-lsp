@@ -1,0 +1,13 @@
+PklModuleImpl
+  PklClassPropertyImpl
+    PklLogicalOrExprImpl
+      PklIntLiteralExprImpl
+      PklIntLiteralExprImpl
+  PklClassPropertyImpl
+    PklAdditiveExprImpl
+      PklIntLiteralExprImpl
+      PklIntLiteralExprImpl
+  PklClassPropertyImpl
+    PklNullCoalesceExprImpl
+      PklIntLiteralExprImpl
+      PklIntLiteralExprImpl

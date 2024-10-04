@@ -3,7 +3,7 @@ assertj = "3.26.3"
 clikt = "4.4.0"
 downloadTaskPlugin = "5.6.0"
 jtreesitter = "0.23.1"
-junit-jupiter = "5.10.2"
+junit = "5.10.2"
 kotlin = "2.0.0"
 kotlinx = "1.7.1"
 ktfmt = "0.51"
@@ -27,7 +27,8 @@ assertJ = { group = "org.assertj", name = "assertj-core", version.ref = "assertj
 clikt = { group = "com.github.ajalt.clikt", name = "clikt", version.ref = "clikt" }
 downloadTaskPlugin = { group = "de.undercouch", name = "gradle-download-task", version.ref = "downloadTaskPlugin" }
 jtreesitter = { group = "io.github.tree-sitter", name = "jtreesitter", version.ref = "jtreesitter" }
-junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
+junitJupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+junitEngine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit" }
 kotlinxSerializationJson = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx" }
 lsp4j = { group = "org.eclipse.lsp4j", name = "org.eclipse.lsp4j", version.ref = "lsp4j" }
 pklCore = { group = "org.pkl-lang", name = "pkl-core", version.ref = "pkl" }

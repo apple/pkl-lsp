@@ -1,0 +1,9 @@
+prop1 = 1
+  // comment here
+  || 2
+
+prop2 = 1 /* comment */ + 2
+
+prop3 = 1
+  // comment
+  ?? 2
