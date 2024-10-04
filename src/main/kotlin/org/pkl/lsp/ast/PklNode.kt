@@ -828,6 +828,9 @@ fun TreeSitterNode.toNode(project: Project, parent: PklNode?): PklNode? {
       when (children[1].type) {
         "**" -> PklExponentiationExprImpl(project, parent!!, this)
         "??" -> PklNullCoalesceExprImpl(project, parent!!, this)
+        "lineComment",
+        "blockComment" -> null
+        "ERROR" -> PklErrorImpl(project, parent!!, this)
         else -> throw RuntimeException("Unknown binary operator `${children[1].type}`")
       }
     "binaryExpr" ->
@@ -847,6 +850,9 @@ fun TreeSitterNode.toNode(project: Project, parent: PklNode?): PklNode? {
         "&&" -> PklLogicalAndExprImpl(project, parent!!, this)
         "||" -> PklLogicalOrExprImpl(project, parent!!, this)
         "|>" -> PklPipeExprImpl(project, parent!!, this)
+        "lineComment",
+        "blockComment" -> null
+        "ERROR" -> PklErrorImpl(project, parent!!, this)
         else -> throw RuntimeException("Unknown binary operator `${children[1].type}`")
       }
     "isExpr" -> PklTypeTestExprImpl(project, parent!!, this)
