@@ -824,17 +824,19 @@ fun TreeSitterNode.toNode(project: Project, parent: PklNode?): PklNode? {
         "!" -> PklLogicalNotExprImpl(project, parent!!, this)
         else -> PklNonNullExprImpl(project, parent!!, this)
       }
-    "binaryExprRightAssoc" ->
-      when (children[1].type) {
+    "binaryExprRightAssoc" -> {
+      val operator = children.find { it.type == "**" || it.type == "??" }
+      when (operator?.type) {
         "**" -> PklExponentiationExprImpl(project, parent!!, this)
         "??" -> PklNullCoalesceExprImpl(project, parent!!, this)
-        "lineComment",
-        "blockComment" -> null
-        "ERROR" -> PklErrorImpl(project, parent!!, this)
-        else -> throw RuntimeException("Unknown binary operator `${children[1].type}`")
+        else -> throw RuntimeException("Unknown binary operator in expr `$text`")
       }
-    "binaryExpr" ->
-      when (children[1].type) {
+    }
+    "binaryExpr" -> {
+      val binOps =
+        setOf("*", "/", "~/", "%", "+", "-", "<", ">", "<=", ">=", "==", "!=", "&&", "||", "|>")
+      val operator = children.find { it.type in binOps }
+      when (operator?.type) {
         "*",
         "/",
         "~/",
@@ -850,11 +852,9 @@ fun TreeSitterNode.toNode(project: Project, parent: PklNode?): PklNode? {
         "&&" -> PklLogicalAndExprImpl(project, parent!!, this)
         "||" -> PklLogicalOrExprImpl(project, parent!!, this)
         "|>" -> PklPipeExprImpl(project, parent!!, this)
-        "lineComment",
-        "blockComment" -> null
-        "ERROR" -> PklErrorImpl(project, parent!!, this)
-        else -> throw RuntimeException("Unknown binary operator `${children[1].type}`")
+        else -> throw RuntimeException("Unknown binary operator in expr `$text`")
       }
+    }
     "isExpr" -> PklTypeTestExprImpl(project, parent!!, this)
     "asExpr" -> PklTypeTestExprImpl(project, parent!!, this)
     "ifExpr" -> PklIfExprImpl(project, parent!!, this)
