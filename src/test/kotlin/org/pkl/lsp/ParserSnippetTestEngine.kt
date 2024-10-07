@@ -91,10 +91,8 @@ class ParserSnippetTestEngine : HierarchicalTestEngine<ParserSnippetTestEngine.E
   private fun generateOutputFor(inputFile: Path): Pair<Boolean, String> {
     return try {
       val text = inputFile.readText()
-      val tsNode = project.pklParser.parse(text, null)
+      val tsNode = project.pklParser.parse(text)
       val mod = PklModuleImpl(tsNode, project.virtualFileManager.getEphemeral(text))
-      //      val file = project.virtualFileManager.getEphemeral(text)
-      //      val parsed = file.getModule().get()!!
       true to mod.render()
     } catch (err: Throwable) {
       false to err.stackTraceToString()
