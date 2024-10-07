@@ -25,7 +25,7 @@ class Stdlib(project: Project) : Component(project) {
   @Suppress("MemberVisibilityCanBePrivate")
   val files: Map<String, VirtualFile> by lazy {
     val baseModuleUri = javaClass.getResource("/org/pkl/stdlib/base.pkl")!!.toURI()
-    project.virtualFileManager.ensureJarFileSystem(baseModuleUri)
+    ensureJarFileSystem(baseModuleUri)
     val path = Path.of(baseModuleUri)
     path.parent
       .listDirectoryEntries()

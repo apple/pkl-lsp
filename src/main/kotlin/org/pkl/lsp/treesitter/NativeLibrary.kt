@@ -15,7 +15,7 @@
  */
 package org.pkl.lsp.treesitter
 
-import java.nio.file.FileSystems
+import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.createParentDirectories
@@ -32,11 +32,10 @@ data class NativeLibrary(val name: String, val version: String) {
 
   private val systemLibraryName = System.mapLibraryName(name)
 
-  private val resourcePath: Path by lazy {
+  private val resourcePath: URL by lazy {
     // keep in sync with `resourceLibraryPath` in build.gradle.kts
     val path = "/NATIVE/org/pkl/lsp/treesitter/${OS.name}-${OS.arch}/$systemLibraryName"
-    NativeLibrary::class.java.getResource(path)?.toURI()?.toPath()
-      ?: throw AssertionError("Cannot find resource in classpath: $path")
+    NativeLibrary::class.java.getResource(path)
   }
 
   private val storedLibraryPath: Path by lazy {
@@ -46,11 +45,11 @@ data class NativeLibrary(val name: String, val version: String) {
   val libraryPath: Path by lazy {
     when {
       // optimization: if the resource file is a normal file, we can use it directly.
-      resourcePath.fileSystem == FileSystems.getDefault() -> resourcePath
+      resourcePath.protocol == "file" -> resourcePath.toURI().toPath()
       storedLibraryPath.exists() -> storedLibraryPath
       else -> {
         storedLibraryPath.createParentDirectories()
-        Files.copy(resourcePath, storedLibraryPath)
+        resourcePath.openStream().use { Files.copy(it, storedLibraryPath) }
         storedLibraryPath
       }
     }
