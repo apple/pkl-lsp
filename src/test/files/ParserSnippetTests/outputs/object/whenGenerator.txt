@@ -1,0 +1,11 @@
+PklModuleImpl
+  PklClassPropertyImpl
+    PklObjectBodyImpl
+      PklWhenGeneratorImpl
+        PklTrueLiteralExprImpl
+        PklObjectBodyImpl
+          PklObjectPropertyImpl
+            PklIntLiteralExprImpl
+        PklObjectBodyImpl
+          PklObjectPropertyImpl
+            PklIntLiteralExprImpl

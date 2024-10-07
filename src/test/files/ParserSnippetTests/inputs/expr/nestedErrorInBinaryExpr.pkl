@@ -1,0 +1,2 @@
+prop1 = one.]
+  || two

@@ -53,7 +53,8 @@ dependencies {
   implementation(libs.jtreesitter)
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
   testImplementation(libs.assertJ)
-  testImplementation(libs.junit.jupiter)
+  testImplementation(libs.junitJupiter)
+  testImplementation(libs.junitEngine)
   jtreeSitterSources(variantOf(libs.jtreesitter) { classifier("sources") })
   pklCli(
     "org.pkl-lang:pkl-cli-${buildInfo.os.canonicalName}-${buildInfo.arch.name}:${libs.versions.pkl.get()}"
@@ -107,7 +108,7 @@ tasks.test {
   dependsOn(configurePklCliExecutable)
   systemProperties["pklExecutable"] = pklCli.singleFile.absolutePath
   systemProperties["java.library.path"] = nativeLibDir.get().asFile.absolutePath
-  useJUnitPlatform()
+  useJUnitPlatform { includeEngines("ParserSnippetTestEngine") }
   System.getProperty("testReportsDir")?.let { reportsDir ->
     reports.junitXml.outputLocation.set(file(reportsDir).resolve(project.name).resolve(name))
   }
