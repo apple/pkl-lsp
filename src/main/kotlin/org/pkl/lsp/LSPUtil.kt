@@ -19,6 +19,8 @@ import com.google.gson.Gson
 import java.math.BigInteger
 import java.net.URI
 import java.net.URISyntaxException
+import java.nio.file.FileSystemAlreadyExistsException
+import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.*
@@ -303,4 +305,15 @@ fun editSource(source: String, line: Int, col: Int, edit: String): String {
   val end = col.coerceAtMost(txt.length)
   lines[line] = txt.substring(0, end) + edit + txt.substring(end)
   return lines.joinToString("\n")
+}
+
+// This is technically a memory leak, albeit a mild one and should be tolerable.
+//
+// For every new package opened, its file system is never closed and kept on heap.
+fun ensureJarFileSystem(uri: URI) {
+  try {
+    FileSystems.newFileSystem(uri, HashMap<String, Any>())
+  } catch (e: FileSystemAlreadyExistsException) {
+    FileSystems.getFileSystem(uri)
+  }
 }

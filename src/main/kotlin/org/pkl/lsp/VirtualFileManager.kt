@@ -60,15 +60,4 @@ class VirtualFileManager(project: Project) : Component(project) {
       }
     return file.also { files[effectiveUri] = file }
   }
-
-  // This is technically a memory leak, albeit a mild one and should be tolerable.
-  //
-  // For every new package opened, its file system is never closed and kept on heap.
-  fun ensureJarFileSystem(uri: URI) {
-    try {
-      FileSystems.newFileSystem(uri, HashMap<String, Any>())
-    } catch (e: FileSystemAlreadyExistsException) {
-      FileSystems.getFileSystem(uri)
-    }
-  }
 }
