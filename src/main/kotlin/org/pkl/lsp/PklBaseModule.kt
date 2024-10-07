@@ -15,8 +15,6 @@
  */
 package org.pkl.lsp
 
-import org.pkl.core.Release
-import org.pkl.core.Version
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.type.Type
 
@@ -56,9 +54,6 @@ class PklBaseModule(project: Project) : Component(project) {
     this.types = types
     this.methods = methods
   }
-
-  val pklVersion: Version
-    get() = Release.current().version()
 
   val listConstructor: PklClassMethod = method("List")
   val setConstructor: PklClassMethod = method("Set")
