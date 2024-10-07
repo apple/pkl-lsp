@@ -21,11 +21,14 @@ import org.gradle.internal.os.OperatingSystem
 plugins {
   application
   idea
+  `maven-publish`
+  signing
   zig
   alias(libs.plugins.kotlin)
   alias(libs.plugins.kotlinSerialization)
   alias(libs.plugins.shadow)
   alias(libs.plugins.spotless)
+  alias(libs.plugins.nexusPublish)
 }
 
 repositories { mavenCentral() }
@@ -38,6 +41,8 @@ java {
 val pklCli: Configuration by configurations.creating
 
 val jtreeSitterSources: Configuration by configurations.creating
+
+val stagedShadowJar: Configuration by configurations.creating
 
 val jsitterMonkeyPatchSourceDir = layout.buildDirectory.dir("generated/libs/jtreesitter")
 val nativeLibDir = layout.buildDirectory.dir("generated/libs/native/")
@@ -55,6 +60,8 @@ dependencies {
   testImplementation(libs.assertJ)
   testImplementation(libs.junitJupiter)
   testImplementation(libs.junitEngine)
+  // comes from the attached workspace in CircleCI
+  stagedShadowJar(tasks.shadowJar.get().outputs.files)
   jtreeSitterSources(variantOf(libs.jtreesitter) { classifier("sources") })
   pklCli(
     "org.pkl-lang:pkl-cli-${buildInfo.os.canonicalName}-${buildInfo.arch.name}:${libs.versions.pkl.get()}"
@@ -114,16 +121,7 @@ tasks.test {
   }
 }
 
-tasks.shadowJar { archiveFileName.set("pkl-lsp") }
-
-val javaExecutable by
-  tasks.registering(ExecutableJar::class) {
-    inJar.set(tasks.shadowJar.flatMap { it.archiveFile })
-    outJar.set(layout.buildDirectory.file("executable/pkl-lsp"))
-
-    // uncomment for debugging
-    // jvmArgs.addAll("-ea", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
-  }
+tasks.shadowJar { archiveClassifier = null }
 
 fun configureRepo(
   repo: String,
@@ -269,7 +267,10 @@ private fun Exec.configureCompile(
     CommandLineArgumentProvider {
       buildList {
         add("cc")
-        add("-Dtarget=${arch.cName}-${os.canonicalName}")
+        add("-target")
+        val targetFlagValue =
+          if (os.isLinux) "${arch.cName}-linux-gnu" else "${arch.cName}-${os.canonicalName}"
+        add(targetFlagValue)
         for (include in includes) {
           add("-I./$include")
         }
@@ -307,6 +308,24 @@ tasks.processResources {
 }
 
 tasks.compileKotlin { dependsOn(monkeyPatchTreeSitter) }
+
+// verify the built distribution in different OSes.
+val verifyDistribution by
+  tasks.registering(Test::class) {
+    dependsOn(configurePklCliExecutable)
+
+    testClassesDirs = tasks.test.get().testClassesDirs
+    classpath =
+      sourceSets.test.get().output +
+        stagedShadowJar +
+        (configurations.testRuntimeClasspath.get() - configurations.runtimeClasspath.get())
+
+    systemProperties["pklExecutable"] = pklCli.singleFile.absolutePath
+    useJUnitPlatform()
+    System.getProperty("testReportsDir")?.let { reportsDir ->
+      reports.junitXml.outputLocation.set(file(reportsDir).resolve(project.name).resolve(name))
+    }
+  }
 
 sourceSets {
   main {
@@ -347,3 +366,65 @@ spotless {
     licenseHeader(licenseHeader)
   }
 }
+
+nexusPublishing {
+  repositories {
+    sonatype {
+      nexusUrl = uri("https://s01.oss.sonatype.org/service/local/")
+      snapshotRepositoryUrl = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+    }
+  }
+}
+
+publishing {
+  publications {
+    create<MavenPublication>("pklLsp") {
+      artifact(stagedShadowJar.singleFile) {
+        classifier = null
+        extension = "jar"
+        builtBy(tasks.shadowJar)
+      }
+      pom {
+        name.set("pkl-lsp")
+        url.set("https://github.com/apple/pkl-lsp")
+        description.set(
+          """
+          CLI for the Pkl Language Server.
+          Requires Java 22 or higher.
+          """
+            .trimIndent()
+        )
+        licenses {
+          license {
+            name = "Apache 2.0"
+            url = "https://github.com/apple/pkl-lsp/blob/main/LICENSE.txt"
+          }
+        }
+        developers {
+          developer {
+            id.set("pkl-authors")
+            name.set("The Pkl Authors")
+            email.set("pkl-oss@group.apple.com")
+          }
+        }
+        scm {
+          connection.set("scm:git:git://github.com/apple/pkl-lsp.git")
+          developerConnection.set("scm:git:ssh://github.com/apple/pkl-lsp.git")
+          url.set(
+            "https://github.com/apple/pkl-lsp/tree/${if (buildInfo.isReleaseBuild) version else "main"}"
+          )
+        }
+        issueManagement {
+          system.set("GitHub Issues")
+          url.set("https://github.com/apple/pkl-lsp/issues")
+        }
+        ciManagement {
+          system.set("Circle CI")
+          url.set("https://app.circleci.com/pipelines/github/apple/pkl-lsp")
+        }
+      }
+    }
+  }
+}
+
+signing { sign(publishing.publications["pklLsp"]) }

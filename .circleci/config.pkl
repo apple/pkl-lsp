@@ -1,11 +1,141 @@
 amends "package://pkg.pkl-lang.org/pkl-project-commons/pkl.impl.circleci@1.1.1#/PklCI.pkl"
 
-prb = buildWorkflow
+prb {
+  jobs {
+    "build"
+  }
+}
 
-main = buildWorkflow
+local function verifyJobs(requiresJob: String): Listing<Mapping<String, WorkflowJob>> = new {
+  for (os in List("macos", "windows")) {
+    new {
+      ["test-\(os)"] {
+        requires {
+          requiresJob
+        }
+      }
+    }
+  }
+}
+
+local verifyJobNames = verifyJobs("build").toList().map((it) -> it.keys.first).toListing()
+
+main {
+  jobs {
+    "build"
+    ...verifyJobs("build")
+    new {
+      ["deploy-snapshot"] {
+        requires = verifyJobNames
+        context = "pkl-maven-release"
+      }
+    }
+  }
+}
+
+release {
+  jobs {
+    "build-release"
+    ...verifyJobs("build-release")
+    // do GitHub release first because we can overwrite the tag.
+    // publishing to Maven Central is final.
+    new {
+      ["github-release"] {
+        requires = verifyJobNames
+        context = "pkl-github-release"
+      }
+    }
+    new {
+      ["deploy-release"] {
+        requires { "github-release" }
+        context = "pkl-maven-release"
+      }
+    }
+  }
+}
+
+local verifyJob: Job = new {
+  steps {
+    "checkout"
+    new AttachWorkspaceStep { at = "." }
+    new RunStep {
+      command = """
+        ./gradlew --info --stacktrace -DtestReportsDir="${HOME}/test-results" verifyDistribution
+        """
+    }
+    new StoreTestResults { path = "~/test-results" }
+  }
+}
+
+local function buildJob(isRelease: Boolean): Job = new {
+  docker {
+    new {
+      image = "cimg/openjdk:21.0"
+    }
+  }
+  steps {
+    "checkout"
+    new RunStep {
+      local args: Listing<String> = new {
+        "--info"
+        "--stacktrace"
+        #"-DtestReportsDir="${HOME}/test-results""#
+        when (isRelease) {
+          "-DreleaseBuild=true"
+        }
+      }
+      command = """
+        ./gradlew \(args.join(" ")) check shadowJar
+        """
+    }
+    new PersistToWorkspaceStep {
+      root = "."
+      paths {
+        "build/libs/"
+      }
+    }
+    new StoreTestResults { path = "~/test-results" }
+  }
+}
 
 jobs {
-  ["build"] {
+  ["build"] = buildJob(false)
+  ["build-release"] = buildJob(true)
+  ["test-macos"] = (verifyJob) {
+    macos {
+      xcode = "15.3.0"
+    }
+    resource_class = "macos.m1.large.gen1"
+  }
+  ["test-windows"] = (verifyJob) {
+    machine {
+      image = "windows-server-2022-gui:current"
+    }
+    resource_class = "windows.large"
+    shell = "bash.exe"
+  }
+  ["github-release"] {
+    docker {
+      new { image = "maniator/gh:v2.40.1" }
+    }
+
+    steps {
+      new AttachWorkspaceStep { at = "." }
+      new RunStep {
+        name = "Publish release on GitHub"
+        command = #"""
+          gh release create "${CIRCLE_TAG}" \
+            --title "${CIRCLE_TAG}" \
+            --target "${CIRCLE_SHA1}" \
+            --verify-tag \
+            --notes "Release notes: https://pkl-lang.org/pkl-lsp/current/release-notes/changelog.html#release-${CIRCLE_TAG}" \
+            --repo "${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}" \
+            build/libs/*
+          """#
+      }
+    }
+  }
+  ["deploy-release"] {
     docker {
       new {
         image = "cimg/openjdk:21.0"
@@ -15,10 +145,22 @@ jobs {
       "checkout"
       new RunStep {
         command = """
-          ./gradlew --info --stacktrace -DtestReportsDir="${HOME}/test-results" check
+          ./gradlew -DreleaseBuild=true publishToSonatype closeAndReleaseSonatypeStagingRepository
           """
       }
-      new StoreTestResults { path = "~/test-results" }
+    }
+  }
+  ["deploy-snapshot"] {
+    docker {
+      new {
+        image = "cimg/openjdk:21.0"
+      }
+    }
+    steps {
+      "checkout"
+      new RunStep {
+        command = "./gradlew build publishToSonatype"
+      }
     }
   }
   ["do-release"] {
@@ -36,11 +178,5 @@ jobs {
           """
       }
     }
-  }
-}
-
-local buildWorkflow = new Workflow {
-  jobs {
-    "build"
   }
 }
