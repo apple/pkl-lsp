@@ -21,8 +21,6 @@ import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import javax.naming.OperationNotSupportedException
 import kotlin.io.path.*
-import org.pkl.core.module.ModuleKeyFactories.file
-import org.pkl.core.util.IoUtils
 import org.pkl.lsp.ast.PklModule
 import org.pkl.lsp.ast.PklModuleImpl
 import org.pkl.lsp.packages.PackageDependency
@@ -149,7 +147,7 @@ sealed class BaseFile : VirtualFile, CachedValueDataHolderBase() {
       }
       return PklModuleImpl(moduleCtx, this)
     } catch (e: Exception) {
-      logger.warn("Error building $file: ${e.message} ${e.stackTraceToString()}")
+      logger.warn("Error building file: ${e.message} ${e.stackTraceToString()}")
       readError = e
       null
     }
@@ -221,7 +219,10 @@ class StdlibFile(moduleName: String, override val project: Project) : BaseFile()
   override fun resolve(path: String): VirtualFile? = null
 
   override fun doReadContents(): String {
-    return IoUtils.readClassPathResourceAsString(javaClass, "/org/pkl/core/stdlib/$name.pkl")
+    return javaClass.getResourceAsStream("/org/pkl/stdlib/$name.pkl")!!.bufferedReader().use {
+      reader ->
+      reader.readText()
+    }
   }
 }
 

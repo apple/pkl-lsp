@@ -47,7 +47,7 @@ val treeSitterRepoDir = layout.buildDirectory.dir("repos/tree-sitter")
 dependencies {
   implementation(kotlin("reflect"))
   implementation(libs.clikt)
-  implementation(libs.pklCore)
+  runtimeOnly(libs.pklStdlib)
   implementation(libs.lsp4j)
   implementation(libs.kotlinxSerializationJson)
   implementation(libs.jtreesitter)
