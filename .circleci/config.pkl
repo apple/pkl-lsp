@@ -85,7 +85,7 @@ local function buildJob(isRelease: Boolean): Job = new {
         }
       }
       command = """
-        ./gradlew \(args.join(" ")) check shadowJar
+        ./gradlew \(args.join(" ")) check shadowJar verifyDistribution
         """
     }
     new PersistToWorkspaceStep {

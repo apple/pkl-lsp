@@ -44,6 +44,8 @@ val jtreeSitterSources: Configuration by configurations.creating
 
 val stagedShadowJar: Configuration by configurations.creating
 
+val pklStdlibFiles: Configuration by configurations.creating
+
 val jsitterMonkeyPatchSourceDir = layout.buildDirectory.dir("generated/libs/jtreesitter")
 val nativeLibDir = layout.buildDirectory.dir("generated/libs/native/")
 val treeSitterPklRepoDir = layout.buildDirectory.dir("repos/tree-sitter-pkl")
@@ -52,14 +54,18 @@ val treeSitterRepoDir = layout.buildDirectory.dir("repos/tree-sitter")
 dependencies {
   implementation(kotlin("reflect"))
   implementation(libs.clikt)
-  runtimeOnly(libs.pklStdlib)
   implementation(libs.lsp4j)
   implementation(libs.kotlinxSerializationJson)
   implementation(libs.jtreesitter)
+  // stdlib files are included from a one-off configuration then bundled into shadow jar (see
+  // shadowJar spec).
+  // declare a regular dependency for testing only.
+  testRuntimeOnly(libs.pklStdlib)
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
   testImplementation(libs.assertJ)
   testImplementation(libs.junitJupiter)
   testImplementation(libs.junitEngine)
+  pklStdlibFiles(libs.pklStdlib)
   // comes from the attached workspace in CircleCI
   stagedShadowJar(tasks.shadowJar.get().outputs.files)
   jtreeSitterSources(variantOf(libs.jtreesitter) { classifier("sources") })
@@ -121,7 +127,13 @@ tasks.test {
   }
 }
 
-tasks.shadowJar { archiveClassifier = null }
+tasks.shadowJar {
+  archiveClassifier = null
+  // Need to rename `.zip` to `.jar`, otherwise the shadow plugin ends up bundling whole zip file
+  // as-is inside the
+  // shadow jar instead of extracting them.
+  from(pklStdlibFiles) { rename("(.*).zip", "$1.jar") }
+}
 
 fun configureRepo(
   repo: String,
