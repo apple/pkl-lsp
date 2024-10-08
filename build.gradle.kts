@@ -394,7 +394,6 @@ publishing {
       artifact(stagedShadowJar.singleFile) {
         classifier = null
         extension = "jar"
-        builtBy(tasks.shadowJar)
       }
       pom {
         name.set("pkl-lsp")
