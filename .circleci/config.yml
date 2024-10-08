@@ -7,7 +7,7 @@ jobs:
     steps:
     - checkout
     - run:
-        command: ./gradlew --info --stacktrace -DtestReportsDir="${HOME}/test-results" check shadowJar
+        command: ./gradlew --info --stacktrace -DtestReportsDir="${HOME}/test-results" check shadowJar verifyDistribution
     - persist_to_workspace:
         root: '.'
         paths:
@@ -20,7 +20,7 @@ jobs:
     steps:
     - checkout
     - run:
-        command: ./gradlew --info --stacktrace -DtestReportsDir="${HOME}/test-results" -DreleaseBuild=true check shadowJar
+        command: ./gradlew --info --stacktrace -DtestReportsDir="${HOME}/test-results" -DreleaseBuild=true check shadowJar verifyDistribution
     - persist_to_workspace:
         root: '.'
         paths:
