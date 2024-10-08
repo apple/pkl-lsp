@@ -53,6 +53,8 @@ val nativeLibDir = layout.buildDirectory.dir("generated/libs/native/")
 val treeSitterPklRepoDir = layout.buildDirectory.dir("repos/tree-sitter-pkl")
 val treeSitterRepoDir = layout.buildDirectory.dir("repos/tree-sitter")
 
+val dummy: SourceSet by sourceSets.creating
+
 dependencies {
   implementation(kotlin("reflect"))
   implementation(libs.clikt)
@@ -136,6 +138,22 @@ tasks.shadowJar {
   // shadow jar instead of extracting them.
   from(pklStdlibFiles) { rename("(.*).zip", "$1.jar") }
 }
+
+val javadocDummy by tasks.creating(Javadoc::class) { source = dummy.allJava }
+
+// create a dummy javadoc jar to make maven central happy
+val javadocJar by
+  tasks.registering(Jar::class) {
+    dependsOn(javadocDummy)
+    archiveClassifier = "javadoc"
+    from(javadocDummy.destinationDir)
+  }
+
+val sourcesJar by
+  tasks.registering(Jar::class) {
+    from(sourceSets.main.get().allSource)
+    archiveClassifier = "sources"
+  }
 
 fun configureRepo(
   repo: String,
@@ -397,6 +415,8 @@ publishing {
         classifier = null
         extension = "jar"
       }
+      artifact(javadocJar.flatMap { it.archiveFile }) { classifier = "javadoc" }
+      artifact(sourcesJar.flatMap { it.archiveFile }) { classifier = "sources" }
       pom {
         name.set("pkl-lsp")
         url.set("https://github.com/apple/pkl-lsp")
