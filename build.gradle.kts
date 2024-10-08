@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import java.nio.charset.StandardCharsets
+import java.util.*
 import kotlin.io.path.absolutePathString
 import org.apache.tools.ant.filters.ReplaceTokens
 import org.gradle.internal.extensions.stdlib.capitalized
@@ -438,4 +440,16 @@ publishing {
   }
 }
 
-signing { sign(publishing.publications["pklLsp"]) }
+signing {
+  // provided as env vars `ORG_GRADLE_PROJECT_signingKey` and `ORG_GRADLE_PROJECT_signingPassword`
+  // in CI.
+  val signingKey =
+    (findProperty("signingKey") as String?)?.let {
+      Base64.getDecoder().decode(it).toString(StandardCharsets.US_ASCII)
+    }
+  val signingPassword = findProperty("signingPassword") as String?
+  if (signingKey != null && signingPassword != null) {
+    useInMemoryPgpKeys(signingKey, signingPassword)
+  }
+  sign(publishing.publications["pklLsp"])
+}
