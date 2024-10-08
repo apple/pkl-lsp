@@ -122,13 +122,13 @@ jobs {
     steps {
       new AttachWorkspaceStep { at = "." }
       new RunStep {
-        name = "Publish release on GitHub"
+        name = "Publish release to GitHub"
         command = #"""
           gh release create "${CIRCLE_TAG}" \
             --title "${CIRCLE_TAG}" \
             --target "${CIRCLE_SHA1}" \
             --verify-tag \
-            --notes "Release notes: https://pkl-lang.org/pkl-lsp/current/release-notes/changelog.html#release-${CIRCLE_TAG}" \
+            --notes "Release version ${CIRCLE_TAG}" \
             --repo "${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}" \
             build/libs/*
           """#
@@ -143,7 +143,9 @@ jobs {
     }
     steps {
       "checkout"
+      new AttachWorkspaceStep { at = "." }
       new RunStep {
+        name = "Publish to Maven Central"
         command = """
           ./gradlew -DreleaseBuild=true publishToSonatype closeAndReleaseSonatypeStagingRepository
           """
@@ -158,24 +160,10 @@ jobs {
     }
     steps {
       "checkout"
+      new AttachWorkspaceStep { at = "." }
       new RunStep {
-        command = "./gradlew build publishToSonatype"
-      }
-    }
-  }
-  ["do-release"] {
-    docker {
-      new { image = "maniator/gh:v2.40.1" }
-    }
-    steps {
-      new AttachWorkspaceStep {
-        at = "."
-      }
-      new RunStep {
-        name = "gh release"
-        command = """
-          echo "release"
-          """
+        name = "Publish snapshot release"
+        command = "./gradlew publishToSonatype"
       }
     }
   }

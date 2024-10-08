@@ -64,35 +64,32 @@ jobs:
             --title "${CIRCLE_TAG}" \
             --target "${CIRCLE_SHA1}" \
             --verify-tag \
-            --notes "Release notes: https://pkl-lang.org/pkl-lsp/current/release-notes/changelog.html#release-${CIRCLE_TAG}" \
+            --notes "Release version ${CIRCLE_TAG}" \
             --repo "${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}" \
             build/libs/*
-        name: Publish release on GitHub
+        name: Publish release to GitHub
     docker:
     - image: maniator/gh:v2.40.1
   deploy-release:
     steps:
     - checkout
+    - attach_workspace:
+        at: '.'
     - run:
         command: ./gradlew -DreleaseBuild=true publishToSonatype closeAndReleaseSonatypeStagingRepository
+        name: Publish to Maven Central
     docker:
     - image: cimg/openjdk:21.0
   deploy-snapshot:
     steps:
     - checkout
-    - run:
-        command: ./gradlew build publishToSonatype
-    docker:
-    - image: cimg/openjdk:21.0
-  do-release:
-    steps:
     - attach_workspace:
         at: '.'
     - run:
-        command: echo "release"
-        name: gh release
+        command: ./gradlew publishToSonatype
+        name: Publish snapshot release
     docker:
-    - image: maniator/gh:v2.40.1
+    - image: cimg/openjdk:21.0
 workflows:
   prb:
     jobs:

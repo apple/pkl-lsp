@@ -3,20 +3,17 @@
 This is an implementation of the link:https://microsoft.github.io/language-server-protocol/[Language Server Protocol]
 for link:https://pkl-lang.org[Pkl].
 
-== Running the LSP in Visual Studio Code
-
-Make sure you have the vscode link:https://pkl-lang.org/vscode/current/installation.html[plugin] installed.
-
-Go to `Settings` -> `Pkl: Path` and set the path to the lsp executable.
-You need to have Java >=17 in your path.
-
 == Features
 
 * [x] Diagnostics (WIP)
 * [x] Hover
 * [x] Go to definition
-* [ ] Auto complete (WIP: only `.` auto complete is support at the moment)
+* [x] Auto complete (WIP: definition level access still needed)
+* [x] Project syncing
+* [x] Package downloading
 * [ ] Rename
 * [ ] Find references
 * [ ] Code lens
 * [ ] Formatting
+* [ ] Type checking
+* [ ] Quick fixes
