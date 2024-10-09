@@ -323,19 +323,10 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
         )
         collector.addAll(DEFINITION_LEVEL_KEYWORD_ELEMENTS)
 
-        when (node) {
-          is PklExpr -> {}
-          is PklObjectBody -> {}
-          else -> {
-            when (enclosingDef) {
-              is PklModule -> {
-                collector.addAll(MODULE_LEVEL_KEYWORD_ELEMENTS)
-              }
-              is PklClass -> {
-                collector.addAll(CLASS_LEVEL_KEYWORD_ELEMENTS)
-              }
-              else -> {}
-            }
+        if (node !is PklExpr && node !is PklObjectBody) {
+          when (enclosingDef) {
+            is PklModule -> collector.addAll(MODULE_LEVEL_KEYWORD_ELEMENTS)
+            is PklClass -> collector.addAll(CLASS_LEVEL_KEYWORD_ELEMENTS)
           }
         }
 
