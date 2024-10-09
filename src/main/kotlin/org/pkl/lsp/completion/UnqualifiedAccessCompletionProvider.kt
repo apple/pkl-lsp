@@ -19,11 +19,8 @@ import org.eclipse.lsp4j.CompletionItem
 import org.eclipse.lsp4j.CompletionItemKind
 import org.eclipse.lsp4j.CompletionParams
 import org.eclipse.lsp4j.InsertTextFormat
-import org.pkl.lsp.PklBaseModule
-import org.pkl.lsp.Project
+import org.pkl.lsp.*
 import org.pkl.lsp.ast.*
-import org.pkl.lsp.decapitalized
-import org.pkl.lsp.editSource
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.resolvers.ResolveVisitors
 import org.pkl.lsp.resolvers.Resolvers
@@ -31,6 +28,7 @@ import org.pkl.lsp.resolvers.withoutShadowedElements
 import org.pkl.lsp.type.Type
 import org.pkl.lsp.type.computeThisType
 import org.pkl.lsp.type.inferExprTypeFromContext
+import org.pkl.lsp.type.toType
 
 class UnqualifiedAccessCompletionProvider(private val project: Project) : CompletionProvider {
 
@@ -53,6 +51,28 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
     val context = node.containingFile.pklProject
     val base = project.pklBaseModule
     val actualNode = node.enclosingModule?.findBySpan(line, column) ?: return
+    val thisType = node.computeThisType(base, mapOf(), context)
+
+    if (thisType == Type.Unknown) return
+
+    if (
+      inClassBody(actualNode) || inObjectBody(actualNode) || inTopLevelModule(actualNode, column)
+    ) {
+      val alreadyDefinedProperties = collectPropertyNames(actualNode)
+      if (
+        addDefinitionCompletions(
+          actualNode,
+          thisType,
+          alreadyDefinedProperties,
+          base,
+          collector,
+          context,
+        )
+      ) {
+        return
+      }
+    }
+
     if (actualNode !is PklUnqualifiedAccessExpr) {
       // user didn't type any identifier, we have to reparse
       if (reparsed) return // prevent stack overflow
@@ -65,9 +85,6 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
       }
       return
     }
-    val thisType = node.computeThisType(base, mapOf(), context)
-
-    if (thisType == Type.Unknown) return
 
     addInferredExprTypeCompletions(node, base, collector, context)
 
@@ -239,48 +256,391 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
     return isClassOrTypeAlias(type)
   }
 
+  private fun inClassBody(node: PklNode): Boolean =
+    node is PklClassBody || (node is PklError && node.parent is PklClassBody)
+
+  private fun inObjectBody(node: PklNode): Boolean =
+    node is PklObjectBody || node.parent is PklObjectElement
+
+  /*
+  This is a heuristic to detect if this node is a top-level definition.
+  We can't just rely upon `node is PklModule` because there are some
+  cases where it doesn't work: `function f() = <caret>`
+   */
+  private fun inTopLevelModule(node: PklNode, col: Int): Boolean =
+    (node is PklModule && col == 1) || (node is PklError && node.parent is PklModule)
+
+  private fun addDefinitionCompletions(
+    node: PklNode,
+    thisType: Type,
+    alreadyDefinedProperties: Set<String>,
+    base: PklBaseModule,
+    collector: MutableList<CompletionItem>,
+    context: PklProject?,
+  ): Boolean {
+
+    return when {
+      thisType == Type.Unknown -> false
+      thisType is Type.Union ->
+        addDefinitionCompletions(
+          node,
+          thisType.leftType,
+          alreadyDefinedProperties,
+          base,
+          collector,
+          context,
+        ) &&
+          addDefinitionCompletions(
+            node,
+            thisType.rightType,
+            alreadyDefinedProperties,
+            base,
+            collector,
+            context,
+          )
+      thisType.isSubtypeOf(base.typedType, base, context) -> {
+        val enclosingDef =
+          node.parentOfTypes(
+            PklModule::class,
+            PklClass::class,
+            // stop classes
+            PklExpr::class,
+            PklObjectBody::class,
+          )
+        val isClassDef =
+          when (enclosingDef) {
+            is PklModule -> !enclosingDef.isAmend
+            is PklClass -> true
+            else -> false
+          }
+        addTypedCompletions(
+          alreadyDefinedProperties,
+          isClassDef,
+          thisType,
+          base,
+          collector,
+          context,
+        )
+        collector.addAll(DEFINITION_LEVEL_KEYWORD_ELEMENTS)
+
+        when (node) {
+          is PklExpr -> {}
+          is PklObjectBody -> {}
+          else -> {
+            when (enclosingDef) {
+              is PklModule -> {
+                collector.addAll(MODULE_LEVEL_KEYWORD_ELEMENTS)
+              }
+              is PklClass -> {
+                collector.addAll(CLASS_LEVEL_KEYWORD_ELEMENTS)
+              }
+              else -> {}
+            }
+          }
+        }
+
+        true // typed objects cannot have elements
+      }
+      else -> {
+        val thisClassType = thisType.toClassType(base, context) ?: return false
+        when {
+          thisClassType.classEquals(base.mappingType) -> {
+            addMappingCompletions(alreadyDefinedProperties, thisClassType, base, collector, context)
+            collector.addAll(DEFINITION_LEVEL_KEYWORD_ELEMENTS)
+            true // mappings cannot have elements
+          }
+          thisClassType.classEquals(base.listingType) -> {
+            addListingCompletions(alreadyDefinedProperties, thisClassType, base, collector, context)
+            collector.addAll(DEFINITION_LEVEL_KEYWORD_ELEMENTS)
+            false
+          }
+          thisClassType.classEquals(base.dynamicType) -> {
+            collector.addAll(DEFINITION_LEVEL_KEYWORD_ELEMENTS)
+            false
+          }
+          else -> false
+        }
+      }
+    }
+  }
+
+  private fun addTypedCompletions(
+    alreadyDefinedProperties: Set<String>,
+    isClassOrModule: Boolean,
+    thisType: Type,
+    base: PklBaseModule,
+    collector: MutableList<CompletionItem>,
+    context: PklProject?,
+  ) {
+
+    val properties =
+      when (thisType) {
+        is Type.Class -> thisType.ctx.cache(context).properties
+        is Type.Module -> thisType.ctx.cache(context).properties
+        else -> unexpectedType(thisType)
+      }
+
+    for ((propertyName, property) in properties) {
+      if (propertyName in alreadyDefinedProperties) continue
+      if (property.isFixedOrConst && !isClassOrModule) continue
+
+      val propertyType = property.type.toType(base, thisType.bindings, context)
+      val amendedPropertyType = propertyType.amended(base, context)
+      if (amendedPropertyType != Type.Nothing && amendedPropertyType != Type.Unknown) {
+        val amendingPropertyType = propertyType.amending(base, context)
+        collector += createPropertyAmendElement(propertyName, amendingPropertyType, property)
+      }
+      collector += createPropertyAssignElement(propertyName, propertyType, property)
+    }
+  }
+
+  private fun addMappingCompletions(
+    alreadyDefinedProperties: Set<String>,
+    thisType: Type.Class,
+    base: PklBaseModule,
+    collector: MutableList<CompletionItem>,
+    context: PklProject?,
+  ) {
+
+    val keyType = thisType.typeArguments[0]
+    val valueType = thisType.typeArguments[1]
+
+    val amendedValueType = valueType.amended(base, context)
+    if (amendedValueType != Type.Nothing && amendedValueType != Type.Unknown) {
+      val amendingValueType = valueType.amending(base, context)
+      if ("default" !in alreadyDefinedProperties) {
+        collector +=
+          createPropertyAmendElement("default", amendingValueType, base.mappingDefaultProperty)
+      }
+      collector += createEntryAmendElement(keyType, amendingValueType, base)
+    }
+    if ("default" !in alreadyDefinedProperties) {
+      collector += createPropertyAssignElement("default", valueType, base.mappingDefaultProperty)
+    }
+    collector += createEntryAssignElement(keyType, valueType, base)
+  }
+
+  private fun addListingCompletions(
+    alreadyDefinedProperties: Set<String>,
+    thisType: Type.Class,
+    base: PklBaseModule,
+    collector: MutableList<CompletionItem>,
+    context: PklProject?,
+  ) {
+
+    val elementType = thisType.typeArguments[0]
+
+    val amendedElementType = elementType.amended(base, context)
+    if (amendedElementType != Type.Nothing && amendedElementType != Type.Unknown) {
+      val amendingElementType = elementType.amending(base, context)
+      if ("default" !in alreadyDefinedProperties) {
+        collector +=
+          createPropertyAmendElement("default", amendingElementType, base.listingDefaultProperty)
+      }
+      collector += createPropertyAmendElement("new", amendingElementType, null)
+    }
+    if ("default" !in alreadyDefinedProperties) {
+      collector += createPropertyAssignElement("default", elementType, base.listingDefaultProperty)
+    }
+  }
+
+  private fun createPropertyAmendElement(
+    propertyName: String,
+    propertyType: Type,
+    propertyCtx: PklProperty?,
+  ): CompletionItem {
+    return CompletionItem("$propertyName {…}").apply {
+      insertTextFormat = InsertTextFormat.Snippet
+      insertText =
+        """
+        ${propertyCtx.modifiersStr}$propertyName {
+          ${'$'}{1:body}
+        }
+        """
+          .trimIndent()
+      detail = propertyType.render()
+      kind = CompletionItemKind.Property
+    }
+  }
+
+  private fun createPropertyAssignElement(
+    propertyName: String,
+    propertyType: Type,
+    propertyCtx: PklProperty,
+  ): CompletionItem {
+    return CompletionItem("$propertyName = ").apply {
+      insertTextFormat = InsertTextFormat.Snippet
+      insertText = "${propertyCtx.modifiersStr}$propertyName = \${1:value}"
+      detail = propertyType.render()
+      kind = CompletionItemKind.Property
+    }
+  }
+
+  private fun createEntryAmendElement(
+    keyType: Type,
+    valueType: Type,
+    base: PklBaseModule,
+  ): CompletionItem {
+    val defaultKey = createDefaultKey(keyType, base)
+    return CompletionItem("[$defaultKey] {…}").apply {
+      insertTextFormat = InsertTextFormat.Snippet
+      insertText =
+        """
+        [${createDefaultKey(keyType, base, true)}] {
+          ${'$'}{2:body}
+        }
+        """
+          .trimIndent()
+      detail = valueType.render()
+      kind = CompletionItemKind.Field
+    }
+  }
+
+  private fun createEntryAssignElement(
+    keyType: Type,
+    valueType: Type,
+    base: PklBaseModule,
+  ): CompletionItem {
+    val defaultKey = createDefaultKey(keyType, base)
+    return CompletionItem("[$defaultKey] = ").apply {
+      insertTextFormat = InsertTextFormat.Snippet
+      insertText = "[${createDefaultKey(keyType, base, true)}] = \${2:value}"
+      detail = valueType.render()
+      kind = CompletionItemKind.Field
+    }
+  }
+
+  private val PklProperty?.modifiersStr: String
+    get() {
+      if (this == null || !isFixed) return ""
+      val self = this
+      // if the parent is fixed/const, the amending element must also be declared fixed/const too.
+      // although not necessary, add the hidden modifier too so that it's clear to users.
+      return buildString {
+        val elems = self.modifiers ?: listOf()
+        for (modifier in elems) {
+          append("${modifier.text} ")
+        }
+      }
+    }
+
+  private fun collectPropertyNames(context: PklNode): Set<String> {
+    return when (
+      val container = context.parentOfTypes(PklModule::class, PklClass::class, PklObjectBody::class)
+    ) {
+      is PklModule -> container.properties.mapTo(mutableSetOf()) { it.name }
+      is PklClass -> container.properties.mapTo(mutableSetOf()) { it.name }
+      is PklObjectBody -> container.properties.mapTo(mutableSetOf()) { it.name }
+      else -> setOf()
+    }
+  }
+
+  private fun createDefaultKey(
+    keyType: Type,
+    base: PklBaseModule,
+    isSnippet: Boolean = false,
+  ): String =
+    when (keyType) {
+      base.stringType -> if (isSnippet) "\"${snippetfy("key")}\"" else "\"key\""
+      base.intType -> if (isSnippet) snippetfy("123") else "123"
+      base.booleanType -> if (isSnippet) snippetfy("true") else "true"
+      else -> if (isSnippet) snippetfy("key") else "key"
+    }
+
+  private fun snippetfy(text: String, index: Int = 1): String = "\${$index:$text}"
+
   companion object {
     private val EXPRESSION_LEVEL_KEYWORD_ELEMENTS =
       listOf(
-          ExprCompletion("as", "$1 as $2", "Type cast"),
-          ExprCompletion("else", "else ", "Else clause"),
-          ExprCompletion("false", "false", "Boolean", CompletionItemKind.Constant),
-          ExprCompletion("if", "if ($1) $2 else $3", "If-then-else"),
-          ExprCompletion("import", "import(\"$1\")", "Import expression"),
-          ExprCompletion("import*", "import*(\"$1\")", "Import glob"),
-          ExprCompletion("is", "$1 is $2", "Type check"),
-          ExprCompletion("let", "let ($1 = $2) $1", "Let variable"),
-          ExprCompletion("module", "module", "Module", CompletionItemKind.Constant),
-          ExprCompletion("new", "new $1 {}", "New object"),
-          ExprCompletion("null", "null", "Null", CompletionItemKind.Constant),
-          ExprCompletion("outer", "outer", "Access outer scope", CompletionItemKind.Constant),
-          ExprCompletion("read", "read($1)", "Read expression"),
-          ExprCompletion("read?", "read?($1)", "Read or null"),
-          ExprCompletion("read*", "read*($1)", "Read glob"),
-          ExprCompletion("super", "super", "Super class", CompletionItemKind.Constant),
-          ExprCompletion("this", "this", "This", CompletionItemKind.Constant),
-          ExprCompletion("throw", "throw($1)", "Throw"),
-          ExprCompletion("trace", "trace($1)", "Trace"),
-          ExprCompletion("true", "true", "Boolean", CompletionItemKind.Constant),
+          Completion("as", "$1 as $2", "Type cast"),
+          Completion("else", "else ", "Else clause"),
+          Completion("false", "false", "Boolean", CompletionItemKind.Constant),
+          Completion("if", "if ($1) $2 else $3", "If-then-else"),
+          Completion("import", "import(\"$1\")", "Import expression"),
+          Completion("import*", "import*(\"$1\")", "Import glob"),
+          Completion("is", "$1 is $2", "Type check"),
+          Completion("let", "let ($1 = $2) $1", "Let variable"),
+          Completion("module", "module", "Module", CompletionItemKind.Constant),
+          Completion("new", "new $1 {}", "New object"),
+          Completion("null", "null", "Null", CompletionItemKind.Constant),
+          Completion("outer", "outer", "Access outer scope", CompletionItemKind.Constant),
+          Completion("read", "read($1)", "Read expression"),
+          Completion("read?", "read?($1)", "Read or null"),
+          Completion("read*", "read*($1)", "Read glob"),
+          Completion("super", "super", "Super class", CompletionItemKind.Constant),
+          Completion("this", "this", "This", CompletionItemKind.Constant),
+          Completion("throw", "throw($1)", "Throw"),
+          Completion("trace", "trace($1)", "Trace"),
+          Completion("true", "true", "Boolean", CompletionItemKind.Constant),
         )
-        .map { (label, insert, detail, kind) ->
-          val item = CompletionItem(label)
-          item.detail = detail
-          item.kind = kind
-          if (insert.contains("\$")) {
-            item.insertTextFormat = InsertTextFormat.Snippet
-            item.insertText = insert
-          } else {
-            item.insertText = insert
-          }
-          item
-        }
+        .map(Completion::toCompletionItem)
 
-    private data class ExprCompletion(
+    private val DEFINITION_LEVEL_KEYWORD_ELEMENTS =
+      listOf(
+          Completion(
+            "for",
+            """
+            for ($1 in $2) {
+              $3
+            }
+            """
+              .trimIndent(),
+            "For generator",
+          ),
+          Completion("function", "function \${1:name}($2) = $3", "Function"),
+          Completion("hidden", "hidden ", "", CompletionItemKind.Keyword),
+          Completion("local", "local ", "", CompletionItemKind.Keyword),
+          Completion("fixed", "fixed ", "", CompletionItemKind.Keyword),
+          Completion("const", "const ", "", CompletionItemKind.Keyword),
+          Completion(
+            "when",
+            """
+            when ($1) {
+              $2
+            }
+            """
+              .trimIndent(),
+            "When generator",
+          ),
+        )
+        .map(Completion::toCompletionItem)
+
+    private val MODULE_LEVEL_KEYWORD_ELEMENTS =
+      listOf(
+          Completion("abstract", "abstract ", "", CompletionItemKind.Keyword),
+          Completion("amends", "amends ", "", CompletionItemKind.Keyword),
+          Completion("class", "class ", "", CompletionItemKind.Keyword),
+          Completion("extends", "extends ", "", CompletionItemKind.Keyword),
+          Completion("import", "import \"$1\"", "Import clause"),
+          Completion("import*", "import* \"$1\"", "Import glob"),
+          Completion("module", "module ", "", CompletionItemKind.Keyword),
+          Completion("open", "open ", "", CompletionItemKind.Keyword),
+          Completion("typealias", "typealias ", "", CompletionItemKind.Keyword),
+        )
+        .map(Completion::toCompletionItem)
+
+    private val CLASS_LEVEL_KEYWORD_ELEMENTS =
+      listOf(Completion("abstract", "abstract ", "", CompletionItemKind.Keyword))
+        .map(Completion::toCompletionItem)
+
+    private data class Completion(
       val label: String,
-      val insertText: String,
+      val insert: String,
       val detail: String,
       val kind: CompletionItemKind = CompletionItemKind.Snippet,
-    )
+    ) {
+      fun toCompletionItem(): CompletionItem {
+        return CompletionItem(label).apply {
+          detail = detail
+          kind = kind
+          if (insert.contains("\$")) {
+            insertTextFormat = InsertTextFormat.Snippet
+            insertText = insert
+          } else {
+            insertText = insert
+          }
+        }
+      }
+    }
   }
 }
