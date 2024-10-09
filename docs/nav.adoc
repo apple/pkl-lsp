@@ -1,0 +1,2 @@
+* xref:ROOT:integration.adoc[Integrating with pkl-lsp]
+* xref:ROOT:CHANGELOG.adoc[Changelog]

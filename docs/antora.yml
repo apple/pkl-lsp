@@ -1,0 +1,5 @@
+name: lsp
+title: pkl-lsp
+version: 0.1.1
+nav:
+  - nav.adoc

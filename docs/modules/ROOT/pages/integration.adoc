@@ -1,0 +1,128 @@
+= Integrating with pkl-lsp
+
+pkl-lsp is a low level tool that is meant to be integrated with editors by way of plugins.
+
+The documentation below is intended for plugin implementors.
+
+== Distribution
+
+pkl-lsp is published to https://central.sonatype.com/artifact/org.pkl-lang/pkl-lsp[Maven Central], and also as releases on https://github.com/apple/pkl-lsp/releases[GitHub].
+
+It is recommended that the jar file be bundled into an editor plugin's package contents.
+
+== Running pkl-lsp
+
+To run the LSP, provide the jar as an argument to Java.
+For example:
+
+[source,shell]
+----
+java -jar path/to/pkl-lsp.jar
+----
+
+pkl-lsp requires Java 22 or higher.
+
+NOTE: We plan on providing native binaries in the future.
+
+== `pkl-lsp` URI scheme
+
+The LSP uses the `pkl-lsp` scheme to represent sources from the standard library, as well as other types of non-file Pkl sources.
+
+For example, the `pkl:base` standard library module is surfaced to editors as URI `pkl-lsp://stdlib/base.pkl`.
+
+== Custom client options
+
+When starting the LSP, additional client options can be provided to configure the behavior of the language server.
+
+These options are provided in the `initializationOptions` section of the link:https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#initializeParams[Initialize Request].
+
+
+=== `renderOpenFileCommandInDocs`
+
+Type: `Boolean`
+
+Cause the LSP to render links within documentation using the `command:pkl.open.file` URI.
+
+If enabled, clients are expected to implement the command <<open-file-command,`pkl.open.file`>>.
+
+[[extended-client-capabilities]]
+=== `extendedClientCapabilities`
+
+Tell the LSP that the client supports additional capabilities made available by pkl-lsp.
+
+|===
+|Name |Description
+
+|`actionableRuntimeNotifications`
+|The client supports the `pkl/actionableNotification` message.
+
+|[[configureCommand]] `pklConfigureCommand`
+|The client supports the `pkl.configure` command.
+|===
+
+== Pkl CLI configuration
+
+To support flows like sync projects, and package downloading, the LSP will look for a path to the Pkl CLI.
+
+By default, the LSP will look for the CLI within the enviornment's `$PATH`.
+
+If the client supports the https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspace_configuration[Configuration Request], it will look for the configuration value `pkl.cli.path` at scope `Pkl`.
+
+== Additional message types
+
+pkl-lsp extends the LSP protocol with custom message types.
+
+These message types are optional, and enhance the integration with an editor.
+
+[[file-contents-request]]
+=== File Contents Request
+
+Method: `pkl/fileContents`
+
+Body: https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocumentIdentifier[`TextDocumentIdentifier`]
+
+Read text contents of the document identified by the specified params..
+
+[[download-package-request]]
+=== Download Package Request
+
+Method: `pkl/downloadPackage`
+
+Body: `String`
+
+Download the specified package.
+
+[[sync-projects]]
+=== Sync Projects Request
+
+Method: `pkl/syncProjects`
+
+Body: `Any`
+
+Sync any `PklProject` defined in the workspace.
+This allows the LSP to understand imports declared using xref:main:language-reference:index.adoc#dependency-notation[dependency notation].
+
+== Commands
+
+The following commands can optionally be implemented.
+If implemented, and the <<extended-client-capabilities,capability>> is made known to pkl-lsp, the LSP will issue https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspace_executeCommand[Execute Command] requests.
+
+|===
+|Name | Arguments | Description
+
+|[[open-file-command]] `pkl.open.file`
+|`[uri: String, line: Int?, column: Int?]`
+|Send a <<file-contents-request>> to pkl-lsp, and open the resulting contents in an editor pane at the indicated line and column.
+
+|`pkl.syncProjects`
+| `<none>`
+|Send a <<sync-projects>> to pkl-lsp.
+
+|`pkl.configure`
+| `[configurationPath: string]`
+|Open the editor's settings/configuration panel at the configuration path.
+
+|`pkl.downloadPackage`
+|`[packageUri: string]`
+|Send a <<download-package-request>> to pkl-lsp.
+|===
