@@ -80,13 +80,14 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
       project.pklParser.parse(editedSource).use { tsnode ->
         val mod = PklModuleImpl(tsnode, node.containingFile)
         // move the column 1 char to the right, because we added a char to the source
-        val newParams = CompletionParams().apply {
-          this.position = Position(params.position.line, params.position.character + 1)
-          this.context = params.context
-          this.textDocument = params.textDocument
-          this.workDoneToken = params.workDoneToken
-          this.partialResultToken = params.partialResultToken
-        }
+        val newParams =
+          CompletionParams().apply {
+            this.position = Position(params.position.line, params.position.character + 1)
+            this.context = params.context
+            this.textDocument = params.textDocument
+            this.workDoneToken = params.workDoneToken
+            this.partialResultToken = params.partialResultToken
+          }
         getCompletions(mod, newParams, collector, reparsed = true)
       }
       return
