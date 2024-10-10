@@ -383,10 +383,9 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
       val propertyType = property.type.toType(base, thisType.bindings, context)
       val amendedPropertyType = propertyType.amended(base, context)
       if (amendedPropertyType != Type.Nothing && amendedPropertyType != Type.Unknown) {
-        val amendingPropertyType = propertyType.amending(base, context)
-        collector += createPropertyAmendElement(propertyName, amendingPropertyType, property)
+        collector += createPropertyAmendElement(propertyName, property)
       }
-      collector += createPropertyAssignElement(propertyName, propertyType, property)
+      collector += createPropertyAssignElement(propertyName, property)
     }
   }
 
@@ -405,13 +404,12 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
     if (amendedValueType != Type.Nothing && amendedValueType != Type.Unknown) {
       val amendingValueType = valueType.amending(base, context)
       if ("default" !in alreadyDefinedProperties) {
-        collector +=
-          createPropertyAmendElement("default", amendingValueType, base.mappingDefaultProperty)
+        collector += createPropertyAmendElement("default", base.mappingDefaultProperty)
       }
       collector += createEntryAmendElement(keyType, amendingValueType, base)
     }
     if ("default" !in alreadyDefinedProperties) {
-      collector += createPropertyAssignElement("default", valueType, base.mappingDefaultProperty)
+      collector += createPropertyAssignElement("default", base.mappingDefaultProperty)
     }
     collector += createEntryAssignElement(keyType, valueType, base)
   }
@@ -430,22 +428,21 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
     if (amendedElementType != Type.Nothing && amendedElementType != Type.Unknown) {
       val amendingElementType = elementType.amending(base, context)
       if ("default" !in alreadyDefinedProperties) {
-        collector +=
-          createPropertyAmendElement("default", amendingElementType, base.listingDefaultProperty)
+        collector += createPropertyAmendElement("default", base.listingDefaultProperty)
       }
-      collector += createPropertyAmendElement("new", amendingElementType, null)
+      collector += createNewAmendElement(amendingElementType)
     }
     if ("default" !in alreadyDefinedProperties) {
-      collector += createPropertyAssignElement("default", elementType, base.listingDefaultProperty)
+      collector += createPropertyAssignElement("default", base.listingDefaultProperty)
     }
   }
 
   private fun createPropertyAmendElement(
     propertyName: String,
-    propertyType: Type,
-    propertyCtx: PklProperty?,
+    propertyCtx: PklProperty,
   ): CompletionItem {
-    return CompletionItem("$propertyName {…}").apply {
+    return propertyCtx.toCompletionItem().apply {
+      label = "$propertyName {…}"
       insertTextFormat = InsertTextFormat.Snippet
       insertText =
         """
@@ -454,21 +451,31 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
         }
         """
           .trimIndent()
-      detail = propertyType.render()
-      kind = CompletionItemKind.Property
+    }
+  }
+
+  private fun createNewAmendElement(type: Type): CompletionItem {
+    return CompletionItem("new {…}").apply {
+      insertTextFormat = InsertTextFormat.Snippet
+      insertText =
+        """
+        new {
+          $1
+        }
+        """
+          .trimIndent()
+      detail = type.render()
     }
   }
 
   private fun createPropertyAssignElement(
     propertyName: String,
-    propertyType: Type,
     propertyCtx: PklProperty,
   ): CompletionItem {
-    return CompletionItem("$propertyName = ").apply {
+    return propertyCtx.toCompletionItem().apply {
+      label = "$propertyName = "
       insertTextFormat = InsertTextFormat.Snippet
       insertText = "${propertyCtx.modifiersStr}$propertyName = $1"
-      detail = propertyType.render()
-      kind = CompletionItemKind.Property
     }
   }
 
