@@ -15,10 +15,7 @@
  */
 package org.pkl.lsp.completion
 
-import org.eclipse.lsp4j.CompletionItem
-import org.eclipse.lsp4j.CompletionItemKind
-import org.eclipse.lsp4j.CompletionParams
-import org.eclipse.lsp4j.InsertTextFormat
+import org.eclipse.lsp4j.*
 import org.pkl.lsp.*
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.packages.dto.PklProject
@@ -51,13 +48,14 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
     val context = node.containingFile.pklProject
     val base = project.pklBaseModule
     val actualNode = node.enclosingModule?.findBySpan(line, column) ?: return
-    val thisType = node.computeThisType(base, mapOf(), context)
+    val thisType = actualNode.computeThisType(base, mapOf(), context)
 
     if (thisType == Type.Unknown) return
 
     if (
       inClassBody(actualNode) || inObjectBody(actualNode) || inTopLevelModule(actualNode, column)
     ) {
+      if (reparsed) return
       val alreadyDefinedProperties = collectPropertyNames(actualNode)
       if (
         addDefinitionCompletions(
@@ -81,7 +79,15 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
       // dispose of the newly parsed node after use
       project.pklParser.parse(editedSource).use { tsnode ->
         val mod = PklModuleImpl(tsnode, node.containingFile)
-        getCompletions(mod, params, collector, reparsed = true)
+        // move the column 1 char to the right, because we added a char to the source
+        val newParams = CompletionParams().apply {
+          this.position = Position(params.position.line, params.position.character + 1)
+          this.context = params.context
+          this.textDocument = params.textDocument
+          this.workDoneToken = params.workDoneToken
+          this.partialResultToken = params.partialResultToken
+        }
+        getCompletions(mod, newParams, collector, reparsed = true)
       }
       return
     }
@@ -262,11 +268,9 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
   private fun inObjectBody(node: PklNode): Boolean =
     node is PklObjectBody || node.parent is PklObjectElement
 
-  /*
-  This is a heuristic to detect if this node is a top-level definition.
-  We can't just rely upon `node is PklModule` because there are some
-  cases where it doesn't work: `function f() = <caret>`
-   */
+  // This is a heuristic to detect if this node is a top-level definition.
+  // We can't just rely upon `node is PklModule` because there are some
+  // cases where it doesn't work: `function f() = <caret>`
   private fun inTopLevelModule(node: PklNode, col: Int): Boolean =
     (node is PklModule && col == 1) || (node is PklError && node.parent is PklModule)
 
@@ -445,7 +449,7 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
       insertText =
         """
         ${propertyCtx.modifiersStr}$propertyName {
-          ${'$'}{1:body}
+          $1
         }
         """
           .trimIndent()
@@ -461,7 +465,7 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
   ): CompletionItem {
     return CompletionItem("$propertyName = ").apply {
       insertTextFormat = InsertTextFormat.Snippet
-      insertText = "${propertyCtx.modifiersStr}$propertyName = \${1:value}"
+      insertText = "${propertyCtx.modifiersStr}$propertyName = $1"
       detail = propertyType.render()
       kind = CompletionItemKind.Property
     }
@@ -478,7 +482,7 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
       insertText =
         """
         [${createDefaultKey(keyType, base, true)}] {
-          ${'$'}{2:body}
+          $2
         }
         """
           .trimIndent()
@@ -495,7 +499,7 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
     val defaultKey = createDefaultKey(keyType, base)
     return CompletionItem("[$defaultKey] = ").apply {
       insertTextFormat = InsertTextFormat.Snippet
-      insertText = "[${createDefaultKey(keyType, base, true)}] = \${2:value}"
+      insertText = "[${createDefaultKey(keyType, base, true)}] = $2"
       detail = valueType.render()
       kind = CompletionItemKind.Field
     }
@@ -532,13 +536,11 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
     isSnippet: Boolean = false,
   ): String =
     when (keyType) {
-      base.stringType -> if (isSnippet) "\"${snippetfy("key")}\"" else "\"key\""
-      base.intType -> if (isSnippet) snippetfy("123") else "123"
-      base.booleanType -> if (isSnippet) snippetfy("true") else "true"
-      else -> if (isSnippet) snippetfy("key") else "key"
+      base.stringType -> if (isSnippet) "\"$1\"" else "\"key\""
+      base.intType -> if (isSnippet) "$1" else "123"
+      base.booleanType -> if (isSnippet) "$1" else "true"
+      else -> if (isSnippet) "$1" else "key"
     }
-
-  private fun snippetfy(text: String, index: Int = 1): String = "\${$index:$text}"
 
   companion object {
     private val EXPRESSION_LEVEL_KEYWORD_ELEMENTS =
@@ -578,7 +580,7 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
               .trimIndent(),
             "For generator",
           ),
-          Completion("function", "function \${1:name}($2) = $3", "Function"),
+          Completion("function", "function $1($2) = $3", "Function"),
           Completion("hidden", "hidden ", "", CompletionItemKind.Keyword),
           Completion("local", "local ", "", CompletionItemKind.Keyword),
           Completion("fixed", "fixed ", "", CompletionItemKind.Keyword),
