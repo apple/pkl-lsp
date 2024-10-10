@@ -17,6 +17,7 @@ package org.pkl.lsp.ast
 
 import io.github.treesitter.jtreesitter.Node
 import java.net.URI
+import kotlin.jvm.optionals.getOrNull
 import kotlin.reflect.KClass
 import org.eclipse.lsp4j.CompletionItem
 import org.eclipse.lsp4j.CompletionItemKind
@@ -841,7 +842,7 @@ fun Node.toNode(project: Project, parent: PklNode?): PklNode? {
       }
     "binaryExprRightAssoc",
     "binaryExpr" -> {
-      val operator = getChildByFieldName("operator")
+      val operator = getChildByFieldName("operator").getOrNull()
       when (operator?.type) {
         "*",
         "/",
