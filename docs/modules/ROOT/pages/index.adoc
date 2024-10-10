@@ -2,4 +2,4 @@
 
 pkl-lsp provides language services for various editor plugins, following the https://microsoft.github.io/language-server-protocol/[Language Server Protocol].
 
-It is a low-level tool that is integrated into various editor plugins, including xref:vscode:ROOT:index.adoc[pkl-vscode] and xref:neovim:ROOT:index.adoc[pkl-neovim].
+It is a low-level tool, and not meant to be used directly by end users.
