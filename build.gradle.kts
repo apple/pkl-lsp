@@ -85,12 +85,13 @@ idea { module { generatedSourceDirs.add(jsitterMonkeyPatchSourceDir.get().asFile
  * `java.library.path`.
  *
  * This patches its source code so that we can control exactly where the tree-sitter library
- * resides.
+ * resides. It also patches the `Tree` class so its objects can be accessed from multiple threads.
+ * As we never modify trees, they are safe to be accessed.
  */
 val monkeyPatchTreeSitter by
   tasks.registering(Copy::class) {
     from(zipTree(jtreeSitterSources.singleFile)) {
-      include("**/TreeSitter.java")
+      include("**/TreeSitter.java", "**/Tree.java")
       filter { line ->
         when {
           line.contains("static final SymbolLookup") ->
@@ -102,6 +103,10 @@ val monkeyPatchTreeSitter by
             import org.pkl.lsp.treesitter.NativeLibraries;
           """
               .trimIndent()
+          line.contains("Arena.ofConfined") -> line.replace("ofConfined", "ofShared")
+          line.contains("jspecify") -> ""
+          line.contains("@NullMarked") -> ""
+          line.contains("@Nullable") -> line.replace("@Nullable ", "")
           else -> line
         }
       }
@@ -130,6 +135,14 @@ tasks.test {
     reports.junitXml.outputLocation.set(file(reportsDir).resolve(project.name).resolve(name))
   }
 }
+
+tasks.distZip { dependsOn(tasks.shadowJar) }
+
+tasks.distTar { dependsOn(tasks.shadowJar) }
+
+tasks.named("startScripts") { dependsOn(tasks.shadowJar) }
+
+tasks.named("startShadowScripts") { dependsOn(tasks.jar) }
 
 tasks.shadowJar {
   archiveClassifier = null

@@ -77,8 +77,8 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
       val editedSource =
         editSource(node.source, params.position.line, params.position.character, "a")
       // dispose of the newly parsed node after use
-      project.pklParser.parse(editedSource).use { tsnode ->
-        val mod = PklModuleImpl(tsnode, node.containingFile)
+      project.pklParser.parse(editedSource).use { tree ->
+        val mod = PklModuleImpl(tree.rootNode, node.containingFile)
         // move the column 1 char to the right, because we added a char to the source
         val newParams =
           CompletionParams().apply {

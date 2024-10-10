@@ -145,7 +145,7 @@ class ParserTest {
   }
 
   private fun parse(text: String): PklModule {
-    val node = parser.parse(text)
-    return PklModuleImpl(node, FsFile(Path.of("."), project))
+    val tree = parser.parse(text)
+    return PklModuleImpl(tree.rootNode, FsFile(Path.of("."), project))
   }
 }

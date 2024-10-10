@@ -15,7 +15,9 @@
  */
 package org.pkl.lsp.ast
 
+import io.github.treesitter.jtreesitter.Node
 import java.net.URI
+import kotlin.jvm.optionals.getOrNull
 import kotlin.reflect.KClass
 import org.eclipse.lsp4j.CompletionItem
 import org.eclipse.lsp4j.CompletionItemKind
@@ -671,7 +673,7 @@ interface PklDefaultUnionType : PklType {
 abstract class AbstractPklNode(
   override val project: Project,
   override val parent: PklNode?,
-  protected open val ctx: TreeSitterNode,
+  protected open val ctx: Node,
 ) : CachedValueDataHolderBase(), PklNode {
   private val childrenByType: Map<KClass<out PklNode>, List<PklNode>> by lazy {
     val self = this
@@ -715,11 +717,11 @@ abstract class AbstractPklNode(
 
   override val children: List<PklNode> by lazy { childrenByType.values.flatten() }
 
-  override val text: String by lazy { ctx.text }
+  override val text: String by lazy { ctx.utfAwareText() }
 
   override val isMissing: Boolean by lazy { ctx.isMissing }
 
-  override val source: String by lazy { ctx.source }
+  override val source: String by lazy { ctx.tree.text }
 
   override fun hashCode(): Int {
     return ctx.hashCode()
@@ -738,18 +740,18 @@ abstract class AbstractPklNode(
 class PklErrorImpl(
   override val project: Project,
   override val parent: PklNode?,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : PklError, AbstractPklNode(project, parent, ctx) {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitError(this)
   }
 }
 
-fun List<TreeSitterNode>.toNode(project: Project, parent: PklNode?, idx: Int): PklNode? {
+fun List<Node>.toNode(project: Project, parent: PklNode?, idx: Int): PklNode? {
   return get(idx).toNode(project, parent)
 }
 
-private fun TreeSitterNode.toTypeNode(project: Project, parent: PklNode?): PklNode? {
+private fun Node.toTypeNode(project: Project, parent: PklNode?): PklNode? {
   if (childCount <= 0) return null
   val childType = children.single()
   return when (childType.type) {
@@ -769,7 +771,7 @@ private fun TreeSitterNode.toTypeNode(project: Project, parent: PklNode?): PklNo
   }
 }
 
-fun TreeSitterNode.toNode(project: Project, parent: PklNode?): PklNode? {
+fun Node.toNode(project: Project, parent: PklNode?): PklNode? {
   return when (type) {
     // a module can never be constructed from this function
     // "module" -> PklModuleImpl(this)
@@ -840,7 +842,7 @@ fun TreeSitterNode.toNode(project: Project, parent: PklNode?): PklNode? {
       }
     "binaryExprRightAssoc",
     "binaryExpr" -> {
-      val operator = getChildByFieldName("operator")
+      val operator = getChildByFieldName("operator").getOrNull()
       when (operator?.type) {
         "*",
         "/",

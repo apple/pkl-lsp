@@ -15,6 +15,7 @@
  */
 package org.pkl.lsp.ast
 
+import io.github.treesitter.jtreesitter.Node
 import org.pkl.lsp.*
 import org.pkl.lsp.LSPUtil.firstInstanceOf
 import org.pkl.lsp.packages.dto.PklProject
@@ -29,7 +30,7 @@ import org.pkl.lsp.type.computeThisType
 class PklThisExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklThisExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitThisExpr(this)
@@ -39,7 +40,7 @@ class PklThisExprImpl(
 class PklOuterExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklOuterExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitOuterExpr(this)
@@ -49,7 +50,7 @@ class PklOuterExprImpl(
 class PklModuleExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklModuleExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitModuleExpr(this)
@@ -59,7 +60,7 @@ class PklModuleExprImpl(
 class PklNullLiteralExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklNullLiteralExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitNullLiteralExpr(this)
@@ -69,7 +70,7 @@ class PklNullLiteralExprImpl(
 class PklTrueLiteralExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklTrueLiteralExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitTrueLiteralExpr(this)
@@ -79,7 +80,7 @@ class PklTrueLiteralExprImpl(
 class PklFalseLiteralExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklFalseLiteralExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitFalseLiteralExpr(this)
@@ -89,7 +90,7 @@ class PklFalseLiteralExprImpl(
 class PklIntLiteralExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklIntLiteralExpr {
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
@@ -100,7 +101,7 @@ class PklIntLiteralExprImpl(
 class PklFloatLiteralExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklFloatLiteralExpr {
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
@@ -111,7 +112,7 @@ class PklFloatLiteralExprImpl(
 class PklThrowExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklThrowExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitThrowExpr(this)
@@ -121,7 +122,7 @@ class PklThrowExprImpl(
 class PklTraceExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklTraceExpr {
   override val expr: PklExpr? by lazy { children.firstInstanceOf<PklExpr>() }
 
@@ -133,7 +134,7 @@ class PklTraceExprImpl(
 class PklImportExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklImportExpr {
   override val isGlob: Boolean by lazy { ctx.type == "importGlobExpr" }
 
@@ -148,7 +149,7 @@ class PklImportExprImpl(
 class PklReadExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklReadExpr {
   override val expr: PklExpr? by lazy { children.firstInstanceOf<PklExpr>() }
   override val isNullable: Boolean by lazy { ctx.type == "readOrNullExpr" }
@@ -162,7 +163,7 @@ class PklReadExprImpl(
 class PklUnqualifiedAccessExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklUnqualifiedAccessExpr {
   override val identifier: Terminal? by lazy { terminals.find { it.type == TokenType.Identifier } }
   override val memberNameText: String by lazy { identifier!!.text }
@@ -203,7 +204,7 @@ class PklUnqualifiedAccessExprImpl(
 class PklSingleLineStringLiteralImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklSingleLineStringLiteral {
   override val exprs: List<PklExpr> by lazy { children.filterIsInstance<PklExpr>() }
 
@@ -215,7 +216,7 @@ class PklSingleLineStringLiteralImpl(
 class PklMultiLineStringLiteralImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklMultiLineStringLiteral {
   override val exprs: List<PklExpr> by lazy { children.filterIsInstance<PklExpr>() }
 
@@ -227,7 +228,7 @@ class PklMultiLineStringLiteralImpl(
 class PklNewExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklNewExpr {
   override val type: PklType? by lazy { children.firstInstanceOf<PklType>() }
   override val objectBody: PklObjectBody? by lazy { children.firstInstanceOf<PklObjectBody>() }
@@ -240,7 +241,7 @@ class PklNewExprImpl(
 class PklAmendExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklAmendExpr {
   override val parentExpr: PklExpr by lazy {
     val expr = children.firstInstanceOf<PklExpr>()
@@ -264,7 +265,7 @@ class PklAmendExprImpl(
 class PklSuperAccessExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklSuperAccessExpr {
   override val identifier: Terminal? by lazy { terminals.find { it.type == TokenType.Identifier } }
   override val memberNameText: String by lazy { identifier!!.text }
@@ -301,7 +302,7 @@ class PklSuperAccessExprImpl(
 class PklSuperSubscriptExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklSuperSubscriptExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitSuperSubscriptExpr(this)
@@ -311,7 +312,7 @@ class PklSuperSubscriptExprImpl(
 class PklQualifiedAccessExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklQualifiedAccessExpr {
   override val identifier: Terminal? by lazy { terminals.find { it.type == TokenType.Identifier } }
   override val memberNameText: String by lazy { identifier!!.text }
@@ -353,7 +354,7 @@ class PklQualifiedAccessExprImpl(
 class PklSubscriptExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklSubscriptExpr {
   override val leftExpr: PklExpr by lazy { ctx.children[0].toNode(project, this) as PklExpr }
   override val rightExpr: PklExpr by lazy { ctx.children[2].toNode(project, this) as PklExpr }
@@ -367,7 +368,7 @@ class PklSubscriptExprImpl(
 class PklNonNullExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklNonNullExpr {
   override val expr: PklExpr by lazy { children.firstInstanceOf<PklExpr>()!! }
 
@@ -379,7 +380,7 @@ class PklNonNullExprImpl(
 class PklUnaryMinusExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklUnaryMinusExpr {
   override val expr: PklExpr by lazy { children.firstInstanceOf<PklExpr>()!! }
 
@@ -391,7 +392,7 @@ class PklUnaryMinusExprImpl(
 class PklLogicalNotExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklLogicalNotExpr {
   override val expr: PklExpr by lazy { children.firstInstanceOf<PklExpr>()!! }
 
@@ -403,8 +404,8 @@ class PklLogicalNotExprImpl(
 abstract class PklBinExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
-  open val tsOperator: TreeSitterNode,
+  override val ctx: Node,
+  open val tsOperator: Node,
 ) : AbstractPklNode(project, parent, ctx), PklBinExpr {
   private val exprs: List<PklExpr> by lazy { children.filterIsInstance<PklExpr>() }
   override val leftExpr: PklExpr by lazy { exprs[0] }
@@ -415,8 +416,8 @@ abstract class PklBinExprImpl(
 class PklAdditiveExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
-  override val tsOperator: TreeSitterNode,
+  override val ctx: Node,
+  override val tsOperator: Node,
 ) : PklBinExprImpl(project, parent, ctx, tsOperator), PklAdditiveExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitAdditiveExpr(this)
@@ -426,8 +427,8 @@ class PklAdditiveExprImpl(
 class PklMultiplicativeExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
-  override val tsOperator: TreeSitterNode,
+  override val ctx: Node,
+  override val tsOperator: Node,
 ) : PklBinExprImpl(project, parent, ctx, tsOperator), PklMultiplicativeExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitMultiplicativeExpr(this)
@@ -437,8 +438,8 @@ class PklMultiplicativeExprImpl(
 class PklComparisonExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
-  override val tsOperator: TreeSitterNode,
+  override val ctx: Node,
+  override val tsOperator: Node,
 ) : PklBinExprImpl(project, parent, ctx, tsOperator), PklComparisonExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitComparisonExpr(this)
@@ -448,8 +449,8 @@ class PklComparisonExprImpl(
 class PklEqualityExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
-  override val tsOperator: TreeSitterNode,
+  override val ctx: Node,
+  override val tsOperator: Node,
 ) : PklBinExprImpl(project, parent, ctx, tsOperator), PklEqualityExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitEqualityExpr(this)
@@ -459,8 +460,8 @@ class PklEqualityExprImpl(
 class PklExponentiationExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
-  override val tsOperator: TreeSitterNode,
+  override val ctx: Node,
+  override val tsOperator: Node,
 ) : PklBinExprImpl(project, parent, ctx, tsOperator), PklExponentiationExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitExponentiationExpr(this)
@@ -470,8 +471,8 @@ class PklExponentiationExprImpl(
 class PklLogicalAndExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
-  override val tsOperator: TreeSitterNode,
+  override val ctx: Node,
+  override val tsOperator: Node,
 ) : PklBinExprImpl(project, parent, ctx, tsOperator), PklLogicalAndExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitLogicalAndExpr(this)
@@ -481,8 +482,8 @@ class PklLogicalAndExprImpl(
 class PklLogicalOrExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
-  override val tsOperator: TreeSitterNode,
+  override val ctx: Node,
+  override val tsOperator: Node,
 ) : PklBinExprImpl(project, parent, ctx, tsOperator), PklLogicalOrExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitLogicalOrExpr(this)
@@ -492,8 +493,8 @@ class PklLogicalOrExprImpl(
 class PklNullCoalesceExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
-  override val tsOperator: TreeSitterNode,
+  override val ctx: Node,
+  override val tsOperator: Node,
 ) : PklBinExprImpl(project, parent, ctx, tsOperator), PklNullCoalesceExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitNullCoalesceExpr(this)
@@ -503,7 +504,7 @@ class PklNullCoalesceExprImpl(
 class PklTypeTestExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklTypeTestExpr {
   override val expr: PklExpr? by lazy { children.firstInstanceOf<PklExpr>() }
   override val type: PklType by lazy { children.firstInstanceOf<PklType>()!! }
@@ -519,8 +520,8 @@ class PklTypeTestExprImpl(
 class PklPipeExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
-  override val tsOperator: TreeSitterNode,
+  override val ctx: Node,
+  override val tsOperator: Node,
 ) : PklBinExprImpl(project, parent, ctx, tsOperator), PklPipeExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitPipeExpr(this)
@@ -530,7 +531,7 @@ class PklPipeExprImpl(
 class PklIfExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklIfExpr {
   private val exprs by lazy { children.filterIsInstance<PklExpr>() }
   override val conditionExpr: PklExpr by lazy { exprs[0] }
@@ -545,7 +546,7 @@ class PklIfExprImpl(
 class PklLetExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklLetExpr {
   private val exprs by lazy { children.filterIsInstance<PklExpr>() }
   override val identifier: Terminal? by lazy { parameter.identifier }
@@ -563,7 +564,7 @@ class PklLetExprImpl(
 class PklFunctionLiteralExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklFunctionLiteralExpr {
   override val expr: PklExpr by lazy { children.firstInstanceOf<PklExpr>()!! }
   override val parameterList: PklParameterList by lazy {
@@ -578,7 +579,7 @@ class PklFunctionLiteralExprImpl(
 class PklParenthesizedExprImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklParenthesizedExpr {
   override val expr: PklExpr? by lazy { children.firstInstanceOf<PklExpr>() }
 
@@ -590,7 +591,7 @@ class PklParenthesizedExprImpl(
 class PklTypedIdentifierImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklTypedIdentifier {
   override val identifier: Terminal? by lazy { terminals.find { it.type == TokenType.Identifier } }
   override val typeAnnotation: PklTypeAnnotation? by lazy {
@@ -607,7 +608,7 @@ class PklTypedIdentifierImpl(
 class PklArgumentListImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklArgumentList {
   override val elements: List<PklExpr> by lazy { children.filterIsInstance<PklExpr>() }
 

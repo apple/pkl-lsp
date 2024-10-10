@@ -15,13 +15,14 @@
  */
 package org.pkl.lsp.ast
 
+import io.github.treesitter.jtreesitter.Node
 import org.pkl.lsp.PklVisitor
 import org.pkl.lsp.Project
 
 class TerminalImpl(
   project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
   override val type: TokenType,
 ) : AbstractPklNode(project, parent, ctx), Terminal {
 
@@ -35,7 +36,7 @@ val Terminal.isModifier: Boolean
     return modifierTypes.contains(type)
   }
 
-fun TreeSitterNode.toTerminal(parent: PklNode): Terminal? {
+fun Node.toTerminal(parent: PklNode): Terminal? {
   val tokenType =
     when (type) {
       "abstract" -> TokenType.ABSTRACT
