@@ -1,5 +1,19 @@
 = Changelog
 
+[[release-0.1.1]]
+== 0.1.1 (2024-10-10)
+
+== Additions
+
+* Add support for definition level completions (https://github.com/apple/pkl-lsp/pull/40[#40]).
+* Improve performance of accessing parse tree (https://github.com/apple/pkl-lsp/pull/44[#44]).
+* Fix bug when member link points to unresolvable import (https://github.com/apple/pkl-lsp/pull/43[#43]).
+* Update tree-sitter-pkl to 0.17.0 (https://github.com/apple/pkl-lsp/pull/42[#42]).
+
+== Miscellaneous
+
+* Add Antora documentation (https://github.com/apple/pkl-lsp/pull/41[#41]).
+
 [[release-0.1.0]]
 == 0.1.0 (2024-10-08)
 
