@@ -15,6 +15,7 @@
  */
 package org.pkl.lsp.ast
 
+import io.github.treesitter.jtreesitter.Node
 import java.net.URI
 import org.pkl.lsp.*
 import org.pkl.lsp.LSPUtil.firstInstanceOf
@@ -23,7 +24,7 @@ import org.pkl.lsp.packages.Dependency
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.util.CachedValue
 
-class PklModuleImpl(override val ctx: TreeSitterNode, override val virtualFile: VirtualFile) :
+class PklModuleImpl(override val ctx: Node, override val virtualFile: VirtualFile) :
   AbstractPklNode(virtualFile.project, null, ctx), PklModule {
   override val uri: URI
     get() = virtualFile.uri
@@ -93,7 +94,7 @@ class PklModuleImpl(override val ctx: TreeSitterNode, override val virtualFile: 
 class PklAnnotationImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklAnnotation {
   // TODO: tree-sitter only accepts  qualified identifier, not any type
   override val type: PklType? by lazy { children.firstInstanceOf<PklType>() }
@@ -110,7 +111,7 @@ class PklAnnotationImpl(
 class PklModuleClauseImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklModuleClause {
   override val qualifiedIdentifier: PklQualifiedIdentifier? by lazy {
     getChild(PklQualifiedIdentifierImpl::class)
@@ -132,7 +133,7 @@ class PklModuleClauseImpl(
 class PklModuleHeaderImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklModuleHeader {
 
   override val annotations: List<PklAnnotation> by lazy {
@@ -157,7 +158,7 @@ class PklModuleHeaderImpl(
 class PklImportImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklImport {
   override val identifier: Terminal? by lazy {
     ctx.children.find { it.type == "identifier" }?.toTerminal(this)
@@ -175,7 +176,7 @@ class PklImportImpl(
 class PklModuleExtendsAmendsClauseImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklModuleExtendsAmendsClause {
   override val isAmend: Boolean
     get() = ctx.children[0].type == "amends"
@@ -193,7 +194,7 @@ class PklModuleExtendsAmendsClauseImpl(
 class PklClassImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklClass {
   override val extends: PklType? by lazy { getChild(PklDeclaredTypeImpl::class) }
 
@@ -230,7 +231,7 @@ class PklClassImpl(
 class PklClassBodyImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklClassBody {
   override val members: List<PklClassMember> by lazy { children.filterIsInstance<PklClassMember>() }
 
@@ -242,7 +243,7 @@ class PklClassBodyImpl(
 class PklTypeParameterListImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklTypeParameterList {
   override val typeParameters: List<PklTypeParameter> by lazy {
     getChildren(PklTypeParameterImpl::class) ?: listOf()
@@ -256,7 +257,7 @@ class PklTypeParameterListImpl(
 class PklTypeParameterImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklTypeParameter {
   override val variance: Variance? by lazy {
     val type = ctx.children[0].type

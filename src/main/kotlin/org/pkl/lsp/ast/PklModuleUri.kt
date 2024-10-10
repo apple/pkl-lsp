@@ -15,6 +15,7 @@
  */
 package org.pkl.lsp.ast
 
+import io.github.treesitter.jtreesitter.Node
 import java.nio.file.Path
 import org.pkl.lsp.*
 import org.pkl.lsp.FsFile
@@ -27,11 +28,8 @@ import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.util.CachedValue
 import org.pkl.lsp.util.GlobResolver
 
-class PklModuleUriImpl(
-  project: Project,
-  override val parent: PklNode,
-  override val ctx: TreeSitterNode,
-) : AbstractPklNode(project, parent, ctx), PklModuleUri {
+class PklModuleUriImpl(project: Project, override val parent: PklNode, override val ctx: Node) :
+  AbstractPklNode(project, parent, ctx), PklModuleUri {
   override val stringConstant: PklStringConstant by lazy {
     children.firstInstanceOf<PklStringConstant>()!!
   }

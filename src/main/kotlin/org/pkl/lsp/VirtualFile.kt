@@ -141,11 +141,11 @@ sealed class BaseFile : VirtualFile, CachedValueDataHolderBase() {
   private fun doBuildModule(): PklModule? {
     return try {
       logger.log("building $uri")
-      val moduleCtx = project.pklParser.parse(contents)
+      val tree = project.pklParser.parse(contents)
       if (readError != null) {
         readError = null
       }
-      return PklModuleImpl(moduleCtx, this)
+      return PklModuleImpl(tree.rootNode, this)
     } catch (e: Exception) {
       logger.warn("Error building file: ${e.message} ${e.stackTraceToString()}")
       readError = e

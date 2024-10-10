@@ -15,13 +15,14 @@
  */
 package org.pkl.lsp.ast
 
+import io.github.treesitter.jtreesitter.Node
 import org.pkl.lsp.PklVisitor
 import org.pkl.lsp.Project
 
 class PklQualifiedIdentifierImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklQualifiedIdentifier {
   override val identifiers: List<Terminal> by lazy {
     terminals.filter { it.type == TokenType.Identifier }
@@ -36,7 +37,7 @@ class PklQualifiedIdentifierImpl(
 class PklStringConstantImpl(
   override val project: Project,
   override val parent: PklNode,
-  override val ctx: TreeSitterNode,
+  override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklStringConstant {
   override val value: String by lazy { text }
 

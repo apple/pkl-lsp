@@ -19,27 +19,15 @@ import io.github.treesitter.jtreesitter.InputEncoding
 import io.github.treesitter.jtreesitter.Language
 import io.github.treesitter.jtreesitter.Parser
 import io.github.treesitter.jtreesitter.Tree
-import java.util.concurrent.Callable
-import java.util.concurrent.Executors
 import org.pkl.lsp.Component
 import org.pkl.lsp.Project
-import org.pkl.lsp.ast.TreeSitterNode
 
 /** A Pkl parser using tree-sitter-pkl */
 class PklParser(project: Project) : Component(project) {
-  private val executor by lazy { Executors.newSingleThreadExecutor() }
-
-  fun parse(text: String, oldAst: Tree? = null): TreeSitterNode {
-    return executor
-      .submit(
-        Callable {
-          parser().use { parser ->
-            val tree = parser.parse(text, InputEncoding.UTF_8, oldAst).orElseThrow(::parsingHalted)
-            TreeSitterNode(tree.rootNode, executor)
-          }
-        }
-      )
-      .get()
+  fun parse(text: String, oldAst: Tree? = null): Tree {
+    return parser().use { parser ->
+      parser.parse(text, InputEncoding.UTF_8, oldAst).orElseThrow(::parsingHalted)
+    }
   }
 
   private fun parser(): Parser = Parser(Language(TreeSitterPkl.language()))
