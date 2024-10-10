@@ -1,6 +1,6 @@
 = Integrating with pkl-lsp
 
-pkl-lsp is a low level tool that is meant to be integrated with editors by way of plugins.
+pkl-lsp is a low-level tool that is meant to be integrated with editors by way of plugins.
 
 The documentation below is intended for plugin implementors.
 
