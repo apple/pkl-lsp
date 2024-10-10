@@ -19,6 +19,7 @@ import io.github.treesitter.jtreesitter.Node
 import io.github.treesitter.jtreesitter.Range
 import java.util.concurrent.Callable
 import java.util.concurrent.ExecutorService
+import kotlin.jvm.optionals.getOrNull
 
 /** Wraps a tree sitter node so all the access comes from the same thread */
 class TreeSitterNode(private val ctx: Node, private val executor: ExecutorService) : AutoCloseable {
@@ -41,6 +42,10 @@ class TreeSitterNode(private val ctx: Node, private val executor: ExecutorServic
   }
 
   val childCount: Int by lazy { call { ctx.childCount } }
+
+  fun getChildByFieldName(name: String): TreeSitterNode? {
+    return call { ctx.getChildByFieldName(name).getOrNull()?.let { TreeSitterNode(it, executor) } }
+  }
 
   override fun hashCode(): Int {
     return call { ctx.hashCode() }

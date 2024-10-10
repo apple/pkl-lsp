@@ -826,27 +826,7 @@ fun TreeSitterNode.toNode(project: Project, parent: PklNode?): PklNode? {
       }
     "binaryExprRightAssoc",
     "binaryExpr" -> {
-      val binOps =
-        setOf(
-          "*",
-          "/",
-          "~/",
-          "%",
-          "+",
-          "-",
-          "<",
-          ">",
-          "<=",
-          ">=",
-          "==",
-          "!=",
-          "&&",
-          "||",
-          "|>",
-          "**",
-          "??",
-        )
-      val operator = children.find { it.type in binOps }
+      val operator = getChildByFieldName("operator")
       when (operator?.type) {
         "*",
         "/",

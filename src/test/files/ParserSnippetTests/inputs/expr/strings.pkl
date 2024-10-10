@@ -1,0 +1,2 @@
+res1 = "one"
+res2 = "// one"
