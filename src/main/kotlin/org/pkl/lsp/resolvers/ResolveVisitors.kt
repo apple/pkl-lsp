@@ -19,10 +19,9 @@ import kotlin.math.min
 import org.eclipse.lsp4j.CompletionItem
 import org.eclipse.lsp4j.CompletionItemKind
 import org.eclipse.lsp4j.InsertTextFormat
-import org.eclipse.lsp4j.MarkupContent
-import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.ast.*
+import org.pkl.lsp.getDoc
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.type.*
 import org.pkl.lsp.unexpectedType
@@ -473,16 +472,6 @@ object ResolveVisitors {
         }
       }
 
-      private fun PklProperty.toCompletionItem(): CompletionItem {
-        val item = CompletionItem(name)
-        item.kind = CompletionItemKind.Field
-        item.detail = type?.render() ?: "unknown"
-        if (this is PklClassProperty) {
-          item.documentation = getDoc(this, containingFile.pklProject)
-        }
-        return item
-      }
-
       private fun PklMethod.toCompletionItem(): CompletionItem {
         val item = CompletionItem()
         val pars = methodHeader.parameterList?.elements ?: listOf()
@@ -547,13 +536,6 @@ object ResolveVisitors {
       ): List<PklNavigableElement> {
         val type = bindings[typeParameter] ?: Type.Unknown
         return type.resolveToDefinitions(base)
-      }
-
-      private fun getDoc(
-        node: PklDocCommentOwner,
-        context: PklProject?,
-      ): Either<String, MarkupContent> {
-        return Either.forRight(MarkupContent("markdown", node.effectiveDocComment(context) ?: ""))
       }
 
       override val result: MutableSet<CompletionItem> = mutableSetOf()

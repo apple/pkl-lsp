@@ -17,6 +17,10 @@ package org.pkl.lsp.ast
 
 import java.net.URI
 import kotlin.reflect.KClass
+import org.eclipse.lsp4j.CompletionItem
+import org.eclipse.lsp4j.CompletionItemKind
+import org.eclipse.lsp4j.MarkupContent
+import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.pkl.lsp.*
 import org.pkl.lsp.VirtualFile
 import org.pkl.lsp.documentation.DocCommentMemberLinkProcessor
@@ -258,6 +262,16 @@ sealed interface PklProperty :
   val expr: PklExpr?
   val isDefinition: Boolean
   val typeAnnotation: PklTypeAnnotation?
+
+  fun toCompletionItem(): CompletionItem {
+    return CompletionItem(name).apply {
+      kind = CompletionItemKind.Field
+      detail = type?.render() ?: "unknown"
+      if (this@PklProperty is PklClassProperty) {
+        documentation = Either.forRight(MarkupContent("markdown", parsedComment ?: ""))
+      }
+    }
+  }
 }
 
 interface PklClassProperty : PklProperty, PklModuleMember, PklClassMember, PklTypeDefOrProperty {

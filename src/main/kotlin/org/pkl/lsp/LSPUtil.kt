@@ -29,9 +29,13 @@ import java.util.regex.Pattern
 import kotlin.math.max
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import org.eclipse.lsp4j.MarkupContent
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
+import org.eclipse.lsp4j.jsonrpc.messages.Either
+import org.pkl.lsp.ast.PklDocCommentOwner
 import org.pkl.lsp.ast.Span
+import org.pkl.lsp.packages.dto.PklProject
 
 private const val SIGNIFICAND_MASK = 0x000fffffffffffffL
 
@@ -316,4 +320,8 @@ fun ensureJarFileSystem(uri: URI) {
   } catch (e: FileSystemAlreadyExistsException) {
     FileSystems.getFileSystem(uri)
   }
+}
+
+fun getDoc(node: PklDocCommentOwner, context: PklProject?): Either<String, MarkupContent> {
+  return Either.forRight(MarkupContent("markdown", node.effectiveDocComment(context) ?: ""))
 }
