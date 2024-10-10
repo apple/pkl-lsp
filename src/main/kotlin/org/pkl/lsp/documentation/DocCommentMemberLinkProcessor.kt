@@ -119,7 +119,7 @@ object DocCommentMemberLinkProcessor {
             imports
               .find { it.memberName == variableName }
               ?.let { import ->
-                if (import.isGlob) import else import.resolveModules(context).first()
+                if (import.isGlob) import else import.resolveModules(context).firstOrNull()
               }
               ?: cache(context).typeDefsAndProperties[variableName]
               ?: project.pklBaseModule.module.cache(null).typeDefsAndProperties[variableName]
