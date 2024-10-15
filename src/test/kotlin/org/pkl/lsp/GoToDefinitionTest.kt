@@ -19,7 +19,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.pkl.lsp.ast.*
 
-class GoToDefinitionTest : LSPTestBase() {
+class GoToDefinitionTest : LspTestBase() {
   @Test
   fun `resolve property name in scope`() {
     createPklFile(

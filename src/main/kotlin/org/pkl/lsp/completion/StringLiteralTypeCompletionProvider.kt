@@ -18,7 +18,7 @@ package org.pkl.lsp.completion
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.pkl.lsp.Component
-import org.pkl.lsp.LSPUtil.toRange
+import org.pkl.lsp.LspUtil.toRange
 import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.Project
 import org.pkl.lsp.ast.*

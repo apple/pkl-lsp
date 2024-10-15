@@ -17,7 +17,7 @@ package org.pkl.lsp.analyzers
 
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
-import org.pkl.lsp.LSPUtil.toRange
+import org.pkl.lsp.LspUtil.toRange
 import org.pkl.lsp.actions.PklCodeAction
 import org.pkl.lsp.ast.PklNode
 import org.pkl.lsp.ast.Span

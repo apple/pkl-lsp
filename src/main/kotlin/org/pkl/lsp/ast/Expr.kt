@@ -17,7 +17,7 @@ package org.pkl.lsp.ast
 
 import io.github.treesitter.jtreesitter.Node
 import org.pkl.lsp.*
-import org.pkl.lsp.LSPUtil.firstInstanceOf
+import org.pkl.lsp.LspUtil.firstInstanceOf
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.resolvers.ResolveVisitor
 import org.pkl.lsp.resolvers.ResolveVisitors

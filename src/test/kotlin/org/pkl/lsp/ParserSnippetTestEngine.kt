@@ -67,7 +67,7 @@ class ParserSnippetTestEngine : HierarchicalTestEngine<ParserSnippetTestEngine.E
     return outputDir.resolve(relativePath.toString().dropLast(4) + ".txt")
   }
 
-  private val project = Project(PklLSPServer(true))
+  private val project = Project(PklLspServer(true))
 
   private fun PklNode.render(): String {
     return buildString {

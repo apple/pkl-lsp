@@ -18,7 +18,7 @@ package org.pkl.lsp.ast
 import io.github.treesitter.jtreesitter.Node
 import java.net.URI
 import org.pkl.lsp.*
-import org.pkl.lsp.LSPUtil.firstInstanceOf
+import org.pkl.lsp.LspUtil.firstInstanceOf
 import org.pkl.lsp.VirtualFile
 import org.pkl.lsp.packages.Dependency
 import org.pkl.lsp.packages.dto.PklProject

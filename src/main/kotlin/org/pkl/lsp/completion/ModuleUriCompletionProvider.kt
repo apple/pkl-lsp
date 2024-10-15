@@ -24,7 +24,7 @@ import kotlin.io.path.*
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.pkl.lsp.*
-import org.pkl.lsp.LSPUtil.toRange
+import org.pkl.lsp.LspUtil.toRange
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.documentation.toMarkdown
 import org.pkl.lsp.packages.dto.PackageAssetUri
