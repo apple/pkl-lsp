@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.pkl.lsp.services.PklWorkspaceState
 
-class SyncProjectsTest : LSPTestBase() {
+class SyncProjectsTest : LspTestBase() {
 
   private lateinit var projectFile: Path
 

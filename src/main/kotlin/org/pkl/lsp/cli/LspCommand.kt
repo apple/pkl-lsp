@@ -19,7 +19,7 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.versionOption
-import org.pkl.lsp.PklLSP
+import org.pkl.lsp.PklLsp
 import org.pkl.lsp.Release
 
 class LspCommand :
@@ -38,6 +38,6 @@ class LspCommand :
       .flag(default = false)
 
   override fun run() {
-    PklLSP.run(verbose)
+    PklLsp.run(verbose)
   }
 }

@@ -43,7 +43,7 @@ private const val SIGNIFICAND_BITS = 52
 
 private const val IMPLICIT_BIT: Long = SIGNIFICAND_MASK + 1
 
-object LSPUtil {
+object LspUtil {
   fun Span.toRange(): Range {
     val start = Position(beginLine - 1, beginCol - 1)
     val end = Position(endLine - 1, endCol - 1)

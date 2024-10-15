@@ -22,12 +22,12 @@ import org.pkl.lsp.ast.PklClassProperty
 import org.pkl.lsp.ast.PklModuleClause
 import org.pkl.lsp.packages.dto.PackageUri
 
-class GoToDefinitionPackagesTest : LSPTestBase() {
+class GoToDefinitionPackagesTest : LspTestBase() {
   companion object {
     @BeforeAll
     @JvmStatic
     fun beforeAll() {
-      LSPTestBase.beforeAll()
+      LspTestBase.beforeAll()
       fakeProject.pklCli
         .downloadPackage(
           listOf(

@@ -18,7 +18,7 @@ package org.pkl.lsp
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-class HoverTest : LSPTestBase() {
+class HoverTest : LspTestBase() {
   @Test
   fun `hover produces docs`() {
     createPklFile(

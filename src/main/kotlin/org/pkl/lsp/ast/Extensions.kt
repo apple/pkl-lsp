@@ -24,7 +24,7 @@ import org.eclipse.lsp4j.Location
 import org.eclipse.lsp4j.LocationLink
 import org.pkl.lsp.*
 import org.pkl.lsp.FsFile
-import org.pkl.lsp.LSPUtil.toRange
+import org.pkl.lsp.LspUtil.toRange
 import org.pkl.lsp.StdlibFile
 import org.pkl.lsp.ast.PklModuleUriImpl.Companion.resolve
 import org.pkl.lsp.ast.PklModuleUriImpl.Companion.resolveGlob

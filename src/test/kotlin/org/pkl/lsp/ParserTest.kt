@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test
 import org.pkl.lsp.ast.*
 
 class ParserTest {
-  private val project = Project(PklLSPServer(true))
+  private val project = Project(PklLspServer(true))
   private val parser = project.pklParser
 
   @Test

@@ -30,15 +30,15 @@ import org.pkl.lsp.ast.PklModule
 import org.pkl.lsp.ast.PklNode
 import org.pkl.lsp.ast.findBySpan
 
-abstract class LSPTestBase {
+abstract class LspTestBase {
   companion object {
-    private lateinit var server: PklLSPServer
+    private lateinit var server: PklLspServer
     internal lateinit var fakeProject: Project
 
     @JvmStatic
     @BeforeAll
     fun beforeAll() {
-      server = PklLSPServer(true).also { it.connect(TestLanguageClient) }
+      server = PklLspServer(true).also { it.connect(TestLanguageClient) }
       fakeProject = server.project
       System.getProperty("pklExecutable")?.let { executablePath ->
         TestLanguageClient.settings["Pkl" to "pkl.cli.path"] = executablePath

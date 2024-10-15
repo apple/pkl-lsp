@@ -27,7 +27,7 @@ import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.*
 import org.pkl.lsp.packages.dto.PackageUri
 
-class PklLSPServer(val verbose: Boolean) : LanguageServer {
+class PklLspServer(val verbose: Boolean) : LanguageServer {
   internal val project: Project = Project(this)
   private lateinit var client: PklLanguageClient
   private lateinit var logger: ClientLogger

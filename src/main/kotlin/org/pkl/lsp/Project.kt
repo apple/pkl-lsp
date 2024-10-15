@@ -24,7 +24,7 @@ import org.pkl.lsp.services.*
 import org.pkl.lsp.treesitter.PklParser
 import org.pkl.lsp.util.CachedValuesManager
 
-class Project(private val server: PklLSPServer) {
+class Project(private val server: PklLspServer) {
   val stdlib: Stdlib by lazy { Stdlib(this) }
 
   val pklBaseModule: PklBaseModule by lazy { PklBaseModule(this) }
