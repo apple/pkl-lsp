@@ -85,13 +85,12 @@ idea { module { generatedSourceDirs.add(jsitterMonkeyPatchSourceDir.get().asFile
  * `java.library.path`.
  *
  * This patches its source code so that we can control exactly where the tree-sitter library
- * resides. It also patches the `Tree` class so its objects can be accessed from multiple threads.
- * As we never modify trees, they are safe to be accessed.
+ * resides.
  */
 val monkeyPatchTreeSitter by
   tasks.registering(Copy::class) {
     from(zipTree(jtreeSitterSources.singleFile)) {
-      include("**/TreeSitter.java", "**/Tree.java")
+      include("**/TreeSitter.java")
       filter { line ->
         when {
           line.contains("static final SymbolLookup") ->
@@ -103,10 +102,6 @@ val monkeyPatchTreeSitter by
             import org.pkl.lsp.treesitter.NativeLibraries;
           """
               .trimIndent()
-          line.contains("Arena.ofConfined") -> line.replace("ofConfined", "ofShared")
-          line.contains("jspecify") -> ""
-          line.contains("@NullMarked") -> ""
-          line.contains("@Nullable") -> line.replace("@Nullable ", "")
           else -> line
         }
       }

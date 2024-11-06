@@ -15,7 +15,6 @@
  */
 package org.pkl.lsp.ast
 
-import io.github.treesitter.jtreesitter.Node
 import java.net.URI
 import java.net.URLEncoder
 import kotlinx.serialization.json.add
@@ -433,12 +432,6 @@ fun PklNode.modificationTracker(): ModificationTracker = containingFile
 
 val PklNode.isInPackage: Boolean
   get() = containingFile.`package` != null
-
-fun Node.utfAwareText(): String {
-  val utf8 = Charsets.UTF_8
-  val text = tree.text ?: throw RuntimeException("Syntax tree has no source")
-  return String(text.toByteArray(utf8), startByte, endByte - startByte, utf8)
-}
 
 fun PklStringConstant.contentsSpan(): Span {
   val stringStart = terminals.first().span

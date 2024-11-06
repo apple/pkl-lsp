@@ -2,7 +2,7 @@
 assertj = "3.26.3"
 clikt = "4.4.0"
 downloadTaskPlugin = "5.6.0"
-jtreesitter = "0.23.1"
+jtreesitter = "0.24.0"
 junit = "5.10.2"
 kotlin = "2.0.0"
 kotlinx = "1.7.1"
