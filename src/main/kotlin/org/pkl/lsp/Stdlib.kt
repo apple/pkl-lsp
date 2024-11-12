@@ -15,6 +15,7 @@
  */
 package org.pkl.lsp
 
+import org.pkl.lsp.packages.dto.Version
 import java.net.URI
 import java.nio.file.Path
 import kotlin.io.path.extension
@@ -39,4 +40,10 @@ class Stdlib(project: Project) : Component(project) {
 
   val base: VirtualFile
     get() = files["base"]!!
+
+  val version: Version by lazy {
+    val baseModule = base.getModule().get()!!
+    // The base module should always have a minPklVersion, otherwise it's a bug
+    baseModule.minPklVersion ?: throw PklLspBugException("Pkl base module does not have a minimum Pkl version")
+  }
 }

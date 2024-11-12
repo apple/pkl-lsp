@@ -155,6 +155,12 @@ val PklImport.memberName: String?
 
 fun PklStringConstant.escapedText(): String? = getEscapedText()
 
+fun PklStringLiteral.escapedText(): String? =
+  when (this) {
+    is PklSingleLineStringLiteral -> escapedText()
+    is PklMultiLineStringLiteral -> escapedText()
+  }
+
 fun PklSingleLineStringLiteral.escapedText(): String? =
   if (exprs.isEmpty()) getEscapedText() else null
 

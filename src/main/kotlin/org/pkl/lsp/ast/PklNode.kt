@@ -28,6 +28,7 @@ import org.pkl.lsp.VirtualFile
 import org.pkl.lsp.documentation.DocCommentMemberLinkProcessor
 import org.pkl.lsp.packages.Dependency
 import org.pkl.lsp.packages.dto.PklProject
+import org.pkl.lsp.packages.dto.Version
 import org.pkl.lsp.resolvers.ResolveVisitor
 import org.pkl.lsp.type.Type
 import org.pkl.lsp.type.TypeParameterBindings
@@ -171,6 +172,8 @@ interface PklModule : PklTypeDefOrModule {
   val typeDefsAndProperties: List<PklTypeDefOrProperty>
   val properties: List<PklClassProperty>
   val methods: List<PklClassMethod>
+  val minPklVersion: Version?
+  val effectivePklVersion: Version
 
   fun supermodule(context: PklProject?): PklModule?
 
@@ -421,7 +424,7 @@ interface PklReadExpr : PklExpr {
   val isGlob: Boolean
 }
 
-interface PklStringLiteral : PklExpr
+sealed interface PklStringLiteral : PklExpr
 
 interface PklSingleLineStringLiteral : PklStringLiteral {
   val exprs: List<PklExpr>
