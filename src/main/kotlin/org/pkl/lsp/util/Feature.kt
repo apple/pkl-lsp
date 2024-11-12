@@ -35,7 +35,7 @@ sealed interface Feature {
       override val message: String =
         "Modifier 'const' cannot be applied to object members in this Pkl version."
       override val predicate: (PklNode) -> Boolean = { node ->
-        node is Terminal && node.type == TokenType.CONST && node.parent?.parent is PklObjectMember
+        node is Terminal && node.type == TokenType.CONST && node.parent is PklObjectProperty
       }
     }
   }

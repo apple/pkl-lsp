@@ -35,7 +35,7 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
   override fun doAnalyze(node: PklNode, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
     // removing module and module declaration because this will be checked in PklModuleHeader
     if (
-      node !is ModifierListOwner ||
+      node !is PklModifierListOwner ||
         node.modifiers == null ||
         node is PklModule ||
         node is PklModuleHeader

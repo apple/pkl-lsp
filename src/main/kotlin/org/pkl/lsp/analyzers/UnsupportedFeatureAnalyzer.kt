@@ -29,7 +29,7 @@ class UnsupportedFeatureAnalyzer(project: Project) : Analyzer(project) {
       error(
         node,
         feature.message +
-          "\nRequired Pkl version: ${feature.requiredVersion}. Detected Pkl version: ${containingModule.effectivePklVersion}",
+          "\nRequired Pkl version: `${feature.requiredVersion}`. Detected Pkl version: `${containingModule.effectivePklVersion}`",
       )
     return true
   }

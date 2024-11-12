@@ -35,6 +35,7 @@ class DiagnosticsManager(project: Project) : Component(project) {
       ModuleUriAnalyzer(project),
       SyntaxAnalyzer(project),
       UnsupportedFeatureAnalyzer(project),
+      MemberAnalyzer(project),
     )
 
   private val openFiles: MutableMap<URI, Boolean> = ConcurrentHashMap()

@@ -85,7 +85,7 @@ interface IdentifierOwner : PklNode {
   fun matches(line: Int, col: Int): Boolean = identifier?.span?.matches(line, col) == true
 }
 
-interface ModifierListOwner : PklNode {
+interface PklModifierListOwner : PklNode {
   val modifiers: List<Terminal>?
 
   val isAbstract: Boolean
@@ -157,7 +157,7 @@ interface PklDocCommentOwner : PklNode {
 
 sealed interface PklNavigableElement : PklNode
 
-sealed interface PklTypeDefOrModule : PklNavigableElement, ModifierListOwner, PklDocCommentOwner
+sealed interface PklTypeDefOrModule : PklNavigableElement, PklModifierListOwner, PklDocCommentOwner
 
 interface PklModule : PklTypeDefOrModule {
   val uri: URI
@@ -187,7 +187,7 @@ interface PklModule : PklTypeDefOrModule {
 }
 
 /** Either [moduleClause] is set, or [moduleExtendsAmendsClause] is set. */
-interface PklModuleHeader : PklNode, ModifierListOwner, PklDocCommentOwner {
+interface PklModuleHeader : PklNode, PklModifierListOwner, PklDocCommentOwner {
   val annotations: List<PklAnnotation>
 
   val isAmend: Boolean
@@ -201,7 +201,7 @@ interface PklModuleHeader : PklNode, ModifierListOwner, PklDocCommentOwner {
     get() = moduleExtendsAmendsClause
 }
 
-interface PklModuleClause : PklNode, ModifierListOwner {
+interface PklModuleClause : PklNode, PklModifierListOwner {
   val qualifiedIdentifier: PklQualifiedIdentifier?
   val shortDisplayName: String?
   val moduleName: String?
@@ -217,14 +217,14 @@ interface PklModuleUriOwner {
   val moduleUri: PklModuleUri?
 }
 
-sealed interface PklModuleMember : PklNavigableElement, PklDocCommentOwner, ModifierListOwner {
+sealed interface PklModuleMember : PklNavigableElement, PklDocCommentOwner, PklModifierListOwner {
   val name: String
 }
 
 sealed interface PklTypeDefOrProperty : PklModuleMember
 
 sealed interface PklTypeDef :
-  PklTypeDefOrProperty, PklTypeDefOrModule, PklModuleMember, ModifierListOwner {
+  PklTypeDefOrProperty, PklTypeDefOrModule, PklModuleMember, PklModifierListOwner {
   val typeParameterList: PklTypeParameterList?
 }
 
@@ -261,7 +261,7 @@ interface PklModuleName : PklNode, IdentifierOwner
 sealed interface PklClassMember : PklModuleMember, PklDocCommentOwner
 
 sealed interface PklProperty :
-  PklNavigableElement, PklReference, ModifierListOwner, IdentifierOwner {
+  PklNavigableElement, PklReference, PklModifierListOwner, IdentifierOwner {
   val name: String
   val type: PklType?
   val expr: PklExpr?
@@ -284,7 +284,7 @@ interface PklClassProperty : PklProperty, PklModuleMember, PklClassMember, PklTy
   val objectBody: PklObjectBody?
 }
 
-interface PklMethod : PklNavigableElement, ModifierListOwner {
+interface PklMethod : PklNavigableElement, PklModifierListOwner {
   val methodHeader: PklMethodHeader
   val body: PklExpr
   val name: String
@@ -332,7 +332,7 @@ interface PklObjectSpread : PklObjectMember {
   val isNullable: Boolean
 }
 
-interface PklMethodHeader : PklNode, ModifierListOwner, IdentifierOwner {
+interface PklMethodHeader : PklNode, PklModifierListOwner, IdentifierOwner {
   val parameterList: PklParameterList?
 
   val typeParameterList: PklTypeParameterList?
