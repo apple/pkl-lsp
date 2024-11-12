@@ -83,4 +83,8 @@ class CachedValuesManager(project: Project) : Component(project), CachedValueDat
   fun clearCachedValue(holder: CachedValueDataHolder, key: String) {
     holder.cachedValues.remove(key)
   }
+
+  fun clearAll() {
+    cachedValues.clear()
+  }
 }

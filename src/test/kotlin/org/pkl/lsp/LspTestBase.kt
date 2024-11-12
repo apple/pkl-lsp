@@ -72,6 +72,7 @@ abstract class LspTestBase {
     TestLanguageClient.testProjectDir = testProjectDir
     TestLanguageClient.reset()
     fakeProject.initialize().get()
+    fakeProject.cachedValuesManager.clearAll()
   }
 
   @AfterEach
