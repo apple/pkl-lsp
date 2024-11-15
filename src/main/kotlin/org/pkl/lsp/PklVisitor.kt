@@ -163,7 +163,7 @@ open class PklVisitor<R> {
     return visitExpr(o)
   }
 
-  open fun visitModifierListOwner(o: ModifierListOwner): R? {
+  open fun visitModifierListOwner(o: PklModifierListOwner): R? {
     return visitElement(o)
   }
 

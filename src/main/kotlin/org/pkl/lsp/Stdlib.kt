@@ -20,6 +20,7 @@ import java.nio.file.Path
 import kotlin.io.path.extension
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
+import org.pkl.lsp.packages.dto.Version
 
 class Stdlib(project: Project) : Component(project) {
   @Suppress("MemberVisibilityCanBePrivate")
@@ -39,4 +40,11 @@ class Stdlib(project: Project) : Component(project) {
 
   val base: VirtualFile
     get() = files["base"]!!
+
+  val version: Version by lazy {
+    val baseModule = base.getModule().get()!!
+    // The base module should always have a minPklVersion, otherwise it's a bug
+    baseModule.minPklVersion
+      ?: throw PklLspBugException("Pkl base module does not have a minimum Pkl version")
+  }
 }

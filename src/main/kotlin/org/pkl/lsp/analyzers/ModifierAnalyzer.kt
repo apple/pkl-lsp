@@ -19,6 +19,7 @@ import org.pkl.lsp.ErrorMessages
 import org.pkl.lsp.Project
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.ast.TokenType.*
+import org.pkl.lsp.packages.dto.Version
 
 class ModifierAnalyzer(project: Project) : Analyzer(project) {
   companion object {
@@ -28,14 +29,14 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
     private val TYPE_ALIAS_MODIFIERS = setOf(EXTERNAL, LOCAL)
     private val CLASS_METHOD_MODIFIERS = setOf(ABSTRACT, EXTERNAL, LOCAL, CONST)
     private val CLASS_PROPERTY_MODIFIERS = setOf(ABSTRACT, EXTERNAL, HIDDEN, LOCAL, FIXED, CONST)
-    private val OBJECT_METHOD_MODIFIERS = setOf(LOCAL)
-    private val OBJECT_PROPERTY_MODIFIERS = setOf(LOCAL)
+    private val OBJECT_METHOD_MODIFIERS = setOf(LOCAL, CONST)
+    private val OBJECT_PROPERTY_MODIFIERS = setOf(LOCAL, CONST)
   }
 
   override fun doAnalyze(node: PklNode, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
     // removing module and module declaration because this will be checked in PklModuleHeader
     if (
-      node !is ModifierListOwner ||
+      node !is PklModifierListOwner ||
         node.modifiers == null ||
         node is PklModule ||
         node is PklModuleHeader
@@ -48,6 +49,7 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
     var openModifier: PklNode? = null
     var hiddenModifier: PklNode? = null
     var fixedModifier: PklNode? = null
+    var constModifier: PklNode? = null
 
     for (modifier in node.modifiers!!) {
       when (modifier.type) {
@@ -56,6 +58,7 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
         OPEN -> openModifier = modifier
         HIDDEN -> hiddenModifier = modifier
         FIXED -> fixedModifier = modifier
+        CONST -> constModifier = modifier
         else -> {}
       }
     }
@@ -85,6 +88,15 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
       diagnosticsHolder.add(
         error(openModifier, ErrorMessages.create("modifierOpenConflictsWithAbstract"))
       )
+    }
+
+    val module = node.enclosingModule
+    if (module != null && module.effectivePklVersion >= Version.PKL_VERSION_0_27) {
+      // TODO: add a quick-fix
+      if (constModifier != null && localModifier == null && node is PklObjectMember) {
+        diagnosticsHolder +=
+          error(constModifier, ErrorMessages.create("invalidModifierConstWithoutLocal"))
+      }
     }
 
     val (description, applicableModifiers) =

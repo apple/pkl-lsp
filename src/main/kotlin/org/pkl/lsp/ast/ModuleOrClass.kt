@@ -22,6 +22,7 @@ import org.pkl.lsp.LspUtil.firstInstanceOf
 import org.pkl.lsp.VirtualFile
 import org.pkl.lsp.packages.Dependency
 import org.pkl.lsp.packages.dto.PklProject
+import org.pkl.lsp.packages.dto.Version
 import org.pkl.lsp.util.CachedValue
 
 class PklModuleImpl(override val ctx: Node, override val virtualFile: VirtualFile) :
@@ -82,6 +83,29 @@ class PklModuleImpl(override val ctx: Node, override val virtualFile: VirtualFil
     header?.moduleClause?.moduleName ?: uri.toString().substringAfterLast('/').replace(".pkl", "")
   }
 
+  override val minPklVersion: Version? by lazy {
+    val annotations = header?.annotations ?: return@lazy null
+    val base = project.pklBaseModule
+    for (ann in annotations) {
+      val type = ann.typeName?.resolve(null) ?: continue
+      if (type == base.moduleInfoType.ctx) {
+        val props = ann.objectBody?.properties ?: return@lazy null
+        for (prop in props) {
+          if (prop.name == "minPklVersion") {
+            val minVersionLiteral = prop.expr as? PklStringLiteral ?: return@lazy null
+            val minVersionContent = minVersionLiteral.escapedText() ?: return@lazy null
+            return@lazy Version.parseOrNull(minVersionContent)
+          }
+        }
+      }
+    }
+    null
+  }
+
+  override val effectivePklVersion: Version by lazy {
+    minPklVersion ?: supermodule(null)?.minPklVersion ?: project.stdlib.version
+  }
+
   override fun dependencies(context: PklProject?): Map<String, Dependency>? =
     containingFile.`package`?.let { project.packageManager.getResolvedDependencies(it, context) }
       ?: containingFile.pklProject?.getResolvedDependencies(context)
@@ -96,8 +120,8 @@ class PklAnnotationImpl(
   override val parent: PklNode,
   override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklAnnotation {
-  // TODO: tree-sitter only accepts  qualified identifier, not any type
-  override val type: PklType? by lazy { children.firstInstanceOf<PklType>() }
+  // tree-sitter only accepts  qualified identifier, not any type
+  override val type: PklType? by lazy { PklDeclaredTypeImpl(project, this, ctx) }
 
   override val typeName: PklTypeName? by lazy { (type as? PklDeclaredType)?.name }
 

@@ -82,6 +82,9 @@ data class Version(
           ids1.size.compareTo(ids2.size)
         }
 
+    val PKL_VERSION_0_26: Version = Version(0, 26, 0, null, null)
+    val PKL_VERSION_0_27: Version = Version(0, 27, 0, null, null)
+
     /**
      * Parses the given string as a semantic version number.
      *
