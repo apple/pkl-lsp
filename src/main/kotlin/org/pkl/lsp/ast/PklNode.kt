@@ -709,11 +709,13 @@ abstract class AbstractPklNode(
   }
 
   protected fun <T : PklNode> getChild(clazz: KClass<T>): T? {
-    @Suppress("UNCHECKED_CAST") return childrenByType[clazz]?.firstOrNull() as T?
+    @Suppress("UNCHECKED_CAST")
+    return childrenByType[clazz]?.firstOrNull() as T?
   }
 
   protected fun <T : PklNode> getChildren(clazz: KClass<T>): List<T>? {
-    @Suppress("UNCHECKED_CAST") return childrenByType[clazz] as List<T>?
+    @Suppress("UNCHECKED_CAST")
+    return childrenByType[clazz] as List<T>?
   }
 
   override val terminals: List<Terminal> by lazy { getChildren(TerminalImpl::class) ?: emptyList() }
