@@ -60,6 +60,7 @@ dependencies {
   implementation(libs.clikt)
   implementation(libs.lsp4j)
   implementation(libs.kotlinxSerializationJson)
+  implementation(libs.jspecify) // used by jtreesitter
   implementation(libs.jtreesitter)
   // stdlib files are included from a one-off configuration then bundled into shadow jar (see
   // shadowJar spec).
