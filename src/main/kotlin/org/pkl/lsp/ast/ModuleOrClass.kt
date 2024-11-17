@@ -290,7 +290,7 @@ class PklTypeParameterImpl(
 
   override val identifier: Terminal? by lazy { terminals.find { it.type == TokenType.Identifier } }
 
-  override val name: String by lazy { ctx.children.find { it.type == "identifier" }!!.text }
+  override val name: String by lazy { ctx.children.find { it.type == "identifier" }!!.text!! }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitTypeParameter(this)

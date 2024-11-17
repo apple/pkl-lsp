@@ -720,11 +720,11 @@ abstract class AbstractPklNode(
 
   override val children: List<PklNode> by lazy { childrenByType.values.flatten() }
 
-  override val text: String by lazy { ctx.text }
+  override val text: String by lazy { ctx.text!! }
 
   override val isMissing: Boolean by lazy { ctx.isMissing }
 
-  override val source: String by lazy { ctx.tree.text }
+  override val source: String by lazy { ctx.tree.text!! }
 
   override fun hashCode(): Int {
     return ctx.hashCode()
