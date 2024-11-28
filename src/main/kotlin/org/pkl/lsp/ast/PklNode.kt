@@ -709,22 +709,24 @@ abstract class AbstractPklNode(
   }
 
   protected fun <T : PklNode> getChild(clazz: KClass<T>): T? {
-    @Suppress("UNCHECKED_CAST") return childrenByType[clazz]?.firstOrNull() as T?
+    @Suppress("UNCHECKED_CAST")
+    return childrenByType[clazz]?.firstOrNull() as T?
   }
 
   protected fun <T : PklNode> getChildren(clazz: KClass<T>): List<T>? {
-    @Suppress("UNCHECKED_CAST") return childrenByType[clazz] as List<T>?
+    @Suppress("UNCHECKED_CAST")
+    return childrenByType[clazz] as List<T>?
   }
 
   override val terminals: List<Terminal> by lazy { getChildren(TerminalImpl::class) ?: emptyList() }
 
   override val children: List<PklNode> by lazy { childrenByType.values.flatten() }
 
-  override val text: String by lazy { ctx.text }
+  override val text: String by lazy { ctx.text!! }
 
   override val isMissing: Boolean by lazy { ctx.isMissing }
 
-  override val source: String by lazy { ctx.tree.text }
+  override val source: String by lazy { ctx.tree.text!! }
 
   override fun hashCode(): Int {
     return ctx.hashCode()

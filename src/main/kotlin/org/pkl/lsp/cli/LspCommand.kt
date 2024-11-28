@@ -16,19 +16,14 @@
 package org.pkl.lsp.cli
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.versionOption
 import org.pkl.lsp.PklLsp
 import org.pkl.lsp.Release
 
-class LspCommand :
-  CliktCommand(
-    name = "pkl-lsp",
-    help =
-      "Run a Language Server Protocol server for Pkl that communicates over standard input/output",
-  ) {
-
+class LspCommand : CliktCommand(name = "pkl-lsp") {
   init {
     versionOption(version = Release.version)
   }
@@ -36,6 +31,9 @@ class LspCommand :
   private val verbose: Boolean by
     option(names = arrayOf("--verbose"), help = "Send debug information to the client")
       .flag(default = false)
+
+  override fun help(context: Context): String =
+    "Run a Language Server Protocol server for Pkl that communicates over standard input/output"
 
   override fun run() {
     PklLsp.run(verbose)
