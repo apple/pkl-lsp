@@ -1,16 +1,34 @@
 = Changelog
 
+[[release-0.1.2]]
+== 0.1.2 (2024-11-28)
+
+=== Changes
+
+* Update Pkl standard library to 0.27 (https://github.com/apple/pkl-lsp/pull/50[#50]).
+* Add `const local` support for object members (https://github.com/apple/pkl-lsp/pull/52[#52]).
+
+=== Miscellaneous
+
+* Update dependencies (https://github.com/apple/pkl-lsp/pull/49[#49], https://github.com/apple/pkl-lsp/pull/51[#51], https://github.com/apple/pkl-lsp/pull/54[#54]).
+
+=== Contributors ❤️
+
+Thank you to all the contributors for this release!
+
+* link:https://github.com/odenix[@odenix]
+
 [[release-0.1.1]]
 == 0.1.1 (2024-10-10)
 
-== Additions
+=== Additions
 
 * Add support for definition level completions (https://github.com/apple/pkl-lsp/pull/40[#40]).
 * Improve performance of accessing parse tree (https://github.com/apple/pkl-lsp/pull/44[#44]).
 * Fix bug when member link points to unresolvable import (https://github.com/apple/pkl-lsp/pull/43[#43]).
 * Update tree-sitter-pkl to 0.17.0 (https://github.com/apple/pkl-lsp/pull/42[#42]).
 
-== Miscellaneous
+=== Miscellaneous
 
 * Add Antora documentation (https://github.com/apple/pkl-lsp/pull/41[#41]).
 
