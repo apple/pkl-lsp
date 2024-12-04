@@ -33,6 +33,12 @@ open class BuildInfo(val project: Project) {
     OperatingSystem.current()
   }
 
+  /** The JDK version used to build the language server. */
+  val jdkVersion: Int = 22
+
+  /** The minimum JDK version required to run the language server. */
+  val jdkTargetVersion: Int = 22
+
   val arch: Architecture
     get() {
       return when (val arch = System.getProperty("os.arch")) {

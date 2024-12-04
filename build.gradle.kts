@@ -19,6 +19,7 @@ import kotlin.io.path.absolutePathString
 import org.apache.tools.ant.filters.ReplaceTokens
 import org.gradle.internal.extensions.stdlib.capitalized
 import org.gradle.internal.os.OperatingSystem
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   application
@@ -33,12 +34,20 @@ plugins {
   alias(libs.plugins.nexusPublish)
 }
 
+val buildInfo = project.extensions.getByType<BuildInfo>()
+
 repositories { mavenCentral() }
 
 java {
-  sourceCompatibility = JavaVersion.VERSION_22
-  toolchain { languageVersion = JavaLanguageVersion.of(22) }
+  sourceCompatibility = JavaVersion.toVersion(buildInfo.jdkTargetVersion)
+  toolchain { languageVersion = JavaLanguageVersion.of(buildInfo.jdkVersion) }
 }
+
+kotlin {
+  compilerOptions { jvmTarget = JvmTarget.fromTarget(buildInfo.jdkTargetVersion.toString()) }
+}
+
+tasks.withType<JavaCompile>().configureEach { options.release = buildInfo.jdkTargetVersion }
 
 val pklCli: Configuration by configurations.creating
 
@@ -115,17 +124,16 @@ val configurePklCliExecutable by
 
 tasks.jar {
   manifest {
-    attributes +=
-      mapOf("Main-Class" to "org.pkl.lsp.cli.Main", "Enable-Native-Access" to "ALL-UNNAMED")
+    attributes("Main-Class" to "org.pkl.lsp.cli.Main", "Enable-Native-Access" to "ALL-UNNAMED")
   }
 }
 
-application { mainClass.set("org.pkl.lsp.cli.Main") }
+application { mainClass = "org.pkl.lsp.cli.Main" }
 
 tasks.test {
   dependsOn(configurePklCliExecutable)
+  jvmArgs("--enable-native-access=ALL-UNNAMED")
   systemProperties["pklExecutable"] = pklCli.singleFile.absolutePath
-  systemProperties["java.library.path"] = nativeLibDir.get().asFile.absolutePath
   useJUnitPlatform { includeEngines("ParserSnippetTestEngine") }
   System.getProperty("testReportsDir")?.let { reportsDir ->
     reports.junitXml.outputLocation.set(file(reportsDir).resolve(project.name).resolve(name))
@@ -432,7 +440,7 @@ publishing {
         description.set(
           """
           CLI for the Pkl Language Server.
-          Requires Java 22 or higher.
+          Requires Java ${buildInfo.jdkTargetVersion} or higher.
           """
             .trimIndent()
         )
