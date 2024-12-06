@@ -51,13 +51,10 @@ tasks.withType<JavaCompile>().configureEach { options.release = buildInfo.jdkTar
 
 val pklCli: Configuration by configurations.creating
 
-val jtreeSitterSources: Configuration by configurations.creating
-
 val stagedShadowJar: Configuration by configurations.creating
 
 val pklStdlibFiles: Configuration by configurations.creating
 
-val jsitterMonkeyPatchSourceDir = layout.buildDirectory.dir("generated/libs/jtreesitter")
 val nativeLibDir = layout.buildDirectory.dir("generated/libs/native/")
 val treeSitterPklRepoDir = layout.buildDirectory.dir("repos/tree-sitter-pkl")
 val treeSitterRepoDir = layout.buildDirectory.dir("repos/tree-sitter")
@@ -91,42 +88,10 @@ dependencies {
   pklStdlibFiles(libs.pklStdlib)
   // comes from the attached workspace in CircleCI
   stagedShadowJar(tasks.shadowJar.get().outputs.files)
-  jtreeSitterSources(variantOf(libs.jtreesitter) { classifier("sources") })
   pklCli(
     "org.pkl-lang:pkl-cli-${buildInfo.os.canonicalName}-${buildInfo.arch.name}:${libs.versions.pkl.get()}"
   )
 }
-
-idea { module { generatedSourceDirs.add(jsitterMonkeyPatchSourceDir.get().asFile) } }
-
-/**
- * jtreesitter expects the tree-sitter library to exist in system dirs, or to be provided through
- * `java.library.path`.
- *
- * This patches its source code so that we can control exactly where the tree-sitter library
- * resides.
- */
-val monkeyPatchTreeSitter by
-  tasks.registering(Copy::class) {
-    from(zipTree(jtreeSitterSources.singleFile)) {
-      include("**/TreeSitter.java")
-      filter { line ->
-        when {
-          line.contains("static final SymbolLookup") ->
-            "static final SymbolLookup SYMBOL_LOOKUP = SymbolLookup.libraryLookup(NativeLibraries.getTreeSitter().getLibraryPath(), LIBRARY_ARENA)"
-          line.contains("package io.github.treesitter.jtreesitter.internal;") ->
-            """
-            $line
-            
-            import org.pkl.lsp.treesitter.NativeLibraries;
-          """
-              .trimIndent()
-          else -> line
-        }
-      }
-    }
-    into(jsitterMonkeyPatchSourceDir)
-  }
 
 val configurePklCliExecutable by
   tasks.registering { doLast { pklCli.singleFile.setExecutable(true) } }
@@ -365,8 +330,6 @@ tasks.processResources {
   }
 }
 
-tasks.compileKotlin { dependsOn(monkeyPatchTreeSitter) }
-
 // verify the built distribution in different OSes.
 @Suppress("unused")
 val verifyDistribution by
@@ -388,7 +351,6 @@ val verifyDistribution by
 
 sourceSets {
   main {
-    java { srcDirs(jsitterMonkeyPatchSourceDir) }
     resources { srcDirs(nativeLibDir) }
   }
 }
