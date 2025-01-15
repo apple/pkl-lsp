@@ -1,4 +1,4 @@
-Copyright © 2024 Apple Inc. and the Pkl project authors
+Copyright © 2024-2025 Apple Inc. and the Pkl project authors
 
 
 This project contains libraries that may be distributed under a different license.
