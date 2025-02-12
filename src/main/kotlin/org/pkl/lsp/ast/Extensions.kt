@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -202,10 +202,10 @@ private fun PklNode.getEscapedText(): String? = buildString {
   }
 }
 
-fun PklTypeAlias.isRecursive(seen: MutableSet<PklTypeAlias>, context: PklProject?): Boolean =
-  !seen.add(this) || type.isRecursive(seen, context)
+fun PklTypeAlias.isRecursive(seen: Set<PklTypeAlias>, context: PklProject?): Boolean =
+  seen.contains(this) || type.isRecursive(seen + this, context)
 
-private fun PklType?.isRecursive(seen: MutableSet<PklTypeAlias>, context: PklProject?): Boolean =
+private fun PklType?.isRecursive(seen: Set<PklTypeAlias>, context: PklProject?): Boolean =
   when (this) {
     is PklDeclaredType -> {
       val resolved = name.resolve(context)
