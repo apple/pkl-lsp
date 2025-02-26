@@ -1,5 +1,20 @@
 = Changelog
 
+[[release-0.2.0]]
+== 0.2.0 (2025-02-27)
+
+=== Changes
+
+* Update Pkl standard library to 0.28 (https://github.com/apple/pkl-lsp/pull/61[#61]).
+
+=== Fixes
+
+* Fix an incorrect "recursive typealias" error (https://github.com/apple/pkl-lsp/pull/59[#59]).
+
+=== Miscellaneous
+
+* Documentation improvements (https://github.com/apple/pkl-lsp/pull/62[#62]).
+
 [[release-0.1.2]]
 == 0.1.2 (2024-11-28)
 
