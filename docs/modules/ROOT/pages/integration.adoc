@@ -1,18 +1,18 @@
-= Integrating with pkl-lsp
+= Integrating with Pkl Language Server
 
-pkl-lsp is a low-level tool that is meant to be integrated with editors by way of plugins.
+Pkl Language Server is a low-level tool that is meant to be integrated with editors by way of plugins.
 
 The documentation below is intended for plugin implementors.
 
 == Distribution
 
-pkl-lsp is published to https://central.sonatype.com/artifact/org.pkl-lang/pkl-lsp[Maven Central], and also as releases on https://github.com/apple/pkl-lsp/releases[GitHub].
+Pkl Language Server is published to https://central.sonatype.com/artifact/org.pkl-lang/pkl-lsp[Maven Central], and also as releases on https://github.com/apple/pkl-lsp/releases[GitHub].
 
 It is recommended that the jar file be bundled into an editor plugin's package contents.
 
-== Running pkl-lsp
+== Running Pkl Language Server
 
-To run the LSP, provide the jar as an argument to Java.
+To run the server, provide the jar as an argument to Java.
 For example:
 
 [source,shell]
@@ -20,19 +20,24 @@ For example:
 java -jar path/to/pkl-lsp.jar
 ----
 
-pkl-lsp requires Java 22 or higher.
+Pkl Language Server requires Java 22 or higher.
 
-NOTE: We plan on providing native binaries in the future.
+[NOTE]
+====
+We plan on providing native binaries in the future.
+
+Follow https://github.com/apple/pkl-lsp/issues/60[#60] to stay updated on its progress.
+====
 
 == `pkl-lsp` URI scheme
 
-The LSP uses the `pkl-lsp` scheme to represent sources from the standard library, as well as other types of non-file Pkl sources.
+The server uses the `pkl-lsp` scheme to represent sources from the standard library, as well as other types of non-file Pkl sources.
 
 For example, the `pkl:base` standard library module is surfaced to editors as URI `pkl-lsp://stdlib/base.pkl`.
 
 == Custom client options
 
-When starting the LSP, additional client options can be provided to configure the behavior of the language server.
+When starting the server, additional client options can be provided to configure the behavior of the language server.
 
 These options are provided in the `initializationOptions` section of the link:https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#initializeParams[Initialize Request].
 
@@ -41,14 +46,14 @@ These options are provided in the `initializationOptions` section of the link:ht
 
 Type: `Boolean`
 
-Cause the LSP to render links within documentation using the `command:pkl.open.file` URI.
+Cause the server to render links within documentation using the `command:pkl.open.file` URI.
 
 If enabled, clients are expected to implement the command <<open-file-command,`pkl.open.file`>>.
 
 [[extended-client-capabilities]]
 === `extendedClientCapabilities`
 
-Tell the LSP that the client supports additional capabilities made available by pkl-lsp.
+Tell the server that the client supports additional capabilities made available by Pkl Language Server.
 
 |===
 |Name |Description
@@ -62,15 +67,15 @@ Tell the LSP that the client supports additional capabilities made available by 
 
 == Pkl CLI configuration
 
-To support flows like sync projects, and package downloading, the LSP will look for a path to the Pkl CLI.
+To support flows like sync projects, and package downloading, the server will look for a path to the Pkl CLI.
 
-By default, the LSP will look for the CLI within the enviornment's `$PATH`.
+By default, the server will look for the CLI within the environment's `$PATH`.
 
 If the client supports the https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspace_configuration[Configuration Request], it will look for the configuration value `pkl.cli.path` at scope `Pkl`.
 
 == Additional message types
 
-pkl-lsp extends the LSP protocol with custom message types.
+Pkl Language Server extends the https://microsoft.github.io/language-server-protocol/[Language Server Protocol] with custom message types.
 
 These message types are optional, and enhance the integration with an editor.
 
@@ -100,23 +105,23 @@ Method: `pkl/syncProjects`
 Body: `Any`
 
 Sync any `PklProject` defined in the workspace.
-This allows the LSP to understand imports declared using xref:main:language-reference:index.adoc#dependency-notation[dependency notation].
+This allows the server to understand imports declared using xref:main:language-reference:index.adoc#dependency-notation[dependency notation].
 
 == Commands
 
 The following commands can optionally be implemented.
-If implemented, and the <<extended-client-capabilities,capability>> is made known to pkl-lsp, the LSP will issue https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspace_executeCommand[Execute Command] requests.
+If implemented, and the <<extended-client-capabilities,capability>> is made known to Pkl Language Server, the server will issue https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspace_executeCommand[Execute Command] requests.
 
 |===
 |Name | Arguments | Description
 
 |[[open-file-command]] `pkl.open.file`
 |`[uri: String, line: Int?, column: Int?]`
-|Send a <<file-contents-request>> to pkl-lsp, and open the resulting contents in an editor pane at the indicated line and column.
+|Send a <<file-contents-request>> to Pkl Language Server, and open the resulting contents in an editor pane at the indicated line and column.
 
 |`pkl.syncProjects`
 | `<none>`
-|Send a <<sync-projects>> to pkl-lsp.
+|Send a <<sync-projects>> to Pkl Language Server.
 
 |`pkl.configure`
 | `[configurationPath: string]`
@@ -124,5 +129,5 @@ If implemented, and the <<extended-client-capabilities,capability>> is made know
 
 |`pkl.downloadPackage`
 |`[packageUri: string]`
-|Send a <<download-package-request>> to pkl-lsp.
+|Send a <<download-package-request>> to Pkl Language Server.
 |===
