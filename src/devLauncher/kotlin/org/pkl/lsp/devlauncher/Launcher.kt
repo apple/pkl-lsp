@@ -49,7 +49,7 @@ class Launcher : CliktCommand() {
   private val pklVscodeDir: Path by lazy { projectRootDir.resolve("../pkl-vscode") }
 
   // The target directory to open; configurable with ARGV.
-  private val pklK8sExamplesDir: Path by lazy { projectRootDir.resolve("../pkl-k8s-examples") }
+  private val pklK8sExamplesDir: Path by lazy { projectRootDir.resolve("../pkl-pantry") }
 
   private fun prepareUserDataDir(port: Int, pklCliPath: Path) {
     val settingsFile =
