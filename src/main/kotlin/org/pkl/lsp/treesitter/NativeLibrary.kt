@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ data class NativeLibrary(val name: String, val version: String) {
   private val resourcePath: URL by lazy {
     // keep in sync with `resourceLibraryPath` in build.gradle.kts
     val path = "/NATIVE/org/pkl/lsp/treesitter/${OS.name}-${OS.arch}/$systemLibraryName"
-    NativeLibrary::class.java.getResource(path)
+    NativeLibrary::class.java.getResource(path)!!
   }
 
   private val storedLibraryPath: Path by lazy {

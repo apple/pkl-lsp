@@ -64,6 +64,15 @@ val treeSitterRepoDir = layout.buildDirectory.dir("repos/tree-sitter")
 
 val dummy: SourceSet by sourceSets.creating
 
+@Suppress("unused")
+val devLauncher: SourceSet by
+  sourceSets.creating {
+    // use test {compile,runtime}Classpath because it has the pkl stdlib
+    // important that main output is first because of monkey-patched jtreesitter
+    compileClasspath = sourceSets.main.get().output + sourceSets.test.get().compileClasspath
+    runtimeClasspath = sourceSets.main.get().output + sourceSets.test.get().runtimeClasspath
+  }
+
 dependencies {
   implementation(kotlin("reflect"))
   implementation(libs.clikt)
@@ -359,6 +368,7 @@ tasks.processResources {
 tasks.compileKotlin { dependsOn(monkeyPatchTreeSitter) }
 
 // verify the built distribution in different OSes.
+@Suppress("unused")
 val verifyDistribution by
   tasks.registering(Test::class) {
     dependsOn(configurePklCliExecutable)

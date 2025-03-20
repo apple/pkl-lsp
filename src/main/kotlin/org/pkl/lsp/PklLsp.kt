@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,17 @@
  */
 package org.pkl.lsp
 
+import java.io.InputStream
+import java.io.OutputStream
 import org.eclipse.lsp4j.jsonrpc.Launcher
 import org.eclipse.lsp4j.launch.LSPLauncher
 
 object PklLsp {
-  fun run(verbose: Boolean) {
+  fun run(verbose: Boolean) = run(verbose, System.`in`, System.`out`)
+
+  fun run(verbose: Boolean, inputStream: InputStream, outputStream: OutputStream) {
     val server = PklLspServer(verbose)
-    val launcher = createLauncher(server)
+    val launcher = createLauncher(server, inputStream, outputStream)
 
     val client = launcher.remoteProxy
     server.connect(client)
@@ -30,12 +34,16 @@ object PklLsp {
     future.get()
   }
 
-  private fun createLauncher(server: PklLspServer): Launcher<PklLanguageClient> =
+  private fun createLauncher(
+    server: PklLspServer,
+    inputStream: InputStream,
+    outputStream: OutputStream,
+  ): Launcher<PklLanguageClient> =
     with(LSPLauncher.Builder<PklLanguageClient>()) {
       setLocalService(server)
       setRemoteInterface(PklLanguageClient::class.java)
-      setInput(System.`in`)
-      setOutput(System.out)
+      setInput(inputStream)
+      setOutput(outputStream)
       create()
     }
 }
