@@ -34,13 +34,13 @@ class Launcher : CliktCommand() {
   private val pklCliPath: Path by
     option("--pkl-cli-path").path().defaultLazy { discoverPklCliPath() }
 
-  private val workspace: Path by option("--workspace").path().defaultLazy { pklK8sExamplesDir }
+  private val workspace: Path by option("--workspace").path().defaultLazy { defaultWorkspace }
 
   private val projectRootDir by lazy {
     val workingDir = Path.of(System.getProperty("user.dir"))
     workingDir.takeIf { it.resolve("settings.gradle.kts").exists() }
-      ?: workingDir.parent.takeIf { it.resolve("settings.gradle.kts").exists() }
-      ?: workingDir.parent.parent.takeIf { it.resolve("settings.gradle.kts").exists() }
+      ?: workingDir.parent?.takeIf { it.resolve("settings.gradle.kts").exists() }
+      ?: workingDir.parent?.parent?.takeIf { it.resolve("settings.gradle.kts").exists() }
       ?: throw AssertionError("Failed to locate root project directory.")
   }
 
@@ -49,7 +49,7 @@ class Launcher : CliktCommand() {
   private val pklVscodeDir: Path by lazy { projectRootDir.resolve("../pkl-vscode") }
 
   // The target directory to open; configurable with ARGV.
-  private val pklK8sExamplesDir: Path by lazy { projectRootDir.resolve("../pkl-pantry") }
+  private val defaultWorkspace: Path by lazy { projectRootDir.resolve("../pkl-pantry") }
 
   private fun prepareUserDataDir(port: Int, pklCliPath: Path) {
     val settingsFile =
@@ -64,7 +64,6 @@ class Launcher : CliktCommand() {
         .trimIndent()
     )
     userDataDir.createDirectories()
-    userDataDir
   }
 
   private fun launchVscode(workspace: Path) {
@@ -93,6 +92,7 @@ class Launcher : CliktCommand() {
     val serverSocket = ServerSocket(0)
     prepareUserDataDir(serverSocket.localPort, pklCliPath)
     launchVscode(workspace)
+    // wait until a connection is made from the client before starting the LSP
     val clientSocket = serverSocket.accept()
     PklLsp.run(true, clientSocket.inputStream, clientSocket.outputStream)
   }
