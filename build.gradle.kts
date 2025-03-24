@@ -219,13 +219,24 @@ val makeTreeSitterTasks: List<TaskProvider<*>> = buildList {
         ) {
           workingDir = treeSitterRepoDir.get().asFile
           dependsOn(setupTreeSitterRepo)
-
           configureCompile(
             os = os,
             arch = arch,
             libraryName = "tree-sitter",
-            includes = listOf("lib/include", "lib/src"),
+            // flags taken from
+            // https://github.com/tree-sitter/tree-sitter/blob/2a835ee029dca1c325e6f1c01dbce40396f6123e/Makefile#L28-L31
+            includes = listOf("lib/include", "lib/src", "lib/src/wasm"),
             sources = listOf("lib/src/lib.c"),
+            extraArgs =
+              listOf(
+                "-fvisibility=hidden",
+                "-Wall",
+                "-Wextra",
+                "-Wpedantic",
+                "-Werror=incompatible-pointer-types",
+                "-D_POSIX_C_SOURCE=200112L",
+                "-D_DEFAULT_SOURCE",
+              ),
           )
         }
       add(task)
@@ -233,7 +244,11 @@ val makeTreeSitterTasks: List<TaskProvider<*>> = buildList {
   }
 }
 
-val makeTreeSitter by tasks.registering { dependsOn(*makeTreeSitterTasks.toTypedArray()) }
+val makeTreeSitter by
+  tasks.registering {
+    group = "build"
+    dependsOn(makeTreeSitterTasks)
+  }
 
 val makeTreeSitterPklTasks: List<TaskProvider<*>> = buildList {
   for (os in oses) {
@@ -259,7 +274,11 @@ val makeTreeSitterPklTasks: List<TaskProvider<*>> = buildList {
   }
 }
 
-val makeTreeSitterPkl by tasks.registering { dependsOn(*makeTreeSitterPklTasks.toTypedArray()) }
+val makeTreeSitterPkl by
+  tasks.registering {
+    group = "build"
+    dependsOn(makeTreeSitterPklTasks)
+  }
 
 // Keep in sync with `org.pkl.lsp.treesitter.NativeLibrary.getResourcePath`
 private fun resourceLibraryPath(os: OperatingSystem, arch: Architecture, libraryName: String) =
@@ -271,6 +290,7 @@ private fun Exec.configureCompile(
   libraryName: String,
   includes: List<String>,
   sources: List<String>,
+  extraArgs: List<String> = listOf(),
 ) {
   group = "build"
 
@@ -308,6 +328,7 @@ private fun Exec.configureCompile(
         add("-std=c11")
         add("-shared")
         add("-fPIC")
+        addAll(extraArgs)
         add("-o")
         add(outputFile.get().asFile.absolutePath)
       }
@@ -349,11 +370,7 @@ val verifyDistribution by
     }
   }
 
-sourceSets {
-  main {
-    resources { srcDirs(nativeLibDir) }
-  }
-}
+sourceSets { main { resources { srcDirs(nativeLibDir) } } }
 
 private val licenseHeader =
   """
