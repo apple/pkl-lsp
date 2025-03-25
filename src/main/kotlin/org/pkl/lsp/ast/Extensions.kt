@@ -147,6 +147,10 @@ fun PklClass.isSubclassOf(other: PklModule, context: PklProject?): Boolean {
   return false
 }
 
+/** Assumes `!this.isSubclassOf(other)`. */
+fun PklClass.hasCommonSubclassWith(other: PklClass, context: PklProject?): Boolean =
+  other.isSubclassOf(this, context)
+
 val PklImport.memberName: String?
   get() =
     identifier?.text
