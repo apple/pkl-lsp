@@ -29,6 +29,7 @@ import org.pkl.lsp.packages.Dependency
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.packages.dto.Version
 import org.pkl.lsp.resolvers.ResolveVisitor
+import org.pkl.lsp.resolvers.Resolvers
 import org.pkl.lsp.type.Type
 import org.pkl.lsp.type.TypeParameterBindings
 import org.pkl.lsp.util.CachedValueDataHolderBase
@@ -471,7 +472,15 @@ interface PklQualifiedAccessExpr : PklAccessExpr {
 
 interface PklSuperAccessExpr : PklAccessExpr
 
-interface PklUnqualifiedAccessExpr : PklAccessExpr
+interface PklUnqualifiedAccessExpr : PklAccessExpr {
+  fun <R> resolveAndGetLookupMode(
+    base: PklBaseModule,
+    receiverType: Type?,
+    bindings: TypeParameterBindings,
+    visitor: ResolveVisitor<R>,
+    context: PklProject?,
+  ): Pair<R, Resolvers.LookupMode>
+}
 
 interface PklSubscriptExpr : PklBinExpr
 

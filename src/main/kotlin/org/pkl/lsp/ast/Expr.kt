@@ -201,6 +201,25 @@ class PklUnqualifiedAccessExprImpl(
     )
   }
 
+  override fun <R> resolveAndGetLookupMode(
+    base: PklBaseModule,
+    receiverType: Type?,
+    bindings: TypeParameterBindings,
+    visitor: ResolveVisitor<R>,
+    context: PklProject?
+  ): Pair<R, Resolvers.LookupMode> {
+    return Resolvers.resolveUnqualifiedAccessAndLookupMode(
+      this,
+      receiverType,
+      isPropertyAccess,
+      true,
+      base,
+      bindings,
+      visitor,
+      context,
+    )
+  }
+
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitUnqualifiedAccessExpr(this)
   }
