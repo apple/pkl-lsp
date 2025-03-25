@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -203,12 +203,14 @@ class PklModuleExtendsAmendsClauseImpl(
   override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklModuleExtendsAmendsClause {
   override val isAmend: Boolean
-    get() = ctx.children[0].type == "amends"
+    get() = keyword.type == TokenType.AMENDS
 
   override val isExtend: Boolean
-    get() = ctx.children[0].type == "extends"
+    get() = keyword.type == TokenType.EXTENDS
 
   override val moduleUri: PklModuleUri? by lazy { PklModuleUriImpl(project, this, ctx) }
+
+  private val keyword by lazy { children[0] as Terminal }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitModuleExtendsAmendsClause(this)

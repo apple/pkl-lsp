@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,12 +119,8 @@ private fun PklNode.doComputeExprType(
     is PklLogicalAndExpr -> base.booleanType
     is PklLogicalOrExpr -> base.booleanType
     is PklLogicalNotExpr -> base.booleanType
-    is PklTypeTestExpr ->
-      if (operator == TypeTestOperator.IS) {
-        base.booleanType
-      } else {
-        type.toType(base, bindings, context)
-      }
+    is PklTypeTestExpr -> base.booleanType
+    is PklTypeCastExpr -> type.toType(base, bindings, context)
     is PklModuleExpr ->
       enclosingModule?.computeResolvedImportType(base, mapOf(), context) ?: Type.Unknown
     is PklUnaryMinusExpr -> {

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -393,12 +393,11 @@ object Resolvers {
       // foo is Bar
       is PklTypeTestExpr -> {
         val leftExpr = expr.expr
-        if (expr.operator == TypeTestOperator.AS) {
-          true
-        } else if (leftExpr is PklUnqualifiedAccessExpr && leftExpr.isPropertyAccess) {
-          visitor.visitHasType(leftExpr.memberNameText, expr.type, bindings, false, context)
+        val type = expr.type ?: return true
+        if (leftExpr is PklUnqualifiedAccessExpr && leftExpr.isPropertyAccess) {
+          visitor.visitHasType(leftExpr.memberNameText, type, bindings, false, context)
         } else if (leftExpr is PklThisExpr) {
-          visitor.visitHasType(leftExpr.text, expr.type, bindings, false, context)
+          visitor.visitHasType(leftExpr.text, type, bindings, false, context)
         } else true
       }
       // foo != null, null != foo
@@ -463,10 +462,11 @@ object Resolvers {
       // foo is Bar -negated-> !(foo is Bar)
       is PklTypeTestExpr -> {
         val leftExpr = expr.expr
+        val type = expr.type ?: return true
         if (leftExpr is PklUnqualifiedAccessExpr && leftExpr.isPropertyAccess) {
-          visitor.visitHasType(leftExpr.memberNameText, expr.type, bindings, true, context)
+          visitor.visitHasType(leftExpr.memberNameText, type, bindings, true, context)
         } else if (leftExpr is PklThisExpr) {
-          visitor.visitHasType(leftExpr.text, expr.type, bindings, true, context)
+          visitor.visitHasType(leftExpr.text, type, bindings, true, context)
         } else true
       }
       // foo == null -negated-> foo != null
