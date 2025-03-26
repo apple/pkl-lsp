@@ -57,7 +57,7 @@ data class NativeLibrary(val name: String, val version: String) {
 }
 
 object NativeLibraries {
-  @JvmStatic val treeSitter = NativeLibrary("tree-sitter", Release.treeSitterVersion)
+  val treeSitter = NativeLibrary("tree-sitter", Release.treeSitterVersion)
 
-  @JvmStatic val treeSitterPkl = NativeLibrary("tree-sitter-pkl", Release.treeSitterPklVersion)
+  val treeSitterPkl = NativeLibrary("tree-sitter-pkl", Release.treeSitterPklVersion)
 }

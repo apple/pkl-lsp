@@ -3,7 +3,7 @@ assertj = "3.26.3"
 clikt = "5.0.1"
 downloadTaskPlugin = "5.6.0"
 jspecify = "1.0.0"
-jtreesitter = "0.24.0"
+jtreesitter = "0.25.0"
 junit = "5.11.3"
 kotlin = "2.0.21"
 kotlinx = "1.7.3"
@@ -13,7 +13,7 @@ nexusPublishPlugin = "2.0.0"
 pkl = "0.28.0"
 shadowPlugin = "8.1.1"
 spotless = "6.25.0"
-treeSitterRepo = "v0.23.0" # git tag name
+treeSitterRepo = "v0.25.3" # git tag name
 treeSitterPklRepo = "0.17.0"
 zig = "0.13.0" # used for cross-compiling tree-sitter libs
 
