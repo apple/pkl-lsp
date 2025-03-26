@@ -1,0 +1,8 @@
+ res1 = 1 as Boolean
+          ^^^^^^^^^^
+| Error: Type cast cannot succeed
+ 
+ res2 = 2 as Number
+          ^^^^^^^^^
+| Hint: Type cast is redundant
+ 

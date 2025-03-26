@@ -1,0 +1,20 @@
+ foo: Listing<String>?
+ 
+ bar {
+   ...foo
+      ^^^
+| Warning: Nullability mismatch.
+| Required: Collection|Map|Dynamic|Listing|Mapping|IntSeq
+| Actual: Listing<String>?
+ }
+ 
+ quz {
+   for (elem in foo) {
+                ^^^
+| Warning: Nullability mismatch.
+| Required: Collection|Map|Dynamic|Listing|Mapping|IntSeq
+| Actual: Listing<String>?
+     "hi \(elem)"
+   }
+ }
+ 

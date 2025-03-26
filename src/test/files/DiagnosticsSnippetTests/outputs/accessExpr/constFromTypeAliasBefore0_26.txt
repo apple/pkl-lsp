@@ -1,0 +1,11 @@
+ @ModuleInfo { minPklVersion = "0.25.0" }
+ module Foo
+ 
+ foo = "foo"
+ 
+ typealias Bar = String(this == foo)
+                                ^^^
+| Warning: Should not reference property `foo` from here because it is not `const`.
+| In Pkl 0.26, typealiases can only reference `const` members of their enclosing module, and this code is considered breaking.
+| To fix, either make the accessed member `const`, or add a self-import of this module, and access this member off of the self import.
+ 

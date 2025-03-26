@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,23 +17,26 @@ package org.pkl.lsp.analyzers
 
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
+import org.eclipse.lsp4j.DiagnosticTag
 import org.pkl.lsp.LspUtil.toRange
 import org.pkl.lsp.actions.PklCodeAction
 import org.pkl.lsp.ast.PklNode
 import org.pkl.lsp.ast.Span
 
 class PklDiagnostic(
-  val span: Span,
-  val message: String,
-  val severity: DiagnosticSeverity,
-  val action: PklCodeAction?,
+  var span: Span,
+  var message: String,
+  var severity: DiagnosticSeverity? = null,
+  var action: PklCodeAction? = null,
+  var tags: List<DiagnosticTag> = emptyList(),
 ) {
   constructor(
     node: PklNode,
     message: String,
-    severity: DiagnosticSeverity,
-    codeAction: PklCodeAction?,
+    severity: DiagnosticSeverity? = null,
+    codeAction: PklCodeAction? = null,
   ) : this(node.span, message, severity, codeAction)
 
-  fun toMessage(): Diagnostic = Diagnostic(span.toRange(), message, severity, "pkl")
+  fun toMessage(): Diagnostic =
+    Diagnostic(span.toRange(), message, severity, "pkl").also { it.tags = tags }
 }

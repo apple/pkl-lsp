@@ -1,0 +1,3 @@
+res1 = 1 as Boolean
+
+res2 = 2 as Number

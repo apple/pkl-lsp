@@ -206,7 +206,7 @@ class PklUnqualifiedAccessExprImpl(
     receiverType: Type?,
     bindings: TypeParameterBindings,
     visitor: ResolveVisitor<R>,
-    context: PklProject?
+    context: PklProject?,
   ): Pair<R, Resolvers.LookupMode> {
     return Resolvers.resolveUnqualifiedAccessAndLookupMode(
       this,
@@ -396,6 +396,9 @@ class PklNonNullExprImpl(
 ) : AbstractPklNode(project, parent, ctx), PklNonNullExpr {
   override val expr: PklExpr by lazy { children.firstInstanceOf<PklExpr>()!! }
 
+  override val operator: Terminal
+    get() = lastTerminalOfType(TokenType.NON_NULL)!!
+
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitNonNullExpr(this)
   }
@@ -537,7 +540,7 @@ class PklTypeCastExprImpl(
   override val project: Project,
   override val parent: PklNode,
   override val ctx: Node,
-) : AbstractPklNode(project, parent, ctx), PklTypeTestExpr {
+) : AbstractPklNode(project, parent, ctx), PklTypeCastExpr {
   override val expr: PklExpr? by lazy { children.firstInstanceOf<PklExpr>() }
   override val type: PklType? by lazy { children.firstInstanceOf<PklType>() }
   override val operator: Terminal by lazy {
@@ -545,7 +548,7 @@ class PklTypeCastExprImpl(
   }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
-    return visitor.visitTypeTestExpr(this)
+    return visitor.visitTypeCastExpr(this)
   }
 }
 

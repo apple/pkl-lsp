@@ -1,0 +1,168 @@
+ int: Int(isBetween(5, 10)) = 100
+                              ^^^
+| Error: Constraint violation.
+| Required: isBetween(5, 10)
+| Found: 100
+ 
+ int2: Int(this > 10) = 5
+                        ^
+| Error: Constraint violation.
+| Required: this > 10
+| Found: 5
+ 
+ int3: Int(isEven) = 3
+                     ^
+| Error: Constraint violation.
+| Required: isEven
+| Found: 3
+ 
+ int4: Int(isOdd) = 4
+                    ^
+| Error: Constraint violation.
+| Required: isOdd
+| Found: 4
+ 
+ int5: Int(isNonZero) = 0
+                        ^
+| Error: Constraint violation.
+| Required: isNonZero
+| Found: 0
+ 
+ int6: Int(this == 10) = 15
+                         ^^
+| Error: Constraint violation.
+| Required: this == 10
+| Found: 15
+ 
+ float: Float(isBetween(5, 10)) = 100.0
+                                  ^^^^^
+| Error: Constraint violation.
+| Required: isBetween(5, 10)
+| Found: 100.0
+ 
+ float2: Float(this > 10) = 5.0
+                            ^^^
+| Error: Constraint violation.
+| Required: this > 10
+| Found: 5.0
+ 
+ float5: Float(isNonZero) = 0.0
+                            ^^^
+| Error: Constraint violation.
+| Required: isNonZero
+| Found: 0.0
+ 
+ float6: Float(this == 10) = 15.0
+                             ^^^^
+| Error: Constraint violation.
+| Required: this == 10
+| Found: 15.0
+ 
+ list1: List(isEmpty) = List(1, 2, 3)
+                        ^^^^^^^^^^^^^
+| Error: Constraint violation.
+| Required: isEmpty
+| Found: List(1, 2, 3)
+ 
+ list2: List(length == 3) = List(1)
+                            ^^^^^^^
+| Error: Constraint violation.
+| Required: length == 3
+| Found: List(1)
+ 
+ set1: Set(isEmpty) = Set(1, 2, 3)
+                      ^^^^^^^^^^^^
+| Error: Constraint violation.
+| Required: isEmpty
+| Found: Set(1, 2, 3)
+ 
+ set2: Set(!isEmpty) = Set()
+                       ^^^^^
+| Error: Constraint violation.
+| Required: !isEmpty
+| Found: Set()
+ 
+ set3: Set(length == 3) = Set(1, 2)
+                          ^^^^^^^^^
+| Error: Constraint violation.
+| Required: length == 3
+| Found: Set(1, 2)
+ 
+ map1: Map(isEmpty) = Map(1, 2)
+                      ^^^^^^^^^
+| Error: Constraint violation.
+| Required: isEmpty
+| Found: Map(1, 2)
+ 
+ map2: Map(!isEmpty) = Map()
+                       ^^^^^
+| Error: Constraint violation.
+| Required: !isEmpty
+| Found: Map()
+ 
+ map3: Map(length == 3) = Map(1, 2, 3, 4)
+                          ^^^^^^^^^^^^^^^
+| Error: Constraint violation.
+| Required: length == 3
+| Found: Map(1, 2, 3, 4)
+ 
+ map4: Map(length > 3) = Map(1, 2, 3, 4, 5, 6)
+                         ^^^^^^^^^^^^^^^^^^^^^
+| Error: Constraint violation.
+| Required: length > 3
+| Found: Map(1, 2, 3, 4, 5, 6)
+ 
+ bool1: String(this == "hi" || this == "bye") = "something else"
+                                                ^^^^^^^^^^^^^^^^
+| Error: Constraint violation.
+| Required: (this == "hi") || (this == "bye")
+| Found: "something else"
+ 
+ bool2: String(this == "hi", this == "bye") = "something else"
+                                              ^^^^^^^^^^^^^^^^
+| Error: Constraint violation.
+| Required: this == "hi"
+| Found: "something else"
+ 
+ datasize1: DataSize(isBetween(1.kb, 1.tb)) = 1.b
+                                              ^^^
+| Error: Constraint violation.
+| Required: isBetween(1.kb, 1.tb)
+| Found: 1.b
+ 
+ datasize2: DataSize(this > 5.mb) = 1.mb
+                                    ^^^^
+| Error: Constraint violation.
+| Required: this > 5.mb
+| Found: 1.mb
+ 
+ datasize3: DataSize(isPositive) = -5.mb
+                                   ^^^^^
+| Error: Constraint violation.
+| Required: isPositive
+| Found: -5.mb
+ 
+ datasize4: DataSize(isBinaryUnit) = 5.mb
+                                     ^^^^
+| Error: Constraint violation.
+| Required: isBinaryUnit
+| Found: 5.mb
+ 
+ datasize5: DataSize(isDecimalUnit) = 5.mib
+                                      ^^^^^
+| Error: Constraint violation.
+| Required: isDecimalUnit
+| Found: 5.mib
+ 
+ string1: String(isEmpty) = "hello"
+                            ^^^^^^^
+| Error: Constraint violation.
+| Required: isEmpty
+| Found: "hello"
+ 
+ string2: String(isRegex) = "\\"
+                            ^^^^
+| Error: Constraint violation.
+| Required: isRegex
+| Found: "\"
+ 

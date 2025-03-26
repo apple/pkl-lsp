@@ -1,0 +1,48 @@
+ res1 = new Listing { 1; 2; 3 }.toList().join(",")
+                                ^^^^^^^^
+| Hint: `toList()` conversion is redundant
+ 
+ res2 = new Listing { 1; 2; 3 }.toList().fold(0, (a, b) -> a + b)
+                                ^^^^^^^^
+| Hint: `toList()` conversion is redundant
+ 
+ res3 = new Listing { 1; 2; 3 }.toList().foldIndexed(0, (_, a, b) -> a + b)
+                                ^^^^^^^^
+| Hint: `toList()` conversion is redundant
+ 
+ res4 = new Mapping { ["foo"] = 1 }.toMap().containsKey("foo")
+                                    ^^^^^^^
+| Hint: `toMap()` conversion is redundant
+ 
+ res5 = new Mapping { ["foo"] = 1 }.toMap().getOrNull("foo")
+                                    ^^^^^^^
+| Hint: `toMap()` conversion is redundant
+ 
+ res6 = new Mapping { ["foo"] = 1 }.toMap().fold(0, (a, _, b) -> a + b)
+                                    ^^^^^^^
+| Hint: `toMap()` conversion is redundant
+ 
+ res7 = new Listing {}.toList().isEmpty
+                       ^^^^^^^^
+| Hint: `toList()` conversion is redundant
+ 
+ res8 = new Listing {}.toList().length
+                       ^^^^^^^^
+| Hint: `toList()` conversion is redundant
+ 
+ res9 = new Listing {}.toList().isDistinct
+                       ^^^^^^^^
+| Hint: `toList()` conversion is redundant
+ 
+ res10 = new Mapping {}.toMap().isEmpty
+                        ^^^^^^^
+| Hint: `toMap()` conversion is redundant
+ 
+ res11 = new Mapping {}.toMap().length
+                        ^^^^^^^
+| Hint: `toMap()` conversion is redundant
+ 
+ res12 = new Mapping {}.toMap().keys
+                        ^^^^^^^
+| Hint: `toMap()` conversion is redundant
+ 

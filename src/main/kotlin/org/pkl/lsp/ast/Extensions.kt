@@ -27,12 +27,15 @@ import org.pkl.lsp.LspUtil.toRange
 import org.pkl.lsp.StdlibFile
 import org.pkl.lsp.ast.PklModuleUriImpl.Companion.resolve
 import org.pkl.lsp.ast.PklModuleUriImpl.Companion.resolveGlob
+import org.pkl.lsp.documentation.DefaultTypeNameRenderer
+import org.pkl.lsp.documentation.TypeNameRenderer
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.resolvers.ResolveVisitors
 import org.pkl.lsp.resolvers.Resolvers
 import org.pkl.lsp.type.Type
 import org.pkl.lsp.type.TypeParameterBindings
 import org.pkl.lsp.type.computeResolvedImportType
+import org.pkl.lsp.type.toType
 import org.pkl.lsp.util.ModificationTracker
 
 val PklClass.supertype: PklType?
@@ -109,6 +112,24 @@ fun PklNode.isAncestor(of: PklNode): Boolean {
     node = node.parent
   }
   return false
+}
+
+inline fun PklNode.lastChildMatching(predicate: (PklNode) -> Boolean): PklNode? {
+  for (i in children.lastIndex downTo 0) {
+    val node = children[i]
+    if (predicate(node)) {
+      return node
+    }
+  }
+  return null
+}
+
+fun PklNode.firstTerminalOfType(type: TokenType): Terminal? {
+  return children.find { it is Terminal && it.type == type } as Terminal?
+}
+
+fun PklNode.lastTerminalOfType(type: TokenType): Terminal? {
+  return lastChildMatching { it is Terminal && it.type == type } as Terminal?
 }
 
 val PklNode.isInStdlib
@@ -238,6 +259,15 @@ val PklMethod.isOverridable: Boolean
       this is PklClassMethod -> owner?.isAbstractOrOpen ?: false
       else -> unexpectedType(this)
     }
+
+fun PklMethod.isVarArgs(base: PklBaseModule): Boolean {
+  val varArgsType = base.varArgsType
+  val lastParam = methodHeader.parameterList?.elements?.lastOrNull() ?: return false
+  val lastParamType =
+    // optimization: varargs is only available in stdlib, no need to provide context.
+    lastParam.type.toType(base, mapOf(), null).toClassType(base, null)
+  return lastParamType != null && lastParamType.classEquals(varArgsType)
+}
 
 inline fun <reified T : PklNode> PklNode.parentOfType(): T? {
   return parentOfTypes(T::class)
@@ -478,4 +508,116 @@ inline fun PklClass.eachSuperclassOrModule(
       consumer(base.anyType.ctx)
     }
   }
+}
+
+fun Appendable.renderTypedIdentifier(
+  typedIdentifier: PklTypedIdentifier,
+  bindings: TypeParameterBindings,
+  nameRenderer: TypeNameRenderer = DefaultTypeNameRenderer,
+): Appendable {
+  if (typedIdentifier.isUnderscore) {
+    append("_")
+  } else {
+    append(typedIdentifier.identifier?.text)
+    renderTypeAnnotation(typedIdentifier.type, bindings, nameRenderer)
+  }
+  return this
+}
+
+fun Appendable.renderTypeAnnotation(
+  type: PklType?,
+  bindings: TypeParameterBindings,
+  nameRenderer: TypeNameRenderer = DefaultTypeNameRenderer,
+): Appendable {
+  append(": ")
+  renderType(type, bindings, nameRenderer)
+  return this
+}
+
+fun Appendable.renderType(
+  type: PklType?,
+  bindings: TypeParameterBindings,
+  nameRenderer: TypeNameRenderer = DefaultTypeNameRenderer,
+): Appendable {
+  when (type) {
+    null -> append("unknown")
+    is PklDeclaredType -> {
+      val name = type.name.simpleTypeName.text
+      for ((key, value) in bindings) {
+        if (key.name == name) {
+          value.render(this, nameRenderer)
+          return this
+        }
+      }
+      nameRenderer.render(type.name, this)
+      val typeArgumentList = type.typeArgumentList
+      if (typeArgumentList != null && typeArgumentList.types.any { it !is PklUnknownType }) {
+        append('<')
+        var first = true
+        for (arg in typeArgumentList.types) {
+          if (first) first = false else append(", ")
+          renderType(arg, bindings, nameRenderer)
+        }
+        append('>')
+      }
+    }
+    is PklNullableType -> {
+      val addParens = type is PklUnionType || type is PklFunctionType
+      if (addParens) append('(')
+      renderType(type.type, bindings, nameRenderer)
+      if (addParens) append(')')
+      append('?')
+    }
+    is PklConstrainedType -> renderType(type.type, bindings, nameRenderer)
+    is PklParenthesizedType -> {
+      append('(')
+      renderType(type.type, bindings, nameRenderer)
+      append(')')
+    }
+    is PklFunctionType -> {
+      append('(')
+      var first = true
+      for (t in type.parameterList) {
+        if (first) first = false else append(", ")
+        renderType(t, bindings, nameRenderer)
+      }
+      append(") -> ")
+      renderType(type.returnType, bindings, nameRenderer)
+    }
+    is PklUnionType -> {
+      renderType(type.leftType, bindings, nameRenderer)
+      append("|")
+      renderType(type.rightType, bindings, nameRenderer)
+    }
+    is PklDefaultUnionType -> {
+      append('*')
+      renderType(type.type, bindings, nameRenderer)
+    }
+    is PklStringLiteralType -> append(type.stringConstant.text)
+    is PklNothingType -> append("nothing")
+    is PklModuleType -> append("module")
+    is PklUnknownType -> append("unknown")
+  }
+
+  return this
+}
+
+fun Appendable.renderParameterList(
+  parameterList: PklParameterList?,
+  bindings: TypeParameterBindings,
+  nameRenderer: TypeNameRenderer = DefaultTypeNameRenderer,
+): Appendable {
+  append('(')
+
+  if (parameterList != null) {
+    var first = true
+    for (parameter in parameterList.elements) {
+      if (first) first = false else append(", ")
+      renderTypedIdentifier(parameter, bindings, nameRenderer)
+    }
+  }
+
+  append(')')
+
+  return this
 }

@@ -1,0 +1,23 @@
+res1 = new Listing { 1; 2; 3 }.toList().join(",")
+
+res2 = new Listing { 1; 2; 3 }.toList().fold(0, (a, b) -> a + b)
+
+res3 = new Listing { 1; 2; 3 }.toList().foldIndexed(0, (_, a, b) -> a + b)
+
+res4 = new Mapping { ["foo"] = 1 }.toMap().containsKey("foo")
+
+res5 = new Mapping { ["foo"] = 1 }.toMap().getOrNull("foo")
+
+res6 = new Mapping { ["foo"] = 1 }.toMap().fold(0, (a, _, b) -> a + b)
+
+res7 = new Listing {}.toList().isEmpty
+
+res8 = new Listing {}.toList().length
+
+res9 = new Listing {}.toList().isDistinct
+
+res10 = new Mapping {}.toMap().isEmpty
+
+res11 = new Mapping {}.toMap().length
+
+res12 = new Mapping {}.toMap().keys

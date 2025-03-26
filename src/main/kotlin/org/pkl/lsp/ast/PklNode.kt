@@ -286,7 +286,7 @@ interface PklClassProperty : PklProperty, PklModuleMember, PklClassMember, PklTy
 
 interface PklMethod : PklNavigableElement, PklModifierListOwner {
   val methodHeader: PklMethodHeader
-  val body: PklExpr
+  val body: PklExpr?
   val name: String
 }
 
@@ -352,6 +352,8 @@ interface PklObjectBody : PklNode {
   val properties: List<PklObjectProperty>
 
   val methods: List<PklObjectMethod>
+
+  fun isConstScope(): Boolean
 }
 
 interface PklTypeParameterList : PklNode {
@@ -486,6 +488,7 @@ interface PklSubscriptExpr : PklBinExpr
 
 interface PklNonNullExpr : PklExpr {
   val expr: PklExpr
+  val operator: Terminal
 }
 
 interface PklUnaryMinusExpr : PklExpr {
@@ -688,11 +691,9 @@ abstract class AbstractPklNode(
   protected open val ctx: Node,
 ) : CachedValueDataHolderBase(), PklNode {
   private val childrenByType: Map<KClass<out PklNode>, List<PklNode>> by lazy {
-    val self = this
     // use LinkedHashMap to preserve order
     LinkedHashMap<KClass<out PklNode>, MutableList<PklNode>>().also { map ->
-      for (idx in ctx.children.indices) {
-        val node = ctx.children.toNode(project, self, idx) ?: continue
+      for (node in children) {
         when (val nodes = map[node::class]) {
           null -> map[node::class] = mutableListOf(node)
           else -> nodes.add(node)
@@ -729,7 +730,9 @@ abstract class AbstractPklNode(
 
   override val terminals: List<Terminal> by lazy { getChildren(TerminalImpl::class) ?: emptyList() }
 
-  override val children: List<PklNode> by lazy { childrenByType.values.flatten() }
+  override val children: List<PklNode> by lazy {
+    ctx.children.mapNotNull { it.toNode(project, this) }
+  }
 
   override val text: String by lazy { ctx.text!! }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ import com.google.gson.JsonPrimitive
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import kotlin.io.path.isExecutable
-import kotlin.io.path.listDirectoryEntries
-import kotlin.io.path.name
 import kotlinx.serialization.Serializable
 import org.eclipse.lsp4j.*
 import org.pkl.lsp.*
@@ -78,11 +76,10 @@ class SettingsManager(project: Project) : Component(project) {
   private fun findPklCliOnPath(): Path? {
     val pathDirs = System.getenv("PATH").split(if (isWindows) ";" else ":")
     for (dir in pathDirs) {
-      for (file in Path.of(dir).listDirectoryEntries()) {
-        if (file.name == "pkl" && file.isExecutable()) {
-          logger.log("Using Pkl CLI on PATH: $file")
-          return file
-        }
+      val file = Path.of(dir).resolve("pkl")
+      if (file.isExecutable()) {
+        logger.log("Using Pkl CLI on PATH: $file")
+        return file
       }
     }
     return null

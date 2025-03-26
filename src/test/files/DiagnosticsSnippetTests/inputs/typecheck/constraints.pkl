@@ -1,0 +1,55 @@
+int: Int(isBetween(5, 10)) = 100
+
+int2: Int(this > 10) = 5
+
+int3: Int(isEven) = 3
+
+int4: Int(isOdd) = 4
+
+int5: Int(isNonZero) = 0
+
+int6: Int(this == 10) = 15
+
+float: Float(isBetween(5, 10)) = 100.0
+
+float2: Float(this > 10) = 5.0
+
+float5: Float(isNonZero) = 0.0
+
+float6: Float(this == 10) = 15.0
+
+list1: List(isEmpty) = List(1, 2, 3)
+
+list2: List(length == 3) = List(1)
+
+set1: Set(isEmpty) = Set(1, 2, 3)
+
+set2: Set(!isEmpty) = Set()
+
+set3: Set(length == 3) = Set(1, 2)
+
+map1: Map(isEmpty) = Map(1, 2)
+
+map2: Map(!isEmpty) = Map()
+
+map3: Map(length == 3) = Map(1, 2, 3, 4)
+
+map4: Map(length > 3) = Map(1, 2, 3, 4, 5, 6)
+
+bool1: String(this == "hi" || this == "bye") = "something else"
+
+bool2: String(this == "hi", this == "bye") = "something else"
+
+datasize1: DataSize(isBetween(1.kb, 1.tb)) = 1.b
+
+datasize2: DataSize(this > 5.mb) = 1.mb
+
+datasize3: DataSize(isPositive) = -5.mb
+
+datasize4: DataSize(isBinaryUnit) = 5.mb
+
+datasize5: DataSize(isDecimalUnit) = 5.mib
+
+string1: String(isEmpty) = "hello"
+
+string2: String(isRegex) = "\\"

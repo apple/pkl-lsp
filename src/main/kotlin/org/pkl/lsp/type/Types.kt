@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package org.pkl.lsp.type
 
 import java.util.*
+import kotlin.math.min
 import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.Project
 import org.pkl.lsp.ast.*
@@ -24,7 +25,6 @@ import org.pkl.lsp.documentation.TypeNameRenderer
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.resolvers.ResolveVisitor
 import org.pkl.lsp.unexpectedType
-import kotlin.math.min
 
 /**
  * A type whose names have been resolved to their definitions.
@@ -568,7 +568,7 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
     override fun hasCommonSubtypeWith(
       type: Type,
       base: PklBaseModule,
-      context: PklProject?
+      context: PklProject?,
     ): Boolean =
       when (type) {
         is Class -> hasCommonSubtypeWith(type, base, context)
@@ -583,7 +583,7 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
     private fun hasCommonSubtypeWith(
       type: Class,
       base: PklBaseModule,
-      context: PklProject?
+      context: PklProject?,
     ): Boolean {
       // optimization
       if (ctx === base.anyType.ctx) return true
@@ -774,9 +774,9 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
       visitor: ResolveVisitor<*>,
       context: PklProject?,
     ): Boolean {
-      // return ctx.body.toType(base, bindings).visitMembers(isProperty, allowClasses, base,
-      // visitor)
-      return true
+      return ctx.type
+        .toType(base, bindings, context)
+        .visitMembers(isProperty, allowClasses, base, visitor, context)
     }
 
     override fun resolveToDefinitions(base: PklBaseModule): List<PklNavigableElement> = listOf(ctx)

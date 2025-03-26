@@ -1,0 +1,8 @@
+ foo = 1 is Number
+       ^^^^^^^^^^^
+| Warning: Expression is always 'true'
+ 
+ bar = 1 is Boolean
+       ^^^^^^^^^^^^
+| Warning: Expression is always 'false'
+ 

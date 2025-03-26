@@ -1,3 +1,18 @@
+/*
+ * Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.pkl.lsp.analyzers
 
 import org.pkl.lsp.PklBaseModule
@@ -12,10 +27,7 @@ import org.pkl.lsp.type.inferExprTypeFromContext
 import org.pkl.lsp.type.toConstraintExpr
 
 class TypeCheckAnalyzer(project: Project) : Analyzer(project) {
-  override fun doAnalyze(
-    node: PklNode,
-    holder: MutableList<PklDiagnostic>
-  ): Boolean {
+  override fun doAnalyze(node: PklNode, holder: MutableList<PklDiagnostic>): Boolean {
     if (node !is PklExpr) return true
 
     val module = node.enclosingModule ?: return true
@@ -24,31 +36,19 @@ class TypeCheckAnalyzer(project: Project) : Analyzer(project) {
     val context = node.containingFile.pklProject
 
     val expectedType = node.inferExprTypeFromContext(base, mapOf(), context)
-    val len = holder.size
-    checkExprType(node, expectedType, base, holder, context)
-    return holder.size > len
-  }
+    if (expectedType == Type.Unknown) return false
 
-  private fun checkExprType(
-    expr: PklExpr?,
-    expectedType: Type,
-    base: PklBaseModule,
-    holder: MutableList<PklDiagnostic>,
-    context: PklProject?
-  ) {
-
-    if (expr == null || expectedType == Type.Unknown) return
-
-    val exprType = expr.computeExprType(base, mapOf(), context)
-    val exprValue = lazy { expr.toConstraintExpr(base, context).evaluate(ConstraintValue.Error) }
+    val exprType = node.computeExprType(base, mapOf(), context)
+    val exprValue = lazy { node.toConstraintExpr(base, context).evaluate(ConstraintValue.Error) }
     val failedConstraints = mutableListOf<Pair<Type, Int>>()
     if (!isTypeMatch(exprType, exprValue, expectedType, failedConstraints, base, context)) {
       when {
         failedConstraints.isEmpty() ->
-          reportTypeMismatch(expr, exprType, expectedType, base, holder, context)
-        else -> reportConstraintMismatch(expr, exprValue, failedConstraints, holder)
+          reportTypeMismatch(node, exprType, expectedType, base, holder, context)
+        else -> reportConstraintMismatch(node, exprValue, failedConstraints, holder)
       }
     }
+    return true
   }
 
   /**
@@ -62,7 +62,7 @@ class TypeCheckAnalyzer(project: Project) : Analyzer(project) {
     memberType: Type,
     failedConstraints: MutableList<Pair<Type, Int>>,
     base: PklBaseModule,
-    context: PklProject?
+    context: PklProject?,
   ): Boolean {
 
     return when {
@@ -73,14 +73,14 @@ class TypeCheckAnalyzer(project: Project) : Analyzer(project) {
           memberType,
           failedConstraints,
           base,
-          context
+          context,
         )
       }
       exprType is Type.Union -> {
         // This can cause multiple checks of the same top-level or nested constraint.
         // To avoid this, constraint check results could be cached while this method runs.
         isTypeMatch(exprType.leftType, exprValue, memberType, failedConstraints, base, context) &&
-            isTypeMatch(exprType.rightType, exprValue, memberType, failedConstraints, base, context)
+          isTypeMatch(exprType.rightType, exprValue, memberType, failedConstraints, base, context)
       }
       memberType is Type.Alias -> {
         isTypeMatch(
@@ -89,23 +89,23 @@ class TypeCheckAnalyzer(project: Project) : Analyzer(project) {
           memberType.aliasedType(base, context),
           failedConstraints,
           base,
-          context
+          context,
         ) && isConstraintMatch(exprValue, memberType, failedConstraints, true)
       }
       memberType is Type.Union && !memberType.isUnionOfStringLiterals -> {
         (isTypeMatch(exprType, exprValue, memberType.leftType, failedConstraints, base, context) ||
-            isTypeMatch(
-              exprType,
-              exprValue,
-              memberType.rightType,
-              failedConstraints,
-              base,
-              context
-            )) && isConstraintMatch(exprValue, memberType, failedConstraints, true)
+          isTypeMatch(
+            exprType,
+            exprValue,
+            memberType.rightType,
+            failedConstraints,
+            base,
+            context,
+          )) && isConstraintMatch(exprValue, memberType, failedConstraints, true)
       }
       else -> {
         exprType.isSubtypeOf(memberType, base, context) &&
-            isConstraintMatch(exprValue, memberType, failedConstraints, false)
+          isConstraintMatch(exprValue, memberType, failedConstraints, false)
       }
     }
   }
@@ -114,7 +114,7 @@ class TypeCheckAnalyzer(project: Project) : Analyzer(project) {
     exprValue: Lazy<ConstraintValue>,
     memberType: Type,
     failedConstraints: MutableList<Pair<Type, Int>>,
-    isOverride: Boolean
+    isOverride: Boolean,
   ): Boolean {
 
     var index = 0
@@ -140,7 +140,7 @@ class TypeCheckAnalyzer(project: Project) : Analyzer(project) {
     requiredType: Type,
     base: PklBaseModule,
     holder: MutableList<PklDiagnostic>,
-    context: PklProject?
+    context: PklProject?,
   ) {
     when {
       !actualType.hasCommonSubtypeWith(requiredType, base, context) -> {
@@ -151,8 +151,7 @@ class TypeCheckAnalyzer(project: Project) : Analyzer(project) {
         holder += error(expr, typeMismatchMessage("Type", requiredType, actualType))
       }
       actualType.isNullable(base, context) &&
-          actualType.nonNull(base, context).isSubtypeOf(requiredType, base, context) -> {
-            holder += warn(expr, "")
+        actualType.nonNull(base, context).isSubtypeOf(requiredType, base, context) -> {
         // actual type is only too weak in that it admits `null` ->
         // could be caused by the type system being too weak ->
         // runtime type check could succeed ->
@@ -181,7 +180,7 @@ class TypeCheckAnalyzer(project: Project) : Analyzer(project) {
     expr: PklExpr,
     exprValue: Lazy<ConstraintValue>,
     constraints: List<Pair<Type, Int>>,
-    holder: MutableList<PklDiagnostic>
+    holder: MutableList<PklDiagnostic>,
   ) {
 
     val textBuilder = StringBuilder()
