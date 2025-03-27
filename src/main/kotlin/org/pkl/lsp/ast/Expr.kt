@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -136,7 +136,10 @@ class PklImportExprImpl(
   override val parent: PklNode,
   override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklImportExpr {
-  override val isGlob: Boolean by lazy { ctx.type == "importGlobExpr" }
+  override val isGlob: Boolean by lazy {
+    val token = children.first() as Terminal
+    token.type == TokenType.IMPORT_GLOB
+  }
 
   // TODO: tree-sitter has only a string constant here
   override val moduleUri: PklModuleUri? by lazy { PklModuleUriImpl(project, this, ctx) }
@@ -152,12 +155,14 @@ class PklReadExprImpl(
   override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklReadExpr {
   override val expr: PklExpr? by lazy { children.firstInstanceOf<PklExpr>() }
-  override val isNullable: Boolean by lazy { ctx.type == "readOrNullExpr" }
-  override val isGlob: Boolean by lazy { ctx.type == "readGlobExpr" }
+  override val isNullable: Boolean by lazy { firstToken.type == TokenType.READ_OR_NULL }
+  override val isGlob: Boolean by lazy { firstToken.type == TokenType.READ_GLOB }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitReadExpr(this)
   }
+
+  private val firstToken by lazy { children.first() as Terminal }
 }
 
 class PklUnqualifiedAccessExprImpl(
@@ -405,20 +410,19 @@ abstract class PklBinExprImpl(
   override val project: Project,
   override val parent: PklNode,
   override val ctx: Node,
-  open val tsOperator: Node,
 ) : AbstractPklNode(project, parent, ctx), PklBinExpr {
   private val exprs: List<PklExpr> by lazy { children.filterIsInstance<PklExpr>() }
   override val leftExpr: PklExpr by lazy { exprs[0] }
   override val rightExpr: PklExpr by lazy { exprs[1] }
   override val operator: Terminal by lazy { tsOperator.toTerminal(parent)!! }
+  private val tsOperator: Node by lazy { ctx.getChildByFieldName("operator").get() }
 }
 
 class PklAdditiveExprImpl(
   override val project: Project,
   override val parent: PklNode,
   override val ctx: Node,
-  override val tsOperator: Node,
-) : PklBinExprImpl(project, parent, ctx, tsOperator), PklAdditiveExpr {
+) : PklBinExprImpl(project, parent, ctx), PklAdditiveExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitAdditiveExpr(this)
   }
@@ -428,8 +432,7 @@ class PklMultiplicativeExprImpl(
   override val project: Project,
   override val parent: PklNode,
   override val ctx: Node,
-  override val tsOperator: Node,
-) : PklBinExprImpl(project, parent, ctx, tsOperator), PklMultiplicativeExpr {
+) : PklBinExprImpl(project, parent, ctx), PklMultiplicativeExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitMultiplicativeExpr(this)
   }
@@ -439,8 +442,7 @@ class PklComparisonExprImpl(
   override val project: Project,
   override val parent: PklNode,
   override val ctx: Node,
-  override val tsOperator: Node,
-) : PklBinExprImpl(project, parent, ctx, tsOperator), PklComparisonExpr {
+) : PklBinExprImpl(project, parent, ctx), PklComparisonExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitComparisonExpr(this)
   }
@@ -450,8 +452,7 @@ class PklEqualityExprImpl(
   override val project: Project,
   override val parent: PklNode,
   override val ctx: Node,
-  override val tsOperator: Node,
-) : PklBinExprImpl(project, parent, ctx, tsOperator), PklEqualityExpr {
+) : PklBinExprImpl(project, parent, ctx), PklEqualityExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitEqualityExpr(this)
   }
@@ -461,8 +462,7 @@ class PklExponentiationExprImpl(
   override val project: Project,
   override val parent: PklNode,
   override val ctx: Node,
-  override val tsOperator: Node,
-) : PklBinExprImpl(project, parent, ctx, tsOperator), PklExponentiationExpr {
+) : PklBinExprImpl(project, parent, ctx), PklExponentiationExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitExponentiationExpr(this)
   }
@@ -472,8 +472,7 @@ class PklLogicalAndExprImpl(
   override val project: Project,
   override val parent: PklNode,
   override val ctx: Node,
-  override val tsOperator: Node,
-) : PklBinExprImpl(project, parent, ctx, tsOperator), PklLogicalAndExpr {
+) : PklBinExprImpl(project, parent, ctx), PklLogicalAndExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitLogicalAndExpr(this)
   }
@@ -483,8 +482,7 @@ class PklLogicalOrExprImpl(
   override val project: Project,
   override val parent: PklNode,
   override val ctx: Node,
-  override val tsOperator: Node,
-) : PklBinExprImpl(project, parent, ctx, tsOperator), PklLogicalOrExpr {
+) : PklBinExprImpl(project, parent, ctx), PklLogicalOrExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitLogicalOrExpr(this)
   }
@@ -494,8 +492,7 @@ class PklNullCoalesceExprImpl(
   override val project: Project,
   override val parent: PklNode,
   override val ctx: Node,
-  override val tsOperator: Node,
-) : PklBinExprImpl(project, parent, ctx, tsOperator), PklNullCoalesceExpr {
+) : PklBinExprImpl(project, parent, ctx), PklNullCoalesceExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitNullCoalesceExpr(this)
   }
@@ -507,9 +504,25 @@ class PklTypeTestExprImpl(
   override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklTypeTestExpr {
   override val expr: PklExpr? by lazy { children.firstInstanceOf<PklExpr>() }
-  override val type: PklType by lazy { children.firstInstanceOf<PklType>()!! }
-  override val operator: TypeTestOperator by lazy {
-    if (ctx.type == "isExpr") TypeTestOperator.IS else TypeTestOperator.AS
+  override val type: PklType? by lazy { children.firstInstanceOf<PklType>() }
+  override val operator: Terminal by lazy {
+    children.first { it is Terminal && it.type == TokenType.IS } as Terminal
+  }
+
+  override fun <R> accept(visitor: PklVisitor<R>): R? {
+    return visitor.visitTypeTestExpr(this)
+  }
+}
+
+class PklTypeCastExprImpl(
+  override val project: Project,
+  override val parent: PklNode,
+  override val ctx: Node,
+) : AbstractPklNode(project, parent, ctx), PklTypeTestExpr {
+  override val expr: PklExpr? by lazy { children.firstInstanceOf<PklExpr>() }
+  override val type: PklType? by lazy { children.firstInstanceOf<PklType>() }
+  override val operator: Terminal by lazy {
+    children.first { it is Terminal && it.type == TokenType.AS } as Terminal
   }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
@@ -521,8 +534,7 @@ class PklPipeExprImpl(
   override val project: Project,
   override val parent: PklNode,
   override val ctx: Node,
-  override val tsOperator: Node,
-) : PklBinExprImpl(project, parent, ctx, tsOperator), PklPipeExpr {
+) : PklBinExprImpl(project, parent, ctx), PklPipeExpr {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitPipeExpr(this)
   }
@@ -592,13 +604,13 @@ class PklTypedIdentifierImpl(
   override val project: Project,
   override val parent: PklNode,
   override val ctx: Node,
+  override val isUnderscore: Boolean,
 ) : AbstractPklNode(project, parent, ctx), PklTypedIdentifier {
   override val identifier: Terminal? by lazy { terminals.find { it.type == TokenType.Identifier } }
   override val typeAnnotation: PklTypeAnnotation? by lazy {
     children.firstInstanceOf<PklTypeAnnotation>()
   }
   override val type: PklType? by lazy { typeAnnotation?.type }
-  override val isUnderscore: Boolean by lazy { typeAnnotation == null && identifier!!.text == "_" }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitTypedIdentifier(this)

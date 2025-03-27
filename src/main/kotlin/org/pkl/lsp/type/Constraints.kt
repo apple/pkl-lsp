@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,16 +55,13 @@ fun PklExpr?.toConstraintExpr(base: PklBaseModule, context: PklProject?): Constr
     is PklFalseLiteralExpr -> False
     is PklNullLiteralExpr -> Null
     is PklThisExpr -> ThisExpr
-    is PklTypeTestExpr -> {
-      if (operator == TypeTestOperator.IS)
-        TypeTest(
-          expr.toConstraintExpr(base, context),
-          type.toType(base, mapOf(), context),
-          base,
-          context,
-        )
-      else Error
-    }
+    is PklTypeTestExpr ->
+      TypeTest(
+        expr.toConstraintExpr(base, context),
+        type.toType(base, mapOf(), context),
+        base,
+        context,
+      )
     is PklIfExpr ->
       If(
         conditionExpr.toConstraintExpr(base, context),

@@ -17,7 +17,6 @@ package org.pkl.lsp.ast
 
 import io.github.treesitter.jtreesitter.Node
 import java.net.URI
-import kotlin.jvm.optionals.getOrNull
 import kotlin.reflect.KClass
 import org.eclipse.lsp4j.CompletionItem
 import org.eclipse.lsp4j.CompletionItemKind
@@ -519,13 +518,14 @@ interface PklNullCoalesceExpr : PklBinExpr
 
 interface PklTypeTestExpr : PklExpr {
   val expr: PklExpr?
-  val type: PklType
-  val operator: TypeTestOperator
+  val type: PklType?
+  val operator: Terminal
 }
 
-enum class TypeTestOperator {
-  IS,
-  AS,
+interface PklTypeCastExpr : PklExpr {
+  val expr: PklExpr?
+  val type: PklType?
+  val operator: Terminal
 }
 
 interface PklPipeExpr : PklBinExpr
@@ -760,26 +760,6 @@ fun List<Node>.toNode(project: Project, parent: PklNode?, idx: Int): PklNode? {
   return get(idx).toNode(project, parent)
 }
 
-private fun Node.toTypeNode(project: Project, parent: PklNode?): PklNode? {
-  if (childCount <= 0) return null
-  val childType = children.single()
-  return when (childType.type) {
-    "unknownType" -> PklUnknownTypeImpl(project, parent!!, childType)
-    "nothingType" -> PklNothingTypeImpl(project, parent!!, childType)
-    "moduleType" -> PklModuleTypeImpl(project, parent!!, childType)
-    "stringLiteralType" -> PklStringLiteralTypeImpl(project, parent!!, childType)
-    "declaredType" -> PklDeclaredTypeImpl(project, parent!!, childType)
-    "parenthesizedType" -> PklParenthesizedTypeImpl(project, parent!!, childType)
-    "functionLiteralType" -> PklFunctionTypeImpl(project, parent!!, childType)
-    // TODO: for pkl-tree-sitter `*Foo` alone is a valid type
-    "unionDefaultType" -> PklDefaultUnionTypeImpl(project, parent!!, childType)
-    "nullableType" -> PklNullableTypeImpl(project, parent!!, childType)
-    "unionType" -> PklUnionTypeImpl(project, parent!!, childType)
-    "constrainedType" -> PklConstrainedTypeImpl(project, parent!!, childType)
-    else -> throw AssertionError("Unexpected type: ${childType.type}")
-  }
-}
-
 fun Node.toNode(project: Project, parent: PklNode?): PklNode? {
   return when (type) {
     // a module can never be constructed from this function
@@ -800,94 +780,71 @@ fun Node.toNode(project: Project, parent: PklNode?): PklNode? {
     "argumentList" -> PklArgumentListImpl(project, parent!!, this)
     "annotation" -> PklAnnotationImpl(project, parent!!, this)
     "typeAnnotation" -> PklTypeAnnotationImpl(project, parent!!, this)
-    "typedIdentifier" -> PklTypedIdentifierImpl(project, parent!!, this)
-    "type" -> toTypeNode(project, parent)
+    "typedIdentifier" -> PklTypedIdentifierImpl(project, parent!!, this, false)
+    "blankIdentifier" -> PklTypedIdentifierImpl(project, parent!!, this, true)
+    "unknownType" -> PklUnknownTypeImpl(project, parent!!, this)
+    "nothingType" -> PklNothingTypeImpl(project, parent!!, this)
+    "moduleType" -> PklModuleTypeImpl(project, parent!!, this)
+    "stringLiteralType" -> PklStringLiteralTypeImpl(project, parent!!, this)
+    "declaredType" -> PklDeclaredTypeImpl(project, parent!!, this)
+    "parenthesizedType" -> PklParenthesizedTypeImpl(project, parent!!, this)
+    "functionLiteralType" -> PklFunctionTypeImpl(project, parent!!, this)
+    // TODO: for pkl-tree-sitter `*Foo` alone is a valid type
+    "defaultUnionType" -> PklDefaultUnionTypeImpl(project, parent!!, this)
+    "nullableType" -> PklNullableTypeImpl(project, parent!!, this)
+    "unionType" -> PklUnionTypeImpl(project, parent!!, this)
+    "constrainedType" -> PklConstrainedTypeImpl(project, parent!!, this)
     "typeArgumentList" -> PklTypeArgumentListImpl(project, parent!!, this)
     "thisExpr" -> PklThisExprImpl(project, parent!!, this)
     "outerExpr" -> PklOuterExprImpl(project, parent!!, this)
     "moduleExpr" -> PklModuleExprImpl(project, parent!!, this)
-    "nullLiteral" -> PklNullLiteralExprImpl(project, parent!!, this)
-    "trueLiteral" -> PklTrueLiteralExprImpl(project, parent!!, this)
-    "falseLiteral" -> PklFalseLiteralExprImpl(project, parent!!, this)
-    "intLiteral" -> PklIntLiteralExprImpl(project, parent!!, this)
-    "floatLiteral" -> PklFloatLiteralExprImpl(project, parent!!, this)
+    "nullLiteralExpr" -> PklNullLiteralExprImpl(project, parent!!, this)
+    "trueLiteralExpr" -> PklTrueLiteralExprImpl(project, parent!!, this)
+    "falseLiteralExpr" -> PklFalseLiteralExprImpl(project, parent!!, this)
+    "intLiteralExpr" -> PklIntLiteralExprImpl(project, parent!!, this)
+    "floatLiteralExpr" -> PklFloatLiteralExprImpl(project, parent!!, this)
     "throwExpr" -> PklThrowExprImpl(project, parent!!, this)
     "traceExpr" -> PklTraceExprImpl(project, parent!!, this)
-    "importExpr",
-    "importGlobExpr" -> PklImportExprImpl(project, parent!!, this)
-    "readExpr",
-    "readOrNullExpr",
-    "readGlobExpr" -> PklReadExprImpl(project, parent!!, this)
-    "variableExpr" -> PklUnqualifiedAccessExprImpl(project, parent!!, this)
-    "propertyCallExpr" ->
-      when {
-        children[0].type == "super" -> PklSuperAccessExprImpl(project, parent!!, this)
-        else -> PklQualifiedAccessExprImpl(project, parent!!, this)
-      }
-    "methodCallExpr" ->
-      when (children[0].type) {
-        "super" -> PklSuperAccessExprImpl(project, parent!!, this)
-        "identifier" -> PklUnqualifiedAccessExprImpl(project, parent!!, this)
-        else -> PklQualifiedAccessExprImpl(project, parent!!, this)
-      }
-    "slStringLiteral" -> PklSingleLineStringLiteralImpl(project, parent!!, this)
+    "importExpr" -> PklImportExprImpl(project, parent!!, this)
+    "readExpr" -> PklReadExprImpl(project, parent!!, this)
+    "unqualifiedAccessExpr" -> PklUnqualifiedAccessExprImpl(project, parent!!, this)
+    "qualifiedAccessExpr" -> PklQualifiedAccessExprImpl(project, parent!!, this)
+    "slStringLiteralExpr" -> PklSingleLineStringLiteralImpl(project, parent!!, this)
     "slStringLiteralPart" -> toTerminal(parent!!)
-    "mlStringLiteral" -> PklMultiLineStringLiteralImpl(project, parent!!, this)
+    "mlStringLiteralExpr" -> PklMultiLineStringLiteralImpl(project, parent!!, this)
     "mlStringLiteralPart" -> toTerminal(parent!!)
     "stringConstant" -> PklStringConstantImpl(project, parent!!, this)
     "newExpr" -> PklNewExprImpl(project, parent!!, this)
-    "objectLiteral",
-    "variableObjectLiteral" -> PklAmendExprImpl(project, parent!!, this)
-    "subscriptExpr" ->
-      when {
-        children[0].type == "super" -> PklSuperSubscriptExprImpl(project, parent!!, this)
-        else -> PklSubscriptExprImpl(project, parent!!, this)
-      }
-    "unaryExpr" ->
-      when (children[0].type) {
-        "-" -> PklUnaryMinusExprImpl(project, parent!!, this)
-        "!" -> PklLogicalNotExprImpl(project, parent!!, this)
-        else -> PklNonNullExprImpl(project, parent!!, this)
-      }
-    "binaryExprRightAssoc",
-    "binaryExpr" -> {
-      val operator = getChildByFieldName("operator").getOrNull()
-      when (operator?.type) {
-        "*",
-        "/",
-        "~/",
-        "%" -> PklMultiplicativeExprImpl(project, parent!!, this, operator)
-        "+",
-        "-" -> PklAdditiveExprImpl(project, parent!!, this, operator)
-        "<",
-        ">",
-        "<=",
-        ">=" -> PklComparisonExprImpl(project, parent!!, this, operator)
-        "==",
-        "!=" -> PklEqualityExprImpl(project, parent!!, this, operator)
-        "&&" -> PklLogicalAndExprImpl(project, parent!!, this, operator)
-        "||" -> PklLogicalOrExprImpl(project, parent!!, this, operator)
-        "|>" -> PklPipeExprImpl(project, parent!!, this, operator)
-        "**" -> PklExponentiationExprImpl(project, parent!!, this, operator)
-        "??" -> PklNullCoalesceExprImpl(project, parent!!, this, operator)
-        else -> throw RuntimeException("Unknown binary operator in expr `$text`")
-      }
-    }
-    "isExpr" -> PklTypeTestExprImpl(project, parent!!, this)
-    "asExpr" -> PklTypeTestExprImpl(project, parent!!, this)
+    "amendExpr" -> PklAmendExprImpl(project, parent!!, this)
+    "subscriptExpr" -> PklSubscriptExprImpl(project, parent!!, this)
+    "superSubscriptExpr" -> PklSuperSubscriptExprImpl(project, parent!!, this)
+    "superAccessExpr" -> PklSuperAccessExprImpl(project, parent!!, this)
+    "unaryMinusExpr" -> PklUnaryMinusExprImpl(project, parent!!, this)
+    "logicalNotExpr" -> PklLogicalNotExprImpl(project, parent!!, this)
+    "nonNullExpr" -> PklNonNullExprImpl(project, parent!!, this)
+    "multiplicativeExpr" -> PklMultiplicativeExprImpl(project, parent!!, this)
+    "additiveExpr" -> PklAdditiveExprImpl(project, parent!!, this)
+    "comparisonExpr" -> PklComparisonExprImpl(project, parent!!, this)
+    "equalityExpr" -> PklEqualityExprImpl(project, parent!!, this)
+    "logicalAndExpr" -> PklLogicalAndExprImpl(project, parent!!, this)
+    "logicalOrExpr" -> PklLogicalOrExprImpl(project, parent!!, this)
+    "pipeExpr" -> PklPipeExprImpl(project, parent!!, this)
+    "exponentiationExpr" -> PklExponentiationExprImpl(project, parent!!, this)
+    "nullCoalesceExpr" -> PklNullCoalesceExprImpl(project, parent!!, this)
+    "typeTestExpr" -> PklTypeTestExprImpl(project, parent!!, this)
+    "typeCastExpr" -> PklTypeCastExprImpl(project, parent!!, this)
     "ifExpr" -> PklIfExprImpl(project, parent!!, this)
     "letExpr" -> PklLetExprImpl(project, parent!!, this)
-    "functionLiteral" -> PklFunctionLiteralExprImpl(project, parent!!, this)
+    "functionLiteralExpr" -> PklFunctionLiteralExprImpl(project, parent!!, this)
     "parenthesizedExpr" -> PklParenthesizedExprImpl(project, parent!!, this)
     "qualifiedIdentifier" -> PklQualifiedIdentifierImpl(project, parent!!, this)
     "objectBody" -> PklObjectBodyImpl(project, parent!!, this)
     "objectBodyParameters" -> PklParameterListImpl(project, parent!!, this)
-    "_objectMember" -> children[0].toNode(project, parent)
     "objectProperty" -> PklObjectPropertyImpl(project, parent!!, this)
     "objectMethod" -> PklObjectMethodImpl(project, parent!!, this)
     "objectEntry" -> PklObjectEntryImpl(project, parent!!, this)
     "objectElement" -> PklObjectElementImpl(project, parent!!, this)
-    "objectPredicate" -> PklMemberPredicateImpl(project, parent!!, this)
+    "memberPredicate" -> PklMemberPredicateImpl(project, parent!!, this)
     "forGenerator" -> PklForGeneratorImpl(project, parent!!, this)
     "whenGenerator" -> PklWhenGeneratorImpl(project, parent!!, this)
     "objectSpread" -> PklObjectSpreadImpl(project, parent!!, this)
@@ -901,7 +858,7 @@ fun Node.toNode(project: Project, parent: PklNode?): PklNode? {
     "docComment" -> toTerminal(parent!!)
     "escapeSequence" -> toTerminal(parent!!)
     // just becomes an expression
-    "interpolationExpr" -> children[1].toNode(project, parent)
+    "stringInterpolation" -> children[1].toNode(project, parent)
     "lineComment",
     "blockComment" -> null
     "ERROR" -> PklErrorImpl(project, parent!!, this)

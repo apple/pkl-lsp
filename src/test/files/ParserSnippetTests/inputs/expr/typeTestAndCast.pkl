@@ -1,0 +1,4 @@
+res {
+  foo is Int
+  foo as Int
+}
