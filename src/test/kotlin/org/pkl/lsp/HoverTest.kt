@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,5 +83,37 @@ class HoverTest : LspTestBase() {
     assertThat(hoverText).contains("`true`")
     assertThat(hoverText).contains("`false`")
     assertThat(hoverText).contains("`null`")
+  }
+
+  @Test
+  fun `compute type for recursive method`() {
+    createPklFile(
+      """
+        function fi<caret>b(num: UInt) =
+          if (num == 0) 0
+          else if (num <= 2) 1
+          else fib(num - 1) + fib(num - 2)
+      """
+        .trimIndent()
+    )
+    val hoverText = getHoverText()
+    assertThat(hoverText).contains("function fib(num: UInt): unknown")
+  }
+
+  @Test
+  fun `compute type that depends on recursive method`() {
+    createPklFile(
+      """
+        function fib(num: UInt) =
+          if (num == 0) 0
+          else if (num <= 2) 1
+          else fib(num - 1) + fib(num - 2)
+          
+        local res<caret> = fib(5)
+      """
+        .trimIndent()
+    )
+    val hoverText = getHoverText()
+    assertThat(hoverText).contains("local res: unknown")
   }
 }
