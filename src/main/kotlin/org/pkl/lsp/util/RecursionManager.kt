@@ -35,16 +35,16 @@ object RecursionManager {
     }
     seenKeys.add(key)
     try {
-      return compute().also {
-        seenKeys.remove(key)
-        if (seenKeys.isEmpty()) {
-          myState.remove(methodName)
-        }
-      }
+      return compute()
     } catch (e: Throwable) {
       // prevent memory leak; clean up state on any exception
       myState.remove(methodName)
       throw e
+    } finally {
+      seenKeys.remove(key)
+      if (seenKeys.isEmpty()) {
+        myState.remove(methodName)
+      }
     }
   }
 }
