@@ -33,7 +33,7 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
     private val OBJECT_PROPERTY_MODIFIERS = setOf(LOCAL, CONST)
   }
 
-  override fun doAnalyze(node: PklNode, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
+  override fun doAnalyze(node: PklNode, diagnosticsHolder: DiagnosticsHolder): Boolean {
     // removing module and module declaration because this will be checked in PklModuleHeader
     if (node !is PklModifierListOwner || node.modifiers == null || node is PklModule) {
       return true
@@ -66,8 +66,9 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
               (hiddenModifier != null || node.typeAnnotation != null)
           ) {
             if (node.identifier != null) {
-              diagnosticsHolder.add(
-                error(node.identifier!!, ErrorMessages.create("missingModifierLocal"))
+              diagnosticsHolder.addError(
+                node.identifier!!,
+                ErrorMessages.create("missingModifierLocal"),
               )
               return true
             }
@@ -77,11 +78,13 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
     }
 
     if (abstractModifier != null && openModifier != null) {
-      diagnosticsHolder.add(
-        error(abstractModifier, ErrorMessages.create("modifierAbstractConflictsWithOpen"))
+      diagnosticsHolder.addError(
+        abstractModifier,
+        ErrorMessages.create("modifierAbstractConflictsWithOpen"),
       )
-      diagnosticsHolder.add(
-        error(openModifier, ErrorMessages.create("modifierOpenConflictsWithAbstract"))
+      diagnosticsHolder.addError(
+        openModifier,
+        ErrorMessages.create("modifierOpenConflictsWithAbstract"),
       )
     }
 
@@ -89,8 +92,10 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
     if (module != null && module.effectivePklVersion >= Version.PKL_VERSION_0_27) {
       // TODO: add a quick-fix
       if (constModifier != null && localModifier == null && node is PklObjectMember) {
-        diagnosticsHolder +=
-          error(constModifier, ErrorMessages.create("invalidModifierConstWithoutLocal"))
+        diagnosticsHolder.addError(
+          constModifier,
+          ErrorMessages.create("invalidModifierConstWithoutLocal"),
+        )
       }
     }
 
@@ -107,11 +112,9 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
       }
     for (modifier in node.modifiers!!) {
       if (modifier.type !in applicableModifiers) {
-        diagnosticsHolder.add(
-          error(
-            modifier,
-            ErrorMessages.create("modifierIsNotApplicable", modifier.text, description),
-          )
+        diagnosticsHolder.addError(
+          modifier,
+          ErrorMessages.create("modifierIsNotApplicable", modifier.text, description),
         )
       }
     }

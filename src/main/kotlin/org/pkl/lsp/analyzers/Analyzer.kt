@@ -15,11 +15,9 @@
  */
 package org.pkl.lsp.analyzers
 
-import org.eclipse.lsp4j.DiagnosticSeverity
 import org.pkl.lsp.Component
 import org.pkl.lsp.Project
 import org.pkl.lsp.ast.PklNode
-import org.pkl.lsp.ast.Span
 import org.pkl.lsp.ast.isInStdlib
 
 /**
@@ -28,7 +26,7 @@ import org.pkl.lsp.ast.isInStdlib
  * Diagnostics then get reported back to the user.
  */
 abstract class Analyzer(project: Project) : Component(project) {
-  fun analyze(node: PklNode, diagnosticsHolder: MutableList<PklDiagnostic>) {
+  fun analyze(node: PklNode, diagnosticsHolder: DiagnosticsHolder) {
     if (node.isInStdlib) return
     if (!doAnalyze(node, diagnosticsHolder)) {
       return
@@ -42,35 +40,5 @@ abstract class Analyzer(project: Project) : Component(project) {
    * Return `false` if the annotator does not need to analyze any further. This skips calling
    * [doAnalyze] on its children.
    */
-  protected abstract fun doAnalyze(
-    node: PklNode,
-    diagnosticsHolder: MutableList<PklDiagnostic>,
-  ): Boolean
-
-  protected fun warn(
-    node: PklNode,
-    message: String,
-    action: PklDiagnostic.() -> Unit = {},
-  ): PklDiagnostic = PklDiagnostic(node, message, DiagnosticSeverity.Warning).also { action(it) }
-
-  protected fun warn(
-    span: Span,
-    message: String,
-    action: PklDiagnostic.() -> Unit = {},
-  ): PklDiagnostic = PklDiagnostic(span, message, DiagnosticSeverity.Warning).also { action(it) }
-
-  protected fun error(
-    node: PklNode,
-    message: String,
-    action: PklDiagnostic.() -> Unit = {},
-  ): PklDiagnostic = PklDiagnostic(node, message, DiagnosticSeverity.Error).also { action(it) }
-
-  protected fun error(
-    span: Span,
-    message: String,
-    action: PklDiagnostic.() -> Unit = {},
-  ): PklDiagnostic = PklDiagnostic(span, message, DiagnosticSeverity.Error).also { action(it) }
-
-  protected fun newDiagnostic(span: Span, message: String, action: PklDiagnostic.() -> Unit = {}) =
-    PklDiagnostic(span, message, null, null).also { action(it) }
+  protected abstract fun doAnalyze(node: PklNode, diagnosticsHolder: DiagnosticsHolder): Boolean
 }

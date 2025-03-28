@@ -27,7 +27,7 @@ import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.packages.dto.Version
 
 class ModuleUriAnalyzer(project: Project) : Analyzer(project) {
-  override fun doAnalyze(node: PklNode, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
+  override fun doAnalyze(node: PklNode, diagnosticsHolder: DiagnosticsHolder): Boolean {
     if (node !is PklModuleUriOwner) {
       return true
     }
@@ -58,14 +58,17 @@ class ModuleUriAnalyzer(project: Project) : Analyzer(project) {
     if (uriStr.startsWith("package:") && analyzePackageUri(moduleUri, uriStr, diagnosticsHolder)) {
       return false
     }
-    diagnosticsHolder += warn(moduleUri.stringConstant, ErrorMessages.create("cannotResolveImport"))
+    diagnosticsHolder.addWarning(
+      moduleUri.stringConstant,
+      ErrorMessages.create("cannotResolveImport"),
+    )
     return true
   }
 
   private fun analyzeGlobUri(
     element: PklModuleUri,
     uriText: String,
-    holder: MutableList<PklDiagnostic>,
+    holder: DiagnosticsHolder,
     context: PklProject?,
   ) {
     val scheme = parseUriOrNull(uriText)?.scheme ?: element.containingFile.uri.scheme
@@ -73,23 +76,23 @@ class ModuleUriAnalyzer(project: Project) : Analyzer(project) {
       return
     }
     if (uriText.startsWith("...")) {
-      holder.add(warn(element.stringConstant, ErrorMessages.create("cannotGlobTripleDots")))
+      holder.addWarning(element.stringConstant, ErrorMessages.create("cannotGlobTripleDots"))
       return
     }
     val resolved = element.resolveGlob(context)
     if (resolved.isEmpty()) {
-      holder.add(warn(element.stringConstant, ErrorMessages.create("globPatternHasNoMatches")))
+      holder.addWarning(element.stringConstant, ErrorMessages.create("globPatternHasNoMatches"))
     }
   }
 
   private fun checkScheme(
     element: PklModuleUri,
     scheme: String,
-    holder: MutableList<PklDiagnostic>,
+    holder: DiagnosticsHolder,
   ): Boolean {
     // only warn on known unglobbable schemes
     if (scheme == "pkl" || scheme == "http" || scheme == "https") {
-      holder.add(warn(element.stringConstant, "Scheme $scheme is not globbable"))
+      holder.addWarning(element.stringConstant, "Scheme $scheme is not globbable")
       return true
     }
     return false
@@ -98,26 +101,26 @@ class ModuleUriAnalyzer(project: Project) : Analyzer(project) {
   private fun analyzePackageUri(
     moduleUri: PklModuleUri,
     uriText: String,
-    holder: MutableList<PklDiagnostic>,
+    holder: DiagnosticsHolder,
   ): Boolean {
     val uri =
       try {
         URI(uriText)
-      } catch (e: URISyntaxException) {
-        holder += warn(moduleUri.stringConstant, ErrorMessages.create("malformedUri", uriText))
+      } catch (_: URISyntaxException) {
+        holder.addWarning(moduleUri.stringConstant, ErrorMessages.create("malformedUri", uriText))
         return true
       }
     if (uri.authority == null) {
-      holder += warn(moduleUri.stringConstant, ErrorMessages.create("missingPackageAuthority"))
+      holder.addWarning(moduleUri.stringConstant, ErrorMessages.create("missingPackageAuthority"))
       return true
     }
     if (uri.path == null) {
-      holder += warn(moduleUri.stringConstant, ErrorMessages.create("missingPackagePath"))
+      holder.addWarning(moduleUri.stringConstant, ErrorMessages.create("missingPackagePath"))
       return true
     }
     val versionAndChecksumPart = uri.path.substringAfterLast('@', "")
     if (versionAndChecksumPart.isEmpty()) {
-      holder += warn(moduleUri.stringConstant, ErrorMessages.create("missingPackageVersion"))
+      holder.addWarning(moduleUri.stringConstant, ErrorMessages.create("missingPackageVersion"))
       return true
     }
     val versionAndChecksumParts = versionAndChecksumPart.split("::")
@@ -126,46 +129,44 @@ class ModuleUriAnalyzer(project: Project) : Analyzer(project) {
     if (version == null) {
       val offset = moduleUri.stringConstant.text.lastIndexOf('@') + 1
       val span = moduleUri.stringConstant.span
-      holder +=
-        warn(
-          span.spliceLine(offset, versionStr.length),
-          ErrorMessages.create("invalidSemver", versionStr),
-        )
+      holder.addWarning(
+        moduleUri,
+        ErrorMessages.create("invalidSemver", versionStr),
+        span = span.spliceLine(offset, versionStr.length),
+      )
       return true
     }
     val checksum =
       if (versionAndChecksumParts.size == 2) {
         val checksumParts = versionAndChecksumParts[1].split(':')
         if (checksumParts.size != 2) {
-          holder +=
-            warn(
-              moduleUri.stringConstant,
-              ErrorMessages.create("invalidPackageChecksum", versionAndChecksumPart),
-            )
+          holder.addWarning(
+            moduleUri.stringConstant,
+            ErrorMessages.create("invalidPackageChecksum", versionAndChecksumPart),
+          )
           return true
         }
         val (algo, value) = checksumParts
         if (algo != "sha256") {
-          holder +=
-            warn(
-              moduleUri.stringConstant,
-              ErrorMessages.create("invalidPackageChecksum", versionAndChecksumPart),
-            )
+          holder.addWarning(
+            moduleUri.stringConstant,
+            ErrorMessages.create("invalidPackageChecksum", versionAndChecksumPart),
+          )
           return true
         }
         Checksums(value)
       } else null
     if (uri.fragment == null) {
-      holder += warn(moduleUri, ErrorMessages.create("missingPackageFragment"))
+      holder.addWarning(moduleUri, ErrorMessages.create("missingPackageFragment"))
       return true
     }
     if (!uri.fragment.startsWith('/')) {
       val offset = moduleUri.stringConstant.text.lastIndexOf('#') + 1
-      holder +=
-        warn(
-          moduleUri.stringConstant.span.drop(offset),
-          ErrorMessages.create("invalidFragmentPath"),
-        )
+      holder.addWarning(
+        moduleUri,
+        ErrorMessages.create("invalidFragmentPath"),
+        span = moduleUri.stringConstant.span.drop(offset),
+      )
       return true
     }
     val packageService = project.packageManager
@@ -173,13 +174,12 @@ class ModuleUriAnalyzer(project: Project) : Analyzer(project) {
     val packageDependency = PackageDependency(packageUri, null, null)
     val roots = packageService.getLibraryRoots(packageDependency)
     if (roots == null) {
-      holder +=
-        warn(
-          moduleUri.stringConstant,
-          ErrorMessages.create("missingPackageSources", packageUri.toString()),
-        ) {
-          action = PklDownloadPackageAction(project, packageUri)
-        }
+      holder.addWarning(
+        moduleUri.stringConstant,
+        ErrorMessages.create("missingPackageSources", packageUri.toString()),
+      ) {
+        actions = listOf(PklDownloadPackageAction(project, packageUri))
+      }
       return true
     }
     return false
@@ -188,7 +188,7 @@ class ModuleUriAnalyzer(project: Project) : Analyzer(project) {
   private fun checkDependencyNotation(
     element: PklModuleUri,
     resolved: List<PklNode>,
-    holder: MutableList<PklDiagnostic>,
+    holder: DiagnosticsHolder,
     context: PklProject?,
   ): Boolean {
     if (element.stringConstant.escapedText()?.startsWith("@") == false) return false
@@ -199,17 +199,18 @@ class ModuleUriAnalyzer(project: Project) : Analyzer(project) {
     if (resolved.isNotEmpty()) return true
     val deps = element.enclosingModule?.dependencies(context) ?: return false
     if (deps.containsKey(dependencyName)) {
-      holder +=
-        warn(
-          element.stringConstant,
-          ErrorMessages.create("missingPackageSources", dependencyName),
-        ) {
-          action = PklDownloadPackageAction(project, deps[dependencyName]!!.packageUri)
-        }
+      holder.addWarning(
+        element.stringConstant,
+        ErrorMessages.create("missingPackageSources", dependencyName),
+      ) {
+        actions = listOf(PklDownloadPackageAction(project, deps[dependencyName]!!.packageUri))
+      }
       return true
     } else {
-      holder +=
-        warn(element.stringConstant, ErrorMessages.create("cannotFindDependency", dependencyName))
+      holder.addWarning(
+        element.stringConstant,
+        ErrorMessages.create("cannotFindDependency", dependencyName),
+      )
       return true
     }
   }

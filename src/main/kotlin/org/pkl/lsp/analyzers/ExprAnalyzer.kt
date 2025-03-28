@@ -26,7 +26,7 @@ import org.pkl.lsp.type.toType
 
 // all expression analysis that's not related to type-checking, or visibility
 class ExprAnalyzer(project: Project) : Analyzer(project) {
-  override fun doAnalyze(node: PklNode, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
+  override fun doAnalyze(node: PklNode, diagnosticsHolder: DiagnosticsHolder): Boolean {
     val base = project.pklBaseModule
     val context = node.containingFile.pklProject
     when (node) {
@@ -35,9 +35,9 @@ class ExprAnalyzer(project: Project) : Analyzer(project) {
         val testedType = node.type.toType(base, mapOf(), context)
         if (testedType.hasConstraints) return false
         if (exprType != Type.Unknown && exprType.isSubtypeOf(testedType, base, context)) {
-          diagnosticsHolder += warn(node, ErrorMessages.create("expressionIsAlwaysTrue"))
+          diagnosticsHolder.addWarning(node, ErrorMessages.create("expressionIsAlwaysTrue"))
         } else if (!testedType.isSubtypeOf(exprType, base, context)) {
-          diagnosticsHolder += warn(node, ErrorMessages.create("expressionIsAlwaysFalse"))
+          diagnosticsHolder.addWarning(node, ErrorMessages.create("expressionIsAlwaysFalse"))
         }
       }
       is PklTypeCastExpr -> {
@@ -49,11 +49,14 @@ class ExprAnalyzer(project: Project) : Analyzer(project) {
             exprType.isSubtypeOf(testedType, base, context)
         ) {
           val message = ErrorMessages.create("typeCastIsRedundant")
-          diagnosticsHolder +=
-            newDiagnostic(node.operator.span.endAt(node.type!!.span), message) {
-              severity = DiagnosticSeverity.Hint
-              tags = listOf(DiagnosticTag.Unnecessary)
-            }
+          diagnosticsHolder.addDiagnostic(
+            node,
+            message,
+            span = node.operator.span.endAt(node.type!!.span),
+          ) {
+            severity = DiagnosticSeverity.Hint
+            tags = listOf(DiagnosticTag.Unnecessary)
+          }
           // TODO add quick fixes
           //          if (holder.currentFile.canModify()) {
           //            annotation.withFix(PklRedundantTypeCastQuickFix(element))
@@ -63,18 +66,25 @@ class ExprAnalyzer(project: Project) : Analyzer(project) {
             !testedType.hasCommonSubtypeWith(exprType, base, context)
         ) {
           val message = ErrorMessages.create("typeCastCannotSucceed")
-          diagnosticsHolder += error(node.operator.span.endAt(node.type!!.span), message)
+          diagnosticsHolder.addError(
+            node,
+            message,
+            span = node.operator.span.endAt(node.type!!.span),
+          )
         }
       }
       is PklNullCoalesceExpr -> {
         val leftType = node.leftExpr.computeExprType(base, mapOf(), context)
         if (!leftType.isNullable(base, context)) {
           val message = ErrorMessages.create("nullCoalescingIsRedundant")
-          diagnosticsHolder +=
-            newDiagnostic(node.operator.span.endAt(node.rightExpr.span), message) {
-              severity = DiagnosticSeverity.Hint
-              tags = listOf(DiagnosticTag.Unnecessary)
-            }
+          diagnosticsHolder.addDiagnostic(
+            node,
+            message,
+            span = node.operator.span.endAt(node.rightExpr.span),
+          ) {
+            severity = DiagnosticSeverity.Hint
+            tags = listOf(DiagnosticTag.Unnecessary)
+          }
           // TODO add quick fixes
           //          if (holder.currentFile.canModify()) {
           //            annotation.withFix(PklRedundantNullCoalesceQuickFix(element))
@@ -85,11 +95,10 @@ class ExprAnalyzer(project: Project) : Analyzer(project) {
         val type = node.expr.computeExprType(base, mapOf(), context)
         if (!type.isNullable(base, context)) {
           val message = ErrorMessages.create("nonNullIsRedundant")
-          diagnosticsHolder +=
-            newDiagnostic(node.lastTerminalOfType(TokenType.NON_NULL)!!.span, message) {
-              severity = DiagnosticSeverity.Hint
-              tags = listOf(DiagnosticTag.Unnecessary)
-            }
+          diagnosticsHolder.addDiagnostic(node.lastTerminalOfType(TokenType.NON_NULL)!!, message) {
+            severity = DiagnosticSeverity.Hint
+            tags = listOf(DiagnosticTag.Unnecessary)
+          }
           // TODO add quick fixes
           //          if (holder.currentFile.canModify()) {
           //            annotation.withFix(PklRedundantNonNullAssertionQuickFix(element))

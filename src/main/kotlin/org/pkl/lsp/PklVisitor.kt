@@ -406,4 +406,12 @@ open class PklVisitor<R> {
   open fun visitDocCommentOwner(o: PklDocCommentOwner): R? {
     return visitElement(o)
   }
+
+  open fun visitLineComment(o: PklLineComment): R? {
+    return null
+  }
+
+  open fun visitBlockComment(o: PklBlockComment): R? {
+    return null
+  }
 }
