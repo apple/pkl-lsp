@@ -1,0 +1,14 @@
+ open class Foo {
+   prop = "hello"
+   function myFunc() = "myFunc"
+ }
+ 
+ class Bar extends Foo {
+   const foo = super.prop
+                     ^^^^
+| Error: Cannot reference property `prop` from here because it is not `const`.
+ 
+   const bar = super.myFunc()
+                     ^^^^^^
+| Error: Cannot call method `myFunc` from here because it is not `const`.
+ }

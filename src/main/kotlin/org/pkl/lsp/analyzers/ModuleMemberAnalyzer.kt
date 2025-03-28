@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ class ModuleMemberAnalyzer(project: Project) : Analyzer(project) {
     val context = node.containingFile.pklProject
     when (node) {
       is PklProperty -> {
-        val isAmends = node.enclosingModule?.isAmend ?: false
+        val isAmends = node.enclosingModule?.isAmend == true
         val supermodule = node.enclosingModule?.supermodule(context)?.cache(context)
 
         if (isAmends && !node.isLocal && supermodule != null) {

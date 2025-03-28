@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -177,8 +177,9 @@ class ModuleUriAnalyzer(project: Project) : Analyzer(project) {
         warn(
           moduleUri.stringConstant,
           ErrorMessages.create("missingPackageSources", packageUri.toString()),
-          PklDownloadPackageAction(project, packageUri),
-        )
+        ) {
+          action = PklDownloadPackageAction(project, packageUri)
+        }
       return true
     }
     return false
@@ -202,8 +203,9 @@ class ModuleUriAnalyzer(project: Project) : Analyzer(project) {
         warn(
           element.stringConstant,
           ErrorMessages.create("missingPackageSources", dependencyName),
-          PklDownloadPackageAction(project, deps[dependencyName]!!.packageUri),
-        )
+        ) {
+          action = PklDownloadPackageAction(project, deps[dependencyName]!!.packageUri)
+        }
       return true
     } else {
       holder +=

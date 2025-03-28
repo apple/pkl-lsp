@@ -1,0 +1,15 @@
+foo: String = 15
+
+class Person {
+  name: String
+}
+
+p: Person = new {
+  name = 15
+}
+
+people: Listing<Person> = new { 1 }
+
+people2: Mapping<Person, String> = new {
+  [5] = "hi"
+}

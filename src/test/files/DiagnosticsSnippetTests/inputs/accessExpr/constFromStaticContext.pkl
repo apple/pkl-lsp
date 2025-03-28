@@ -1,0 +1,14 @@
+bar = 15
+
+class Foo {
+  res = bar
+}
+
+class MyAnn extends Annotation {
+  value: String
+}
+
+@MyAnn { value = bar }
+myProp: String
+
+typealias MyTypeAlias = Int(this == bar)

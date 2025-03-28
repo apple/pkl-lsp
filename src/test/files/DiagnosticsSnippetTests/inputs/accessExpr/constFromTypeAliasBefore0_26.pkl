@@ -1,0 +1,6 @@
+@ModuleInfo { minPklVersion = "0.25.0" }
+module Foo
+
+foo = "foo"
+
+typealias Bar = String(this == foo)

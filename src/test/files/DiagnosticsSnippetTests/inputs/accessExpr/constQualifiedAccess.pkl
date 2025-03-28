@@ -1,0 +1,5 @@
+const foo = module.bar
+
+const qux = this.bar
+
+bar = 15

@@ -1,0 +1,8 @@
+ res1 = 1!!
+         ^^
+| Hint: Non-null assertion is redundant
+ 
+ res2 = 1 ?? 2
+          ^^^^
+| Hint: Null coalescing is redundant
+ 

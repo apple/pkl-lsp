@@ -1,0 +1,11 @@
+foo: Listing<String>?
+
+bar {
+  ...foo
+}
+
+quz {
+  for (elem in foo) {
+    "hi \(elem)"
+  }
+}

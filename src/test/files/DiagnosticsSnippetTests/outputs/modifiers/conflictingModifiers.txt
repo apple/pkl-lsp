@@ -1,0 +1,8 @@
+ open abstract class Foo {
+      ^^^^^^^^
+| Error: Modifier 'abstract' conflicts with 'open'
+ ^^^^
+| Error: Modifier 'open' conflicts with 'abstract'
+ 
+ }
+ 

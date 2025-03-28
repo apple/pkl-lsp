@@ -1,0 +1,27 @@
+ bar = 15
+ 
+ class Foo {
+   res = bar
+         ^^^
+| Error: Cannot reference property `bar` from here because it is not `const`.
+| Classes, typealiases, and annotations can only reference `const` members of their enclosing module.
+| To fix, either make the accessed member `const`, or add a self-import of this module, and access this member off of the self import.
+ }
+ 
+ class MyAnn extends Annotation {
+   value: String
+ }
+ 
+ @MyAnn { value = bar }
+                  ^^^
+| Error: Cannot reference property `bar` from here because it is not `const`.
+| Classes, typealiases, and annotations can only reference `const` members of their enclosing module.
+| To fix, either make the accessed member `const`, or add a self-import of this module, and access this member off of the self import.
+ myProp: String
+ 
+ typealias MyTypeAlias = Int(this == bar)
+                                     ^^^
+| Error: Cannot reference property `bar` from here because it is not `const`.
+| Classes, typealiases, and annotations can only reference `const` members of their enclosing module.
+| To fix, either make the accessed member `const`, or add a self-import of this module, and access this member off of the self import.
+ 

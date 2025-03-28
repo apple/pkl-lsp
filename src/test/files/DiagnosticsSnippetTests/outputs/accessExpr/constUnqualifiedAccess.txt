@@ -1,0 +1,12 @@
+ function bar() = 15
+ 
+ baz = 15
+ 
+ const foo = bar()
+             ^^^
+| Error: Cannot call method `bar` from here because it is not `const`.
+ 
+ const qux = baz
+             ^^^
+| Error: Cannot reference property `baz` from here because it is not `const`.
+ 

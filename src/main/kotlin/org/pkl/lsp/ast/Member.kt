@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.resolvers.ResolveVisitors
 import org.pkl.lsp.resolvers.Resolvers
 import org.pkl.lsp.type.computeThisType
+import org.pkl.lsp.util.CachedValue
 
 class PklClassPropertyImpl(
   override val project: Project,
@@ -105,7 +106,7 @@ class PklClassMethodImpl(
     children.filterIsInstance<PklAnnotation>()
   }
 
-  override val body: PklExpr by lazy { children.firstInstanceOf<PklExpr>()!! }
+  override val body: PklExpr? by lazy { children.firstInstanceOf<PklExpr>() }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitClassMethod(this)
@@ -189,6 +190,20 @@ class PklObjectBodyImpl(
     members.filterIsInstance<PklObjectMethod>()
   }
 
+  override fun isConstScope(): Boolean {
+    return project.cachedValuesManager.getCachedValue(this, "isConstScope()") {
+      val parentProperty = parentOfTypes(PklProperty::class, PklMethod::class)
+      val isConstScope =
+        if (parentProperty?.isConst == true) {
+          true
+        } else {
+          val parentObj = parentOfTypes(PklObjectBody::class)
+          parentObj?.isConstScope() == true
+        }
+      CachedValue(isConstScope, this.containingFile)
+    }!!
+  }
+
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitObjectBody(this)
   }
@@ -204,7 +219,7 @@ class PklObjectPropertyImpl(
   override val name: String by lazy { identifier!!.text }
   override val type: PklType? = null
   override val expr: PklExpr? by lazy { children.firstInstanceOf<PklExpr>() }
-  override val isDefinition: Boolean by lazy { expr != null }
+  override val isDefinition: Boolean by lazy { type != null || isLocal }
   override val typeAnnotation: PklTypeAnnotation? by lazy {
     children.firstInstanceOf<PklTypeAnnotation>()
   }
@@ -234,7 +249,7 @@ class PklObjectMethodImpl(
 ) : AbstractPklNode(project, parent, ctx), PklObjectMethod {
   override val methodHeader: PklMethodHeader by lazy { getChild(PklMethodHeaderImpl::class)!! }
   override val modifiers: List<Terminal>? by lazy { methodHeader.modifiers }
-  override val body: PklExpr by lazy { children.firstInstanceOf<PklExpr>()!! }
+  override val body: PklExpr? by lazy { children.firstInstanceOf<PklExpr>() }
   override val name: String by lazy { methodHeader.identifier!!.text }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {

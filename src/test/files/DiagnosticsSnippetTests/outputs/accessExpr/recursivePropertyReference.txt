@@ -1,0 +1,8 @@
+ foo = this.foo
+            ^^^
+| Error: Recursive property reference
+ 
+ bar = bar
+       ^^^
+| Error: Recursive property reference
+ 

@@ -1,0 +1,3 @@
+open abstract class Foo {
+
+}
