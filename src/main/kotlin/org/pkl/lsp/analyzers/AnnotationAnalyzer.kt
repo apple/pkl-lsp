@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,22 +21,22 @@ import org.pkl.lsp.ast.*
 import org.pkl.lsp.type.computeThisType
 
 class AnnotationAnalyzer(project: Project) : Analyzer(project) {
-  override fun doAnalyze(node: PklNode, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
+  override fun doAnalyze(node: PklNode, diagnosticsHolder: DiagnosticsHolder): Boolean {
     if (node !is PklAnnotation) return true
     val type = node.type ?: return true
     val context = node.containingFile.pklProject
     if (type !is PklDeclaredType) {
-      diagnosticsHolder.add(error(type, ErrorMessages.create("annotationHasNoName")))
+      diagnosticsHolder.addError(type, ErrorMessages.create("annotationHasNoName"))
       return true
     }
 
     val resolvedType = type.name.resolve(context)
     if (resolvedType == null || resolvedType !is PklClass) {
-      diagnosticsHolder.add(error(type, ErrorMessages.create("cannotFindType")))
+      diagnosticsHolder.addError(type, ErrorMessages.create("cannotFindType"))
       return true
     }
     if (resolvedType.isAbstract) {
-      diagnosticsHolder.add(error(type, ErrorMessages.create("typeIsAbstract")))
+      diagnosticsHolder.addError(type, ErrorMessages.create("typeIsAbstract"))
     }
     val base = project.pklBaseModule
     if (
@@ -44,7 +44,7 @@ class AnnotationAnalyzer(project: Project) : Analyzer(project) {
         .computeThisType(base, mapOf(), context)
         .isSubtypeOf(base.annotationType, base, context)
     ) {
-      diagnosticsHolder.add(error(type, ErrorMessages.create("notAnnotation")))
+      diagnosticsHolder.addError(type, ErrorMessages.create("notAnnotation"))
     }
 
     return true

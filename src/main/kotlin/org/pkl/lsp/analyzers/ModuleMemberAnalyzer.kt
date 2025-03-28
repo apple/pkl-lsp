@@ -24,7 +24,7 @@ import org.pkl.lsp.ast.PklProperty
 
 class ModuleMemberAnalyzer(project: Project) : Analyzer(project) {
 
-  override fun doAnalyze(node: PklNode, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
+  override fun doAnalyze(node: PklNode, diagnosticsHolder: DiagnosticsHolder): Boolean {
     val context = node.containingFile.pklProject
     when (node) {
       is PklProperty -> {
@@ -34,8 +34,10 @@ class ModuleMemberAnalyzer(project: Project) : Analyzer(project) {
         if (isAmends && !node.isLocal && supermodule != null) {
           val superProperty = supermodule.properties[node.name]
           if (superProperty == null) {
-            diagnosticsHolder +=
-              warn(node.identifier ?: node, ErrorMessages.create("unresolvedProperty", node.name))
+            diagnosticsHolder.addWarning(
+              node.identifier ?: node,
+              ErrorMessages.create("unresolvedProperty", node.name),
+            )
           }
         }
       }
@@ -43,11 +45,10 @@ class ModuleMemberAnalyzer(project: Project) : Analyzer(project) {
         val isAmends = node.enclosingModule?.isAmend ?: false
 
         if (isAmends && !node.isLocal) {
-          diagnosticsHolder +=
-            error(
-              node.methodHeader.identifier ?: node,
-              ErrorMessages.create("missingModifierLocal"),
-            )
+          diagnosticsHolder.addError(
+            node.methodHeader.identifier ?: node,
+            ErrorMessages.create("missingModifierLocal"),
+          )
         }
       }
     }

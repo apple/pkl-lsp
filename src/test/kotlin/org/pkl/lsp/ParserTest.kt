@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,9 +38,9 @@ class ParserTest {
         .trimIndent()
 
     val mod = parse(code)
-    val prop = mod.children[0]
+    val prop = mod.children[1]
     assertThat(prop.text).isEqualTo("const `fo©o` = 1")
-    val prop2 = mod.children[1]
+    val prop2 = mod.children[2]
     assertThat(prop2.text).isEqualTo("bar = 3")
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.pkl.lsp.features.CompletionFeature
 import org.pkl.lsp.features.GoToDefinitionFeature
 import org.pkl.lsp.features.HoverFeature
 import org.pkl.lsp.services.Topic
+import org.pkl.lsp.util.Edits
 
 val textDocumentTopic = Topic<TextDocumentEvent>("TextDocumentEvent")
 
@@ -62,7 +63,7 @@ class PklTextDocumentService(project: Project) : Component(project), TextDocumen
     // receive
     // up-to-date versions of each VirtualFile.
     project.virtualFileManager.get(uri)?.let { file ->
-      file.contents = replaceContents(file.contents, params.contentChanges)
+      file.contents = Edits.applyChangeEvents(file.contents, params.contentChanges)
       file.version = params.textDocument.version.toLong()
     }
     project.messageBus.emit(
@@ -107,22 +108,5 @@ class PklTextDocumentService(project: Project) : Component(project), TextDocumen
     params: CodeActionParams
   ): CompletableFuture<List<Either<Command, CodeAction>>> {
     return codeAction.onCodeAction(params)
-  }
-
-  private fun replaceContents(
-    contents: String,
-    changes: List<TextDocumentContentChangeEvent>,
-  ): String {
-    var result = contents
-    for (change in changes) {
-      if (change.range == null) {
-        result = change.text
-      } else {
-        val startIndex = result.getIndex(change.range.start)
-        val endIndex = result.getIndex(change.range.end)
-        result = result.replaceRange(startIndex, endIndex, change.text)
-      }
-    }
-    return result
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,20 +15,20 @@
  */
 package org.pkl.lsp.analyzers
 
-import org.pkl.lsp.ErrorMessages
-import org.pkl.lsp.Project
-import org.pkl.lsp.ast.PklError
+import org.pkl.lsp.actions.PklCodeAction
+import org.pkl.lsp.actions.PklSuppressWarningsCodeAction
 import org.pkl.lsp.ast.PklNode
+import org.pkl.lsp.ast.PklSuppressWarningsTarget
+import org.pkl.lsp.ast.parentsOfType
 
-class SyntaxAnalyzer(project: Project) : Analyzer(project) {
-  override fun doAnalyze(node: PklNode, diagnosticsHolder: DiagnosticsHolder): Boolean {
-
-    if (node is PklError) {
-      diagnosticsHolder.addError(node, ErrorMessages.create("invalidSyntax"))
-    } else if (node.isMissing) {
-      diagnosticsHolder.addError(node, ErrorMessages.create("missingSyntax", node.text))
+class PklProblemGroup(val problemName: String) {
+  fun getSuppressQuickFixes(node: PklNode): List<PklCodeAction> {
+    if (!node.containingFile.canModify()) return listOf()
+    val self = this
+    return buildList {
+      for (target in node.parentsOfType<PklSuppressWarningsTarget>()) {
+        add(PklSuppressWarningsCodeAction(target, self))
+      }
     }
-
-    return true
   }
 }

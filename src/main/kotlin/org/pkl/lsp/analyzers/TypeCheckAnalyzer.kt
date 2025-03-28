@@ -28,7 +28,7 @@ import org.pkl.lsp.type.inferExprTypeFromContext
 import org.pkl.lsp.type.toConstraintExpr
 
 class TypeCheckAnalyzer(project: Project) : Analyzer(project) {
-  override fun doAnalyze(node: PklNode, holder: MutableList<PklDiagnostic>): Boolean {
+  override fun doAnalyze(node: PklNode, holder: DiagnosticsHolder): Boolean {
     if (node !is PklExpr) return true
 
     val module = node.enclosingModule ?: return true
@@ -140,7 +140,7 @@ class TypeCheckAnalyzer(project: Project) : Analyzer(project) {
     actualType: Type,
     requiredType: Type,
     base: PklBaseModule,
-    holder: MutableList<PklDiagnostic>,
+    holder: DiagnosticsHolder,
     context: PklProject?,
   ) {
     when {
@@ -149,7 +149,9 @@ class TypeCheckAnalyzer(project: Project) : Analyzer(project) {
         // cannot be caused by the type system being too weak ->
         // runtime type check cannot succeed ->
         // report error
-        holder += error(expr, typeMismatchMessage("Type", requiredType, actualType))
+        holder.addError(expr, typeMismatchMessage("Type", requiredType, actualType)) {
+          problemGroup = PklProblemGroups.typeMismatch
+        }
       }
       actualType.isNullable(base, context) &&
         actualType.nonNull(base, context).isSubtypeOf(requiredType, base, context) -> {
@@ -157,14 +159,18 @@ class TypeCheckAnalyzer(project: Project) : Analyzer(project) {
         // could be caused by the type system being too weak ->
         // runtime type check could succeed ->
         // report warning with custom message
-        holder += warn(expr, typeMismatchMessage("Nullability", requiredType, actualType))
+        holder.addWarning(expr, typeMismatchMessage("Nullability", requiredType, actualType)) {
+          problemGroup = PklProblemGroups.typeMismatch
+        }
       }
       else -> {
         // actual type is too weak ->
         // could be caused by the type system being too weak ->
         // runtime type check could succeed ->
         // report warning
-        holder += warn(expr, typeMismatchMessage("Type", requiredType, actualType))
+        holder.addWarning(expr, typeMismatchMessage("Type", requiredType, actualType)) {
+          problemGroup = PklProblemGroups.typeMismatch
+        }
       }
     }
   }
@@ -182,7 +188,7 @@ class TypeCheckAnalyzer(project: Project) : Analyzer(project) {
     expr: PklExpr,
     exprValue: Lazy<ConstraintValue>,
     constraints: List<Pair<Type, Int>>,
-    holder: MutableList<PklDiagnostic>,
+    holder: DiagnosticsHolder,
   ) {
     var renderedConstraint = buildString {
       var isFirst = true
@@ -198,6 +204,6 @@ class TypeCheckAnalyzer(project: Project) : Analyzer(project) {
     }
     val message =
       ErrorMessages.create("constraintViolation", renderedConstraint, exprValue.value.render())
-    holder += error(expr, message)
+    holder.addError(expr, message) { problemGroup = PklProblemGroups.typeMismatch }
   }
 }

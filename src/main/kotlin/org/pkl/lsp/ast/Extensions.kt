@@ -273,6 +273,8 @@ inline fun <reified T : PklNode> PklNode.parentOfType(): T? {
   return parentOfTypes(T::class)
 }
 
+inline fun <reified T : PklNode> PklNode.parentsOfType(): List<T> = parentsOfTypes(T::class)
+
 fun PklImportBase.resolve(context: PklProject?): ModuleResolutionResult =
   if (isGlob) GlobModuleResolutionResult(moduleUri?.resolveGlob(context) ?: emptyList())
   else SimpleModuleResolutionResult(moduleUri?.resolve(context))

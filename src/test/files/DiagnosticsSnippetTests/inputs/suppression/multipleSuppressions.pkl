@@ -1,0 +1,10 @@
+bar: String?
+
+// noinspection Foo,TypeMismatch
+foo: String = bar
+
+// noinspection Biz, TypeMismatch, Qux
+qux: String = bar
+
+// noinspection Biz,TypeMismatch,Qux
+corge: String = bar
