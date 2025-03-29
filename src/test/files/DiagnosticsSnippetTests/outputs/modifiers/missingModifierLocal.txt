@@ -1,0 +1,8 @@
+ amends "pkl:test"
+ 
+ foo: String = "hello"
+ ^^^
+| Error: Missing modifier 'local'
+ ^^^
+| Warning: Unresolved property `foo`
+ 

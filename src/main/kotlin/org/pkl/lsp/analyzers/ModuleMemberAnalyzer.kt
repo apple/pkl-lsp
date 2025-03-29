@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,18 +24,20 @@ import org.pkl.lsp.ast.PklProperty
 
 class ModuleMemberAnalyzer(project: Project) : Analyzer(project) {
 
-  override fun doAnalyze(node: PklNode, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
+  override fun doAnalyze(node: PklNode, diagnosticsHolder: DiagnosticsHolder): Boolean {
     val context = node.containingFile.pklProject
     when (node) {
       is PklProperty -> {
-        val isAmends = node.enclosingModule?.isAmend ?: false
+        val isAmends = node.enclosingModule?.isAmend == true
         val supermodule = node.enclosingModule?.supermodule(context)?.cache(context)
 
         if (isAmends && !node.isLocal && supermodule != null) {
           val superProperty = supermodule.properties[node.name]
           if (superProperty == null) {
-            diagnosticsHolder +=
-              warn(node.identifier ?: node, ErrorMessages.create("unresolvedProperty", node.name))
+            diagnosticsHolder.addWarning(
+              node.identifier ?: node,
+              ErrorMessages.create("unresolvedProperty", node.name),
+            )
           }
         }
       }
@@ -43,11 +45,10 @@ class ModuleMemberAnalyzer(project: Project) : Analyzer(project) {
         val isAmends = node.enclosingModule?.isAmend ?: false
 
         if (isAmends && !node.isLocal) {
-          diagnosticsHolder +=
-            error(
-              node.methodHeader.identifier ?: node,
-              ErrorMessages.create("missingModifierLocal"),
-            )
+          diagnosticsHolder.addError(
+            node.methodHeader.identifier ?: node,
+            ErrorMessages.create("missingModifierLocal"),
+          )
         }
       }
     }

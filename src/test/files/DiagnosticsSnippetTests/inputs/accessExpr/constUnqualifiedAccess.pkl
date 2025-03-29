@@ -1,0 +1,7 @@
+function bar() = 15
+
+baz = 15
+
+const foo = bar()
+
+const qux = baz

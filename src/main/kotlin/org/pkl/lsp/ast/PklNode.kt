@@ -29,6 +29,7 @@ import org.pkl.lsp.packages.Dependency
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.packages.dto.Version
 import org.pkl.lsp.resolvers.ResolveVisitor
+import org.pkl.lsp.resolvers.Resolvers
 import org.pkl.lsp.type.Type
 import org.pkl.lsp.type.TypeParameterBindings
 import org.pkl.lsp.util.CachedValueDataHolderBase
@@ -60,6 +61,60 @@ interface PklNode {
     }
     return null
   }
+
+  @Suppress("UNCHECKED_CAST")
+  fun <T : PklNode> parentsOfTypes(vararg classes: KClass<out T>): List<T> {
+    return buildList {
+      var node: PklNode? = parent
+      while (node != null) {
+        for (clazz in classes) {
+          if (clazz.isInstance(node)) add(node as T)
+        }
+        node = node.parent
+      }
+    }
+  }
+
+  fun prevSibling(): PklNode? {
+    val parentNode = parent ?: return null
+    var idx = parentNode.children.indexOf(this)
+    return when {
+      idx > 0 -> parentNode.children[idx - 1]
+      else -> null
+    }
+  }
+
+  @Suppress("UNCHECKED_CAST")
+  fun <T : PklNode> prevSiblingOfTypes(vararg classes: KClass<out T>): T? {
+    val parentNode = parent ?: return null
+    var idx = parentNode.children.indexOf(this) - 1
+    while (idx >= 0) {
+      val node = parentNode.children[idx]
+      for (clazz in classes) {
+        if (clazz.isInstance(node)) {
+          return node as T
+        }
+      }
+      idx--
+    }
+    return null
+  }
+}
+
+interface PklSuppressWarningsTarget : PklNode {
+  fun getKind(): String =
+    when (this) {
+      is PklImport -> "import"
+      is PklClass -> "class"
+      is PklTypeAlias -> "type alias"
+      is PklProperty -> "property"
+      is PklObjectElement -> "element"
+      is PklMemberPredicate -> "member predicate"
+      is PklObjectEntry -> "entry"
+      is PklMethod -> "method"
+      is PklForGenerator -> "for generator"
+      else -> error("Unexpected suppress warnings target: ${this::class.qualifiedName}")
+    }
 }
 
 /** Represents an error node in tree-sitter */
@@ -223,7 +278,11 @@ sealed interface PklModuleMember : PklNavigableElement, PklDocCommentOwner, PklM
 sealed interface PklTypeDefOrProperty : PklModuleMember
 
 sealed interface PklTypeDef :
-  PklTypeDefOrProperty, PklTypeDefOrModule, PklModuleMember, PklModifierListOwner {
+  PklTypeDefOrProperty,
+  PklTypeDefOrModule,
+  PklModuleMember,
+  PklModifierListOwner,
+  PklSuppressWarningsTarget {
   val typeParameterList: PklTypeParameterList?
 }
 
@@ -260,7 +319,11 @@ interface PklModuleName : PklNode, IdentifierOwner
 sealed interface PklClassMember : PklModuleMember, PklDocCommentOwner
 
 sealed interface PklProperty :
-  PklNavigableElement, PklReference, PklModifierListOwner, IdentifierOwner {
+  PklNavigableElement,
+  PklReference,
+  PklModifierListOwner,
+  IdentifierOwner,
+  PklSuppressWarningsTarget {
   val name: String
   val type: PklType?
   val expr: PklExpr?
@@ -283,9 +346,9 @@ interface PklClassProperty : PklProperty, PklModuleMember, PklClassMember, PklTy
   val objectBody: PklObjectBody?
 }
 
-interface PklMethod : PklNavigableElement, PklModifierListOwner {
+interface PklMethod : PklNavigableElement, PklModifierListOwner, PklSuppressWarningsTarget {
   val methodHeader: PklMethodHeader
-  val body: PklExpr
+  val body: PklExpr?
   val name: String
 }
 
@@ -299,19 +362,19 @@ sealed interface PklObjectMember : PklNode
 
 interface PklObjectProperty : PklNavigableElement, PklProperty, PklObjectMember
 
-interface PklObjectEntry : PklObjectMember {
+interface PklObjectEntry : PklObjectMember, PklSuppressWarningsTarget {
   val keyExpr: PklExpr?
   val valueExpr: PklExpr?
   val objectBodyList: List<PklObjectBody>
 }
 
-interface PklMemberPredicate : PklObjectMember {
+interface PklMemberPredicate : PklObjectMember, PklSuppressWarningsTarget {
   val conditionExpr: PklExpr?
   val valueExpr: PklExpr?
   val objectBodyList: List<PklObjectBody>
 }
 
-interface PklForGenerator : PklObjectMember {
+interface PklForGenerator : PklObjectMember, PklSuppressWarningsTarget {
   val iterableExpr: PklExpr?
   val parameters: List<PklTypedIdentifier>
 }
@@ -322,7 +385,7 @@ interface PklWhenGenerator : PklObjectMember {
   val elseBody: PklObjectBody?
 }
 
-interface PklObjectElement : PklObjectMember {
+interface PklObjectElement : PklObjectMember, PklSuppressWarningsTarget {
   val expr: PklExpr
 }
 
@@ -351,6 +414,8 @@ interface PklObjectBody : PklNode {
   val properties: List<PklObjectProperty>
 
   val methods: List<PklObjectMethod>
+
+  fun isConstScope(): Boolean
 }
 
 interface PklTypeParameterList : PklNode {
@@ -377,6 +442,12 @@ interface PklTypeAlias : PklTypeDef, IdentifierOwner {
   fun isRecursive(context: PklProject?): Boolean
 }
 
+interface PklWhiteSpace
+
+interface PklLineComment : PklNode, PklWhiteSpace
+
+interface PklBlockComment : PklNode, PklWhiteSpace
+
 interface Terminal : PklNode {
   val type: TokenType
 }
@@ -389,7 +460,7 @@ interface PklImportBase : PklNode, PklModuleUriOwner {
   val isGlob: Boolean
 }
 
-sealed interface PklImport : PklImportBase, IdentifierOwner
+sealed interface PklImport : PklImportBase, IdentifierOwner, PklSuppressWarningsTarget
 
 sealed interface PklExpr : PklNode
 
@@ -471,12 +542,21 @@ interface PklQualifiedAccessExpr : PklAccessExpr {
 
 interface PklSuperAccessExpr : PklAccessExpr
 
-interface PklUnqualifiedAccessExpr : PklAccessExpr
+interface PklUnqualifiedAccessExpr : PklAccessExpr {
+  fun <R> resolveAndGetLookupMode(
+    base: PklBaseModule,
+    receiverType: Type?,
+    bindings: TypeParameterBindings,
+    visitor: ResolveVisitor<R>,
+    context: PklProject?,
+  ): Pair<R, Resolvers.LookupMode>
+}
 
 interface PklSubscriptExpr : PklBinExpr
 
 interface PklNonNullExpr : PklExpr {
   val expr: PklExpr
+  val operator: Terminal
 }
 
 interface PklUnaryMinusExpr : PklExpr {
@@ -679,11 +759,9 @@ abstract class AbstractPklNode(
   protected open val ctx: Node,
 ) : CachedValueDataHolderBase(), PklNode {
   private val childrenByType: Map<KClass<out PklNode>, List<PklNode>> by lazy {
-    val self = this
     // use LinkedHashMap to preserve order
     LinkedHashMap<KClass<out PklNode>, MutableList<PklNode>>().also { map ->
-      for (idx in ctx.children.indices) {
-        val node = ctx.children.toNode(project, self, idx) ?: continue
+      for (node in children) {
         when (val nodes = map[node::class]) {
           null -> map[node::class] = mutableListOf(node)
           else -> nodes.add(node)
@@ -720,7 +798,9 @@ abstract class AbstractPklNode(
 
   override val terminals: List<Terminal> by lazy { getChildren(TerminalImpl::class) ?: emptyList() }
 
-  override val children: List<PklNode> by lazy { childrenByType.values.flatten() }
+  override val children: List<PklNode> by lazy {
+    ctx.children.mapNotNull { it.toNode(project, this) }
+  }
 
   override val text: String by lazy { ctx.text!! }
 
@@ -859,8 +939,8 @@ fun Node.toNode(project: Project, parent: PklNode?): PklNode? {
     "escapeSequence" -> toTerminal(parent!!)
     // just becomes an expression
     "stringInterpolation" -> children[1].toNode(project, parent)
-    "lineComment",
-    "blockComment" -> null
+    "lineComment" -> PklLineCommentImpl(project, parent!!, this)
+    "blockComment" -> PklBlockCommentImpl(project, parent!!, this)
     "ERROR" -> PklErrorImpl(project, parent!!, this)
     else -> {
       val term = toTerminal(parent!!)

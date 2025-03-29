@@ -1,0 +1,13 @@
+ // Assert that we get the very previous line comment.
+ // This should still result in a warning diagnostic.
+ bar: String?
+ 
+ // noinspection TypeMismatch
+ qux = 5
+ 
+ foo: String = bar
+               ^^^
+| Warning: Nullability mismatch.
+| Required: String
+| Actual: String?
+ 

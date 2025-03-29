@@ -1,0 +1,6 @@
+ local module Foo
+ ^^^^^
+| Error: Modifier 'local' is not applicable to amending modules
+ 
+ amends "pkl:test"
+ 

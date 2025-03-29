@@ -1,0 +1,4 @@
+ const foo = this
+             ^^^^
+| Error: Cannot reference `this` from here because it is not `const`
+ 

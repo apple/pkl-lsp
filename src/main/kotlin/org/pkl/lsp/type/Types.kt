@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package org.pkl.lsp.type
 
 import java.util.*
+import kotlin.math.min
 import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.Project
 import org.pkl.lsp.ast.*
@@ -563,9 +564,6 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
         else -> doIsSubtypeOf(type, base, context)
       }
 
-    override fun isUnresolvedMemberFatal(base: PklBaseModule, context: PklProject?): Boolean =
-      !ctx.isAbstractOrOpen
-
     // assumes `!this.isSubtypeOf(type)`
     override fun hasCommonSubtypeWith(
       type: Type,
@@ -577,6 +575,55 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
         is Module -> type.isSubtypeOf(this, base, context)
         else -> doHasCommonSubtypeWith(type, base, context)
       }
+
+    override fun isUnresolvedMemberFatal(base: PklBaseModule, context: PklProject?): Boolean =
+      !ctx.isAbstractOrOpen
+
+    // assumes `!this.isSubtypeOf(type)`
+    private fun hasCommonSubtypeWith(
+      type: Class,
+      base: PklBaseModule,
+      context: PklProject?,
+    ): Boolean {
+      // optimization
+      if (ctx === base.anyType.ctx) return true
+
+      if (typeArguments.isEmpty()) {
+        if (type.typeArguments.isNotEmpty()) return false // holds for stdlib
+        assert(!ctx.isSubclassOf(type.ctx, context)) // due to `!this.isSubtypeOf(type)`
+        return ctx.hasCommonSubclassWith(type.ctx, context)
+      }
+
+      if (!ctx.isSubclassOf(type.ctx, context) && !ctx.hasCommonSubclassWith(type.ctx, context))
+        return false
+
+      val size = typeArguments.size
+      val otherSize = type.typeArguments.size
+
+      for (i in 1..min(size, otherSize)) {
+        // assume [typeArg] maps directly to [otherTypeArg] in extends clause(s) (holds for stdlib)
+        val typeArg = typeArguments[size - i]
+        val typeParam = typeParameters[size - i]
+        val otherTypeArg = type.typeArguments[otherSize - i]
+        val result =
+          when (typeParam.variance) {
+            Variance.OUT -> { // covariance
+              typeArg.isSubtypeOf(otherTypeArg, base, context) ||
+                typeArg.hasCommonSubtypeWith(otherTypeArg, base, context)
+            }
+            Variance.IN -> { // contravariance
+              // can always weaken `typeArg` (e.g., to `typeArg|otherTypeArg`)
+              // so that `otherTypeArg` is a subtype
+              true
+            }
+            else -> { // invariance
+              typeArg.isEquivalentTo(otherTypeArg, base, context)
+            }
+          }
+        if (!result) return false
+      }
+      return true
+    }
 
     val isNullType: Boolean by lazy { ctx.name == "Null" && ctx.isInPklBaseModule }
 
@@ -727,9 +774,9 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
       visitor: ResolveVisitor<*>,
       context: PklProject?,
     ): Boolean {
-      // return ctx.body.toType(base, bindings).visitMembers(isProperty, allowClasses, base,
-      // visitor)
-      return true
+      return ctx.type
+        .toType(base, bindings, context)
+        .visitMembers(isProperty, allowClasses, base, visitor, context)
     }
 
     override fun resolveToDefinitions(base: PklBaseModule): List<PklNavigableElement> = listOf(ctx)

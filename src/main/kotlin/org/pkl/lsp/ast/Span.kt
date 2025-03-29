@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,8 @@ data class Span(val beginLine: Int, val beginCol: Int, val endLine: Int, val end
 
   fun spliceLine(offset: Int, length: Int): Span =
     Span(beginLine, beginCol + offset, beginLine, beginCol + offset + length)
+
+  fun endAt(span: Span) = Span(beginLine, beginCol, span.endLine, span.endCol)
 
   companion object {
     fun from(s1: Span, s2: Span): Span = Span(s1.beginLine, s1.beginCol, s2.endLine, s2.endCol)

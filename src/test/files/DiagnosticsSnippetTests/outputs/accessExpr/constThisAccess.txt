@@ -1,0 +1,16 @@
+ open class Person {
+   age: Int
+ }
+ 
+ class MyPerson extends Person {
+   // implicit this
+   const olderAge = age + 1
+                    ^^^
+| Error: Cannot reference property `age` from here because it is not `const`.
+ 
+   // explicit this
+   const youngerAge = this.age - 1
+                           ^^^
+| Error: Cannot reference property `age` from here because it is not `const`.
+ }
+ 

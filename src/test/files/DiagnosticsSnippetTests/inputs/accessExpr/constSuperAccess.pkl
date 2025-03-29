@@ -1,0 +1,10 @@
+open class Foo {
+  prop = "hello"
+  function myFunc() = "myFunc"
+}
+
+class Bar extends Foo {
+  const foo = super.prop
+
+  const bar = super.myFunc()
+}

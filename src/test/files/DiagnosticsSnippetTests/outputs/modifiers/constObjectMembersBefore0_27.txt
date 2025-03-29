@@ -1,0 +1,10 @@
+ @ModuleInfo { minPklVersion = "0.26.0" }
+ module mytest
+ 
+ foo = new Dynamic {
+   const bar = 1
+   ^^^^^
+| Error: Modifier 'const' cannot be applied to object members in this Pkl version.
+| Required Pkl version: `0.27.0`. Detected Pkl version: `0.26.0`
+ }
+ 

@@ -1,0 +1,16 @@
+ class Person { name: String }
+ 
+ foo = bar
+       ^^^
+| Error: Unresolved reference `bar`
+ 
+ qux = someQux()
+       ^^^^^^^
+| Error: Unresolved reference `someQux`
+ 
+ local p: Person = new {}
+ 
+ corge = p.flooey
+           ^^^^^^
+| Error: Unresolved reference `flooey`
+ 

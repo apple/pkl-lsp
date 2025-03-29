@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,9 @@ class DiagnosticsManager(project: Project) : Component(project) {
       ModuleUriAnalyzer(project),
       SyntaxAnalyzer(project),
       UnsupportedFeatureAnalyzer(project),
+      TypeCheckAnalyzer(project),
+      AccessExprAnalyzer(project),
+      ExprAnalyzer(project),
     )
 
   private val openFiles: MutableMap<URI, Boolean> = ConcurrentHashMap()
@@ -94,11 +97,11 @@ class DiagnosticsManager(project: Project) : Component(project) {
     return project.cachedValuesManager.getCachedValue(
       "DiagnosticsManager.getDiagnostics(${module.uri})"
     ) {
-      val diagnostics = mutableListOf<PklDiagnostic>()
+      val holder = DiagnosticsHolder()
       for (analyzer in analyzers) {
-        analyzer.analyze(module, diagnostics)
+        analyzer.analyze(module, holder)
       }
-      logger.log("Found ${diagnostics.size} diagnostic errors for ${module.uri}")
+      logger.log("Found ${holder.diagnostics.size} diagnostic errors for ${module.uri}")
       val dependencies = buildList {
         val file = module.containingFile
 
@@ -113,7 +116,7 @@ class DiagnosticsManager(project: Project) : Component(project) {
           add(project.pklProjectManager.syncTracker)
         }
       }
-      CachedValue(diagnostics, dependencies)
+      CachedValue(holder.diagnostics, dependencies)
     }!!
   }
 }

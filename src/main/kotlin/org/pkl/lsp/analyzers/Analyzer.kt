@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,9 @@
  */
 package org.pkl.lsp.analyzers
 
-import org.eclipse.lsp4j.DiagnosticSeverity
 import org.pkl.lsp.Component
 import org.pkl.lsp.Project
-import org.pkl.lsp.actions.PklCodeAction
 import org.pkl.lsp.ast.PklNode
-import org.pkl.lsp.ast.Span
 import org.pkl.lsp.ast.isInStdlib
 
 /**
@@ -29,7 +26,7 @@ import org.pkl.lsp.ast.isInStdlib
  * Diagnostics then get reported back to the user.
  */
 abstract class Analyzer(project: Project) : Component(project) {
-  fun analyze(node: PklNode, diagnosticsHolder: MutableList<PklDiagnostic>) {
+  fun analyze(node: PklNode, diagnosticsHolder: DiagnosticsHolder) {
     if (node.isInStdlib) return
     if (!doAnalyze(node, diagnosticsHolder)) {
       return
@@ -43,26 +40,5 @@ abstract class Analyzer(project: Project) : Component(project) {
    * Return `false` if the annotator does not need to analyze any further. This skips calling
    * [doAnalyze] on its children.
    */
-  protected abstract fun doAnalyze(
-    node: PklNode,
-    diagnosticsHolder: MutableList<PklDiagnostic>,
-  ): Boolean
-
-  protected fun warn(
-    node: PklNode,
-    message: String,
-    codeAction: PklCodeAction? = null,
-  ): PklDiagnostic = PklDiagnostic(node, message, DiagnosticSeverity.Warning, codeAction)
-
-  protected fun warn(
-    span: Span,
-    message: String,
-    codeAction: PklCodeAction? = null,
-  ): PklDiagnostic = PklDiagnostic(span, message, DiagnosticSeverity.Warning, codeAction)
-
-  protected fun error(
-    node: PklNode,
-    message: String,
-    codeAction: PklCodeAction? = null,
-  ): PklDiagnostic = PklDiagnostic(node, message, DiagnosticSeverity.Error, codeAction)
+  protected abstract fun doAnalyze(node: PklNode, diagnosticsHolder: DiagnosticsHolder): Boolean
 }

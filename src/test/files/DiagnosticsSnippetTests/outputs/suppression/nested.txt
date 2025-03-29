@@ -1,0 +1,7 @@
+ const bar: String?
+ 
+ // noinspection TypeMismatch
+ class Bar {
+   foo: String = bar
+ }
+ 

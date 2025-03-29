@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package org.pkl.lsp.features
 
+import com.google.gson.JsonPrimitive
 import java.net.URI
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.CodeAction
@@ -22,7 +23,6 @@ import org.eclipse.lsp4j.CodeActionParams
 import org.eclipse.lsp4j.Command
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.pkl.lsp.Component
-import org.pkl.lsp.LspUtil.toRange
 import org.pkl.lsp.Project
 
 class CodeActionFeature(project: Project) : Component(project) {
@@ -32,13 +32,19 @@ class CodeActionFeature(project: Project) : Component(project) {
       project.virtualFileManager.get(uri) ?: return CompletableFuture.completedFuture(emptyList())
     return file.getModule().thenApply { module ->
       if (module == null) listOf()
-      else
+      else {
+        val ids =
+          params.context.diagnostics
+            .map { it.data }
+            .filterIsInstance<JsonPrimitive>()
+            .map { it.asString }
         project.diagnosticsManager
           .getDiagnostics(module)
-          .filter { it.span.toRange() == params.range }
-          .mapNotNull { diagnostic ->
-            diagnostic.action?.let { Either.forRight(it.toMessage(diagnostic)) }
+          .filter { ids.contains(it.id) }
+          .flatMap { diagnostic ->
+            diagnostic.actions.map { Either.forRight(it.toMessage(diagnostic)) }
           }
+      }
     }
   }
 }

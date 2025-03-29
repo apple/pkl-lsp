@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -375,6 +375,10 @@ open class PklVisitor<R> {
     return visitExpr(o)
   }
 
+  open fun visitTypeCastExpr(o: PklTypeCastExpr): R? {
+    return visitExpr(o)
+  }
+
   open fun visitTypedIdentifier(o: PklTypedIdentifier): R? {
     return visitIdentifierOwner(o)
   }
@@ -401,5 +405,13 @@ open class PklVisitor<R> {
 
   open fun visitDocCommentOwner(o: PklDocCommentOwner): R? {
     return visitElement(o)
+  }
+
+  open fun visitLineComment(o: PklLineComment): R? {
+    return null
+  }
+
+  open fun visitBlockComment(o: PklBlockComment): R? {
+    return null
   }
 }
