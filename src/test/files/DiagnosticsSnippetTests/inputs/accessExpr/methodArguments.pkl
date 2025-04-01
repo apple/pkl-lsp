@@ -1,0 +1,11 @@
+function foo(a: Int, b: String, c: "foo"|"bar") = "\(a)\(b)\(c)"
+
+function bar(_) = "hello"
+
+res = foo()
+
+res2 = foo(1, "hello")
+
+res3 = foo(1, "hello", "bar", 15)
+
+res4 = bar()

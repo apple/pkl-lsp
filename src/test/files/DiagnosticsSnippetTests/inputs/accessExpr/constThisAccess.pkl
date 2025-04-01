@@ -1,0 +1,11 @@
+open class Person {
+  age: Int
+}
+
+class MyPerson extends Person {
+  // implicit this
+  const olderAge = age + 1
+
+  // explicit this
+  const youngerAge = this.age - 1
+}

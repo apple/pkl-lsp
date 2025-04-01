@@ -1,0 +1,9 @@
+class Person { name: String }
+
+foo = bar
+
+qux = someQux()
+
+local p: Person = new {}
+
+corge = p.flooey

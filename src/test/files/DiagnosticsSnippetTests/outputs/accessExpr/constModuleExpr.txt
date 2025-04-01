@@ -1,0 +1,4 @@
+ const foo = module
+             ^^^^^^
+| Error: Cannot reference `module` from here because it is not `const`
+ 

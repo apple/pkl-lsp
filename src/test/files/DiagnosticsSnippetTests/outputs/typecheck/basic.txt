@@ -1,0 +1,31 @@
+ foo: String = 15
+               ^^
+| Error: Type mismatch.
+| Required: String
+| Actual: Int
+ 
+ class Person {
+   name: String
+ }
+ 
+ p: Person = new {
+   name = 15
+          ^^
+| Error: Type mismatch.
+| Required: String
+| Actual: Int
+ }
+ 
+ people: Listing<Person> = new { 1 }
+                                 ^
+| Error: Type mismatch.
+| Required: Person
+| Actual: Int
+ 
+ people2: Mapping<Person, String> = new {
+   [5] = "hi"
+    ^
+| Error: Type mismatch.
+| Required: Person
+| Actual: Int
+ }

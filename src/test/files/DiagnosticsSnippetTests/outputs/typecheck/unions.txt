@@ -1,0 +1,13 @@
+ foo: Int|String = true
+                   ^^^^
+| Error: Type mismatch.
+| Required: Int|String
+| Actual: Boolean
+ 
+ bar: Int = null
+            ^^^^
+| Error: Type mismatch.
+| Required: Int
+| Actual: Null
+ 
+ 

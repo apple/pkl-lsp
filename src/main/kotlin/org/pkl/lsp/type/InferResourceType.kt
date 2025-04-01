@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.pkl.lsp.type
 import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.ast.PklSingleLineStringLiteral
 import org.pkl.lsp.ast.TokenType
+import org.pkl.lsp.ast.firstTerminalOfType
 import org.pkl.lsp.packages.dto.PklProject
 
 fun inferResourceType(
@@ -29,7 +30,7 @@ fun inferResourceType(
   // note that [resourceUri] could be an interpolated string.
   // we only operate on the first string part.
   val firstChild =
-    resourceUri.children.firstOrNull()
+    resourceUri.firstTerminalOfType(TokenType.SLCharacters)
       ?: return Type.union(
         base.stringType,
         base.resourceType,
@@ -39,9 +40,6 @@ fun inferResourceType(
   val stringChars = firstChild.text
 
   return when {
-    firstChild.terminals.firstOrNull()?.type != TokenType.SLCharacters ->
-      // starts with escape sequence or interpolation expression -> bail out
-      Type.union(base.stringType, base.resourceType, base, context)
     stringChars.startsWith("env:", ignoreCase = true) -> base.stringType
     stringChars.startsWith("prop:", ignoreCase = true) -> base.stringType
 

@@ -1,0 +1,6 @@
+@ModuleInfo { minPklVersion = "0.26.0" }
+module mytest
+
+foo = new Dynamic {
+  const bar = 1
+}

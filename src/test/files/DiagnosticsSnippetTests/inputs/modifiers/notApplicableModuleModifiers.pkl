@@ -1,0 +1,3 @@
+local module Foo
+
+amends "pkl:test"

@@ -1,0 +1,24 @@
+ function foo(a: Int, b: String, c: "foo"|"bar") = "\(a)\(b)\(c)"
+ 
+ function bar(_) = "hello"
+ 
+ res = foo()
+          ^^
+| Error: Missing argument for `a: Int`
+          ^^
+| Error: Missing argument for `b: String`
+          ^^
+| Error: Missing argument for `c: "foo"|"bar"`
+ 
+ res2 = foo(1, "hello")
+               ^^^^^^^^
+| Error: Missing argument for `c: "foo"|"bar"`
+ 
+ res3 = foo(1, "hello", "bar", 15)
+                               ^^
+| Error: Too many arguments for method `foo(a: Int, b: String, c: "foo"|"bar")`
+ 
+ res4 = bar()
+           ^^
+| Error: Missing argument for `_`
+ 

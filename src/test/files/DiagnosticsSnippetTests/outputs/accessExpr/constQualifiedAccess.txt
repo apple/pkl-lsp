@@ -1,0 +1,10 @@
+ const foo = module.bar
+                    ^^^
+| Error: Cannot reference property `bar` from here because it is not `const`.
+ 
+ const qux = this.bar
+                  ^^^
+| Error: Cannot reference property `bar` from here because it is not `const`.
+ 
+ bar = 15
+ 

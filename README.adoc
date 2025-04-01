@@ -15,7 +15,7 @@ for link:https://pkl-lang.org[Pkl].
 * [ ] Find references
 * [ ] Code lens
 * [ ] Formatting
-* [ ] Type checking
+* [x] Type checking
 * [ ] Quick fixes
 
 == Development
@@ -27,7 +27,7 @@ The easiest way to start and debug the LSP is to use the `org.pkl.lsp.devlaunche
 This will open an instance of VSCode as an extension host, with the pkl-vscode plugin installed.
 This extension host then connects to the running Java instance.
 
-By default, the launcher https://github.com/apple/pkl-pantry[pkl-pantry] repo, and assumes it is checked out as a sibling repo.
+By default, the launcher opens the https://github.com/apple/pkl-pantry[pkl-pantry] repo, and assumes it is checked out as a sibling repo.
 This behavior can be configured with CLI flags; take a look at the link:src/devLauncher/kotlin/org/pkl/lsp/devlauncher/Launcher.kt[source code] for more details.
 
 This expects that the https://github.com/apple/pkl-vscode[pkl-vscode] repo is checked out, and placed right next to this repo on the file system.
