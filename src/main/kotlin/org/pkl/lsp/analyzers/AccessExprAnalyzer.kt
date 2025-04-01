@@ -351,8 +351,8 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
     base: PklBaseModule,
     holder: MutableList<PklDiagnostic>,
   ) {
-    val paramList = method.methodHeader.parameterList ?: return
-    val params = paramList.elements
+    val paramList = method.methodHeader.parameterList
+    val params = paramList?.elements ?: return
     val argList = expr.argumentList ?: return
     val args = argList.elements
     val paramCount = params.size
@@ -360,14 +360,11 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
     when {
       argCount < paramCount -> {
         if (argCount == paramCount - 1 && method.isVarArgs(base)) return
-
-        val closingParen =
-          argList.lastChildMatching { it is Terminal && it.type == TokenType.RPAREN } ?: return
-
         for (idx in argCount until paramCount) {
           val arg = buildString { renderTypedIdentifier(params[idx], mapOf()) }
           val message = ErrorMessages.create("missingArgument", arg)
-          holder += error(closingParen, message)
+          val span = args.lastOrNull()?.span?.endAt(argList.span) ?: argList.span
+          holder += error(span, message)
         }
       }
       argCount > paramCount -> {
@@ -375,10 +372,10 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
 
         val arg = buildString {
           append(method.name)
-          renderParameterList(method.methodHeader.parameterList, mapOf())
+          renderParameterList(paramList, mapOf())
         }
         val message = ErrorMessages.create("tooManyArguments", arg)
-        holder += error(argList.elements.last(), message)
+        holder += error(args.last(), message)
       }
     }
   }

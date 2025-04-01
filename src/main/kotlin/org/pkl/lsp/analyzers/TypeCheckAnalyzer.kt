@@ -15,6 +15,7 @@
  */
 package org.pkl.lsp.analyzers
 
+import org.pkl.lsp.ErrorMessages
 import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.Project
 import org.pkl.lsp.ast.PklExpr
@@ -169,11 +170,12 @@ class TypeCheckAnalyzer(project: Project) : Analyzer(project) {
   }
 
   private fun typeMismatchMessage(header: String, expectedType: Type, actualType: Type): String {
-    return buildString {
-      appendLine("$header mismatch.")
-      appendLine("Required: ${expectedType.render()}")
-      appendLine("Actual: ${actualType.render()}")
-    }
+    return ErrorMessages.create(
+      "typeOrConstraintMismatch",
+      header,
+      expectedType.render(),
+      actualType.render(),
+    )
   }
 
   private fun reportConstraintMismatch(
@@ -182,29 +184,20 @@ class TypeCheckAnalyzer(project: Project) : Analyzer(project) {
     constraints: List<Pair<Type, Int>>,
     holder: MutableList<PklDiagnostic>,
   ) {
-
-    val textBuilder = StringBuilder()
-    val htmlBuilder = StringBuilder()
-    val valueText = exprValue.value.render()
-
-    textBuilder.append("Constraint violation.\nRequired: ")
-    htmlBuilder.append("Constraint violation.").append("<table><tr><td>Required:</td><td>")
-
-    var isFirst = true
-    for ((type, index) in constraints) {
-      if (isFirst) {
-        isFirst = false
-      } else {
-        textBuilder.append(" || ")
-        htmlBuilder.append(" || ")
+    var renderedConstraint = buildString {
+      var isFirst = true
+      for ((type, index) in constraints) {
+        if (isFirst) {
+          isFirst = false
+        } else {
+          append(" || ")
+        }
+        val constraint = type.constraints[index]
+        append(constraint.render())
       }
-      val constraint = type.constraints[index]
-      val constraintText = constraint.render()
-      textBuilder.append(constraintText)
     }
-
-    textBuilder.append("\nFound: ").appendLine(valueText)
-
-    holder += error(expr, textBuilder.toString())
+    val message =
+      ErrorMessages.create("constraintViolation", renderedConstraint, exprValue.value.render())
+    holder += error(expr, message)
   }
 }

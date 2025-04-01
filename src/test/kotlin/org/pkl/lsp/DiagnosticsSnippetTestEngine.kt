@@ -36,7 +36,6 @@ class DiagnosticsSnippetTestEngine : InputOutputTestEngine() {
     val project = server.project
     System.getProperty("pklExecutable")?.let { executablePath ->
       TestLanguageClient.settings["Pkl" to "pkl.cli.path"] = executablePath
-      println("pkl is: $executablePath")
       project.settingsManager.settings.pklCliPath = Path.of(executablePath)
     }
     project
