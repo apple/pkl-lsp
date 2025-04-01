@@ -17,6 +17,7 @@ package org.pkl.lsp.ast
 
 import io.github.treesitter.jtreesitter.Node
 import java.net.URI
+import kotlin.properties.Delegates
 import kotlin.reflect.KClass
 import org.eclipse.lsp4j.CompletionItem
 import org.eclipse.lsp4j.CompletionItemKind
@@ -47,6 +48,7 @@ interface PklNode {
   /** True if tree-sitter inserted this node. */
   val isMissing: Boolean
   val source: String
+  var index: Int
 
   fun <R> accept(visitor: PklVisitor<R>): R?
 
@@ -76,28 +78,9 @@ interface PklNode {
   }
 
   fun prevSibling(): PklNode? {
+    if (index == 0) return null
     val parentNode = parent ?: return null
-    var idx = parentNode.children.indexOf(this)
-    return when {
-      idx > 0 -> parentNode.children[idx - 1]
-      else -> null
-    }
-  }
-
-  @Suppress("UNCHECKED_CAST")
-  fun <T : PklNode> prevSiblingOfTypes(vararg classes: KClass<out T>): T? {
-    val parentNode = parent ?: return null
-    var idx = parentNode.children.indexOf(this) - 1
-    while (idx >= 0) {
-      val node = parentNode.children[idx]
-      for (clazz in classes) {
-        if (clazz.isInstance(node)) {
-          return node as T
-        }
-      }
-      idx--
-    }
-    return null
+    return parentNode.children[index - 1]
   }
 }
 
@@ -758,6 +741,8 @@ abstract class AbstractPklNode(
   override val parent: PklNode?,
   protected open val ctx: Node,
 ) : CachedValueDataHolderBase(), PklNode {
+  override var index by Delegates.notNull<Int>()
+
   private val childrenByType: Map<KClass<out PklNode>, List<PklNode>> by lazy {
     // use LinkedHashMap to preserve order
     LinkedHashMap<KClass<out PklNode>, MutableList<PklNode>>().also { map ->
@@ -799,7 +784,16 @@ abstract class AbstractPklNode(
   override val terminals: List<Terminal> by lazy { getChildren(TerminalImpl::class) ?: emptyList() }
 
   override val children: List<PklNode> by lazy {
-    ctx.children.mapNotNull { it.toNode(project, this) }
+    val self = this
+    buildList {
+      var idx = 0
+      for (child in ctx.children) {
+        val node = child.toNode(project, self) ?: continue
+        node.index = idx
+        add(node)
+        idx++
+      }
+    }
   }
 
   override val text: String by lazy { ctx.text!! }
@@ -834,10 +828,6 @@ class PklErrorImpl(
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitError(this)
   }
-}
-
-fun List<Node>.toNode(project: Project, parent: PklNode?, idx: Int): PklNode? {
-  return get(idx).toNode(project, parent)
 }
 
 fun Node.toNode(project: Project, parent: PklNode?): PklNode? {
