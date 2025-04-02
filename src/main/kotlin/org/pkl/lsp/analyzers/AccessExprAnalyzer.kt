@@ -31,7 +31,7 @@ import org.pkl.lsp.type.computeExprType
 import org.pkl.lsp.type.computeThisType
 
 class AccessExprAnalyzer(project: Project) : Analyzer(project) {
-  override fun doAnalyze(node: PklNode, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
+  override fun doAnalyze(node: PklNode, diagnosticsHolder: DiagnosticsHolder): Boolean {
     val base = project.pklBaseModule
     val context = node.containingFile.pklProject
     if (node !is PklExpr) return true
@@ -53,7 +53,7 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
               ) {
                 return // don't flag
               }
-              diagnosticsHolder += unresolvedAccessDiagnostic(node, thisType, base, context)
+              diagnosticsHolder.addUnresolvedAccessDiagnostic(node, thisType, base, context)
             }
             is PklMethod -> {
               checkConstAccess(node, target, diagnosticsHolder, lookupMode)
@@ -78,7 +78,7 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
           val visitor = ResolveVisitors.firstElementNamed(element.memberNameText, base)
           when (val target = element.resolve(base, receiverType, mapOf(), visitor, context)) {
             null -> {
-              diagnosticsHolder += unresolvedAccessDiagnostic(element, receiverType, base, context)
+              diagnosticsHolder.addUnresolvedAccessDiagnostic(element, receiverType, base, context)
             }
             is PklMethod -> {
               checkConstQualifiedAccess(element, target, diagnosticsHolder)
@@ -170,7 +170,7 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
           val visitor = ResolveVisitors.firstElementNamed(node.memberNameText, base)
           val target = node.resolve(base, thisType, mapOf(), visitor, context)
           if (target == null)
-            diagnosticsHolder += unresolvedAccessDiagnostic(node, thisType, base, context)
+            diagnosticsHolder.addUnresolvedAccessDiagnostic(node, thisType, base, context)
           when (target) {
             is PklProperty -> checkConstAccess(node, target, diagnosticsHolder, null)
             is PklMethod -> checkConstAccess(node, target, diagnosticsHolder, null)
@@ -189,17 +189,18 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
     return true
   }
 
-  private fun unresolvedAccessDiagnostic(
+  private fun DiagnosticsHolder.addUnresolvedAccessDiagnostic(
     expr: PklAccessExpr,
     receiverType: Type,
     base: PklBaseModule,
     context: PklProject?,
-  ): PklDiagnostic {
+  ) {
     val message = ErrorMessages.create("unresolvedReference", expr.memberNameText)
-    return newDiagnostic(expr.identifier!!.span, message) {
+    addDiagnostic(expr, message, span = expr.identifier!!.span) {
       severity =
         if (receiverType.isUnresolvedMemberFatal(base, context)) DiagnosticSeverity.Error
         else DiagnosticSeverity.Warning
+      problemGroup = PklProblemGroups.unresolvedElement
     }
   }
 
@@ -219,7 +220,7 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
   private fun checkConstAccess(
     node: IdentifierOwner,
     target: PklModifierListOwner,
-    holder: MutableList<PklDiagnostic>,
+    holder: DiagnosticsHolder,
     lookupMode: Resolvers.LookupMode?,
   ) {
     val (isConst, isInConstScope) = node.getConstScope()
@@ -250,7 +251,7 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
       val name = node.identifier!!.text
       val action = if (target is PklProperty) "reference property" else "call method"
       val message = ErrorMessages.create("cannotAccessFromConst", action, name)
-      holder += error(node.identifier!!.span, message)
+      holder.addError(node, message, span = node.identifier!!.span)
       return
     }
 
@@ -273,21 +274,21 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
           node.enclosingModule?.effectivePklVersion?.let { effectivePklVersion ->
             if (effectivePklVersion < PKL_VERSION_0_26) {
               val message = ErrorMessages.create("shouldNotAccessConstFromTypeAlias", action, name)
-              holder += warn(node.identifier!!.span, message)
+              holder.addWarning(node, message, span = node.identifier!!.span)
               return
             }
           }
         }
         val message =
           ErrorMessages.create("cannotAccessConstFromStaticBody", action, name.toString())
-        holder += error(node.identifier!!.span, message)
+        holder.addError(node, message, span = node.identifier!!.span)
       }
     }
   }
 
   // TODO: provide checks for `outer`. Right now we don't have any editor support at all for `outer`
   // outside of syntax highlighting.
-  private fun checkConstAccess(element: PklModuleExpr, holder: MutableList<PklDiagnostic>) {
+  private fun checkConstAccess(element: PklModuleExpr, holder: DiagnosticsHolder) {
     // `module.<prop>` is allowed even if inside a const property.
     // Instead, `<prop>` is the one that gets checked.
     if (element.parent is PklQualifiedAccessExpr) return
@@ -296,7 +297,7 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
       constPropertyOrMethod?.isConst == true ||
         element.parentOfTypes(PklClass::class, PklAnnotation::class, PklTypeAlias::class) != null
     if (needsConst) {
-      holder += error(element, ErrorMessages.create("cannotReferenceModuleFromConst"))
+      holder.addError(element, ErrorMessages.create("cannotReferenceModuleFromConst"))
     }
   }
 
@@ -319,19 +320,19 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
    * Does not check qualified access (e.g. `const foo = this.bar`); this is handled by
    * [checkConstQualifiedAccess].
    */
-  private fun checkConstAccess(element: PklThisExpr, holder: MutableList<PklDiagnostic>) {
+  private fun checkConstAccess(element: PklThisExpr, holder: DiagnosticsHolder) {
     if (element.parent is PklQualifiedAccessExpr || element.isCustomThis()) return
     val (isConst, isInConstScope) = element.getConstScope()
     val needsConst = isConst && !isInConstScope
     if (needsConst) {
-      holder += error(element, ErrorMessages.create("cannotReferenceThisFromConst"))
+      holder.addError(element, ErrorMessages.create("cannotReferenceThisFromConst"))
     }
   }
 
   private fun checkConstQualifiedAccess(
     element: PklQualifiedAccessExpr,
     target: PklModifierListOwner,
-    holder: MutableList<PklDiagnostic>,
+    holder: DiagnosticsHolder,
   ) {
     // only need to check for const-ness if the receiver is `module` or `this`.
     if (element.receiverExpr !is PklModuleExpr && element.receiverExpr !is PklThisExpr) return
@@ -349,7 +350,7 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
     expr: PklAccessExpr,
     method: PklMethod,
     base: PklBaseModule,
-    holder: MutableList<PklDiagnostic>,
+    holder: DiagnosticsHolder,
   ) {
     val paramList = method.methodHeader.parameterList
     val params = paramList?.elements ?: return
@@ -364,7 +365,7 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
           val arg = buildString { renderTypedIdentifier(params[idx], mapOf()) }
           val message = ErrorMessages.create("missingArgument", arg)
           val span = args.lastOrNull()?.span?.endAt(argList.span) ?: argList.span
-          holder += error(span, message)
+          holder.addError(argList, message, span = span)
         }
       }
       argCount > paramCount -> {
@@ -375,7 +376,7 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
           renderParameterList(paramList, mapOf())
         }
         val message = ErrorMessages.create("tooManyArguments", arg)
-        holder += error(args.last(), message)
+        holder.addError(args.last(), message)
       }
     }
   }
@@ -384,7 +385,7 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
     expr: PklExpr,
     conversionMethod: PklClassMethod,
     base: PklBaseModule,
-    holder: MutableList<PklDiagnostic>,
+    holder: DiagnosticsHolder,
     context: PklProject?,
   ) {
     if (expr !is PklQualifiedAccessExpr) return
@@ -394,18 +395,17 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
     val target = expr.resolve(base, null, mapOf(), visitor, context)
     if (target == conversionMethod) {
       val message = ErrorMessages.create("redundantConversion", methodName)
-      holder +=
-        newDiagnostic(expr.identifier!!.span.endAt(expr.span), message) {
-          severity = DiagnosticSeverity.Hint
-          tags = listOf(DiagnosticTag.Unnecessary)
-        }
+      holder.addDiagnostic(expr, message, span = expr.identifier!!.span.endAt(expr.span)) {
+        severity = DiagnosticSeverity.Hint
+        tags = listOf(DiagnosticTag.Unnecessary)
+      }
     }
   }
 
   private fun checkRecursivePropertyReference(
     expr: PklAccessExpr,
     property: PklProperty,
-    holder: MutableList<PklDiagnostic>,
+    holder: DiagnosticsHolder,
   ) {
     val parent =
       expr.parentOfTypes(
@@ -416,7 +416,7 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
 
     if (parent == property) {
       val message = ErrorMessages.create("recursivePropertyReference")
-      holder += error(expr.identifier!!, message)
+      holder.addError(expr.identifier!!, message)
     }
   }
 

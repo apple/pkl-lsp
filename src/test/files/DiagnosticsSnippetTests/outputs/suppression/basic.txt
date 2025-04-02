@@ -1,0 +1,5 @@
+ bar: String?
+ 
+ // noinspection TypeMismatch
+ foo: String = bar
+ 

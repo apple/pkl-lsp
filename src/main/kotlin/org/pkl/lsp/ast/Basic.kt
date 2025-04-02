@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,5 +43,19 @@ class PklStringConstantImpl(
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitStringConstant(this)
+  }
+}
+
+class PklLineCommentImpl(project: Project, parent: PklNode, override val ctx: Node) :
+  AbstractPklNode(project, parent, ctx), PklLineComment {
+  override fun <R> accept(visitor: PklVisitor<R>): R? {
+    return visitor.visitLineComment(this)
+  }
+}
+
+class PklBlockCommentImpl(project: Project, parent: PklNode, override val ctx: Node) :
+  AbstractPklNode(project, parent, ctx), PklBlockComment {
+  override fun <R> accept(visitor: PklVisitor<R>): R? {
+    return visitor.visitBlockComment(this)
   }
 }

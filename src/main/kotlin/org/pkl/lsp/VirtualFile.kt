@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,6 +94,8 @@ interface VirtualFile : ModificationTracker, CachedValueDataHolder {
   fun resolve(path: String): VirtualFile?
 
   fun getModule(): CompletableFuture<PklModule?>
+
+  fun canModify(): Boolean
 }
 
 sealed class BaseFile : VirtualFile, CachedValueDataHolderBase() {
@@ -194,6 +196,8 @@ class FsFile(override val path: Path, override val project: Project) : BaseFile(
     else null
   }
 
+  override fun canModify(): Boolean = true
+
   override fun doReadContents(): String = path.readText()
 }
 
@@ -224,6 +228,8 @@ class StdlibFile(moduleName: String, override val project: Project) : BaseFile()
       reader.readText()
     }
   }
+
+  override fun canModify(): Boolean = false
 }
 
 class HttpsFile(override val uri: URI, override val project: Project) : BaseFile() {
@@ -259,6 +265,8 @@ class HttpsFile(override val uri: URI, override val project: Project) : BaseFile
       uri.toURL().readText()
     }
   }
+
+  override fun canModify(): Boolean = false
 }
 
 class JarFile(override val path: Path, override val uri: URI, override val project: Project) :
@@ -302,6 +310,8 @@ class JarFile(override val path: Path, override val uri: URI, override val proje
     project.cachedValuesManager.getCachedValue(this, "${javaClass.simpleName}-contents-${uri}") {
       CachedValue(path.readText())
     }!!
+
+  override fun canModify(): Boolean = false
 }
 
 class EphemeralFile(private val text: String, override val project: Project) : BaseFile() {
@@ -322,4 +332,6 @@ class EphemeralFile(private val text: String, override val project: Project) : B
   override fun resolve(path: String): VirtualFile? = null
 
   override fun doReadContents(): String = text
+
+  override fun canModify(): Boolean = false
 }

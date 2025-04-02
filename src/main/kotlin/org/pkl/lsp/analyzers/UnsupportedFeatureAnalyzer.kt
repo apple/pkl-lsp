@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,17 @@ import org.pkl.lsp.util.Feature
 
 class UnsupportedFeatureAnalyzer(project: Project) : Analyzer(project) {
 
-  override fun doAnalyze(node: PklNode, diagnosticsHolder: MutableList<PklDiagnostic>): Boolean {
+  override fun doAnalyze(node: PklNode, diagnosticsHolder: DiagnosticsHolder): Boolean {
     val containingModule = node.enclosingModule ?: return false
     val feature = Feature.features.find { it.predicate(node) } ?: return true
     if (feature.isSupported(containingModule)) return true
-    diagnosticsHolder +=
-      error(
-        node,
-        feature.message +
-          "\nRequired Pkl version: `${feature.requiredVersion}`. Detected Pkl version: `${containingModule.effectivePklVersion}`",
-      )
+    diagnosticsHolder.addError(
+      node,
+      feature.message +
+        "\nRequired Pkl version: `${feature.requiredVersion}`. Detected Pkl version: `${containingModule.effectivePklVersion}`",
+    ) {
+      problemGroup = PklProblemGroups.unsupportedFeature
+    }
     return true
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,14 +21,17 @@ import java.nio.file.Path
 import kotlin.io.path.name
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
+import org.assertj.core.api.Assertions.assertThat
 import org.eclipse.lsp4j.*
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.io.TempDir
+import org.pkl.lsp.analyzers.PklDiagnostic
 import org.pkl.lsp.ast.PklModule
 import org.pkl.lsp.ast.PklNode
 import org.pkl.lsp.ast.findBySpan
+import org.pkl.lsp.util.Edits
 
 abstract class LspTestBase {
   companion object {
@@ -78,6 +81,28 @@ abstract class LspTestBase {
   @AfterEach
   open fun afterEach() {
     server.shutdown()
+  }
+
+  /** Same as [createPklFile], but returns the resulting [VirtualFile]. */
+  protected fun createPklVirtualFile(contents: String): VirtualFile {
+    val path = createPklFile(contents)
+    return fakeProject.virtualFileManager.get(path)!!
+  }
+
+  /** Gets the diagnostics created for [file]. */
+  protected fun getDiagnostics(file: VirtualFile): List<PklDiagnostic> {
+    return fakeProject.diagnosticsManager.getDiagnostics(file.getModule().get()!!)
+  }
+
+  /**
+   * Gets the single diagnostic created for [file].
+   *
+   * Asserts that there is only one diagnostic.
+   */
+  protected fun getSingleDiagnostic(file: VirtualFile): PklDiagnostic {
+    val diag = getDiagnostics(file)
+    assertThat(diag).hasSize(1)
+    return diag.single()
   }
 
   protected fun createPklFile(contents: String): Path = createPklFile("main.pkl", contents)
@@ -157,6 +182,19 @@ abstract class LspTestBase {
     server.textDocumentService.didSave(
       DidSaveTextDocumentParams(TextDocumentIdentifier(fileInFocus!!.toUri().toString()))
     )
+  }
+
+  protected fun runAction(action: CodeAction) {
+    require(action.edit != null) { "Don't know how to execute actions that run commands" }
+    for ((uri, change) in action.edit.changes) {
+      val file = fakeProject.virtualFileManager.get(URI(uri))!!
+      file.contents = Edits.applyTextEdits(file.contents, change)
+      file.version = file.version?.plus(1) ?: 1
+      fakeProject.messageBus.emit(
+        textDocumentTopic,
+        TextDocumentEvent.Changed(file.uri, emptyList()),
+      )
+    }
   }
 
   private fun ensureActiveFile() {

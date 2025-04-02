@@ -30,6 +30,8 @@ class PklModuleImpl(override val ctx: Node, override val virtualFile: VirtualFil
   override val uri: URI
     get() = virtualFile.uri
 
+  override var index: Int = 0
+
   override val isAmend: Boolean by lazy { header?.moduleExtendsAmendsClause?.isAmend ?: false }
 
   override val header: PklModuleHeader? by lazy { getChild(PklModuleHeaderImpl::class) }
