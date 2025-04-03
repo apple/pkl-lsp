@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -162,7 +162,7 @@ class PklDefaultUnionTypeImpl(project: Project, override val parent: PklNode, ct
 
 class PklTypeAliasImpl(project: Project, override val parent: PklNode?, ctx: Node) :
   AbstractPklNode(project, parent, ctx), PklTypeAlias {
-  override val modifiers: List<Terminal>? by lazy { terminals.takeWhile { it.isModifier } }
+  override val modifiers: List<Terminal>? by lazy { terminals.filter { it.isModifier } }
   override val identifier: Terminal? by lazy { terminals.find { it.type == TokenType.Identifier } }
   override val name: String by lazy { identifier!!.text }
   override val type: PklType by lazy { children.firstInstanceOf<PklType>()!! }

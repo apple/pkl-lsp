@@ -143,7 +143,7 @@ class PklModuleClauseImpl(
     getChild(PklQualifiedIdentifierImpl::class)
   }
 
-  override val modifiers: List<Terminal>? by lazy { terminals.takeWhile { it.isModifier } }
+  override val modifiers: List<Terminal>? by lazy { terminals.filter { it.isModifier } }
 
   override val shortDisplayName: String? by lazy {
     qualifiedIdentifier?.fullName?.substringAfterLast('.')
@@ -186,9 +186,7 @@ class PklImportImpl(
   override val parent: PklNode,
   override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklImport {
-  override val identifier: Terminal? by lazy {
-    ctx.children.find { it.type == "identifier" }?.toTerminal(this)
-  }
+  override val identifier: Terminal? by lazy { terminals.find { it.type == TokenType.Identifier } }
 
   override val isGlob: Boolean by lazy { ctx.type == "importGlobClause" }
 
@@ -234,7 +232,7 @@ class PklClassImpl(
 
   override val name: String by lazy { identifier!!.text }
 
-  override val modifiers: List<Terminal>? by lazy { terminals.takeWhile { it.isModifier } }
+  override val modifiers: List<Terminal>? by lazy { terminals.filter { it.isModifier } }
 
   override fun cache(context: PklProject?): ClassMemberCache =
     ClassMemberCache.create(this, context)

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@ package org.pkl.lsp
 
 import java.net.URI
 import java.nio.file.*
-import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 class VirtualFileManager(project: Project) : Component(project) {
-  private val files: MutableMap<URI, BaseFile> = Collections.synchronizedMap(WeakHashMap())
+  private val files: MutableMap<URI, BaseFile> = ConcurrentHashMap()
 
   fun get(path: Path): VirtualFile? {
     return if (!Files.exists(path)) null else get(path.toUri(), path)

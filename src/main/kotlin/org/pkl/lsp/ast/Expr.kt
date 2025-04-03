@@ -267,18 +267,8 @@ class PklAmendExprImpl(
   override val parent: PklNode,
   override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklAmendExpr {
-  override val parentExpr: PklExpr by lazy {
-    val expr = children.firstInstanceOf<PklExpr>()
-    // tree-sitter can either have an identifier here or an expression
-    if (expr != null) expr
-    else {
-      val ident = children.firstInstanceOf<Terminal>()!!
-      if (ident.type != TokenType.Identifier) {
-        throw RuntimeException("Amend expression has no expression")
-      }
-      PklUnqualifiedAccessExprImpl(project, parent, ctx)
-    }
-  }
+  override val parentExpr: PklExpr by lazy { getChildByFieldName("parent") as PklExpr }
+
   override val objectBody: PklObjectBody by lazy { children.firstInstanceOf<PklObjectBody>()!! }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
@@ -380,8 +370,10 @@ class PklSubscriptExprImpl(
   override val parent: PklNode,
   override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklSubscriptExpr {
-  override val leftExpr: PklExpr by lazy { ctx.children[0].toNode(project, this) as PklExpr }
-  override val rightExpr: PklExpr by lazy { ctx.children[2].toNode(project, this) as PklExpr }
+  override val leftExpr: PklExpr by lazy { getChildByFieldName("receiver") as PklExpr }
+
+  override val rightExpr: PklExpr by lazy { lastChildMatching { it is PklExpr } as PklExpr }
+
   override val operator: Terminal by lazy { terminals[0] }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
@@ -436,8 +428,7 @@ abstract class PklBinExprImpl(
   private val exprs: List<PklExpr> by lazy { children.filterIsInstance<PklExpr>() }
   override val leftExpr: PklExpr by lazy { exprs[0] }
   override val rightExpr: PklExpr by lazy { exprs[1] }
-  override val operator: Terminal by lazy { tsOperator.toTerminal(parent)!! }
-  private val tsOperator: Node by lazy { ctx.getChildByFieldName("operator").get() }
+  override val operator: Terminal by lazy { getChildByFieldName("operator") as Terminal }
 }
 
 class PklAdditiveExprImpl(
