@@ -122,6 +122,10 @@ interface IdentifierOwner : PklNode {
   fun matches(line: Int, col: Int): Boolean = identifier?.span?.matches(line, col) == true
 }
 
+interface PklNamedNode {
+  val name: String
+}
+
 interface PklModifierListOwner : PklNode {
   val modifiers: List<Terminal>?
 
@@ -269,7 +273,7 @@ sealed interface PklTypeDef :
   val typeParameterList: PklTypeParameterList?
 }
 
-interface PklClass : PklTypeDef, IdentifierOwner {
+interface PklClass : PklTypeDef, IdentifierOwner, PklNamedNode {
   val annotations: List<PklAnnotation>?
   val extends: PklType?
   val classBody: PklClassBody?
@@ -329,7 +333,8 @@ interface PklClassProperty : PklProperty, PklModuleMember, PklClassMember, PklTy
   val objectBody: PklObjectBody?
 }
 
-interface PklMethod : PklNavigableElement, PklModifierListOwner, PklSuppressWarningsTarget {
+interface PklMethod :
+  PklNavigableElement, PklModifierListOwner, PklSuppressWarningsTarget, IdentifierOwner {
   val methodHeader: PklMethodHeader
   val body: PklExpr?
   val name: String
@@ -781,20 +786,26 @@ abstract class AbstractPklNode(
     return childrenByType[clazz] as List<T>?
   }
 
+  protected fun getChildByFieldName(name: String): PklNode? {
+    children
+    return childrenByFieldName[name]
+  }
+
   override val terminals: List<Terminal> by lazy { getChildren(TerminalImpl::class) ?: emptyList() }
 
   override val children: List<PklNode> by lazy {
     val self = this
     buildList {
-      var idx = 0
-      for (child in ctx.children) {
+      for ((idx, child) in ctx.children.withIndex()) {
         val node = child.toNode(project, self) ?: continue
         node.index = idx
+        ctx.getFieldNameForChild(idx)?.let { fieldName -> childrenByFieldName[fieldName] = node }
         add(node)
-        idx++
       }
     }
   }
+
+  private val childrenByFieldName: MutableMap<String, PklNode> = mutableMapOf()
 
   override val text: String by lazy { ctx.text!! }
 

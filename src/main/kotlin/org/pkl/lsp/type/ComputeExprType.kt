@@ -19,6 +19,7 @@ import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.resolvers.ResolveVisitors
+import org.pkl.lsp.util.CachedValue
 import org.pkl.lsp.util.RecursionManager
 
 fun PklNode?.computeExprType(
@@ -28,12 +29,21 @@ fun PklNode?.computeExprType(
 ): Type {
   return when {
     this == null || this !is PklExpr -> Type.Unknown
-    //    bindings.isEmpty() -> {
-    //      project.cachedValuesManager.getCachedValue("computeExprType") {
-    //        val result = doComputeExprType(base, bindings, context)
-    //        CachedValue(result)
-    //      }!!
-    //    }
+    bindings.isEmpty() -> {
+      project.cachedValuesManager.getCachedValue(
+        containingFile,
+        "computeExprType(${System.identityHashCode(this)})",
+      ) {
+        val result = doComputeExprType(base, bindings, context)
+        val dependencies = buildList {
+          add(project.pklFileTracker)
+          if (context != null) {
+            add(project.pklProjectManager.syncTracker)
+          }
+        }
+        CachedValue(result, dependencies)
+      }!!
+    }
     else -> doComputeExprType(base, bindings, context)
   }
 }

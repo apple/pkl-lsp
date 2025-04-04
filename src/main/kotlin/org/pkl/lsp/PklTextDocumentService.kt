@@ -51,9 +51,6 @@ class PklTextDocumentService(project: Project) : Component(project), TextDocumen
 
   override fun didOpen(params: DidOpenTextDocumentParams) {
     val uri = URI(params.textDocument.uri)
-    project.virtualFileManager.get(uri)?.let { file ->
-      file.version = params.textDocument.version.toLong()
-    }
     project.messageBus.emit(textDocumentTopic, TextDocumentEvent.Opened(uri))
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package org.pkl.lsp.util
 
-import java.util.concurrent.ConcurrentHashMap
 import org.pkl.lsp.Component
 import org.pkl.lsp.Project
 
@@ -34,13 +33,11 @@ interface CachedValueDataHolder {
 }
 
 abstract class CachedValueDataHolderBase : CachedValueDataHolder {
-  override val cachedValues: MutableMap<String, Pair<List<Long>, CachedValue<*>>> =
-    ConcurrentHashMap()
+  override val cachedValues: MutableMap<String, Pair<List<Long>, CachedValue<*>>> = mutableMapOf()
 }
 
 class CachedValuesManager(project: Project) : Component(project), CachedValueDataHolder {
-  override val cachedValues: MutableMap<String, Pair<List<Long>, CachedValue<*>>> =
-    ConcurrentHashMap()
+  override val cachedValues: MutableMap<String, Pair<List<Long>, CachedValue<*>>> = mutableMapOf()
 
   /** Returns the currently cached value, or `null` if the cached value is out of date. */
   @Suppress("UNCHECKED_CAST")
@@ -73,8 +70,10 @@ class CachedValuesManager(project: Project) : Component(project), CachedValueDat
     key: String,
     provider: () -> CachedValue<T>?,
   ): T? {
-    return getValue<T>(holder, key)?.value
-      ?: provider()?.also { storeCachedValue(holder, key, it) }?.value
+    synchronized(holder) {
+      return getValue<T>(holder, key)?.value
+        ?: provider()?.also { storeCachedValue(holder, key, it) }?.value
+    }
   }
 
   fun <T> getCachedValue(key: String, provider: () -> CachedValue<T>?): T? =

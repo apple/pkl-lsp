@@ -137,6 +137,21 @@ class ParserTest {
     assertThat(err!!.text).isEqualTo(".]")
   }
 
+  @Test
+  fun `parse modifiers with preceding line comments`() {
+    val code =
+      """
+      // some line comment
+      abstract function foo()
+    """
+        .trimIndent()
+
+    val mod = parse(code)
+    val method = mod.methods.first()
+    assertThat(method.modifiers).hasSize(1)
+    assertThat(method.modifiers!!.first().type).isEqualTo(TokenType.ABSTRACT)
+  }
+
   private fun assertClassPropertyExpr(node: PklNode): PklExpr {
     assertThat(node).isInstanceOf(PklClassProperty::class.java)
     val expr = (node as PklClassProperty).expr
