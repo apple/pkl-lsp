@@ -1,0 +1,3 @@
+module Foo
+
+prop: Int(this > 3)
