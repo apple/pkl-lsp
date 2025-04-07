@@ -51,7 +51,34 @@ class PklClassPropertyImpl(
 
   override val type: PklType? by lazy { typeAnnotation?.type }
 
-  override val isDefinition: Boolean by lazy { expr != null }
+  override fun isDefinition(context: PklProject?): Boolean =
+    when {
+      type != null -> true
+      isLocalOrConstOrFixed -> true
+      else -> {
+        when (val owner = this.parentOfTypes(PklModule::class, PklClass::class)) {
+          is PklModule -> {
+            if (owner.header?.moduleExtendsAmendsClause?.isAmend == true) false
+            else
+              when (val supermodule = owner.supermodule(context)) {
+                null ->
+                  !project.pklBaseModule.moduleType.ctx.cache(context).properties.containsKey(name)
+                else -> !supermodule.cache(context).properties.containsKey(name)
+              }
+          }
+          is PklClass -> {
+            owner.superclass(context)?.let { superclass ->
+              return !superclass.cache(context).properties.containsKey(name)
+            }
+            owner.supermodule(context)?.let { supermodule ->
+              return !supermodule.cache(context).properties.containsKey(name)
+            }
+            true
+          }
+          else -> false
+        }
+      }
+    }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitClassProperty(this)
@@ -221,10 +248,11 @@ class PklObjectPropertyImpl(
   override val name: String by lazy { identifier!!.text }
   override val type: PklType? = null
   override val expr: PklExpr? by lazy { children.firstInstanceOf<PklExpr>() }
-  override val isDefinition: Boolean by lazy { type != null || isLocal }
   override val typeAnnotation: PklTypeAnnotation? by lazy {
     children.firstInstanceOf<PklTypeAnnotation>()
   }
+
+  override fun isDefinition(context: PklProject?): Boolean = type != null || isLocal
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitObjectProperty(this)

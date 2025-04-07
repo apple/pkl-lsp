@@ -314,8 +314,10 @@ sealed interface PklProperty :
   val name: String
   val type: PklType?
   val expr: PklExpr?
-  val isDefinition: Boolean
   val typeAnnotation: PklTypeAnnotation?
+
+  /** Tells if this element defines a new property instead of just overriding its value. */
+  fun isDefinition(context: PklProject?): Boolean
 
   fun toCompletionItem(): CompletionItem {
     return CompletionItem(name).apply {

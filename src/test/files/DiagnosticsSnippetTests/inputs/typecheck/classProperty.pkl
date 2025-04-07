@@ -1,0 +1,7 @@
+open class Baz {
+  prop: Int(this > 3)
+}
+
+class Bar extends Baz {
+  prop = "Hello there"
+}
