@@ -1,0 +1,7 @@
+ amends ".../inputHelpers/typecheck/Foo.pkl"
+ 
+ prop = "Hello there"
+        ^^^^^^^^^^^^^
+| Error: Type mismatch.
+| Required: Int
+| Actual: "Hello there"

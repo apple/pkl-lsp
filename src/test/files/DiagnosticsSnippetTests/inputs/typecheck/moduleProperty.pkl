@@ -1,0 +1,3 @@
+amends ".../inputHelpers/typecheck/Foo.pkl"
+
+prop = "Hello there"

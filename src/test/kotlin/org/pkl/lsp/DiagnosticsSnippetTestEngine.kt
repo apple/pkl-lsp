@@ -85,7 +85,8 @@ class DiagnosticsSnippetTestEngine : InputOutputTestEngine() {
   override fun generateOutputFor(inputFile: Path): Pair<Boolean, String> {
     reset()
     val sourceText = inputFile.readText()
-    val module = parse(sourceText)
+    fakeProject.messageBus.emit(textDocumentTopic, TextDocumentEvent.Opened(inputFile.toUri()))
+    val module = fakeProject.virtualFileManager.get(inputFile)!!.getModule().get()!!
     val diagnostics = fakeProject.diagnosticsManager.getDiagnostics(module)
     return true to render(sourceText, diagnostics)
   }

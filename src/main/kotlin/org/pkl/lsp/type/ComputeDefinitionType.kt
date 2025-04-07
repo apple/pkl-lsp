@@ -53,7 +53,7 @@ fun PklNode?.computeResolvedImportType(
             when {
               canInferExprBody && isLocalOrConstOrFixed ->
                 expr.computeExprType(base, bindings, context)
-              isDefinition -> Type.Unknown
+              isDefinition(context) -> Type.Unknown
               else -> {
                 val receiverType = computeThisType(base, bindings, context)
                 val visitor =
