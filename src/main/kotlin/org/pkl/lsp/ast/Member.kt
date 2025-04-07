@@ -96,6 +96,8 @@ class PklClassMethodImpl(
   override val parent: PklNode,
   override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklClassMethod {
+  override val identifier: Terminal? by lazy { methodHeader.identifier }
+
   override val methodHeader: PklMethodHeader by lazy { getChild(PklMethodHeaderImpl::class)!! }
 
   override val name: String by lazy { methodHeader.identifier!!.text }
@@ -144,7 +146,7 @@ class PklMethodHeaderImpl(
     getChild(PklTypeParameterListImpl::class)
   }
 
-  override val modifiers: List<Terminal> by lazy { terminals.takeWhile { it.isModifier } }
+  override val modifiers: List<Terminal> by lazy { terminals.filter { it.isModifier } }
 
   override val identifier: Terminal? by lazy { terminals.find { it.type == TokenType.Identifier } }
 
@@ -215,7 +217,7 @@ class PklObjectPropertyImpl(
   override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklObjectProperty {
   override val identifier: Terminal? by lazy { terminals.find { it.type == TokenType.Identifier } }
-  override val modifiers: List<Terminal> by lazy { terminals.takeWhile { it.isModifier } }
+  override val modifiers: List<Terminal> by lazy { terminals.filter { it.isModifier } }
   override val name: String by lazy { identifier!!.text }
   override val type: PklType? = null
   override val expr: PklExpr? by lazy { children.firstInstanceOf<PklExpr>() }
@@ -247,6 +249,7 @@ class PklObjectMethodImpl(
   override val parent: PklNode,
   override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklObjectMethod {
+  override val identifier: Terminal? by lazy { methodHeader.identifier }
   override val methodHeader: PklMethodHeader by lazy { getChild(PklMethodHeaderImpl::class)!! }
   override val modifiers: List<Terminal>? by lazy { methodHeader.modifiers }
   override val body: PklExpr? by lazy { children.firstInstanceOf<PklExpr>() }
@@ -262,8 +265,10 @@ class PklObjectEntryImpl(
   override val parent: PklNode,
   override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklObjectEntry {
-  override val keyExpr: PklExpr? by lazy { ctx.children[1].toNode(project, this) as? PklExpr }
-  override val valueExpr: PklExpr? by lazy { ctx.children.last().toNode(project, this) as? PklExpr }
+  override val keyExpr: PklExpr? by lazy { getChildByFieldName("key") as PklExpr? }
+
+  override val valueExpr: PklExpr? by lazy { getChildByFieldName("valueExpr") as PklExpr? }
+
   override val objectBodyList: List<PklObjectBody> by lazy {
     children.filterIsInstance<PklObjectBody>()
   }
@@ -278,8 +283,10 @@ class PklMemberPredicateImpl(
   override val parent: PklNode,
   override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklMemberPredicate {
-  override val conditionExpr: PklExpr? by lazy { ctx.children[1].toNode(project, this) as? PklExpr }
-  override val valueExpr: PklExpr? by lazy { ctx.children.last().toNode(project, this) as? PklExpr }
+  override val conditionExpr: PklExpr? by lazy { getChildByFieldName("conditionExpr") as PklExpr? }
+
+  override val valueExpr: PklExpr? by lazy { getChildByFieldName("valueExpr") as PklExpr? }
+
   override val objectBodyList: List<PklObjectBody> by lazy {
     children.filterIsInstance<PklObjectBody>()
   }
@@ -309,11 +316,15 @@ class PklWhenGeneratorImpl(
   override val parent: PklNode,
   override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklWhenGenerator {
-  private val bodies by lazy { getChildren(PklObjectBodyImpl::class) }
+  override val conditionExpr: PklExpr? by lazy { getChildByFieldName("conditionExpr") as PklExpr? }
 
-  override val conditionExpr: PklExpr? by lazy { children.firstInstanceOf<PklExpr>() }
-  override val thenBody: PklObjectBody? by lazy { bodies?.firstOrNull() }
-  override val elseBody: PklObjectBody? by lazy { bodies?.getOrNull(1) }
+  override val thenBody: PklObjectBody? by lazy {
+    getChildByFieldName("thenBody") as PklObjectBody?
+  }
+
+  override val elseBody: PklObjectBody? by lazy {
+    getChildByFieldName("elseBody") as PklObjectBody?
+  }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitWhenGenerator(this)
