@@ -1,0 +1,15 @@
+bar: Mapping?
+
+myNum: Int
+
+prop1 {
+  ...?bar
+}
+
+prop2 {
+  ...bar
+}
+
+prop3 {
+  ...myNum
+}
