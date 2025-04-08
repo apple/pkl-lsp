@@ -163,6 +163,18 @@ abstract class LspTestBase {
     return server.textDocumentService.hover(params).get().contents.right.value
   }
 
+  protected fun getCompletions(): List<CompletionItem> {
+    ensureActiveFile()
+    ensureCaret()
+    val params =
+      CompletionParams(TextDocumentIdentifier(fileInFocus!!.toUri().toString()), caretPosition!!)
+    val result = server.textDocumentService.completion(params).get()
+    return when {
+      result.isLeft -> result.left
+      else -> result.right.items
+    }
+  }
+
   protected fun typeText(text: String) {
     ensureActiveFile()
     val currentText = fileInFocus!!.readText()

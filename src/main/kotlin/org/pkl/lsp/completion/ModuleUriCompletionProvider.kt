@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import kotlin.io.path.*
+import kotlin.math.min
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.pkl.lsp.*
@@ -56,17 +57,22 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
     params: CompletionParams,
     collector: MutableList<CompletionItem>,
   ) {
+    if (node !is PklStringConstant) return
     val import =
-      node.parentOfTypes(PklImportBase::class, /* stop class */ PklObjectBody::class)
-        as? PklImportBase ?: return
-    val isGlobImport = import.isGlob
-    val stringChars = import.moduleUri?.stringConstant ?: return
+      node.parentOfTypes(
+        PklImportBase::class,
+        PklModuleExtendsAmendsClause::class, /* stop class */
+        PklObjectBody::class,
+      )
+    if (import is PklObjectBody) return
+    val isGlobImport = (import as? PklImportBase)?.isGlob == true
     val targetUri =
-      stringChars.escapedText()?.substring(0, params.position.character - stringChars.span.beginCol)
-        ?: return
-    val pklModule = stringChars.enclosingModule!!
-    val project = stringChars.project
-    return complete(targetUri, stringChars, isGlobImport, pklModule, project, collector)
+      node.escapedText()?.let { text ->
+        text.substring(0, min(params.position.character - node.span.beginCol, text.length))
+      } ?: return
+    val pklModule = node.enclosingModule!!
+    val project = node.project
+    return complete(targetUri, node, isGlobImport, pklModule, project, collector)
   }
 
   override fun resolveCompletionItem(
