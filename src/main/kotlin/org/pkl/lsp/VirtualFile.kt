@@ -191,8 +191,9 @@ class FsFile(override val path: Path, override val project: Project) : BaseFile(
   override fun parent(): VirtualFile? = path.parent?.let { project.virtualFileManager.get(it) }
 
   override fun resolve(path: String): VirtualFile? {
-    val resolvedPath = this.path.resolve(path)
-    return if (Files.exists(resolvedPath)) project.virtualFileManager.get(resolvedPath.toUri())
+    val resolvedPath = this.path.resolve(path).normalize()
+    return if (Files.exists(resolvedPath))
+      project.virtualFileManager.get(resolvedPath.toUri(), resolvedPath)
     else null
   }
 
