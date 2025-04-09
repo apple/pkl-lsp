@@ -1,0 +1,36 @@
+ import "pkl:json"
+ 
+ typealias Foo = Bar.Baz
+                 ^^^
+| Error: Unresolved reference `Bar`
+ 
+ typealias Qux = Baz
+                 ^^^
+| Error: Unresolved reference `Baz`
+ 
+ typealias Fooey = json.Fooey
+                        ^^^^^
+| Error: Unresolved reference `Fooey`
+ 
+ prop1: Bar.Baz
+        ^^^
+| Error: Unresolved reference `Bar`
+ 
+ prop2: Baz
+        ^^^
+| Error: Unresolved reference `Baz`
+ 
+ prop3: json.Fooey
+             ^^^^^
+| Error: Unresolved reference `Fooey`
+ 
+ @Baz
+  ^^^
+| Error: Unresolved reference `Baz`
+ prop4: Int
+ 
+ @Bar.Baz
+  ^^^
+| Error: Unresolved reference `Bar`
+ prop5: Int
+ 

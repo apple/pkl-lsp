@@ -63,10 +63,27 @@ class PklStringLiteralTypeImpl(project: Project, override val parent: PklNode, c
   }
 }
 
-class PklDeclaredTypeImpl(project: Project, override val parent: PklNode, override val ctx: Node) :
-  AbstractPklNode(project, parent, ctx), PklDeclaredType {
+class PklDeclaredTypeImpl(
+  project: Project,
+  override val parent: PklNode,
+  override val ctx: Node,
+  // hack: to make tree-sitter's grammar line up with IntelliJ, we create a PklDeclaredTypeImpl from
+  // inside a PklAnnotation but set [ctx] to the PklAnnotation's ctx. However, that ctx also has an
+  // object body as a child, which is incorrect.
+  // To work around this, we simply filter out anything that doesn't match a declared type.
+  val filterChildren: Boolean,
+) : AbstractPklNode(project, parent, ctx), PklDeclaredType {
+  val qualifiedIdentifierIdx
+    get() = super.children.indexOfFirst { it is PklQualifiedIdentifier }
+
+  override val children: List<PklNode>
+    get() =
+      super.children.withReplaced(qualifiedIdentifierIdx, name).let { elems ->
+        if (filterChildren) elems.filter { it is PklTypeName || it is Terminal } else elems
+      }
+
   override val name: PklTypeName by lazy {
-    toTypeName(children.firstInstanceOf<PklQualifiedIdentifier>()!!)
+    toTypeName(super.children[qualifiedIdentifierIdx] as PklQualifiedIdentifier)
   }
 
   override val typeArgumentList: PklTypeArgumentList? by lazy {
@@ -178,8 +195,11 @@ class PklTypeAliasImpl(project: Project, override val parent: PklNode?, ctx: Nod
   }
 }
 
-class PklTypeNameImpl(project: Project, ident: PklQualifiedIdentifier, override val ctx: Node) :
-  AbstractPklNode(project, ident.parent, ctx), PklTypeName {
+class PklTypeNameImpl(
+  project: Project,
+  private val ident: PklQualifiedIdentifier,
+  override val ctx: Node,
+) : AbstractPklNode(project, ident.parent, ctx), PklTypeName {
   override val moduleName: PklModuleName? by lazy {
     // if there's only 1 identifier it's not qualified, therefore, there's no module name
     if (ctx.childCount > 1) {
@@ -189,6 +209,8 @@ class PklTypeNameImpl(project: Project, ident: PklQualifiedIdentifier, override 
   override val simpleTypeName: PklSimpleTypeName by lazy {
     PklSimpleTypeNameImpl(project, this, ident.identifiers.last(), ctx.children.last())
   }
+
+  override val children: List<PklNode> by lazy { listOf(ident) }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitTypeName(this)

@@ -623,3 +623,6 @@ fun Appendable.renderParameterList(
 
   return this
 }
+
+fun <T> List<T>.withReplaced(idx: Int, elem: T): List<T> =
+  toMutableList().apply { this[idx] = elem }

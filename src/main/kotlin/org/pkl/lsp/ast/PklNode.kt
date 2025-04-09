@@ -855,7 +855,7 @@ fun Node.toNode(project: Project, parent: PklNode?): PklNode? {
     "clazz" -> PklClassImpl(project, parent!!, this)
     "classBody" -> PklClassBodyImpl(project, parent!!, this)
     // This is kinda of a hack but works because they have the same children
-    "classExtendsClause" -> PklDeclaredTypeImpl(project, parent!!, this)
+    "classExtendsClause" -> PklDeclaredTypeImpl(project, parent!!, this, false)
     "classProperty" -> PklClassPropertyImpl(project, parent!!, this)
     "methodHeader" -> PklMethodHeaderImpl(project, parent!!, this)
     "classMethod" -> PklClassMethodImpl(project, parent!!, this)
@@ -869,7 +869,7 @@ fun Node.toNode(project: Project, parent: PklNode?): PklNode? {
     "nothingType" -> PklNothingTypeImpl(project, parent!!, this)
     "moduleType" -> PklModuleTypeImpl(project, parent!!, this)
     "stringLiteralType" -> PklStringLiteralTypeImpl(project, parent!!, this)
-    "declaredType" -> PklDeclaredTypeImpl(project, parent!!, this)
+    "declaredType" -> PklDeclaredTypeImpl(project, parent!!, this, false)
     "parenthesizedType" -> PklParenthesizedTypeImpl(project, parent!!, this)
     "functionLiteralType" -> PklFunctionTypeImpl(project, parent!!, this)
     // TODO: for pkl-tree-sitter `*Foo` alone is a valid type

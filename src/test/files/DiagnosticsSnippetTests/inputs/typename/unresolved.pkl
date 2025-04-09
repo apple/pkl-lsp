@@ -1,0 +1,19 @@
+import "pkl:json"
+
+typealias Foo = Bar.Baz
+
+typealias Qux = Baz
+
+typealias Fooey = json.Fooey
+
+prop1: Bar.Baz
+
+prop2: Baz
+
+prop3: json.Fooey
+
+@Baz
+prop4: Int
+
+@Bar.Baz
+prop5: Int
