@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,16 +107,17 @@ private fun PklExpr?.doInferExprTypeFromContext(
         }
 
         override fun visitObjectSpread(parent: PklObjectSpread): Type {
-          return when (expr) {
-            parent.expr -> {
-              val enclosingObjectType =
-                parent.computeThisType(base, bindings, context).toClassType(base, context)
-                  ?: return base.iterableType
-              val baseExpected = base.spreadType(enclosingObjectType)
-              if (parent.isNullable) baseExpected.nullable(base, context) else baseExpected
+          val underlyingType =
+            when (expr) {
+              parent.expr -> {
+                val enclosingObjectType =
+                  parent.computeThisType(base, bindings, context).toClassType(base, context)
+                if (enclosingObjectType == null) base.iterableType
+                else base.spreadType(enclosingObjectType)
+              }
+              else -> base.iterableType
             }
-            else -> base.iterableType
-          }
+          return if (parent.isNullable) underlyingType.nullable(base, context) else underlyingType
         }
 
         override fun visitMemberPredicate(parent: PklMemberPredicate): Type =

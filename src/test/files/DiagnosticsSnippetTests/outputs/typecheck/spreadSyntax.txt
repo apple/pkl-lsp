@@ -1,0 +1,24 @@
+ bar: Mapping?
+ 
+ myNum: Int
+ 
+ prop1 {
+   ...?bar
+ }
+ 
+ prop2 {
+   ...bar
+      ^^^
+| Warning: Nullability mismatch.
+| Required: Collection|Map|Dynamic|Listing|Mapping|IntSeq
+| Actual: Mapping?
+ }
+ 
+ prop3 {
+   ...myNum
+      ^^^^^
+| Error: Type mismatch.
+| Required: Collection|Map|Dynamic|Listing|Mapping|IntSeq
+| Actual: Int
+ }
+ 
