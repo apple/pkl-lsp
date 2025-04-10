@@ -108,6 +108,8 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
         is PklTypeAlias -> "typealiases" to TYPE_ALIAS_MODIFIERS
         is PklClassMethod -> "class methods" to CLASS_METHOD_MODIFIERS
         is PklClassProperty -> "class properties" to CLASS_PROPERTY_MODIFIERS
+        is PklObjectProperty -> "object properties" to OBJECT_PROPERTY_MODIFIERS
+        is PklObjectMethod -> "object methods" to OBJECT_METHOD_MODIFIERS
         else -> return true
       }
     for (modifier in node.modifiers!!) {
