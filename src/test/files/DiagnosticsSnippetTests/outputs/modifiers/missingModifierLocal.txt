@@ -3,6 +3,14 @@
  foo: String = "hello"
  ^^^
 | Error: Missing modifier 'local'
- ^^^
-| Warning: Unresolved property `foo`
+ 
+ function bar(): String = "Hello"
+          ^^^
+| Error: Missing modifier 'local'
+ 
+ examples {
+   function baz(): String = "Hi again"
+            ^^^
+| Error: Missing modifier 'local'
+ }
  

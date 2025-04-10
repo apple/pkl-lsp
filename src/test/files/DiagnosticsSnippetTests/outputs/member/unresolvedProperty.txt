@@ -1,0 +1,12 @@
+ amends "pkl:test"
+ 
+ qux = "This is qux"
+ ^^^
+| Warning: Unresolved property `qux`
+ 
+ facts {
+   fooey = "This is fooey"
+   ^^^^^
+| Error: Unresolved property `fooey`
+ }
+ 

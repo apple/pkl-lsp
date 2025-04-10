@@ -31,7 +31,7 @@ class DiagnosticsManager(project: Project) : Component(project) {
     listOf(
       AnnotationAnalyzer(project),
       ModifierAnalyzer(project),
-      ModuleMemberAnalyzer(project),
+      MemberAnalyzer(project),
       ModuleUriAnalyzer(project),
       SyntaxAnalyzer(project),
       UnsupportedFeatureAnalyzer(project),
