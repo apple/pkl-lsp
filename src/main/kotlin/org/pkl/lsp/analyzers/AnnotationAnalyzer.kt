@@ -31,12 +31,17 @@ class AnnotationAnalyzer(project: Project) : Analyzer(project) {
     }
 
     val resolvedType = type.name.resolve(context)
-    if (resolvedType == null || resolvedType !is PklClass) {
-      diagnosticsHolder.addError(type, ErrorMessages.create("cannotFindType"))
-      return true
+    // unresolved type name is handled by TypeNameAnalyzer
+    if (resolvedType == null) {
+      return false
+    }
+    if (resolvedType !is PklClass) {
+      diagnosticsHolder.addError(type, ErrorMessages.create("notAnnotation"))
+      return false
     }
     if (resolvedType.isAbstract) {
       diagnosticsHolder.addError(type, ErrorMessages.create("typeIsAbstract"))
+      return false
     }
     val base = project.pklBaseModule
     if (
@@ -47,6 +52,6 @@ class AnnotationAnalyzer(project: Project) : Analyzer(project) {
       diagnosticsHolder.addError(type, ErrorMessages.create("notAnnotation"))
     }
 
-    return true
+    return false
   }
 }

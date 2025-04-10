@@ -15,27 +15,33 @@ PklModuleImpl
   PklClassPropertyImpl
     PklTypeAnnotationImpl
       PklDeclaredTypeImpl
-        PklQualifiedIdentifierImpl
+        PklTypeNameImpl
+          PklQualifiedIdentifierImpl
         PklTypeArgumentListImpl
           PklDeclaredTypeImpl
-            PklQualifiedIdentifierImpl
+            PklTypeNameImpl
+              PklQualifiedIdentifierImpl
           PklDeclaredTypeImpl
-            PklQualifiedIdentifierImpl
+            PklTypeNameImpl
+              PklQualifiedIdentifierImpl
   PklClassPropertyImpl
     PklTypeAnnotationImpl
       PklParenthesizedTypeImpl
         PklDeclaredTypeImpl
-          PklQualifiedIdentifierImpl
+          PklTypeNameImpl
+            PklQualifiedIdentifierImpl
   PklClassPropertyImpl
     PklTypeAnnotationImpl
       PklNullableTypeImpl
         PklDeclaredTypeImpl
-          PklQualifiedIdentifierImpl
+          PklTypeNameImpl
+            PklQualifiedIdentifierImpl
   PklClassPropertyImpl
     PklTypeAnnotationImpl
       PklConstrainedTypeImpl
         PklDeclaredTypeImpl
-          PklQualifiedIdentifierImpl
+          PklTypeNameImpl
+            PklQualifiedIdentifierImpl
         PklLogicalNotExprImpl
           PklUnqualifiedAccessExprImpl
         PklLogicalNotExprImpl
@@ -44,16 +50,21 @@ PklModuleImpl
     PklTypeAnnotationImpl
       PklUnionTypeImpl
         PklDeclaredTypeImpl
-          PklQualifiedIdentifierImpl
+          PklTypeNameImpl
+            PklQualifiedIdentifierImpl
         PklDefaultUnionTypeImpl
           PklDeclaredTypeImpl
-            PklQualifiedIdentifierImpl
+            PklTypeNameImpl
+              PklQualifiedIdentifierImpl
   PklClassPropertyImpl
     PklTypeAnnotationImpl
       PklFunctionTypeImpl
         PklDeclaredTypeImpl
-          PklQualifiedIdentifierImpl
+          PklTypeNameImpl
+            PklQualifiedIdentifierImpl
         PklDeclaredTypeImpl
-          PklQualifiedIdentifierImpl
+          PklTypeNameImpl
+            PklQualifiedIdentifierImpl
         PklDeclaredTypeImpl
-          PklQualifiedIdentifierImpl
+          PklTypeNameImpl
+            PklQualifiedIdentifierImpl

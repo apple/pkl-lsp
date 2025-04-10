@@ -5,9 +5,11 @@ PklModuleImpl
         PklTypeTestExprImpl
           PklUnqualifiedAccessExprImpl
           PklDeclaredTypeImpl
-            PklQualifiedIdentifierImpl
+            PklTypeNameImpl
+              PklQualifiedIdentifierImpl
       PklObjectElementImpl
         PklTypeCastExprImpl
           PklUnqualifiedAccessExprImpl
           PklDeclaredTypeImpl
-            PklQualifiedIdentifierImpl
+            PklTypeNameImpl
+              PklQualifiedIdentifierImpl

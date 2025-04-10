@@ -126,12 +126,19 @@ class PklAnnotationImpl(
   override val parent: PklNode,
   override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklAnnotation {
-  // tree-sitter only accepts  qualified identifier, not any type
-  override val type: PklType? by lazy { PklDeclaredTypeImpl(project, this, ctx) }
+  private val qualifiedIdentifierIdx
+    get() = super.children.indexOfFirst { it is PklQualifiedIdentifier }
+
+  // tree-sitter only accepts qualified identifier, not any type
+  override val type: PklType by lazy { PklDeclaredTypeImpl(project, this, ctx, true) }
 
   override val typeName: PklTypeName? by lazy { (type as? PklDeclaredType)?.name }
 
   override val objectBody: PklObjectBody? by lazy { children.firstInstanceOf<PklObjectBody>() }
+
+  override val children: List<PklNode> by lazy {
+    super.children.withReplaced(qualifiedIdentifierIdx, type)
+  }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitAnnotation(this)

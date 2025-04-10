@@ -24,6 +24,7 @@ class PklQualifiedIdentifierImpl(
   override val parent: PklNode,
   override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklQualifiedIdentifier {
+
   override val identifiers: List<Terminal> by lazy {
     terminals.filter { it.type == TokenType.Identifier }
   }
