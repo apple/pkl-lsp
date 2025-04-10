@@ -22,36 +22,32 @@ import org.pkl.lsp.ast.PklTypeName
 import org.pkl.lsp.ast.resolve
 
 class TypeNameAnalyzer(project: Project) : Analyzer(project) {
-  override fun doAnalyze(node: PklNode, holder: DiagnosticsHolder): Boolean {
-    when (node) {
-      is PklTypeName -> {
-        val moduleName = node.moduleName
+  override fun doAnalyze(node: PklNode, holder: DiagnosticsHolder): Boolean =
+    when {
+      node is PklTypeName -> {
         val context = node.containingFile.pklProject
-        if (moduleName != null) {
-          val resolvedModule = moduleName.resolve(context)
-          if (resolvedModule == null) {
-            moduleName.identifier?.let { identifier ->
+        when {
+          node.moduleName != null && node.moduleName!!.resolve(context) == null -> {
+            node.moduleName!!.identifier?.let {
               holder.addError(
-                moduleName,
-                ErrorMessages.create("unresolvedReference", identifier.text),
+                node.moduleName!!,
+                ErrorMessages.create("unresolvedReference", it.text),
               )
             }
-            return false
+            false
           }
-        }
-        val typeName = node.simpleTypeName
-        val resolvedType = typeName.resolve(context)
-        if (resolvedType == null) {
-          typeName.identifier?.let { identifier ->
-            holder.addError(
-              node.simpleTypeName,
-              ErrorMessages.create("unresolvedReference", identifier.text),
-            )
+          node.simpleTypeName.resolve(context) == null -> {
+            node.simpleTypeName.identifier?.let {
+              holder.addError(
+                node.simpleTypeName,
+                ErrorMessages.create("unresolvedReference", it.text),
+              )
+            }
+            false
           }
-          return false
+          else -> true
         }
       }
+      else -> true
     }
-    return true
-  }
 }
