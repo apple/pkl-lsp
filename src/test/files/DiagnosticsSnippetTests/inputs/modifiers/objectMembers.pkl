@@ -1,0 +1,5 @@
+foo {
+  open prop = 1
+
+  open local function myFunc(): Int = 2
+}
