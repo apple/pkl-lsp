@@ -1,0 +1,7 @@
+amends "pkl:test"
+
+qux = "This is qux"
+
+facts {
+  fooey = "This is fooey"
+}

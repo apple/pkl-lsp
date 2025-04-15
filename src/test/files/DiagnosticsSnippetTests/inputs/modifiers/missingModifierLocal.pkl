@@ -1,3 +1,9 @@
 amends "pkl:test"
 
 foo: String = "hello"
+
+function bar(): String = "Hello"
+
+examples {
+  function baz(): String = "Hi again"
+}

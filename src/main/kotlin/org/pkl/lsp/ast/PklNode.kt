@@ -260,6 +260,7 @@ interface PklModuleUriOwner {
 
 sealed interface PklModuleMember : PklNavigableElement, PklDocCommentOwner, PklModifierListOwner {
   val name: String
+  val identifier: Terminal?
 }
 
 sealed interface PklTypeDefOrProperty : PklModuleMember

@@ -74,6 +74,20 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
             }
           }
         }
+        is PklObjectMethod -> {
+          node.identifier?.let { identifier ->
+            diagnosticsHolder.addError(identifier, ErrorMessages.create("missingModifierLocal"))
+            return true
+          }
+        }
+        is PklModuleMember -> {
+          if (node.parent is PklModule && (node.parent as PklModule).isAmend) {
+            node.identifier?.let { identifier ->
+              diagnosticsHolder.addError(identifier, ErrorMessages.create("missingModifierLocal"))
+            }
+            return true
+          }
+        }
       }
     }
 
