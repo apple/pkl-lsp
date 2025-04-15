@@ -3,7 +3,7 @@
 [[release-0.3.0]]
 == 0.3.0 (2025-04-14)
 
-This change adds much more diagnostics to better match the capabilities of pkl-intellij.
+This change adds many more diagnostics to better match the capabilities of pkl-intellij.
 
 === Fixes
 
