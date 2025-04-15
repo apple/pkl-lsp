@@ -1,5 +1,41 @@
 = Changelog
 
+[[release-0.3.0]]
+== 0.3.0 (2025-04-14)
+
+This change adds many more diagnostics to better match the capabilities of pkl-intellij.
+
+=== Fixes
+
+* Fixes a runtime crash that happens when interpolation start tokens are used within an invalid syntactic block (https://github.com/apple/pkl-lsp/pull/67[#67]).
+* Fixes stack overflow exceptions when analyzing recursive methods (https://github.com/apple/pkl-lsp/pull/68[#68]).
+* Fixes parsing of modifier nodes (https://github.com/apple/pkl-lsp/pull/74[#74]).
+* Fixes an issue where some nodes are constructed twice, causing analysis to fail (https://github.com/apple/pkl-lsp/pull/74[#74]).
+* Fixes an issue where stdlib modules can possibly be initialized multiple times, causing analysis to fail (https://github.com/apple/pkl-lsp/pull/74[#74]).
+* Improve cache-ing of expensive operations (https://github.com/apple/pkl-lsp/pull/74[#74]).
+* Fixes an issue that causes the language server to hang indefinitely (https://github.com/apple/pkl-lsp/pull/78[#78]).
+* Fixes a false positive warning on nullable spreads (https://github.com/apple/pkl-lsp/pull/79[#79]).
+
+=== Changes
+
+* Upgrade tree-sitter and java-tree-sitter (https://github.com/apple/pkl-lsp/pull/69[#69]).
+* Upgrade tree-sitter-pkl (https://github.com/apple/pkl-lsp/pull/70[#70], https://github.com/apple/pkl-lsp/pull/75[#75]).
+
+=== Additions
+
+* Add typechecking, const checking, constraint checking, argument counts for method calls, unresolved properties/methods (https://github.com/apple/pkl-lsp/pull/71[#71], https://github.com/apple/pkl-lsp/pull/76[#76], https://github.com/apple/pkl-lsp/pull/82[#82]).
+* Add support for warning suppression (https://github.com/apple/pkl-lsp/pull/72[#72]).
+* Add analysis for unresolved type names (https://github.com/apple/pkl-lsp/pull/80[#80]).
+* Add completions for extends/amends clauses (https://github.com/apple/pkl-lsp/pull/77[#77]).
+
+=== Contributors ❤️
+
+Thank you to all of our contributors!
+
+* https://github.com/HT154[@HT154]
+* https://github.com/KushalP[@KushalP]
+* https://github.com/odenix[@odenix]
+
 [[release-0.2.0]]
 == 0.2.0 (2025-02-27)
 
