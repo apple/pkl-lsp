@@ -166,3 +166,20 @@
 | Required: isRegex
 | Found: "\"
  
+ typealias MyStr = String(matches(Regex(#"\d*"#)))
+ 
+ listing1 = new Listing<MyStr> {
+   "Invalid"
+   ^^^^^^^^^
+| Error: Constraint violation.
+| Required: matches(Regex(#"\d*"#))
+| Found: "Invalid"
+ }
+ 
+ listing2: Listing<MyStr> = new {
+   "Invalid"
+   ^^^^^^^^^
+| Error: Constraint violation.
+| Required: matches(Regex(#"\d*"#))
+| Found: "Invalid"
+ }

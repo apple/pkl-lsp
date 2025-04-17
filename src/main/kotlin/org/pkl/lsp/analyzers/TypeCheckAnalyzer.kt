@@ -31,13 +31,13 @@ class TypeCheckAnalyzer(project: Project) : Analyzer(project) {
   override fun doAnalyze(node: PklNode, holder: DiagnosticsHolder): Boolean {
     if (node !is PklExpr) return true
 
-    val module = node.enclosingModule ?: return true
+    val module = node.enclosingModule ?: return false
     val project = module.project
     val base = project.pklBaseModule
     val context = node.containingFile.pklProject
 
     val expectedType = node.inferExprTypeFromContext(base, mapOf(), context)
-    if (expectedType == Type.Unknown) return false
+    if (expectedType == Type.Unknown) return true
 
     val exprType = node.computeExprType(base, mapOf(), context)
     val exprValue = lazy { node.toConstraintExpr(base, context).evaluate(ConstraintValue.Error) }
