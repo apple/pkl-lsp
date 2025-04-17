@@ -1,0 +1,4 @@
+ foo: String?
+ 
+ res = foo?.base64 ?? "hello"
+ 

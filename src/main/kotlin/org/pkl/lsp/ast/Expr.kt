@@ -330,7 +330,9 @@ class PklQualifiedAccessExprImpl(
 ) : AbstractPklNode(project, parent, ctx), PklQualifiedAccessExpr {
   override val identifier: Terminal? by lazy { terminals.find { it.type == TokenType.Identifier } }
   override val memberNameText: String by lazy { identifier!!.text }
-  override val isNullSafeAccess: Boolean by lazy { ctx.children[1].type == ".?" }
+  override val isNullSafeAccess: Boolean by lazy {
+    terminals.find { it.type == TokenType.QDOT } != null
+  }
   override val argumentList: PklArgumentList? by lazy {
     children.firstInstanceOf<PklArgumentList>()
   }
