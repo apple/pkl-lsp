@@ -246,7 +246,7 @@ class PklObjectPropertyImpl(
   override val identifier: Terminal? by lazy { terminals.find { it.type == TokenType.Identifier } }
   override val modifiers: List<Terminal> by lazy { terminals.filter { it.isModifier } }
   override val name: String by lazy { identifier!!.text }
-  override val type: PklType? = null
+  override val type: PklType? by lazy { typeAnnotation?.type }
   override val expr: PklExpr? by lazy { children.firstInstanceOf<PklExpr>() }
   override val typeAnnotation: PklTypeAnnotation? by lazy {
     children.firstInstanceOf<PklTypeAnnotation>()
