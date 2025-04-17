@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -193,5 +193,29 @@ class GoToDefinitionTest : LspTestBase() {
     assertThat(resolved).hasSize(3)
     assertThat(resolved.map { it.containingFile.name })
       .hasSameElementsAs(setOf("main.pkl", "foo.pkl", "bar.pkl"))
+  }
+
+  @Test
+  fun `resolve local property type`() {
+    createPklFile(
+      """
+        class Person {
+            name: String
+        }
+
+        foo {
+            ["bar"] {
+                local r: Person = new {
+                    name<caret> = "Bob"
+                }
+            }
+        }
+      """
+        .trimIndent()
+    )
+    val resolved = goToDefinition()
+    assertThat(resolved).hasSize(1)
+    assertThat(resolved[0]).isInstanceOf(PklClassProperty::class.java)
+    assertThat((resolved[0] as PklClassProperty).name).isEqualTo("name")
   }
 }
