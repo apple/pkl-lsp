@@ -53,3 +53,13 @@ datasize5: DataSize(isDecimalUnit) = 5.mib
 string1: String(isEmpty) = "hello"
 
 string2: String(isRegex) = "\\"
+
+typealias MyStr = String(matches(Regex(#"\d*"#)))
+
+listing1 = new Listing<MyStr> {
+  "Invalid"
+}
+
+listing2: Listing<MyStr> = new {
+  "Invalid"
+}
