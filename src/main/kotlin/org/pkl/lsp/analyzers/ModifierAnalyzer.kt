@@ -17,6 +17,7 @@ package org.pkl.lsp.analyzers
 
 import org.pkl.lsp.ErrorMessages
 import org.pkl.lsp.Project
+import org.pkl.lsp.actions.PklAddModifierQuickFix
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.ast.TokenType.*
 import org.pkl.lsp.packages.dto.Version
@@ -31,6 +32,15 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
     private val CLASS_PROPERTY_MODIFIERS = setOf(ABSTRACT, EXTERNAL, HIDDEN, LOCAL, FIXED, CONST)
     private val OBJECT_METHOD_MODIFIERS = setOf(LOCAL, CONST)
     private val OBJECT_PROPERTY_MODIFIERS = setOf(LOCAL, CONST)
+  }
+
+  private fun DiagnosticsHolder.missingIdentifierLocal(
+    node: PklModifierListOwner,
+    identifier: Terminal,
+  ) {
+    addError(identifier, ErrorMessages.create("missingModifierLocal")) {
+      actions += PklAddModifierQuickFix(node, "Add modifier 'local'", TokenType.LOCAL)
+    }
   }
 
   override fun doAnalyze(node: PklNode, diagnosticsHolder: DiagnosticsHolder): Boolean {
@@ -65,27 +75,32 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
               (node.parent as PklModule).isAmend &&
               (hiddenModifier != null || node.typeAnnotation != null)
           ) {
-            if (node.identifier != null) {
-              diagnosticsHolder.addError(
-                node.identifier!!,
-                ErrorMessages.create("missingModifierLocal"),
-              )
+            node.identifier?.let { identifier ->
+              diagnosticsHolder.missingIdentifierLocal(node, identifier)
+              return true
+            }
+          }
+        }
+        is PklObjectProperty -> {
+          if (node.typeAnnotation != null) {
+            node.identifier?.let { identifier ->
+              diagnosticsHolder.missingIdentifierLocal(node, identifier)
               return true
             }
           }
         }
         is PklObjectMethod -> {
           node.identifier?.let { identifier ->
-            diagnosticsHolder.addError(identifier, ErrorMessages.create("missingModifierLocal"))
+            diagnosticsHolder.missingIdentifierLocal(node, identifier)
             return true
           }
         }
         is PklModuleMember -> {
           if (node.parent is PklModule && (node.parent as PklModule).isAmend) {
             node.identifier?.let { identifier ->
-              diagnosticsHolder.addError(identifier, ErrorMessages.create("missingModifierLocal"))
+              diagnosticsHolder.missingIdentifierLocal(node, identifier)
+              return true
             }
-            return true
           }
         }
       }

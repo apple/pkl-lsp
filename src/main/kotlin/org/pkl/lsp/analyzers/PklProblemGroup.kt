@@ -16,7 +16,7 @@
 package org.pkl.lsp.analyzers
 
 import org.pkl.lsp.actions.PklCodeAction
-import org.pkl.lsp.actions.PklSuppressWarningsCodeAction
+import org.pkl.lsp.actions.PklSuppressWarningsQuickFix
 import org.pkl.lsp.ast.PklNode
 import org.pkl.lsp.ast.PklSuppressWarningsTarget
 import org.pkl.lsp.ast.parentsOfType
@@ -27,7 +27,7 @@ class PklProblemGroup(val problemName: String) {
     val self = this
     return buildList {
       for (target in node.parentsOfType<PklSuppressWarningsTarget>()) {
-        add(PklSuppressWarningsCodeAction(target, self))
+        add(PklSuppressWarningsQuickFix(target, self))
       }
     }
   }

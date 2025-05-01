@@ -84,7 +84,7 @@ interface PklNode {
   }
 }
 
-interface PklSuppressWarningsTarget : PklNode {
+sealed interface PklSuppressWarningsTarget : PklNode {
   fun getKind(): String =
     when (this) {
       is PklImport -> "import"
