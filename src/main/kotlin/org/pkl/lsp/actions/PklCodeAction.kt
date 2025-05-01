@@ -18,7 +18,12 @@ package org.pkl.lsp.actions
 import org.eclipse.lsp4j.CodeAction
 import org.eclipse.lsp4j.CodeActionDisabled
 import org.eclipse.lsp4j.Command
+import org.eclipse.lsp4j.TextEdit
+import org.eclipse.lsp4j.WorkspaceEdit
+import org.pkl.lsp.LspUtil.toRange
 import org.pkl.lsp.analyzers.PklDiagnostic
+import org.pkl.lsp.ast.PklNode
+import org.pkl.lsp.ast.lspUri
 
 sealed interface PklCodeAction {
   val title: String
@@ -50,6 +55,27 @@ abstract class PklCommandCodeAction(val commandId: String, val arguments: List<A
           command = self.commandId
           arguments = self.arguments
         }
+    }
+  }
+}
+
+/** Changes code locally within the enclosing file of [node]. */
+abstract class PklLocalEditCodeAction(protected open val node: PklNode) : PklCodeAction {
+  protected abstract fun getEdits(): List<TextEdit>
+
+  override fun toMessage(diagnostic: PklDiagnostic): CodeAction {
+    return super.toMessage(diagnostic).apply {
+      edit =
+        WorkspaceEdit().apply {
+          changes = mapOf(node.containingFile.lspUri.toString() to getEdits())
+        }
+    }
+  }
+
+  protected fun insertBefore(anchor: PklNode, newText: String): TextEdit {
+    return TextEdit().apply {
+      this.range = anchor.span.firstCaret().toRange()
+      this.newText = newText
     }
   }
 }

@@ -32,6 +32,9 @@ data class Span(val beginLine: Int, val beginCol: Int, val endLine: Int, val end
       else -> true
     }
 
+  /** Returns a zero-length span at the first position of this span. */
+  fun firstCaret(): Span = Span(beginLine, beginCol, beginLine, beginCol)
+
   fun drop(offset: Int): Span = Span(beginLine, beginCol + offset, endLine, endCol)
 
   fun spliceLine(offset: Int, length: Int): Span =
