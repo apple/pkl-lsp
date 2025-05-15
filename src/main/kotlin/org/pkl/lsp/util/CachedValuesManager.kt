@@ -68,16 +68,17 @@ class CachedValuesManager(project: Project) : Component(project), CachedValueDat
   fun <T> getCachedValue(
     holder: CachedValueDataHolder,
     key: String,
+    lock: Any,
     provider: () -> CachedValue<T>?,
   ): T? {
-    synchronized(holder) {
+    synchronized(lock) {
       return getValue<T>(holder, key)?.value
         ?: provider()?.also { storeCachedValue(holder, key, it) }?.value
     }
   }
 
-  fun <T> getCachedValue(key: String, provider: () -> CachedValue<T>?): T? =
-    getCachedValue(this, key, provider)
+  fun <T> getCachedValue(key: String, lock: Any, provider: () -> CachedValue<T>?): T? =
+    getCachedValue(this, key, lock, provider)
 
   fun clearCachedValue(holder: CachedValueDataHolder, key: String) {
     holder.cachedValues.remove(key)
