@@ -15,10 +15,12 @@
  */
 package org.pkl.lsp.actions
 
+import java.util.EnumSet
 import org.eclipse.lsp4j.CodeActionDisabled
 import org.eclipse.lsp4j.CodeActionKind
 import org.eclipse.lsp4j.TextEdit
 import org.pkl.lsp.ast.PklModifierListOwner
+import org.pkl.lsp.ast.PklNode
 import org.pkl.lsp.ast.TokenType
 
 class PklAddModifierQuickFix(
@@ -26,22 +28,35 @@ class PklAddModifierQuickFix(
   override val title: String,
   private val modifier: TokenType,
 ) : PklLocalEditCodeAction(node) {
-  override fun getEdits(): List<TextEdit> {
-    return listOf(getEdit())
+  init {
+    require(validModifiers.contains(modifier)) { "$modifier is not a valid modifier" }
   }
 
-  private fun getEdit(): TextEdit {
+  override fun getEdits(): List<TextEdit> {
+    return listOf(insertBefore(getAnchor(), modifier.sourceCode + " "))
+  }
+
+  private fun getAnchor(): PklNode {
     val sortOrder = modifier.sortOrder
-    val anchor = node.modifiers?.find { it.type.sortOrder >= sortOrder }
-    if (anchor != null) {
-      return insertBefore(anchor, modifier.sourceCode + " ")
-    }
-    return insertBefore(node.terminals.first(), modifier.sourceCode + " ")
+    return node.modifiers?.find { it.type.sortOrder >= sortOrder } ?: node.terminals.first()
   }
 
   override val kind: String = CodeActionKind.QuickFix
 
   override val disabled: CodeActionDisabled? = null
+
+  companion object {
+    private val validModifiers =
+      EnumSet.of(
+        TokenType.ABSTRACT,
+        TokenType.OPEN,
+        TokenType.FIXED,
+        TokenType.CONST,
+        TokenType.HIDDEN,
+        TokenType.LOCAL,
+        TokenType.EXTERNAL,
+      )
+  }
 }
 
 private val TokenType.sortOrder: Int
