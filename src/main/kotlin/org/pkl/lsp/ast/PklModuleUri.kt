@@ -16,6 +16,7 @@
 package org.pkl.lsp.ast
 
 import io.github.treesitter.jtreesitter.Node
+import java.nio.file.Files
 import java.nio.file.Path
 import org.pkl.lsp.*
 import org.pkl.lsp.FsFile
@@ -124,6 +125,16 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
             getDependencyRoot(project, targetUriStr, enclosingModule, context)
               ?.resolve(targetUri.fragment)
           vfile?.getModule()?.get()
+        }
+        "modulepath" -> {
+          val path = targetUri.path.trimStart('/')
+          val absolutePath =
+            project.pklProjectManager.findModulePath().map { it.resolve(path) }.first(Files::exists)
+              ?: return null
+          return sourceFile.project.virtualFileManager
+            .get(absolutePath.toUri(), absolutePath)
+            ?.getModule()
+            ?.get()
         }
         // targetUri is a relative URI
         null -> {

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.pkl.lsp.services
 import java.net.URI
 import java.nio.file.FileVisitResult
 import java.nio.file.Files
+import java.nio.file.InvalidPathException
 import java.nio.file.Path
 import java.nio.file.SimpleFileVisitor
 import java.nio.file.attribute.BasicFileAttributes
@@ -45,6 +46,7 @@ class PklProjectManager(project: Project) : Component(project) {
     const val PKL_PROJECT_FILENAME = "PklProject"
     const val PKL_PROJECT_DEPS_FILENAME = "PklProject.deps.json"
     const val PKL_PROJECT_STATE_FILENAME = "projects.json"
+    const val PKL_MODULE_PATH_FILENAME = ".pkl-module-path"
     const val PKL_LSP_DIR = ".pkl-lsp"
 
     private const val DEPENDENCIES_EXPR =
@@ -142,6 +144,31 @@ class PklProjectManager(project: Project) : Component(project) {
 
   /** All projects, keyed by the project directory. */
   private val pklProjects: MutableMap<URI, PklProject> = ConcurrentHashMap()
+
+  /**
+   * All modulepath entries from a local ".pkl-module-path" that can be resolved to a existing path.
+   */
+  fun findModulePath(): List<Path> {
+    return workspaceFolders
+      .map { it.resolve(PKL_MODULE_PATH_FILENAME) }
+      .first(Files::exists)
+      ?.toFile()
+      ?.bufferedReader()
+      ?.readLines()
+      ?.filter { !it.isBlank() && !it.trimStart().startsWith('#') }
+      ?.mapNotNull {
+        try {
+          val path = Path.of(it)
+          if (Files.exists(path)) {
+            return@mapNotNull path
+          }
+          // logger.log("modulepath entry does not exist: $it")
+        } catch (_: InvalidPathException) {
+          // logger.log("bad modulepath entry: $it")
+        }
+        null
+      } ?: listOf()
+  }
 
   /**
    * The modification count of each project file during the last sync, keyed by the project
