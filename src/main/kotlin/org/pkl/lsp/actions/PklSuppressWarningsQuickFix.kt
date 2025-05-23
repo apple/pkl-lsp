@@ -15,11 +15,9 @@
  */
 package org.pkl.lsp.actions
 
-import org.eclipse.lsp4j.CodeAction
 import org.eclipse.lsp4j.CodeActionDisabled
 import org.eclipse.lsp4j.CodeActionKind
 import org.eclipse.lsp4j.TextEdit
-import org.eclipse.lsp4j.WorkspaceEdit
 import org.pkl.lsp.LspUtil.toRange
 import org.pkl.lsp.analyzers.PklDiagnostic
 import org.pkl.lsp.analyzers.PklDiagnostic.Companion.getSuppression
@@ -27,12 +25,11 @@ import org.pkl.lsp.analyzers.PklProblemGroup
 import org.pkl.lsp.ast.IdentifierOwner
 import org.pkl.lsp.ast.PklSuppressWarningsTarget
 import org.pkl.lsp.ast.Span
-import org.pkl.lsp.ast.lspUri
 
-class PklSuppressWarningsCodeAction(
-  private val node: PklSuppressWarningsTarget,
+class PklSuppressWarningsQuickFix(
+  override val node: PklSuppressWarningsTarget,
   private val group: PklProblemGroup,
-) : PklCodeAction {
+) : PklLocalEditCodeAction(node) {
   override val title: String
     get() =
       if (node is IdentifierOwner && node.identifier != null)
@@ -68,17 +65,9 @@ class PklSuppressWarningsCodeAction(
     }
   }
 
-  private fun getEdit(): TextEdit {
-    return node.getSuppression()?.let { addToExistingSuppression(it) } ?: addNewSuppression()
-  }
-
-  override fun toMessage(diagnostic: PklDiagnostic): CodeAction {
-    val self = this
-    return super.toMessage(diagnostic).apply {
-      edit =
-        WorkspaceEdit().apply {
-          changes = mapOf(node.containingFile.lspUri.toString() to listOf(self.getEdit()))
-        }
-    }
+  override fun getEdits(): List<TextEdit> {
+    val suppression =
+      node.getSuppression()?.let { addToExistingSuppression(it) } ?: addNewSuppression()
+    return listOf(suppression)
   }
 }
