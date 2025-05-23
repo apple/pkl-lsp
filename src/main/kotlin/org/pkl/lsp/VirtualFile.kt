@@ -110,6 +110,8 @@ sealed class BaseFile : VirtualFile, CachedValueDataHolderBase() {
 
   private var readError: Exception? = null
 
+  private val lock = Object()
+
   // If contents have not yet been set, read contents from external source, possibly performing I/O.
   override var contents: String
     get() {
@@ -128,7 +130,7 @@ sealed class BaseFile : VirtualFile, CachedValueDataHolderBase() {
       readError = null
       project.cachedValuesManager.clearCachedValue(this, cacheKey)
     }
-    return project.cachedValuesManager.getCachedValue(this, cacheKey) {
+    return project.cachedValuesManager.getCachedValue(this, cacheKey, lock) {
       CachedValue(CompletableFuture.supplyAsync(::doBuildModule), this)
     }!!
   }
@@ -163,7 +165,7 @@ class FsFile(override val path: Path, override val project: Project) : BaseFile(
 
   override val pklProjectDir: VirtualFile?
     get() =
-      project.cachedValuesManager.getCachedValue(this, "FsFile.getProjectDir($path)") {
+      project.cachedValuesManager.getCachedValue(this, "FsFile.getProjectDir($path)", lock) {
         val dependency = project.pklProjectManager.addedOrRemovedFilesModificationTracker
         var dir = if (Files.isDirectory(path)) this else parent()
         while (dir != null) {
@@ -200,6 +202,8 @@ class FsFile(override val path: Path, override val project: Project) : BaseFile(
   override fun canModify(): Boolean = true
 
   override fun doReadContents(): String = path.readText()
+
+  private val lock = Object()
 }
 
 class StdlibFile(moduleName: String, override val project: Project) : BaseFile() {
@@ -272,6 +276,8 @@ class HttpsFile(override val uri: URI, override val project: Project) : BaseFile
 
 class JarFile(override val path: Path, override val uri: URI, override val project: Project) :
   BaseFile() {
+  private val lock = Object()
+
   override val name: String
     get() = path.name
 
@@ -288,7 +294,7 @@ class JarFile(override val path: Path, override val uri: URI, override val proje
 
   override val `package`: PackageDependency?
     get() =
-      project.cachedValuesManager.getCachedValue(this, "JarFile.package(${uri})") {
+      project.cachedValuesManager.getCachedValue(this, "JarFile.package(${uri})", lock) {
         val jarFile: Path = Path.of(URI(uri.toString().drop(4).substringBefore("!/")))
         val jsonFile =
           jarFile.parent.resolve(jarFile.nameWithoutExtension + ".json")
@@ -308,7 +314,11 @@ class JarFile(override val path: Path, override val uri: URI, override val proje
     project.virtualFileManager.get(this.path.resolve(path))
 
   override fun doReadContents(): String =
-    project.cachedValuesManager.getCachedValue(this, "${javaClass.simpleName}-contents-${uri}") {
+    project.cachedValuesManager.getCachedValue(
+      this,
+      "${javaClass.simpleName}-contents-${uri}",
+      lock,
+    ) {
       CachedValue(path.readText())
     }!!
 

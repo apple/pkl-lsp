@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,8 +47,10 @@ sealed interface PackageEvent {
 class PackageManager(project: Project) : Component(project) {
   private fun Path.toVirtualFile(): VirtualFile? = project.virtualFileManager.get(this)
 
+  val lock = Object()
+
   fun getLibraryRoots(dependency: PackageDependency): PackageLibraryRoots? =
-    project.cachedValuesManager.getCachedValue("library-roots-${dependency.packageUri}") {
+    project.cachedValuesManager.getCachedValue("library-roots-${dependency.packageUri}", lock) {
       logger.info("Getting library roots for ${dependency.packageUri}")
       val metadataFile =
         dependency.packageUri.relativeMetadataFiles.firstNotNullOfOrNull {
@@ -92,7 +94,8 @@ class PackageManager(project: Project) : Component(project) {
 
   private fun getPackageMetadata(packageDependency: PackageDependency): PackageMetadata? =
     project.cachedValuesManager.getCachedValue(
-      "PackageManager.getPackageMetadata(${packageDependency.packageUri})"
+      "PackageManager.getPackageMetadata(${packageDependency.packageUri})",
+      lock,
     ) {
       val roots = getLibraryRoots(packageDependency) ?: return@getCachedValue null
       CachedValue(PackageMetadata.load(roots.metadataFile))

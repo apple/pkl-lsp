@@ -50,9 +50,11 @@ class PklModuleImpl(override val ctx: Node, override val virtualFile: VirtualFil
     header?.moduleExtendsAmendsClause?.moduleUri
   }
 
+  private val lock = Object()
+
   // This is cached at the VirtualFile level
   override fun supermodule(context: PklProject?): PklModule? =
-    project.cachedValuesManager.getCachedValue(this, "supermodule") {
+    project.cachedValuesManager.getCachedValue(this, "supermodule", lock) {
       val resolved = extendsAmendsUri?.resolve(context)
       CachedValue(resolved, listOfNotNull(this.containingFile, resolved?.containingFile))
     }
@@ -61,6 +63,7 @@ class PklModuleImpl(override val ctx: Node, override val virtualFile: VirtualFil
     project.cachedValuesManager.getCachedValue(
       this,
       "PklModule.cache(${virtualFile.uri}, ${context?.projectDir}}",
+      lock,
     ) {
       val cache = ModuleMemberCache.create(this, context)
       CachedValue(cache, cache.dependencies + project.pklProjectManager.syncTracker)
