@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,8 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
 
   companion object {
 
+    private val lock = Object()
+
     fun resolve(
       project: Project,
       targetUri: String,
@@ -78,7 +80,8 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
       context: PklProject?,
     ): List<VirtualFile>? =
       element.project.cachedValuesManager.getCachedValue(
-        "PklModuleUri.resolveGlob($targetUriString, $moduleUriString, ${element.containingFile.path}, ${context?.projectDir})"
+        "PklModuleUri.resolveGlob($targetUriString, $moduleUriString, ${element.containingFile.path}, ${context?.projectDir})",
+        lock,
       ) {
         val result =
           doResolveGlob(targetUriString, moduleUriString, element, context)

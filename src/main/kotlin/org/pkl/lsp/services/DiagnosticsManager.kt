@@ -44,6 +44,8 @@ class DiagnosticsManager(project: Project) : Component(project) {
   private val openFiles: MutableMap<URI, Boolean> = ConcurrentHashMap()
   private val downloadPackageTracker = SimpleModificationTracker()
 
+  private val lock = Object()
+
   override fun initialize(): CompletableFuture<*> {
     project.messageBus.subscribe(textDocumentTopic, ::handleTextDocumentEvent)
     project.messageBus.subscribe(projectTopic, ::handleProjectEvent)
@@ -96,7 +98,8 @@ class DiagnosticsManager(project: Project) : Component(project) {
 
   fun getDiagnostics(module: PklModule): List<PklDiagnostic> {
     return project.cachedValuesManager.getCachedValue(
-      "DiagnosticsManager.getDiagnostics(${module.uri})"
+      "DiagnosticsManager.getDiagnostics(${module.uri})",
+      lock,
     ) {
       val holder = DiagnosticsHolder()
       for (analyzer in analyzers) {

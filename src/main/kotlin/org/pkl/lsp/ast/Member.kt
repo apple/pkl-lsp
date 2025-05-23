@@ -203,6 +203,8 @@ class PklObjectBodyImpl(
   override val parent: PklNode,
   override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklObjectBody {
+  private val lock = Object()
+
   override val parameters: PklParameterList? by lazy {
     children.firstInstanceOf<PklParameterList>()
   }
@@ -220,7 +222,7 @@ class PklObjectBodyImpl(
   }
 
   override fun isConstScope(): Boolean {
-    return project.cachedValuesManager.getCachedValue(this, "isConstScope()") {
+    return project.cachedValuesManager.getCachedValue(this, "isConstScope()", lock) {
       val parentProperty = parentOfTypes(PklProperty::class, PklMethod::class)
       val isConstScope =
         if (parentProperty?.isConst == true) {

@@ -33,6 +33,7 @@ fun PklNode?.computeExprType(
       project.cachedValuesManager.getCachedValue(
         containingFile,
         "computeExprType(${System.identityHashCode(this)})",
+        lock = this,
       ) {
         val result = doComputeExprType(base, bindings, context)
         val dependencies = buildList {
