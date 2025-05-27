@@ -17,6 +17,7 @@ package org.pkl.lsp.services
 
 import com.google.gson.JsonElement
 import com.google.gson.JsonPrimitive
+import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import kotlin.io.path.isExecutable
@@ -25,7 +26,11 @@ import org.eclipse.lsp4j.*
 import org.pkl.lsp.*
 import org.pkl.lsp.messages.ActionableNotification
 
-@Serializable data class WorkspaceSettings(var pklCliPath: Path? = null)
+@Serializable
+data class WorkspaceSettings(
+  var pklCliPath: Path? = null,
+  var pklModulepath: List<Path> = listOf(),
+)
 
 class SettingsManager(project: Project) : Component(project) {
   var settings: WorkspaceSettings = WorkspaceSettings()
@@ -50,27 +55,49 @@ class SettingsManager(project: Project) : Component(project) {
           ConfigurationItem().apply {
             scopeUri = "Pkl"
             section = "pkl.cli.path"
-          }
+          },
+          ConfigurationItem().apply {
+            scopeUri = "Pkl"
+            section = "pkl.modulepath"
+          },
         )
       )
-    return project.languageClient
-      .configuration(params)
-      .thenApply { (cliPath) ->
-        logger.log("Got configuration: $cliPath")
-        cliPath as JsonElement
-        if (cliPath.isJsonNull) {
-          settings.pklCliPath = findPklCliOnPath()
-          return@thenApply
+    return project.languageClient.configuration(params).thenApply { (cliPath, modulepath) ->
+      logger.log("Got configuration: { cli.path = $cliPath, modulepath = $modulepath }")
+      setCliPath(cliPath as JsonElement)
+      setModulepath(modulepath as JsonElement)
+    }
+  }
+
+  private fun setCliPath(cliPath: JsonElement) {
+    if (cliPath.isJsonNull) {
+      settings.pklCliPath = findPklCliOnPath()
+      return
+    }
+    if (!(cliPath is JsonPrimitive && cliPath.isString)) {
+      logger.warn("Got non-string value for configuration: $cliPath")
+      return
+    }
+    settings.pklCliPath =
+      cliPath.asString.let { if (it.isEmpty()) findPklCliOnPath() else Path.of(it) }
+  }
+
+  private fun setModulepath(modulepath: JsonElement) {
+    if (modulepath.isJsonNull) return
+    if (!modulepath.isJsonArray) {
+      logger.warn("Got non-array value for configuration: $modulepath")
+      return
+    }
+    settings.pklModulepath = buildList {
+      for (path in modulepath.asJsonArray) {
+        if (!(path is JsonPrimitive && path.isString)) {
+          logger.warn("Got non-string value in modulepath: $path")
         }
-        if (!(cliPath is JsonPrimitive && cliPath.isString)) {
-          logger.warn("Got non-string value for configuration: $cliPath")
-          return@thenApply
-        }
-        settings.pklCliPath =
-          cliPath.asString.let { if (it.isEmpty()) findPklCliOnPath() else Path.of(it) }
+        val entry = Path.of(path.asString)
+        if (Files.exists(entry)) add(entry)
+        else logger.warn("Entry in modulepath does not exist: $entry")
       }
-      .exceptionally { logger.error("Failed to fetch settings: ${it.cause}") }
-      .whenComplete { _, _ -> logger.log("Settings changed to $settings") }
+    }
   }
 
   private fun findPklCliOnPath(): Path? {
