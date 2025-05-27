@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package org.pkl.lsp.services
 
 import com.google.gson.JsonElement
 import com.google.gson.JsonPrimitive
+import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import kotlin.io.path.isExecutable
@@ -30,6 +31,7 @@ import org.pkl.lsp.messages.ActionableNotification
 data class WorkspaceSettings(
   var pklCliPath: Path? = null,
   var grammarVersion: GrammarVersion? = null,
+  var pklModulepath: List<Path> = listOf(),
 )
 
 class SettingsManager(project: Project) : Component(project) {
@@ -77,6 +79,24 @@ class SettingsManager(project: Project) : Component(project) {
     }
   }
 
+  private fun resolveModulepath(value: JsonElement): List<Path> {
+    if (value.isJsonNull) return listOf()
+    if (!value.isJsonArray) {
+      logger.warn("Got non-array value for configuration: pkl.modulepath. Value: $value")
+      return listOf()
+    }
+    return buildList {
+      for (path in value.asJsonArray) {
+        val decodedPath = decodeString(path, "pkl.modulepath")
+        if (path != null) {
+          val entry = Path.of(path.asString)
+          if (Files.exists(entry)) add(entry)
+          else logger.warn("Entry in pkl.modulepath does not exist: $entry")
+        }
+      }
+    }
+  }
+
   private fun loadSettings(): CompletableFuture<Unit> {
     logger.log("Fetching configuration")
     val params =
@@ -90,14 +110,21 @@ class SettingsManager(project: Project) : Component(project) {
             scopeUri = "Pkl"
             section = "pkl.formatter.grammarVersion"
           },
+          ConfigurationItem().apply {
+            scopeUri = "Pkl"
+            section = "pkl.modulepath"
+          },
         )
       )
     return project.languageClient
       .configuration(params)
-      .thenApply { (cliPath, grammarVersion) ->
-        logger.log("Got configuration: cliPath = $cliPath, grammarVersion = $grammarVersion")
+      .thenApply { (cliPath, grammarVersion, modulepath) ->
+        logger.log(
+          "Got configuration: cliPath = $cliPath, grammarVersion = $grammarVersion, modulepath = $modulepath"
+        )
         settings.pklCliPath = resolvePklCliPath(cliPath as JsonElement)
         settings.grammarVersion = resolveGrammarVersion(grammarVersion as JsonElement)
+        settings.pklModulepath = resolveModulepath(modulepath as JsonElement)
       }
       .exceptionally { logger.error("Failed to fetch settings: ${it.cause}") }
       .whenComplete { _, _ -> logger.log("Settings changed to $settings") }

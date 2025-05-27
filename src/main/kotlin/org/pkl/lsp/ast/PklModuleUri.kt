@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -129,8 +129,9 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
         "modulepath" -> {
           val path = targetUri.path.trimStart('/')
           val absolutePath =
-            project.pklProjectManager.findModulePath().map { it.resolve(path) }.first(Files::exists)
-              ?: return null
+            project.settingsManager.settings.pklModulepath
+              .map { it.resolve(path) }
+              .firstOrNull(Files::exists) ?: return null
           return sourceFile.project.virtualFileManager
             .get(absolutePath.toUri(), absolutePath)
             ?.getModule()
