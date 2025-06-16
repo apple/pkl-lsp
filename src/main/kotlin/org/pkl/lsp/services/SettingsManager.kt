@@ -92,6 +92,7 @@ class SettingsManager(project: Project) : Component(project) {
       for (path in modulepath.asJsonArray) {
         if (!(path is JsonPrimitive && path.isString)) {
           logger.warn("Got non-string value in modulepath: $path")
+          continue
         }
         val entry = Path.of(path.asString)
         if (Files.exists(entry)) add(entry)
