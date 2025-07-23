@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,17 +100,13 @@ class PklBaseModule(project: Project) : Component(project) {
   val moduleInfoType: Type.Class = classType("ModuleInfo")
   val regexType: Type.Class = classType("Regex")
   val valueRenderer: Type.Class = classType("ValueRenderer")
+  val bytesType: Type.Class = classType("Bytes")
 
   val comparableType: Type = aliasType("Comparable")
 
   val iterableType: Type by lazy {
     Type.union(
-      collectionType,
-      mapType,
-      dynamicType,
-      listingType,
-      mappingType,
-      intSeqType,
+      listOf(collectionType, mapType, dynamicType, listingType, mappingType, intSeqType, bytesType),
       this,
       null,
     )
