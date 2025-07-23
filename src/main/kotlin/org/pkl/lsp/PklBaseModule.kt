@@ -101,6 +101,7 @@ class PklBaseModule(project: Project) : Component(project) {
   val regexType: Type.Class = classType("Regex")
   val valueRenderer: Type.Class = classType("ValueRenderer")
   val bytesType: Type.Class = classType("Bytes")
+  val uint8Type: Type.Alias = aliasType("UInt8")
 
   val comparableType: Type = aliasType("Comparable")
 
@@ -122,6 +123,7 @@ class PklBaseModule(project: Project) : Component(project) {
             listingType.withTypeArguments(elemType),
             dynamicType,
             intSeqType,
+            bytesType,
             this,
             null,
           )
@@ -153,12 +155,15 @@ class PklBaseModule(project: Project) : Component(project) {
 
   val additiveOperandType: Type by lazy {
     Type.union(
-      stringType,
-      numberType,
-      durationType,
-      dataSizeType,
-      collectionType,
-      mapType,
+      listOf(
+        stringType,
+        numberType,
+        durationType,
+        dataSizeType,
+        collectionType,
+        mapType,
+        bytesType,
+      ),
       this,
       null,
     )
@@ -170,12 +175,7 @@ class PklBaseModule(project: Project) : Component(project) {
 
   val subscriptableType: Type by lazy {
     Type.union(
-      stringType,
-      collectionType,
-      mapType,
-      listingType,
-      mappingType,
-      dynamicType,
+      listOf(stringType, collectionType, mapType, listingType, mappingType, dynamicType, bytesType),
       this,
       null,
     )
