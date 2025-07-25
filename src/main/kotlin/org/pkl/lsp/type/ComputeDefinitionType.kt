@@ -131,6 +131,8 @@ fun PklNode?.computeResolvedImportType(
                         iterableClassType.typeArguments[0]
                       iterableClassType.isSubtypeOf(base.typedType, base, context) ->
                         base.stringType
+                      base.bytesType != null && iterableClassType.classEquals(base.bytesType) ->
+                        base.intType
                       else -> Type.Unknown
                     }
                   }
@@ -144,6 +146,8 @@ fun PklNode?.computeResolvedImportType(
                       iterableClassType.classEquals(base.mapType) ||
                         iterableClassType.classEquals(base.mappingType) ->
                         iterableClassType.typeArguments[1]
+                      base.bytesType != null && iterableClassType.classEquals(base.bytesType) ->
+                        base.uint8Type
                       iterableClassType.isSubtypeOf(base.typedType, base, context) ->
                         Type.Unknown // could strengthen value type to union of property types
                       else -> Type.Unknown

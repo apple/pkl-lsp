@@ -10,7 +10,7 @@
    ...bar
       ^^^
 | Warning: Nullability mismatch.
-| Required: Collection|Map|Dynamic|Listing|Mapping|IntSeq
+| Required: Collection|Map|Dynamic|Listing|Mapping|IntSeq|Bytes
 | Actual: Mapping?
  }
  
@@ -18,7 +18,18 @@
    ...myNum
       ^^^^^
 | Error: Type mismatch.
-| Required: Collection|Map|Dynamic|Listing|Mapping|IntSeq
+| Required: Collection|Map|Dynamic|Listing|Mapping|IntSeq|Bytes
 | Actual: Int
  }
  
+ prop4Correct: Listing<Int> = new {
+   ...Bytes(1, 2, 3)
+ }
+ 
+ prop4Error: Listing<String> = new {
+   ...Bytes(1, 2, 3)
+      ^^^^^^^^^^^^^^
+| Error: Type mismatch.
+| Required: Collection<String>|Listing<String>|Dynamic
+| Actual: Bytes
+ }

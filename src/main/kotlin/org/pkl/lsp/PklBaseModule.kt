@@ -100,34 +100,34 @@ class PklBaseModule(project: Project) : Component(project) {
   val moduleInfoType: Type.Class = classType("ModuleInfo")
   val regexType: Type.Class = classType("Regex")
   val valueRenderer: Type.Class = classType("ValueRenderer")
-  val bytesType: Type.Class = classType("Bytes")
+  // Will be `null` for versions < 0.29
+  val bytesType: Type.Class? = classTypeOrNull("Bytes")
   val uint8Type: Type.Alias = aliasType("UInt8")
 
   val comparableType: Type = aliasType("Comparable")
 
   val iterableType: Type by lazy {
-    Type.union(
-      listOf(collectionType, mapType, dynamicType, listingType, mappingType, intSeqType, bytesType),
-      this,
-      null,
-    )
+    val types =
+      mutableListOf(collectionType, mapType, dynamicType, listingType, mappingType, intSeqType)
+    if (bytesType != null) types += bytesType
+    Type.union(types, this, null)
   }
 
   fun spreadType(enclosingObjectClassType: Type.Class): Type {
     return when {
       enclosingObjectClassType.classEquals(listingType) -> {
         val elemType = enclosingObjectClassType.typeArguments[0]
-        if (elemType.isSubtypeOf(intType, this, null))
-          Type.union(
-            collectionType.withTypeArguments(elemType),
-            listingType.withTypeArguments(elemType),
-            dynamicType,
-            intSeqType,
-            bytesType,
-            this,
-            null,
-          )
-        else
+        if (elemType.isSubtypeOf(intType, this, null)) {
+          val types =
+            mutableListOf(
+              collectionType.withTypeArguments(elemType),
+              listingType.withTypeArguments(elemType),
+              dynamicType,
+              intSeqType,
+            )
+          if (bytesType != null) types += bytesType
+          Type.union(types, this, null)
+        } else
           Type.union(
             collectionType.withTypeArguments(elemType),
             listingType.withTypeArguments(elemType),
@@ -154,19 +154,10 @@ class PklBaseModule(project: Project) : Component(project) {
   }
 
   val additiveOperandType: Type by lazy {
-    Type.union(
-      listOf(
-        stringType,
-        numberType,
-        durationType,
-        dataSizeType,
-        collectionType,
-        mapType,
-        bytesType,
-      ),
-      this,
-      null,
-    )
+    val types =
+      mutableListOf(stringType, numberType, durationType, dataSizeType, collectionType, mapType)
+    if (bytesType != null) types += bytesType
+    Type.union(types, this, null)
   }
 
   val multiplicativeOperandType: Type by lazy {
@@ -174,11 +165,10 @@ class PklBaseModule(project: Project) : Component(project) {
   }
 
   val subscriptableType: Type by lazy {
-    Type.union(
-      listOf(stringType, collectionType, mapType, listingType, mappingType, dynamicType, bytesType),
-      this,
-      null,
-    )
+    val types =
+      mutableListOf(stringType, collectionType, mapType, listingType, mappingType, dynamicType)
+    if (bytesType != null) types += bytesType
+    Type.union(types, this, null)
   }
 
   private val intPsiCache by lazy { intType.ctx.cache(null) }
@@ -362,6 +352,8 @@ class PklBaseModule(project: Project) : Component(project) {
       // Since resolution and (to some extent) cause are unknown, throw an error (with some extra
       // info) for now.
       ?: throw AssertionError("Cannot find stdlib method `base.$name`.")
+
+  private fun classTypeOrNull(name: String): Type.Class? = types[name] as Type.Class?
 
   private fun classType(name: String): Type.Class =
     types[name] as Type.Class?

@@ -4,7 +4,7 @@
    ...foo
       ^^^
 | Warning: Nullability mismatch.
-| Required: Collection|Map|Dynamic|Listing|Mapping|IntSeq
+| Required: Collection|Map|Dynamic|Listing|Mapping|IntSeq|Bytes
 | Actual: Listing<String>?
  }
  
@@ -12,7 +12,7 @@
    for (elem in foo) {
                 ^^^
 | Warning: Nullability mismatch.
-| Required: Collection|Map|Dynamic|Listing|Mapping|IntSeq
+| Required: Collection|Map|Dynamic|Listing|Mapping|IntSeq|Bytes
 | Actual: Listing<String>?
      "hi \(elem)"
    }

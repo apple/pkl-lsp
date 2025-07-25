@@ -410,7 +410,7 @@ private fun doComputeSubscriptExprType(
         receiverClassType.classEquals(base.listingType) -> receiverClassType.typeArguments[0]
         receiverClassType.classEquals(base.mapType) -> receiverClassType.typeArguments[1]
         receiverClassType.classEquals(base.mappingType) -> receiverClassType.typeArguments[1]
-        receiverClassType.classEquals(base.bytesType) -> base.uint8Type
+        base.bytesType != null && receiverClassType.classEquals(base.bytesType) -> base.uint8Type
         else -> Type.Unknown
       }
     }

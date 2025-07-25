@@ -187,7 +187,7 @@ private fun PklExpr?.doInferExprTypeFromContext(
                 unaliasedType.classEquals(base.mapType) -> unaliasedType.typeArguments[0]
                 unaliasedType.classEquals(base.listingType) -> base.intType
                 unaliasedType.classEquals(base.mappingType) -> unaliasedType.typeArguments[0]
-                unaliasedType.classEquals(base.bytesType) -> base.intType
+                base.bytesType != null && unaliasedType.classEquals(base.bytesType) -> base.intType
                 else -> Type.Unknown // unsupported type
               }
             }
@@ -246,7 +246,12 @@ private fun PklExpr?.doInferExprTypeFromContext(
             base.numberType -> base.numberType
             base.durationType -> base.durationType
             base.dataSizeType -> base.dataSizeType
-            base.bytesType -> base.bytesType
+            base.bytesType ->
+              base.bytesType
+                ?:
+                // if we fall through, both bytesType and unaliasedType is [null] (possible when Pkl
+                // < 0.29)
+                base.additiveOperandType
             is Type.Class ->
               when {
                 unaliasedType.classEquals(base.listType) ||
