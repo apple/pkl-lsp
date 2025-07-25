@@ -160,6 +160,10 @@ private fun PklNode.doComputeExprType(
                 else -> Type.Unknown
               }
             } else Type.Unknown
+          base.bytesType ->
+            if (op == TokenType.PLUS && rightType == base.bytesType) {
+              base.bytesType
+            } else Type.Unknown
           is Type.StringLiteral ->
             if (op == TokenType.PLUS) {
               when (rightType) {
@@ -406,6 +410,7 @@ private fun doComputeSubscriptExprType(
         receiverClassType.classEquals(base.listingType) -> receiverClassType.typeArguments[0]
         receiverClassType.classEquals(base.mapType) -> receiverClassType.typeArguments[1]
         receiverClassType.classEquals(base.mappingType) -> receiverClassType.typeArguments[1]
+        base.bytesType != null && receiverClassType.classEquals(base.bytesType) -> base.uint8Type
         else -> Type.Unknown
       }
     }

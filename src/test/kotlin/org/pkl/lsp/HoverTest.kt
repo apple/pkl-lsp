@@ -116,4 +116,61 @@ class HoverTest : LspTestBase() {
     val hoverText = getHoverText()
     assertThat(hoverText).contains("local res: unknown")
   }
+
+  @Test
+  fun `compute type for Bytes - for generator index`() {
+    createPklFile(
+      """
+        foo {
+          for (idx<caret>, byte in Bytes(1, 2, 3)) {
+            byte
+          }
+        }
+        """
+        .trimIndent()
+    )
+    val hoverText = getHoverText()
+    assertThat(hoverText).contains("idx: Int")
+  }
+
+  @Test
+  fun `compute type for Bytes - for generator value`() {
+    createPklFile(
+      """
+        foo {
+          for (idx, byte<caret> in Bytes(1, 2, 3)) {
+            byte
+          }
+        }
+        """
+        .trimIndent()
+    )
+    val hoverText = getHoverText()
+    assertThat(hoverText).contains("byte: UInt8")
+  }
+
+  @Test
+  fun `compute type for Bytes - addition`() {
+    createPklFile(
+      """
+        local foo<caret> = Bytes(1, 2) + Bytes(3, 4)
+        """
+        .trimIndent()
+    )
+    val hoverText = getHoverText()
+    assertThat(hoverText).contains("foo: Bytes")
+  }
+
+  @Test
+  fun `compute type for Bytes - subscript`() {
+    createPklFile(
+      """
+        local bytes = Bytes(1, 2, 3)
+        local foo<caret> = bytes[0]
+        """
+        .trimIndent()
+    )
+    val hoverText = getHoverText()
+    assertThat(hoverText).contains("foo: UInt8")
+  }
 }

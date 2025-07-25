@@ -13,3 +13,11 @@ prop2 {
 prop3 {
   ...myNum
 }
+
+prop4Correct: Listing<Int> = new {
+  ...Bytes(1, 2, 3)
+}
+
+prop4Error: Listing<String> = new {
+  ...Bytes(1, 2, 3)
+}
