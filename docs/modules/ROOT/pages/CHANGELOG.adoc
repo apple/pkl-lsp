@@ -1,5 +1,30 @@
 = Changelog
 
+[[release-0.4.0]]
+== 0.4.0 (2025-07-28)
+
+=== Fixes
+
+* Fixes a deadlock that arises when computing diagnostics (https://github.com/apple/pkl-lsp/pull/92[#92]).
+
+=== Changes
+
+* Improves modifier analysis (https://github.com/apple/pkl-lsp/pull/90[#90]).
+** Adds quickfix to add `local` modifier.
+** Adds diagnostic for non-local object properties with type annotations.
+* Switches publishing to sonatype central (https://github.com/apple/pkl-lsp/pull/96[#96]).
+
+=== Additions
+
+* Adds support for Pkl 0.29 (https://github.com/apple/pkl-lsp/pull/95[#95]).
+
+=== Contributors ❤️
+
+Thank you to all of our contributors!
+
+* https://github.com/bioball[@bioball]
+* https://github.com/stackoverflow[@stackoverflow]
+
 [[release-0.3.2]]
 == 0.3.2 (2025-04-24)
 
