@@ -47,9 +47,6 @@ class ScipCommand : CliktCommand(name = "scip") {
 
   override fun run() {
     try {
-      // Create minimal project for SCIP indexing without full LSP initialization
-      val minimalProject = createMinimalProject()
-      
       val allPklFiles = findPklFiles(sourceRoots)
       if (allPklFiles.isEmpty()) {
         echo("No .pkl files found in the specified paths", err = true)
@@ -58,14 +55,19 @@ class ScipCommand : CliktCommand(name = "scip") {
       
       echo("Found ${allPklFiles.size} .pkl files to index")
       
+      // Use the common function to properly set up the project
+      val projectWithServer = createProjectForFiles(allPklFiles, verbose = false)
+      val project = projectWithServer.project
+      val server = projectWithServer.server
+      
       val rootPath = findCommonRoot(allPklFiles.map { it.toAbsolutePath() })
-      val scipAnalyzer = ScipAnalyzer(minimalProject, rootPath)
+      val scipAnalyzer = ScipAnalyzer(project, rootPath)
       
       for (pklFile in allPklFiles) {
         echo("Processing $pklFile")
         try {
           val absolutePath = pklFile.toAbsolutePath()
-          val virtualFile = minimalProject.virtualFileManager.get(absolutePath.toUri())
+          val virtualFile = project.virtualFileManager.get(absolutePath.toUri())
           if (virtualFile != null) {
             scipAnalyzer.analyzeFile(virtualFile)
           } else {
@@ -94,20 +96,15 @@ class ScipCommand : CliktCommand(name = "scip") {
     }
   }
   
-  private fun createMinimalProject(): Project {
-    // Use the first source root as workspace directory
-    val workspaceFolder = (sourceRoots.firstOrNull()?.parent ?: sourceRoots.firstOrNull() ?: Path.of(".")).toAbsolutePath()
-    return createProject(workspaceFolder, verbose = false)
-  }
   
   companion object {
     data class ProjectWithServer(val project: Project, val server: PklLspServer)
     
     /**
-     * Creates a properly initialized Project with full LSP server setup.
-     * This ensures symbol resolution and project loading work correctly.
+     * Low-level function that creates an LSP server and project for a specific workspace folder.
+     * Most code should use createProjectForFiles() instead for proper file-to-project association.
      */
-    fun createProjectWithServer(workspaceFolder: Path, verbose: Boolean = true): ProjectWithServer {
+    private fun createProjectWithServer(workspaceFolder: Path, verbose: Boolean = true): ProjectWithServer {
       val server = PklLspServer(verbose)
       val client = object : org.pkl.lsp.PklLanguageClient {
         override fun sendActionableNotification(params: org.pkl.lsp.messages.ActionableNotification) {
@@ -198,12 +195,101 @@ class ScipCommand : CliktCommand(name = "scip") {
       return ProjectWithServer(project, server)
     }
     
+    
     /**
-     * Creates a properly initialized Project with full LSP server setup.
-     * This ensures symbol resolution and project loading work correctly.
+     * THE SINGLE FUNCTION FOR PROJECT SETUP.
+     * 
+     * Creates a Project properly configured for analyzing specific files.
+     * Both debug and SCIP commands must use this function to ensure consistent behavior.
+     * 
+     * Key features:
+     * - Smart workspace detection based on PklProject files
+     * - Full LSP server initialization with proper handshake
+     * - Critical didOpen notifications for all target files
+     * - File-to-project association validation
+     * 
+     * @param targetFiles The files that will be analyzed (used to determine proper workspace folders)
+     * @param verbose Whether to print debug information
+     * @return A properly configured project with document associations
      */
-    fun createProject(workspaceFolder: Path, verbose: Boolean = true): Project {
-      return createProjectWithServer(workspaceFolder, verbose).project
+    fun createProjectForFiles(targetFiles: List<Path>, verbose: Boolean = true): ProjectWithServer {
+      // Group files by their potential project directories
+      val projectGroups = targetFiles.groupBy { file ->
+        findProjectDirectory(file.toAbsolutePath())
+      }
+      
+      // For simplicity, use the most common project directory as workspace
+      // TODO: In the future, we could support multiple projects simultaneously
+      val mainWorkspace = projectGroups.keys.maxByOrNull { projectGroups[it]?.size ?: 0 } 
+        ?: targetFiles.firstOrNull()?.parent?.toAbsolutePath() 
+        ?: Path.of(".").toAbsolutePath()
+      
+      if (verbose && projectGroups.size > 1) {
+        println("Warning: Multiple project directories detected. Using $mainWorkspace as main workspace.")
+        projectGroups.forEach { (dir, files) ->
+          println("  $dir: ${files.size} files")
+        }
+      }
+      
+      // Create project with full LSP setup
+      val projectWithServer = createProjectWithServer(mainWorkspace, verbose)
+      val project = projectWithServer.project
+      val server = projectWithServer.server
+      
+      // Critical: Open all target documents to trigger proper project association
+      if (verbose) println("Opening ${targetFiles.size} documents for proper project association...")
+      for (file in targetFiles) {
+        try {
+          val textDocumentItem = org.eclipse.lsp4j.TextDocumentItem().apply {
+            uri = file.toUri().toString()
+            languageId = "pkl"
+            version = 1
+            text = file.readText()
+          }
+          
+          val openParams = org.eclipse.lsp4j.DidOpenTextDocumentParams().apply {
+            textDocument = textDocumentItem
+          }
+          
+          // This triggers project discovery and file-to-project association
+          server.textDocumentService.didOpen(openParams)
+          
+          if (verbose) {
+            // Verify the file is properly associated with its project
+            try {
+              val fsFile = project.virtualFileManager.getFsFile(file.toUri())
+              val pklProject = fsFile?.let { project.pklProjectManager.getPklProject(it) }
+              if (pklProject != null) {
+                println("  ✓ ${file.fileName}: Associated with ${pklProject.metadata.packageUri}")
+              } else {
+                println("  ⚠ ${file.fileName}: No PklProject association found")
+              }
+            } catch (e: Exception) {
+              println("  ✗ ${file.fileName}: Error checking project association: ${e.message}")
+            }
+          }
+        } catch (e: Exception) {
+          if (verbose) println("  ✗ ${file.fileName}: Error opening document: ${e.message}")
+        }
+      }
+      
+      return projectWithServer
+    }
+    
+    /**
+     * Find the directory that should be used as the project workspace for a given file.
+     * Looks for PklProject files in the file's directory hierarchy.
+     */
+    private fun findProjectDirectory(filePath: Path): Path {
+      var current = filePath.parent
+      while (current != null) {
+        if (current.resolve("PklProject").exists()) {
+          return current
+        }
+        current = current.parent
+      }
+      // Fallback to file's parent if no PklProject found
+      return filePath.parent ?: filePath
     }
   }
   

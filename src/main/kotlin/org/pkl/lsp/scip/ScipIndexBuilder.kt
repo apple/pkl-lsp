@@ -292,7 +292,8 @@ object ScipSymbolFormatter {
   private fun getModuleName(module: PklModule): String {
     val uri = module.uri.toString()
     val projectDir = module.containingFile.pklProject?.projectDir?.toUri()?.toString()
-    println("Module URI: $uri, packageUri: $projectDir")
+    val actualPackageUri = module.containingFile.pklProject?.metadata?.packageUri?.toString()
+    println("Module URI: $uri, projectDir: $projectDir, actualPackageUri: $actualPackageUri")
     if (projectDir != null && uri.startsWith(projectDir)) {
       // Remove projectDir URI prefix and leading slash
       return uri.removePrefix(projectDir).removePrefix("/")

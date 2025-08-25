@@ -166,26 +166,9 @@ class AstDumper {
   }
   
   private fun createProject(filePath: Path): Project {
-    val workspaceFolder = (filePath.parent ?: filePath).toAbsolutePath()
-    val projectWithServer = org.pkl.lsp.cli.ScipCommand.createProjectWithServer(workspaceFolder, verbose = true)
+    // Use the common function that properly handles file-to-project association
+    val projectWithServer = org.pkl.lsp.cli.ScipCommand.createProjectForFiles(listOf(filePath), verbose = true)
     val project = projectWithServer.project
-    val server = projectWithServer.server
-    
-    // Let the server fully configure itself via LSP protocol
-    // Open the document to trigger project loading and analysis
-    val textDocumentItem = org.eclipse.lsp4j.TextDocumentItem().apply {
-      uri = filePath.toUri().toString()
-      languageId = "pkl"
-      version = 1
-      text = filePath.readText()
-    }
-    
-    val openParams = org.eclipse.lsp4j.DidOpenTextDocumentParams().apply {
-      textDocument = textDocumentItem
-    }
-    
-    // Send document open notification - this triggers additional project discovery
-    server.textDocumentService.didOpen(openParams)
     
     // Debug: Check what projects were actually loaded
     try {
@@ -194,6 +177,7 @@ class AstDumper {
       println("Debug: PklProject from manager: $pklProjectForFile")
       
       // Check if any PklProject files were discovered in the workspace
+      val workspaceFolder = (filePath.parent ?: filePath).toAbsolutePath()
       println("Debug: Workspace folder: $workspaceFolder")
       println("Debug: Current working directory: ${System.getProperty("user.dir")}")
       println("Debug: FilePath absolute: ${filePath.toAbsolutePath()}")
