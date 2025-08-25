@@ -1,0 +1,492 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module org.json_schema.contrib.internal.utils
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/
+  
+  import "@syntax/TypeNode.pkl"
+  import "@syntax/ExpressionNode.pkl"
+  import "@syntax/operators.pkl"
+  import "@syntax/AnnotationNode.pkl"
+  import "Type.pkl"
+  import "@jsonschema/JsonSchema.pkl"
+  
+  /// Renders the string in pascal case.
+  ///
+  /// Underscores, dashes and dots are all considered word separators.
+  ///
+  /// Facts:
+  /// ```
+  /// pascalCase("foo-bar") == "FooBar"
+  /// pascalCase("foo.bar") == "FooBar"
+  /// pascalCase("foo_bar") == "FooBar"
+  /// pascalCase("fooBar") == "FooBar"
+  /// ```
+  function pascalCase(text: String) =
+//         ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/pascalCase().
+//         documentation
+//         > Renders the string in pascal case.
+//         > 
+//         > Underscores, dashes and dots are all considered word separators.
+//         > 
+//         > Facts:
+//         > ```
+//         > pascalCase("foo-bar") == "FooBar"
+//         > pascalCase("foo.bar") == "FooBar"
+//         > pascalCase("foo_bar") == "FooBar"
+//         > pascalCase("fooBar") == "FooBar"
+//         > ```
+//                    ^^^^ definition local text_36
+//                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    let (words = text.split(Regex(#"[_.-]"#)))
+//       ^^^^^ definition local words_37
+//               ^^^^ reference local text_36
+//                    ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+//                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+      words.map((w) -> w.capitalize()).join("")
+//    ^^^^^ reference local words_37
+//          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//               ^ definition local w_38
+//                     ^ reference local w_38
+//                       ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#capitalize().
+//                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  
+  /// Node representing `this`.
+  THIS: ExpressionNode.BuiltInKeywordExpressionNode = new { keyword = "this" }
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/THIS.
+//documentation
+//> Node representing `this`.
+//                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BuiltInKeywordExpressionNode#
+//                                                          ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/keyword.
+  
+  /// Node representing `@Deprecated`
+  DEPRECATED: AnnotationNode = new {
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/DEPRECATED.
+//documentation
+//> Node representing `@Deprecated`
+//            ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `AnnotationNode.pkl`/
+    identifier {
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/identifier.
+      parts {
+//    ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/parts.
+        new { value = "Deprecated" }
+//            ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/value.
+      }
+    }
+  }
+  
+  /// Creates a node equivalent of a number
+  function numberLiteral(num: Number) = new ExpressionNode.LiteralValueExpressionNode { value = num }
+//         ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/numberLiteral().
+//         documentation
+//         > Creates a node equivalent of a number
+//                       ^^^ definition local num_53
+//                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+//                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+//                                                                                      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/value.
+//                                                                                              ^^^ reference local num_53
+  
+  /// Creates a declared type
+  function declaredType(type: String) = new TypeNode.DeclaredTypeNode {
+//         ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/declaredType().
+//         documentation
+//         > Creates a declared type
+//                      ^^^^ definition local type_56
+//                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/DeclaredTypeNode#
+    name {
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/name.
+      parts {
+//    ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/parts.
+        new {
+          value = type
+//        ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/value.
+//                ^^^^ reference local type_56
+        }
+      }
+    }
+  }
+  
+  function declaredType1(type: Type, isImport: Boolean) = new TypeNode.DeclaredTypeNode {
+//         ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/declaredType1().
+//                       ^^^^ definition local type_66
+//                             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/
+//                                   ^^^^^^^^ definition local isImport_66
+//                                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                                                                     ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/DeclaredTypeNode#
+    name {
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/name.
+      parts {
+//    ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/parts.
+        when (isImport) {
+//            ^^^^^^^^ reference local isImport_66
+          new {
+            value = type.moduleName.split(".").last
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/value.
+//                  ^^^^ reference local type_66
+//                       ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/moduleName.
+//                                  ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+//                                             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#last.
+          }
+        }
+        new {
+          value = type.name
+//        ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/value.
+//                ^^^^ reference local type_66
+//                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/name.
+        }
+      }
+    }
+  }
+  
+  /// Helper for creating `ExpressionNode.BinaryOperatorExpressionNode`
+  function binaryOperatorNode(
+//         ^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/binaryOperatorNode().
+//         documentation
+//         > Helper for creating `ExpressionNode.BinaryOperatorExpressionNode`
+    _lhs: ExpressionNode,
+//  ^^^^ definition local _lhs_83
+//        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+    _operator: operators.BinaryOperator,
+//  ^^^^^^^^^ definition local _operator_84
+//                       ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/BinaryOperator#
+    _rhs: ExpressionNode
+//  ^^^^ definition local _rhs_85
+//        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+  ): ExpressionNode.BinaryOperatorExpressionNode = new {
+//                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#
+    lhs = _lhs
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/lhs.
+//        ^^^^ reference local _lhs_83
+    operator = _operator
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/operator.
+//             ^^^^^^^^^ reference local _operator_84
+    rhs = _rhs
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/rhs.
+//        ^^^^ reference local _rhs_85
+  }
+  
+  /// Merge multiple schemas into one schema document.
+  function mergeSchemas(baseSchema: JsonSchema, rest: List<JsonSchema.Schema>) =
+//         ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/mergeSchemas().
+//         documentation
+//         > Merge multiple schemas into one schema document.
+//                      ^^^^^^^^^^ definition local baseSchema_93
+//                                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                              ^^^^ definition local rest_93
+//                                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                                    ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+    rest
+//  ^^^^ reference local rest_93
+      .fold(baseSchema.toMap(), (aggregate: Map, schema: JsonSchema.Schema) ->
+//     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#fold().
+//          ^^^^^^^^^^ reference local baseSchema_93
+//                     ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#toMap().
+//                               ^^^^^^^^^ definition local aggregate_95
+//                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                                               ^^^^^^ definition local schema_95
+//                                                                  ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+        if (schema is Boolean)
+//          ^^^^^^ reference local schema_95
+//                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+          aggregate
+//        ^^^^^^^^^ reference local aggregate_95
+        else
+          aggregate + schema.toMap().filter((_, value) -> value != null)
+//        ^^^^^^^^^ reference local aggregate_95
+//                    ^^^^^^ reference local schema_95
+//                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#toMap().
+//                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#filter().
+//                                              ^^^^^ definition local value_99
+//                                                        ^^^^^ reference local value_99
+      )
+      .toTyped(JsonSchema.getClass())
+//     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#toTyped().
+//             ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                        ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+  
+  
+  local function findMatchingSchemasInMapping(
+//               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition local findMatchingSchemasInMapping_104
+    m: Mapping<String, JsonSchema.Schema>?,
+//  ^ definition local m_105
+//     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+    path: List<String>,
+//  ^^^^ definition local path_106
+//        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    predicate: (JsonSchema) -> Boolean
+//  ^^^^^^^^^ definition local predicate_107
+//              ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  ): Map<List<String>, JsonSchema> =
+//   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                     ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+    if (m == null)
+//      ^ reference local m_105
+      Map()
+//    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+    else
+      m
+//    ^ reference local m_105
+        .toMap()
+//       ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+        .filter((_, value) -> value is JsonSchema)
+//       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#filter().
+//                  ^^^^^ definition local value_114
+//                            ^^^^^ reference local value_114
+//                                     ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        .flatMap((propertyName, schema) -> _findMatchingSubSchemas(schema as JsonSchema, path.add(propertyName), predicate))
+//       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#flatMap().
+//                ^^^^^^^^^^^^ definition local propertyName_115
+//                              ^^^^^^ definition local schema_115
+//                                         ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/_findMatchingSubSchemas().
+//                                                                 ^^^^^^ reference local schema_115
+//                                                                           ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                                                       ^^^^ reference local path_106
+//                                                                                            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                                                                                                ^^^^^^^^^^^^ reference local propertyName_115
+//                                                                                                               ^^^^^^^^^ reference local predicate_107
+  
+  local function findMatchingSchemasInListing(
+//               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition local findMatchingSchemasInListing_117
+    l: Listing<JsonSchema.Schema>?,
+//  ^ definition local l_118
+//     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+    path: List<String>,
+//  ^^^^ definition local path_119
+//        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    namePart: String,
+//  ^^^^^^^^ definition local namePart_120
+//            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    predicate: (JsonSchema) -> Boolean
+//  ^^^^^^^^^ definition local predicate_121
+//              ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  ): Map<List<String>, JsonSchema> =
+//   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                     ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+    if (l == null)
+//      ^ reference local l_118
+      Map()
+//    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+    else
+      l.toList()
+//    ^ reference local l_118
+//      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+        .filterIsInstance(JsonSchema.getClass())
+//       ^^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#filterIsInstance().
+//                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                   ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+        .mapIndexed((idx, schema) -> Pair(idx, schema))
+//       ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#mapIndexed().
+//                   ^^^ definition local idx_128
+//                        ^^^^^^ definition local schema_128
+//                                   ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+//                                        ^^^ reference local idx_128
+//                                             ^^^^^^ reference local schema_128
+        .toMap((p) -> p.first, (p) -> p.second)
+//       ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#toMap().
+//              ^ definition local p_129
+//                    ^ reference local p_129
+//                      ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#first.
+//                              ^ definition local p_129
+//                                    ^ reference local p_129
+//                                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#second.
+        .flatMap((idx, schema) ->
+//       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#flatMap().
+//                ^^^ definition local idx_130
+//                     ^^^^^^ definition local schema_130
+        _findMatchingSubSchemas(
+//      ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/_findMatchingSubSchemas().
+          schema,
+//        ^^^^^^ reference local schema_130
+          path.add((path.lastOrNull ?? "") + namePart + idx.toString()),
+//        ^^^^ reference local path_119
+//             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                  ^^^^ reference local path_119
+//                       ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#lastOrNull.
+//                                           ^^^^^^^^ reference local namePart_120
+//                                                      ^^^ reference local idx_130
+//                                                          ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toString().
+          predicate
+//        ^^^^^^^^^ reference local predicate_121
+        )
+      )
+  
+  function _findMatchingSubSchemas(
+//         ^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/_findMatchingSubSchemas().
+    schema: JsonSchema,
+//  ^^^^^^ definition local schema_139
+//          ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+    path: List<String>,
+//  ^^^^ definition local path_140
+//        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    predicate: (JsonSchema) -> Boolean
+//  ^^^^^^^^^ definition local predicate_141
+//              ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  ): Map<List<String>, JsonSchema> =
+//   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                     ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+    (if (predicate.apply(schema))
+//       ^^^^^^^^^ reference local predicate_141
+//                 ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Function1#apply().
+//                       ^^^^^^ reference local schema_139
+      Map(path, schema)
+//    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//        ^^^^ reference local path_140
+//              ^^^^^^ reference local schema_139
+    else
+      Map())
+//    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+    + findMatchingSchemasInMapping(schema.properties, path, predicate)
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference local findMatchingSchemasInMapping_104
+//                                 ^^^^^^ reference local schema_139
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/properties.
+//                                                    ^^^^ reference local path_140
+//                                                          ^^^^^^^^^ reference local predicate_141
+    + (
+      let (map = schema.patternProperties?.toMap() ?? Map())
+//         ^^^ definition local map_149
+//               ^^^^^^ reference local schema_139
+//                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/patternProperties.
+//                                         ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+//                                                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+        if (map.length == 1 && map.values.first is JsonSchema)
+//          ^^^ reference local map_149
+//              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#length.
+//                             ^^^ reference local map_149
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#values.
+//                                        ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#first.
+//                                                 ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+          _findMatchingSubSchemas(map.values.first as JsonSchema, path, predicate)
+//        ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/_findMatchingSubSchemas().
+//                                ^^^ reference local map_149
+//                                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#values.
+//                                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#first.
+//                                                    ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                                ^^^^ reference local path_140
+//                                                                      ^^^^^^^^^ reference local predicate_141
+        else
+          Map()
+//        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+      )
+    + findMatchingSchemasInMapping(schema.definitions, path, predicate)
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference local findMatchingSchemasInMapping_104
+//                                 ^^^^^^ reference local schema_139
+//                                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/definitions.
+//                                                     ^^^^ reference local path_140
+//                                                           ^^^^^^^^^ reference local predicate_141
+    + findMatchingSchemasInMapping(schema.$defs, path, predicate)
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference local findMatchingSchemasInMapping_104
+//                                 ^^^^^^ reference local schema_139
+//                                        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/$defs.
+//                                               ^^^^ reference local path_140
+//                                                     ^^^^^^^^^ reference local predicate_141
+    + (if (schema.additionalProperties is JsonSchema)
+//         ^^^^^^ reference local schema_139
+//                ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/additionalProperties.
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        _findMatchingSubSchemas(schema.additionalProperties as JsonSchema, path, predicate)
+//      ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/_findMatchingSubSchemas().
+//                              ^^^^^^ reference local schema_139
+//                                     ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/additionalProperties.
+//                                                             ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                                         ^^^^ reference local path_140
+//                                                                               ^^^^^^^^^ reference local predicate_141
+      else
+        Map())
+//      ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+    + (if (schema.items is JsonSchema)
+//         ^^^^^^ reference local schema_139
+//                ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/items.
+//                         ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        _findMatchingSubSchemas(schema.items as JsonSchema, path.add("[]"), predicate)
+//      ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/_findMatchingSubSchemas().
+//                              ^^^^^^ reference local schema_139
+//                                     ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/items.
+//                                              ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                          ^^^^ reference local path_140
+//                                                               ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                                                                          ^^^^^^^^^ reference local predicate_141
+      else if (schema.items is Listing)
+//             ^^^^^^ reference local schema_139
+//                    ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/items.
+//                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+        findMatchingSchemasInListing(schema.items as Listing, path, "Item", predicate)
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference local findMatchingSchemasInListing_117
+//                                   ^^^^^^ reference local schema_139
+//                                          ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/items.
+//                                                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                                            ^^^^ reference local path_140
+//                                                                          ^^^^^^^^^ reference local predicate_141
+      else Map())
+//         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+    + findMatchingSchemasInListing(schema.oneOf, path, "Alternate", predicate)
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference local findMatchingSchemasInListing_117
+//                                 ^^^^^^ reference local schema_139
+//                                        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/oneOf.
+//                                               ^^^^ reference local path_140
+//                                                                  ^^^^^^^^^ reference local predicate_141
+    + findMatchingSchemasInListing(schema.anyOf, path, "Alternate", predicate)
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference local findMatchingSchemasInListing_117
+//                                 ^^^^^^ reference local schema_139
+//                                        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/anyOf.
+//                                               ^^^^ reference local path_140
+//                                                                  ^^^^^^^^^ reference local predicate_141
+    + findMatchingSchemasInMapping(schema._inline_, path, predicate)
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference local findMatchingSchemasInMapping_104
+//                                 ^^^^^^ reference local schema_139
+//                                        ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/_inline_.
+//                                                  ^^^^ reference local path_140
+//                                                        ^^^^^^^^^ reference local predicate_141
+  
+  /// Traverse the [schema], returning all schemas that match [predicate].
+  ///
+  /// Returns a map whose key is the path to that schema, and value is the schema itself.
+  // TODO: additionalItems, allOf
+  function findMatchingSubschemas(schema: JsonSchema, predicate: (JsonSchema) -> Boolean): Map<List<String>, JsonSchema> =
+//         ^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/findMatchingSubschemas().
+//         documentation
+//         > Traverse the [`schema`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.json_schema.contrib/internal/utils.pkl#L174,C33), returning all schemas that match [`predicate`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.json_schema.contrib/internal/utils.pkl#L174,C53).
+//         > 
+//         > Returns a map whose key is the path to that schema, and value is the schema itself.
+//                                ^^^^^^ definition local schema_174
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                    ^^^^^^^^^ definition local predicate_174
+//                                                                ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                                                                                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                                                                                             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                                                                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                                                           ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+    _findMatchingSubSchemas(schema, List(), predicate)
+//  ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/_findMatchingSubSchemas().
+//                          ^^^^^^ reference local schema_174
+//                                  ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                          ^^^^^^^^^ reference local predicate_174
+  

@@ -1,0 +1,79 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module io.prometheus.examples.rule
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/rule.pkl`/
+  
+  amends "../Rule.pkl"
+  
+  groups {
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/rule.pkl`/groups.
+    new AlertingRuleGroup {
+//      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Rule.pkl`/AlertingRuleGroup#
+      name = "alerting_rules"
+//    ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/rule.pkl`/name.
+      interval = 5.min
+//    ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/rule.pkl`/interval.
+//                 ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#min.
+      labels {
+//    ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/rule.pkl`/labels.
+        ["group"] = "alerts"
+      }
+      rules {
+//    ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/rule.pkl`/rules.
+        new {
+          alert = "HighRequestLatency"
+//        ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/rule.pkl`/alert.
+          expr = #"job:request_latency_seconds:mean5m{job="myjob"} > 0.5"#
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/rule.pkl`/expr.
+          `for` = 10.min
+//        ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/rule.pkl`/for.
+//                   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#min.
+          labels {
+//        ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/rule.pkl`/labels.
+            ["prod"] = true
+            ["priority"] = 1
+            ["severity"] = "page"
+          }
+          annotations {
+//        ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/rule.pkl`/annotations.
+            ["summary"] = "High request latency"
+          }
+        }
+      }
+    }
+    new RecordingRuleGroup {
+//      ^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Rule.pkl`/RecordingRuleGroup#
+      name = "recording_rules"
+//    ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/rule.pkl`/name.
+      interval = 10.h
+//    ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/rule.pkl`/interval.
+//                  ^ reference pkl . pkl 0.29.0 `pkl.base`/Int#h.
+      labels {
+//    ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/rule.pkl`/labels.
+        ["group"] = "recording"
+      }
+      rules {
+//    ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/rule.pkl`/rules.
+        new {
+          `record` = "job:http_inprogress_requests:sum"
+//        ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/rule.pkl`/record.
+          expr = "sum by (job) (http_inprogress_requests)"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/rule.pkl`/expr.
+        }
+      }
+    }
+  }
+  

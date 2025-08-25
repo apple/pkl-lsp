@@ -1,0 +1,83 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  abstract module org.apache.spark.PropertiesBase
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `PropertiesBase.pkl`/
+  
+  import "pkl:semver"
+  import "utils.pkl"
+  
+  /// The Spark version to use these properties with.
+  hidden targetSparkVersion: String?
+//       ^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `PropertiesBase.pkl`/targetSparkVersion.
+//       documentation
+//       > The Spark version to use these properties with.
+//                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  function since(sparkVersion: String): Boolean =
+//         ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `PropertiesBase.pkl`/since().
+//               ^^^^^^^^^^^^ definition local sparkVersion_24
+//                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+    if (targetSparkVersion == null) true
+//      ^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `PropertiesBase.pkl`/targetSparkVersion.
+    else
+      let (parsedVersion = semver.Version(sparkVersion))
+//         ^^^^^^^^^^^^^ definition local parsedVersion_27
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.semver`/
+//                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.semver`/Version().
+//                                        ^^^^^^^^^^^^ reference local sparkVersion_24
+        if (!parsedVersion.isGreaterThan(semver.Version(targetSparkVersion)))
+//           ^^^^^^^^^^^^^ reference local parsedVersion_27
+//                         ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.semver`/Version#isGreaterThan().
+//                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.semver`/
+//                                              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.semver`/Version().
+//                                                      ^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `PropertiesBase.pkl`/targetSparkVersion.
+          throw("This property exists since Spark version \(parsedVersion), but target Spark version is \(targetSparkVersion).")
+//                                                          ^^^^^^^^^^^^^ reference local parsedVersion_27
+//                                                                                                        ^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `PropertiesBase.pkl`/targetSparkVersion.
+        else
+          true
+  
+  hidden effectiveProperties: Map =
+//       ^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `PropertiesBase.pkl`/effectiveProperties.
+//                            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+    module.toMap().flatMap((key, value) -> utils.convertProperty(key, value))
+//         ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#toMap().
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#flatMap().
+//                          ^^^ definition local key_34
+//                               ^^^^^ definition local value_34
+//                                         ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `utils.pkl`/
+//                                               ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `utils.pkl`/convertProperty().
+//                                                               ^^^ reference local key_34
+//                                                                    ^^^^^ reference local value_34
+  
+  /// Indicates that the annotated property cannot be set by the user.
+  class Reserved extends Annotation
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `PropertiesBase.pkl`/Reserved#
+//      documentation
+//      > Indicates that the annotated property cannot be set by the user.
+//                       ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Annotation#
+  
+  output {
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `PropertiesBase.pkl`/output.
+    value = effectiveProperties
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `PropertiesBase.pkl`/value.
+//          ^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `PropertiesBase.pkl`/effectiveProperties.
+    renderer = new PropertiesRenderer {}
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `PropertiesBase.pkl`/renderer.
+//                 ^^^^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/PropertiesRenderer#
+  }
+  

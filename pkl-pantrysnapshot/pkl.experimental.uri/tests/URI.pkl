@@ -1,0 +1,476 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module pkl.experimental.uri.tests.URI
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/
+  
+  amends "pkl:test"
+  
+  import "../URI.pkl"
+  
+  local alphaLower = "abcdefghijklmnopqrstuvwxyz"
+//      ^^^^^^^^^^ definition local alphaLower_22
+  local alphaUpper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+//      ^^^^^^^^^^ definition local alphaUpper_23
+  local nums = "0123456789"
+//      ^^^^ definition local nums_24
+  
+  facts {
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/facts.
+    ["encode"] {
+      URI.encode("https://example.com/some path") == "https://example.com/some%20path"
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/encode().
+      URI.encode(alphaLower) == alphaLower
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/encode().
+//               ^^^^^^^^^^ reference local alphaLower_22
+//                              ^^^^^^^^^^ reference local alphaLower_22
+      URI.encode(alphaUpper) == alphaUpper
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/encode().
+//               ^^^^^^^^^^ reference local alphaUpper_23
+//                              ^^^^^^^^^^ reference local alphaUpper_23
+      URI.encode(nums) == nums
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/encode().
+//               ^^^^ reference local nums_24
+//                        ^^^^ reference local nums_24
+  
+      local safeChars = "!#$&'()*+,-./:;=?@_~"
+//          ^^^^^^^^^ definition local safeChars_33
+      URI.encode(safeChars) == safeChars
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/encode().
+//               ^^^^^^^^^ reference local safeChars_33
+//                             ^^^^^^^^^ reference local safeChars_33
+      URI.encode("\u{ffff}") == "%EF%BF%BF"
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/encode().
+      URI.encode("🏀") == "%F0%9F%8F%80"
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/encode().
+      URI.encode("\n") == "%0A"
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/encode().
+    }
+    ["encodeComponent"] {
+      URI.encodeComponent("https://example.com/some path") == "https%3A%2F%2Fexample.com%2Fsome%20path"
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/encodeComponent().
+      URI.encode(alphaLower) == alphaLower
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/encode().
+//               ^^^^^^^^^^ reference local alphaLower_22
+//                              ^^^^^^^^^^ reference local alphaLower_22
+      URI.encode(alphaUpper) == alphaUpper
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/encode().
+//               ^^^^^^^^^^ reference local alphaUpper_23
+//                              ^^^^^^^^^^ reference local alphaUpper_23
+      URI.encode(nums) == nums
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/encode().
+//               ^^^^ reference local nums_24
+//                        ^^^^ reference local nums_24
+      local safeChars = "-_.!~*'()"
+//          ^^^^^^^^^ definition local safeChars_44
+      URI.encode(safeChars) == safeChars
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/encode().
+//               ^^^^^^^^^ reference local safeChars_44
+//                             ^^^^^^^^^ reference local safeChars_44
+    }
+    ["percentDecode"] {
+      URI.percentDecode("foo%20bar") == "foo bar"
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/percentDecode().
+      URI.percentDecode("foo%20bar") == "foo bar"
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/percentDecode().
+      URI.percentDecode("foo%20%20bar") == "foo  bar"
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/percentDecode().
+      URI.percentDecode("%F0%9F%8F%80") == "🏀"
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/percentDecode().
+      URI.percentDecode("%C2%A3") == "£"
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/percentDecode().
+      URI.percentDecode("%EF%BF%BF") == "\u{ffff}"
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/percentDecode().
+      URI.percentDecode("%2Fbar%2Fbaz") == "/bar/baz"
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/percentDecode().
+    }
+    ["parse"] {
+      local uri1 = URI.parse("https://www.example.com")
+//          ^^^^ definition local uri1_57
+//                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                     ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+      uri1 == new URI {
+//    ^^^^ reference local uri1_57
+//                ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+        scheme = "https"
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/scheme.
+        host = "www.example.com"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/host.
+        path = ""
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/path.
+      }
+      uri1.pathSegments == List("")
+//    ^^^^ reference local uri1_57
+//         ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/pathSegments.
+//                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+  
+      local uri2 = URI.parse("https://bilbo@www.example.com:1234/my/path?search=mysearch#fragment-value")
+//          ^^^^ definition local uri2_65
+//                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                     ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+      uri2 == new URI {
+//    ^^^^ reference local uri2_65
+//                ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+        scheme = "https"
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/scheme.
+        userInfo = "bilbo"
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/userInfo.
+        host = "www.example.com"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/host.
+        port = 1234
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/port.
+        path = "/my/path"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/path.
+        query = "search=mysearch"
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/query.
+        fragment = "fragment-value"
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/fragment.
+      }
+      uri2.pathSegments == List("my", "path")
+//    ^^^^ reference local uri2_65
+//         ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/pathSegments.
+//                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+  
+      local uri3 = URI.parse("pkl:base?mybase")
+//          ^^^^ definition local uri3_77
+//                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                     ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+      uri3 == new URI {
+//    ^^^^ reference local uri3_77
+//                ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+        scheme = "pkl"
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/scheme.
+        path = "base"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/path.
+        query = "mybase"
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/query.
+      }
+      uri3.pathSegments == List("base")
+//    ^^^^ reference local uri3_77
+//         ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/pathSegments.
+//                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+  
+      local uri4 = URI.parse("pkl:base?mybase#fragment")
+//          ^^^^ definition local uri4_85
+//                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                     ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+      uri4 == new URI {
+//    ^^^^ reference local uri4_85
+//                ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+        scheme = "pkl"
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/scheme.
+        path = "base"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/path.
+        query = "mybase"
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/query.
+        fragment = "fragment"
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/fragment.
+      }
+      uri4.pathSegments == List("base")
+//    ^^^^ reference local uri4_85
+//         ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/pathSegments.
+//                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+  
+      local uri5 = URI.parse("https://www.example.com/my%20path")
+//          ^^^^ definition local uri5_94
+//                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                     ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+      uri5 == new URI {
+//    ^^^^ reference local uri5_94
+//                ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+        scheme = "https"
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/scheme.
+        host = "www.example.com"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/host.
+        path = "/my%20path"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/path.
+      }
+      uri5.pathSegments == List("my path")
+//    ^^^^ reference local uri5_94
+//         ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/pathSegments.
+//                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+  
+      local uri6 = URI.parse("https://www.example.com/search?q=%F0%9F%8F%80")
+//          ^^^^ definition local uri6_102
+//                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                     ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+      uri6 == new URI {
+//    ^^^^ reference local uri6_102
+//                ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+        scheme = "https"
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/scheme.
+        host = "www.example.com"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/host.
+        path = "/search"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/path.
+        query = "q=%F0%9F%8F%80"
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/query.
+      }
+      uri6.pathSegments == List("search")
+//    ^^^^ reference local uri6_102
+//         ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/pathSegments.
+//                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+  
+      local uri7 = URI.parse("myscheme:%F0%9F%8F%80#myfragment")
+//          ^^^^ definition local uri7_111
+//                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                     ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+      uri7 == new URI {
+//    ^^^^ reference local uri7_111
+//                ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+        scheme = "myscheme"
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/scheme.
+        path = "%F0%9F%8F%80"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/path.
+        fragment = "myfragment"
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/fragment.
+      }
+      uri7.pathSegments == List("🏀")
+//    ^^^^ reference local uri7_111
+//         ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/pathSegments.
+//                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+  
+      local uri8 = URI.parse("file:/my%20file.txt")
+//          ^^^^ definition local uri8_119
+//                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                     ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+      uri8 == new URI {
+//    ^^^^ reference local uri8_119
+//                ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+        scheme = "file"
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/scheme.
+        path = "/my%20file.txt"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/path.
+      }
+      uri8.pathSegments == List("my file.txt")
+//    ^^^^ reference local uri8_119
+//         ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/pathSegments.
+//                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+  
+      local uri9 = URI.parse("file:///my%20file.txt")
+//          ^^^^ definition local uri9_126
+//                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                     ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+      uri9 == new URI {
+//    ^^^^ reference local uri9_126
+//                ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+        scheme = "file"
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/scheme.
+        path = "/my%20file.txt"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/path.
+        host = ""
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/host.
+      }
+      uri9.pathSegments == List("my file.txt")
+//    ^^^^ reference local uri9_126
+//         ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/pathSegments.
+//                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+  
+      local uri10 = URI.parse("schemey:///first%2Fsegment/second")
+//          ^^^^^ definition local uri10_134
+//                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                      ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+      uri10 == new URI {
+//    ^^^^^ reference local uri10_134
+//                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+        scheme = "schemey"
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/scheme.
+        path = "/first%2Fsegment/second"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/path.
+        host = ""
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/host.
+      }
+      uri10.pathSegments == List("first/segment", "second")
+//    ^^^^^ reference local uri10_134
+//          ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/pathSegments.
+//                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+  
+      local uri11 = URI.parse("../bar/baz")
+//          ^^^^^ definition local uri11_142
+//                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                      ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+      uri11 == new URI {
+//    ^^^^^ reference local uri11_142
+//                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+        path = "../bar/baz"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/path.
+      }
+      uri11.pathSegments == List("..", "bar", "baz")
+//    ^^^^^ reference local uri11_142
+//          ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/pathSegments.
+//                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+  
+      local uri12 = URI.parse("//www.example.com/foo")
+//          ^^^^^ definition local uri12_148
+//                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                      ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+      uri12 == new URI {
+//    ^^^^^ reference local uri12_148
+//                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+        host = "www.example.com"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/host.
+        path = "/foo"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/path.
+      }
+      uri12.pathSegments == List("foo")
+//    ^^^^^ reference local uri12_148
+//          ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/pathSegments.
+//                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+  
+      local uri13 = URI.parse("#")
+//          ^^^^^ definition local uri13_155
+//                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                      ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+      uri13 == new URI {
+//    ^^^^^ reference local uri13_155
+//                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+        path = ""
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/path.
+        fragment = ""
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `tests/URI.pkl`/fragment.
+      }
+      uri13.pathSegments == List("")
+//    ^^^^^ reference local uri13_155
+//          ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/pathSegments.
+//                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+    }
+    ["toString()"] {
+      URI.parse("https://www.example.com").toString() == "https://www.example.com"
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+//                                         ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/toString().
+      URI.parse("https://bilbo@www.example.com:1234/my/path?search=mysearch#fragment-value").toString() == "https://bilbo@www.example.com:1234/my/path?search=mysearch#fragment-value"
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+//                                                                                           ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/toString().
+      URI.parse("pkl:base?mybase").toString() == "pkl:base?mybase"
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+//                                 ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/toString().
+      URI.parse("pkl:base?mybase#fragment").toString() == "pkl:base?mybase#fragment"
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+//                                          ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/toString().
+      URI.parse("https://www.example.com/my%20path").toString() == "https://www.example.com/my%20path"
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+//                                                   ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/toString().
+      URI.parse("https://www.example.com/search?q=%F0%9F%8F%80").toString() == "https://www.example.com/search?q=%F0%9F%8F%80"
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+//                                                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/toString().
+      URI.parse("pkl:%F0%9F%8F%80#myfragment").toString() == "pkl:%F0%9F%8F%80#myfragment"
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+//                                             ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/toString().
+      URI.parse("file:/my%20file.txt").toString() == "file:/my%20file.txt"
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+//                                     ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/toString().
+      URI.parse("file:///my%20file.txt").toString() == "file:///my%20file.txt"
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+//                                       ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/toString().
+    }
+    ["resolve"] {
+      URI.parse("schemey:/first/second/").resolve("../third").toString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+//                                        ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/resolve().
+//                                                            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/toString().
+        == "schemey:/first/third"
+      URI.parse("schemey:/first/second/").resolve("../../third").toString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+//                                        ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/resolve().
+//                                                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/toString().
+        == "schemey:/third"
+      URI.parse("schemey:/first/second/").resolve("./").toString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+//                                        ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/resolve().
+//                                                      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/toString().
+        == "schemey:/first/second/"
+      URI.parse("schemey:/first/second").resolve("./").toString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+//                                       ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/resolve().
+//                                                     ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/toString().
+        == "schemey:/first/"
+      URI.parse("schemey:/first/second/").resolve("/some/other/path").toString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+//                                        ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/resolve().
+//                                                                    ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/toString().
+        == "schemey:/some/other/path"
+      URI.parse("schemey:/first/second/").resolve("otherscheme:/some/other/path").toString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+//                                        ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/resolve().
+//                                                                                ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/toString().
+        == "otherscheme:/some/other/path"
+      URI.parse("schemey:/first/leaf").resolve("./").toString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+//                                     ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/resolve().
+//                                                   ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/toString().
+        == "schemey:/first/"
+      URI.parse("schemey:/first/leaf").resolve("./second").toString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+//                                     ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/resolve().
+//                                                         ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/toString().
+        == "schemey:/first/second"
+      URI.parse("https://www.example.com").resolve("some/relative/path").toString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+//                                         ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/resolve().
+//                                                                       ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/toString().
+        == "https://www.example.com/some/relative/path"
+      URI.parse("https://www.example.com").resolve("some/relative/path").toString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+//                                         ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/resolve().
+//                                                                       ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/toString().
+        == "https://www.example.com/some/relative/path"
+      URI.parse("https://www.example.com").resolve("//foo.com/some/relative/path").toString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+//                                         ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/resolve().
+//                                                                                 ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/toString().
+        == "https://foo.com/some/relative/path"
+    }
+  }
+  

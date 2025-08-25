@@ -1,0 +1,1764 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// Prometheus is configured via command-line flags and a configuration file.
+  ///
+  /// While the command-line flags configure immutable system parameters
+  /// (such as storage locations, amount of data to keep on disk and in memory, etc.),
+  /// the configuration file defines everything related to scraping
+  /// [jobs and their instances](https://prometheus.io/docs/concepts/jobs_instances/),
+  /// as well as which
+  /// [rule files to load](https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/#configuring-rules).
+  ///
+  /// To view all available command-line flags, run `./prometheus -h`.
+  ///
+  /// Prometheus can reload its configuration at runtime.
+  /// If the new configuration is not well-formed, the changes will not be applied.
+  /// A configuration reload is triggered by sending a `SIGHUP` to the Prometheus process
+  /// or sending a HTTP POST request to the `/-/reload` endpoint
+  /// (when the `--web.enable-lifecycle` flag is enabled).
+  /// This will also reload any configured rule files.
+  ///
+  /// More details: <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#configuration-file>
+  @ModuleInfo { minPklVersion = "0.25.0" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleInfo#
+//              ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/minPklVersion.
+  open module io.prometheus.Configuration
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/
+  
+  extends "PrometheusObject.pkl"
+  
+  /// The global configuration specifies parameters that are valid in all other configuration contexts.
+  ///
+  /// They also serve as defaults for other configuration sections.
+  global: GlobalConfig?
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/global.
+//documentation
+//> The global configuration specifies parameters that are valid in all other configuration contexts.
+//> 
+//> They also serve as defaults for other configuration sections.
+//        ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/GlobalConfig#
+  
+  /// Alerting specifies settings related to the Alertmanager.
+  alerting: AlertingConfig?
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/alerting.
+//documentation
+//> Alerting specifies settings related to the Alertmanager.
+//          ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/AlertingConfig#
+  
+  /// A list of scrape configurations.
+  scrape_configs: Listing<ScrapeConfig>?
+//^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/scrape_configs.
+//documentation
+//> A list of scrape configurations.
+//                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                        ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ScrapeConfig#
+  
+  /// Settings related to the remote write feature.
+  remote_write: Listing<RemoteWriteConfig>?
+//^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/remote_write.
+//documentation
+//> Settings related to the remote write feature.
+//              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RemoteWriteConfig#
+  
+  /// Settings related to the remote read feature.
+  remote_read: Listing<RemoteReadConfig>?
+//^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/remote_read.
+//documentation
+//> Settings related to the remote read feature.
+//             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                     ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RemoteReadConfig#
+  
+  /// A list of globs. Rules and alerts are read from all matching files.
+  rule_files: Listing<String>?
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/rule_files.
+//documentation
+//> A list of globs. Rules and alerts are read from all matching files.
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  class GlobalConfig {
+//      ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/GlobalConfig#
+    /// How frequently to evaluate rules
+    ///
+    /// Default: `1.min`
+    evaluation_interval: Duration?
+//  ^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/GlobalConfig#evaluation_interval.
+//  documentation
+//  > How frequently to evaluate rules
+//  > 
+//  > Default: `1.min`
+//                       ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+  
+    /// The labels to add to any time series or alerts when communicating
+    /// with external systems (federation, remote storage, Alertmanager).
+    external_labels: Labels?
+//  ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/GlobalConfig#external_labels.
+//  documentation
+//  > The labels to add to any time series or alerts when communicating
+//  > with external systems (federation, remote storage, Alertmanager).
+//                   ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `PrometheusObject.pkl`/Labels#
+  
+    /// File to which PromQL queries are logged.
+    ///
+    /// Reloading the configuration will reopen the file.
+    query_log_file: String?
+//  ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/GlobalConfig#query_log_file.
+//  documentation
+//  > File to which PromQL queries are logged.
+//  > 
+//  > Reloading the configuration will reopen the file.
+//                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// How long until a scrape request times out.
+    ///
+    /// Default if omitted: `10.s`
+    scrape_timeout: Duration?
+//  ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/GlobalConfig#scrape_timeout.
+//  documentation
+//  > How long until a scrape request times out.
+//  > 
+//  > Default if omitted: `10.s`
+//                  ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+  
+    /// How frequently to evaluate rules.
+    ///
+    /// Default if omitted: `1.min`
+    scrape_interval: Duration?
+//  ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/GlobalConfig#scrape_interval.
+//  documentation
+//  > How frequently to evaluate rules.
+//  > 
+//  > Default if omitted: `1.min`
+//                   ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+  }
+  
+  /// A set of targets and parameters describing how to scrape them.
+  ///
+  /// In the general case, one scrape configuration specifies a single job.
+  /// In advanced configurations, this may change.
+  ///
+  /// Targets may be statically configured via [static_configs]
+  /// or dynamically discovered using one of the supported service-discovery mechanisms.
+  ///
+  /// Additionally, [relabel_configs] allow advanced modifications to any target and its labels before scraping.
+  ///
+  /// More details: <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scrape_config>
+  open class ScrapeConfig extends HttpClientConfig {
+//           ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ScrapeConfig#
+//           documentation
+//           > A set of targets and parameters describing how to scrape them.
+//           > 
+//           > In the general case, one scrape configuration specifies a single job.
+//           > In advanced configurations, this may change.
+//           > 
+//           > Targets may be statically configured via [`static_configs`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/io.prometheus/Configuration.pkl#L168,C3)
+//           > or dynamically discovered using one of the supported service-discovery mechanisms.
+//           > 
+//           > Additionally, [`relabel_configs`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/io.prometheus/Configuration.pkl#L171,C3) allow advanced modifications to any target and its labels before scraping.
+//           > 
+//           > More details: <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scrape_config>
+//                                ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#
+    /// The job name assigned to scraped metrics by default.
+    job_name: String
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ScrapeConfig#job_name.
+//  documentation
+//  > The job name assigned to scraped metrics by default.
+//            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// How frequently to scrape targets from this job.
+    ///
+    /// Default if omitted: [GlobalConfig.scrape_interval]
+    scrape_interval: Duration?
+//  ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ScrapeConfig#scrape_interval.
+//  documentation
+//  > How frequently to scrape targets from this job.
+//  > 
+//  > Default if omitted: [`GlobalConfig.scrape_interval`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/io.prometheus/Configuration.pkl#L83,C3)
+//                   ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+  
+    /// Per-scrape timeout when scraping this job.
+    ///
+    /// Default if omitted: [GlobalConfig.scrape_timeout]
+    scrape_timeout: Duration?
+//  ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ScrapeConfig#scrape_timeout.
+//  documentation
+//  > Per-scrape timeout when scraping this job.
+//  > 
+//  > Default if omitted: [`GlobalConfig.scrape_timeout`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/io.prometheus/Configuration.pkl#L78,C3)
+//                  ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+  
+    /// The HTTP resource path on which to fetch metrics from targets.
+    ///
+    /// Default if omitted: `"/metrics"`
+    metrics_path: String?
+//  ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ScrapeConfig#metrics_path.
+//  documentation
+//  > The HTTP resource path on which to fetch metrics from targets.
+//  > 
+//  > Default if omitted: `"/metrics"`
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Controls how Prometheus handles conflicts between labels that are
+    /// already present in scraped data and labels that Prometheus would attach
+    /// server-side ("job" and "instance" labels, manually configured target
+    /// labels, and labels generated by service discovery implementations).
+    ///
+    /// If [true], label conflicts are resolved by keeping label
+    /// values from the scraped data and ignoring the conflicting server-side labels.
+    ///
+    /// If [false], label conflicts are resolved by renaming conflicting labels
+    /// in the scraped data to "exported_<original-label>" (for example "exported_instance", "exported_job")
+    /// and then attaching server-side labels.
+    ///
+    /// Setting [honor_labels] to [true] is useful for use cases such as federation
+    /// and scraping the Pushgateway, where all labels specified in the target should be preserved.
+    ///
+    /// Note that any globally configured [GlobalConfig.external_labels] are unaffected by this setting.
+    /// In communication with external systems, they are always applied only
+    /// when a time series does not have a given label yet and are ignored otherwise.
+    ///
+    /// Default if omitted: [false]
+    honor_labels: Boolean?
+//  ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ScrapeConfig#honor_labels.
+//  documentation
+//  > Controls how Prometheus handles conflicts between labels that are
+//  > already present in scraped data and labels that Prometheus would attach
+//  > server-side ("job" and "instance" labels, manually configured target
+//  > labels, and labels generated by service discovery implementations).
+//  > 
+//  > If `true`, label conflicts are resolved by keeping label
+//  > values from the scraped data and ignoring the conflicting server-side labels.
+//  > 
+//  > If `false`, label conflicts are resolved by renaming conflicting labels
+//  > in the scraped data to "exported_<original-label>" (for example "exported_instance", "exported_job")
+//  > and then attaching server-side labels.
+//  > 
+//  > Setting [`honor_labels`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/io.prometheus/Configuration.pkl#L136,C3) to `true` is useful for use cases such as federation
+//  > and scraping the Pushgateway, where all labels specified in the target should be preserved.
+//  > 
+//  > Note that any globally configured [`GlobalConfig.external_labels`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/io.prometheus/Configuration.pkl#L68,C3) are unaffected by this setting.
+//  > In communication with external systems, they are always applied only
+//  > when a time series does not have a given label yet and are ignored otherwise.
+//  > 
+//  > Default if omitted: `false`
+//                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+    /// Controls whether Prometheus respects the timestamps present in scraped data.
+    ///
+    /// If [true], the timestamps of the metrics exposed by the target will be used.
+    ///
+    /// If [false], the timestamps of the metrics exposed by the target will be ignored.
+    ///
+    /// Default if omitted: [true]
+    honor_timestamps: Boolean?
+//  ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ScrapeConfig#honor_timestamps.
+//  documentation
+//  > Controls whether Prometheus respects the timestamps present in scraped data.
+//  > 
+//  > If `true`, the timestamps of the metrics exposed by the target will be used.
+//  > 
+//  > If `false`, the timestamps of the metrics exposed by the target will be ignored.
+//  > 
+//  > Default if omitted: `true`
+//                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+    /// Configures the protocol scheme used for requests.
+    ///
+    /// Default if omitted: `"http"`
+    scheme: Scheme?
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ScrapeConfig#scheme.
+//  documentation
+//  > Configures the protocol scheme used for requests.
+//  > 
+//  > Default if omitted: `"http"`
+//          ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `PrometheusObject.pkl`/Scheme#
+  
+    /// Optional HTTP URL parameters.
+    params: Mapping<String, Listing<String>>?
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ScrapeConfig#params.
+//  documentation
+//  > Optional HTTP URL parameters.
+//          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// List of HTTP service discovery configurations.
+    http_sd_configs: Listing<HttpSdConfig>?
+//  ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ScrapeConfig#http_sd_configs.
+//  documentation
+//  > List of HTTP service discovery configurations.
+//                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                           ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpSdConfig#
+  
+    /// List of Kubernetes service discovery configurations.
+    kubernetes_sd_configs: Listing<KubernetesSdConfig>?
+//  ^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ScrapeConfig#kubernetes_sd_configs.
+//  documentation
+//  > List of Kubernetes service discovery configurations.
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                 ^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/KubernetesSdConfig#
+  
+    /// List of file service discovery configurations.
+    file_sd_configs: Listing<FileSdConfig>?
+//  ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ScrapeConfig#file_sd_configs.
+//  documentation
+//  > List of file service discovery configurations.
+//                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                           ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/FileSdConfig#
+  
+    /// List of DNS-based service discovery configurations.
+    dns_sd_configs: Listing<DnsSdConfig>?
+//  ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ScrapeConfig#dns_sd_configs.
+//  documentation
+//  > List of DNS-based service discovery configurations.
+//                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                          ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/DnsSdConfig#
+  
+    /// List of labeled statically configured targets for this job.
+    static_configs: Listing<StaticConfig>?
+//  ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ScrapeConfig#static_configs.
+//  documentation
+//  > List of labeled statically configured targets for this job.
+//                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                          ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/StaticConfig#
+  
+    /// List of target relabel configurations.
+    relabel_configs: Listing<RelabelConfig>?
+//  ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ScrapeConfig#relabel_configs.
+//  documentation
+//  > List of target relabel configurations.
+//                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                           ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RelabelConfig#
+  
+    /// List of metric relabel configurations.
+    metric_relabel_configs: Listing<RelabelConfig>?
+//  ^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ScrapeConfig#metric_relabel_configs.
+//  documentation
+//  > List of metric relabel configurations.
+//                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                  ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RelabelConfig#
+  
+    /// Per-scrape limit on number of scraped samples that will be accepted.
+    ///
+    /// If more than this number of samples are present after metric relabeling,
+    /// the entire scrape will be treated as failed.
+    /// `0` means no limit.
+    ///
+    /// Default if omitted: `0`
+    sample_limit: UInt?
+//  ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ScrapeConfig#sample_limit.
+//  documentation
+//  > Per-scrape limit on number of scraped samples that will be accepted.
+//  > 
+//  > If more than this number of samples are present after metric relabeling,
+//  > the entire scrape will be treated as failed.
+//  > `0` means no limit.
+//  > 
+//  > Default if omitted: `0`
+//                ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+  
+    /// Per-scrape config limit on number of unique targets that will be accepted.
+    ///
+    /// If more than this number of targets are present after target relabeling,
+    /// Prometheus will mark the targets as failed without scraping them.
+    /// `0` means no limit.
+    ///
+    /// This is an experimental feature, this behaviour could change in the future.
+    ///
+    /// Default if omitted: `0`
+    target_limit: UInt?
+//  ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ScrapeConfig#target_limit.
+//  documentation
+//  > Per-scrape config limit on number of unique targets that will be accepted.
+//  > 
+//  > If more than this number of targets are present after target relabeling,
+//  > Prometheus will mark the targets as failed without scraping them.
+//  > `0` means no limit.
+//  > 
+//  > This is an experimental feature, this behaviour could change in the future.
+//  > 
+//  > Default if omitted: `0`
+//                ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+  }
+  
+  /// Allow retrieving scrape targets from Kubernetes' REST API
+  /// and always staying synchronized with the cluster state.
+  ///
+  /// One of the following role types can be configured to discover targets:
+  ///
+  /// More details: <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#kubernetes_sd_config>
+  class KubernetesSdConfig extends HttpClientConfig {
+//      ^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/KubernetesSdConfig#
+//      documentation
+//      > Allow retrieving scrape targets from Kubernetes' REST API
+//      > and always staying synchronized with the cluster state.
+//      > 
+//      > One of the following role types can be configured to discover targets:
+//      > 
+//      > More details: <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#kubernetes_sd_config>
+//                                 ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#
+    /// The Kubernetes role of entities that should be discovered.
+    role: KubernetesSdConfigRole
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/KubernetesSdConfig#role.
+//  documentation
+//  > The Kubernetes role of entities that should be discovered.
+//        ^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/KubernetesSdConfigRole#
+  
+    /// Optional namespace discovery.
+    ///
+    /// Default if omitted: all namespaces are used
+    namespaces: NamespaceSpec?
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/KubernetesSdConfig#namespaces.
+//  documentation
+//  > Optional namespace discovery.
+//  > 
+//  > Default if omitted: all namespaces are used
+//              ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/NamespaceSpec#
+  
+    /// The API server addresses.
+    ///
+    /// If left empty, Prometheus is assumed to run inside of the cluster
+    /// and will discover API servers automatically and use the pod's CA certificate
+    /// and bearer token file at /var/run/secrets/kubernetes.io/serviceaccount/.
+    api_server: String?
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/KubernetesSdConfig#api_server.
+//  documentation
+//  > The API server addresses.
+//  > 
+//  > If left empty, Prometheus is assumed to run inside of the cluster
+//  > and will discover API servers automatically and use the pod's CA certificate
+//  > and bearer token file at /var/run/secrets/kubernetes.io/serviceaccount/.
+//              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Optional label and field selectors to limit the discovery process to a subset of available resources.
+    ///
+    /// See <https://kubernetes.io/docs/concepts/overview/working-with-objects/field-selectors/>
+    /// and <https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/>
+    /// to learn more about the possible filters that can be used.
+    /// Endpoints role supports pod, service and endpoints selectors,
+    /// other roles only support selectors matching the role itself
+    /// (e.g. node role can only contain node selectors).
+    ///
+    /// Note: When making decision about using field/label selector,
+    /// make sure that this is the best approach -
+    /// it will prevent Prometheus from reusing single list/watch for all scrape configs.
+    /// This might result in a bigger load on the Kubernetes API,
+    /// because per each selector combination there will be additional LIST/WATCH.
+    /// On the other hand, if you just want to monitor small subset of pods in large cluster,
+    /// it's recommended to use selectors.
+    /// If selectors should be used or not depends on the particular situation.
+    selectors: Listing<KubernetesSdConfigSelector>?
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/KubernetesSdConfig#selectors.
+//  documentation
+//  > Optional label and field selectors to limit the discovery process to a subset of available resources.
+//  > 
+//  > See <https://kubernetes.io/docs/concepts/overview/working-with-objects/field-selectors/>
+//  > and <https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/>
+//  > to learn more about the possible filters that can be used.
+//  > Endpoints role supports pod, service and endpoints selectors,
+//  > other roles only support selectors matching the role itself
+//  > (e.g. node role can only contain node selectors).
+//  > 
+//  > Note: When making decision about using field/label selector,
+//  > make sure that this is the best approach -
+//  > it will prevent Prometheus from reusing single list/watch for all scrape configs.
+//  > This might result in a bigger load on the Kubernetes API,
+//  > because per each selector combination there will be additional LIST/WATCH.
+//  > On the other hand, if you just want to monitor small subset of pods in large cluster,
+//  > it's recommended to use selectors.
+//  > If selectors should be used or not depends on the particular situation.
+//             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                     ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/KubernetesSdConfigSelector#
+  
+    /// Optional metadata to attach to discovered targets.
+    /// If omitted, no additional metadata is attached.
+    attach_metadata: KubernetesSdConfigAttachMetadata(node?.implies(role is KubernetesSdConfigRoleWithNodeMetadata) || true)?
+//  ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/KubernetesSdConfig#attach_metadata.
+//  documentation
+//  > Optional metadata to attach to discovered targets.
+//  > If omitted, no additional metadata is attached.
+//                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/KubernetesSdConfigAttachMetadata#
+//                                                    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/KubernetesSdConfigAttachMetadata#node.
+//                                                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#implies().
+//                                                                  ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/KubernetesSdConfig#role.
+//                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/KubernetesSdConfigRoleWithNodeMetadata#
+  }
+  
+  typealias KubernetesSdConfigRole = *"pod"|"service"|"node"|"endpoints"|"endpointslice"|"ingress"
+//          ^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/KubernetesSdConfigRole#
+  
+  /// [KubernetesSdConfig.role] values that [KubernetesSdConfigAttachMetadata.node] may be enabled with
+  typealias KubernetesSdConfigRoleWithNodeMetadata = "pod"|"endpoints"|"endpointslice"
+//          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/KubernetesSdConfigRoleWithNodeMetadata#
+//          documentation
+//          > [`KubernetesSdConfig.role`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/io.prometheus/Configuration.pkl#L205,C3) values that [`KubernetesSdConfigAttachMetadata.node`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/io.prometheus/Configuration.pkl#L268,C3) may be enabled with
+  
+  class KubernetesSdConfigSelector {
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/KubernetesSdConfigSelector#
+    role: KubernetesSdConfigRole
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/KubernetesSdConfigSelector#role.
+//        ^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/KubernetesSdConfigRole#
+  
+    /// A `key=value` pair describing a Kubernetes resource label.
+    ///.
+    /// See <https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/>.
+    label: String?
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/KubernetesSdConfigSelector#label.
+//  documentation
+//  > A `key=value` pair describing a Kubernetes resource label.
+//  > .
+//  >  See <https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/>.
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// A `key=value` pair describing a Kubernetes field selector.
+    ///
+    /// See <https://kubernetes.io/docs/concepts/overview/working-with-objects/field-selectors/>.
+    field: String?
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/KubernetesSdConfigSelector#field.
+//  documentation
+//  > A `key=value` pair describing a Kubernetes field selector.
+//  > 
+//  > See <https://kubernetes.io/docs/concepts/overview/working-with-objects/field-selectors/>.
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  class KubernetesSdConfigAttachMetadata {
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/KubernetesSdConfigAttachMetadata#
+    /// Attaches node metadata to discovered targets.
+    /// Valid for roles: pod, endpoints, endpointslice.
+    /// When set to true, Prometheus must have permissions to get Nodes.
+    ///
+    /// Defaults to [false]
+    node: Boolean?
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/KubernetesSdConfigAttachMetadata#node.
+//  documentation
+//  > Attaches node metadata to discovered targets.
+//  > Valid for roles: pod, endpoints, endpointslice.
+//  > When set to true, Prometheus must have permissions to get Nodes.
+//  > 
+//  > Defaults to `false`
+//        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  }
+  
+  /// File-based service discovery provides a more generic way to configure static targets and
+  /// serves as an interface to plug in custom service discovery mechanisms.
+  ///
+  /// It reads a set of files containing a list of zero or more `<static_config>`s. Changes to all
+  /// defined files are detected via disk watches and applied immediately. Files may be provided in
+  /// YAML or JSON format. Only changes resulting in well-formed target groups are applied.
+  class FileSdConfig {
+//      ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/FileSdConfig#
+//      documentation
+//      > File-based service discovery provides a more generic way to configure static targets and
+//      > serves as an interface to plug in custom service discovery mechanisms.
+//      > 
+//      > It reads a set of files containing a list of zero or more `<static_config>`s. Changes to all
+//      > defined files are detected via disk watches and applied immediately. Files may be provided in
+//      > YAML or JSON format. Only changes resulting in well-formed target groups are applied.
+    /// Patterns for files from which target groups are extracted.
+    ///
+    /// Files may end with `.json`, `.yaml` or `.yml`. The last path segment may contain a single `*`
+    /// that matches any character sequence, e.g. `my/path/tg_*.json`.
+    files: Listing<String(endsWith(Regex(#"\.(json|ya?ml)"#)))>
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/FileSdConfig#files.
+//  documentation
+//  > Patterns for files from which target groups are extracted.
+//  > 
+//  > Files may end with `.json`, `.yaml` or `.yml`. The last path segment may contain a single `*`
+//  > that matches any character sequence, e.g. `my/path/tg_*.json`.
+//         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                        ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#endsWith().
+//                                 ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+  
+    /// Refresh interval to re-read the files.
+    ///
+    /// Defaults to `5.m`.
+    refresh_interval: Duration?
+//  ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/FileSdConfig#refresh_interval.
+//  documentation
+//  > Refresh interval to re-read the files.
+//  > 
+//  > Defaults to `5.m`.
+//                    ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+  }
+  
+  /// DNS-based service discovery configuration allows specifying a set of DNS domain names which
+  /// are periodically queried to discover a list of targets.
+  ///
+  /// <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#dns_sd_config>
+  class DnsSdConfig {
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/DnsSdConfig#
+//      documentation
+//      > DNS-based service discovery configuration allows specifying a set of DNS domain names which
+//      > are periodically queried to discover a list of targets.
+//      > 
+//      > <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#dns_sd_config>
+    /// A list of DNS domain names to be queried.
+    names: Listing<String>
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/DnsSdConfig#names.
+//  documentation
+//  > A list of DNS domain names to be queried.
+//         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// The type of DNS query to perform. One of SRV, A, AAAA, MX or NS.
+    ///
+    /// Default if unspecified: `"SRV"`
+    type: ("SRV"|"A"|"AAAA"|"MX"|"NS")?
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/DnsSdConfig#type.
+//  documentation
+//  > The type of DNS query to perform. One of SRV, A, AAAA, MX or NS.
+//  > 
+//  > Default if unspecified: `"SRV"`
+  
+    /// The port number used if the query type is not SRV.
+    port: UInt16?((type != null && type != "SRV").implies(this != null))
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/DnsSdConfig#port.
+//  documentation
+//  > The port number used if the query type is not SRV.
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt16#
+//                 ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/DnsSdConfig#type.
+//                                 ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/DnsSdConfig#type.
+//                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#implies().
+  
+    /// The time after which the provided names are refreshed.
+    ///
+    /// Default if unspecified: `30.s`
+    refresh_internal: Duration?
+//  ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/DnsSdConfig#refresh_internal.
+//  documentation
+//  > The time after which the provided names are refreshed.
+//  > 
+//  > Default if unspecified: `30.s`
+//                    ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+  }
+  
+  class NamespaceSpec {
+//      ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/NamespaceSpec#
+    names: Listing<String>
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/NamespaceSpec#names.
+//         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  /// HTTP-based service discovery provides a more generic way to configure static targets
+  /// and serves as an interface to plug in custom service discovery mechanisms.
+  ///
+  /// It fetches targets from an HTTP endpoint containing a list of zero or more <static_config>s.
+  /// The target must reply with an HTTP 200 response. The HTTP header Content-Type must be application/json,
+  /// and the body must be valid JSON.
+  ///
+  /// <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#http_sd_config>
+  class HttpSdConfig extends HttpClientConfig {
+//      ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpSdConfig#
+//      documentation
+//      > HTTP-based service discovery provides a more generic way to configure static targets
+//      > and serves as an interface to plug in custom service discovery mechanisms.
+//      > 
+//      > It fetches targets from an HTTP endpoint containing a list of zero or more <static_config>s.
+//      > The target must reply with an HTTP 200 response. The HTTP header Content-Type must be application/json,
+//      > and the body must be valid JSON.
+//      > 
+//      > <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#http_sd_config>
+//                           ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#
+    /// URL from which the targets are fetched.
+    url: String
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpSdConfig#url.
+//  documentation
+//  > URL from which the targets are fetched.
+//       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Refresh interval to re-query the endpoint.
+    ///
+    /// Defaults to `60.s`
+    refresh_interval: Duration?
+//  ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpSdConfig#refresh_interval.
+//  documentation
+//  > Refresh interval to re-query the endpoint.
+//  > 
+//  > Defaults to `60.s`
+//                    ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+  }
+  
+  /// Relabeling is a powerful tool to dynamically rewrite the label set of a target before it gets scraped.
+  ///
+  /// Multiple relabeling steps can be configured per scrape configuration.
+  /// They are applied to the label set of each target in order of their appearance in the configuration file.
+  ///
+  /// Initially, aside from the configured per-target labels,
+  /// a target's `job` label is set to the `job_name` value of the respective scrape configuration.
+  /// The `__address__` label is set to the `<host>:<port>` address of the target.
+  /// After relabeling, the `instance` label is set to the value of `__address__`
+  /// by default if it was not set during relabeling.
+  /// The `__scheme__` and `__metrics_path__` labels
+  /// are set to the scheme and metrics path of the target respectively.
+  /// The `__param_<name>` label is set to the value of the first passed URL parameter called `<name>`.
+  ///
+  /// Additional labels prefixed with `__meta_` may be available during the relabeling phase.
+  /// They are set by the service discovery mechanism that provided the target and vary between mechanisms.
+  ///
+  /// Labels starting with `__` will be removed from the label set after target relabeling is completed.
+  ///
+  /// If a relabeling step needs to store a label value only temporarily
+  /// (as the input to a subsequent relabeling step), use the `__tmp` label name prefix.
+  /// This prefix is guaranteed to never be used by Prometheus itself.
+  ///
+  /// More details: <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config>
+  class RelabelConfig {
+//      ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RelabelConfig#
+//      documentation
+//      > Relabeling is a powerful tool to dynamically rewrite the label set of a target before it gets scraped.
+//      > 
+//      > Multiple relabeling steps can be configured per scrape configuration.
+//      > They are applied to the label set of each target in order of their appearance in the configuration file.
+//      > 
+//      > Initially, aside from the configured per-target labels,
+//      > a target's `job` label is set to the `job_name` value of the respective scrape configuration.
+//      > The `__address__` label is set to the `<host>:<port>` address of the target.
+//      > After relabeling, the `instance` label is set to the value of `__address__`
+//      > by default if it was not set during relabeling.
+//      > The `__scheme__` and `__metrics_path__` labels
+//      > are set to the scheme and metrics path of the target respectively.
+//      > The `__param_<name>` label is set to the value of the first passed URL parameter called `<name>`.
+//      > 
+//      > Additional labels prefixed with `__meta_` may be available during the relabeling phase.
+//      > They are set by the service discovery mechanism that provided the target and vary between mechanisms.
+//      > 
+//      > Labels starting with `__` will be removed from the label set after target relabeling is completed.
+//      > 
+//      > If a relabeling step needs to store a label value only temporarily
+//      > (as the input to a subsequent relabeling step), use the `__tmp` label name prefix.
+//      > This prefix is guaranteed to never be used by Prometheus itself.
+//      > 
+//      > More details: <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config>
+    /// The source labels select values from existing labels.
+    ///
+    /// Their content is concatenated using the configured separator
+    /// and matched against the configured regular expression for the replace, keep, and drop actions.
+    source_labels: Listing<String>?
+//  ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RelabelConfig#source_labels.
+//  documentation
+//  > The source labels select values from existing labels.
+//  > 
+//  > Their content is concatenated using the configured separator
+//  > and matched against the configured regular expression for the replace, keep, and drop actions.
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Separator placed between concatenated source label values.
+    separator: String?
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RelabelConfig#separator.
+//  documentation
+//  > Separator placed between concatenated source label values.
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Action to perform based on regex matching.
+    action: RelabelAction?
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RelabelConfig#action.
+//  documentation
+//  > Action to perform based on regex matching.
+//          ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RelabelAction#
+  
+    /// Regular expression against which the extracted value is matched.
+    @SourceCode { language = "RegExp" }
+//   ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/SourceCode#
+//                ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RelabelConfig#language.
+    regex: String(isRegex)?
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RelabelConfig#regex.
+//  documentation
+//  > Regular expression against which the extracted value is matched.
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#isRegex.
+  
+    /// Label to which the resulting value is written in a replace action.
+    ///
+    /// Mandatory for replace actions.
+    /// Regex capture groups are available.
+    target_label: String?
+//  ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RelabelConfig#target_label.
+//  documentation
+//  > Label to which the resulting value is written in a replace action.
+//  > 
+//  > Mandatory for replace actions.
+//  > Regex capture groups are available.
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Modulus to take of the hash of the source label values.
+    modulus: Int?
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RelabelConfig#modulus.
+//  documentation
+//  > Modulus to take of the hash of the source label values.
+//           ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+  
+    /// Replacement value against which a regex replace is performed if the regular expression matches.
+    ///
+    /// Regex capture groups are available.
+    replacement: String?
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RelabelConfig#replacement.
+//  documentation
+//  > Replacement value against which a regex replace is performed if the regular expression matches.
+//  > 
+//  > Regex capture groups are available.
+//               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  /// Which relabel action to perform.
+  ///
+  /// * `"replace"`: Match `regex` against the concatenated `source_labels`.
+  ///   Then, set `target_label` to `replacement`, with match group references
+  ///   (`${1}`, `${2}`, ...) in `replacement` substituted by their value.
+  ///   If `regex` does not match, no replacement takes place.
+  /// * `"lowercase"`: Maps the concatenated source_labels to their lower case.
+  /// * `"uppercase"`: Maps the concatenated source_labels to their upper case.
+  /// * `"keep"`: Drop targets for which `regex` does not match the concatenated `source_labels`.
+  /// * `"drop"`: Drop targets for which `regex` matches the concatenated `source_labels`.
+  /// * `"keepequal"`: Drop targets for which the concatenated source_labels do not match target_label.
+  /// * `"dropequal"`: Drop targets for which the concatenated source_labels do match target_label.
+  /// * `"hashmod"`: Set `target_label` to the `modulus` of a hash of the concatenated `source_labels`.
+  /// * `"labelmap"`: Match `regex` against all label names.
+  ///   Then copy the values of the matching labels to label names given by `replacement`
+  ///   with match group references (`${1}`, `${2}`, ...) in `replacement` substituted by their value.
+  /// * `"labeldrop"`: Match `regex` against all label names.
+  ///   Any label that matches will be removed from the set of labels.
+  /// * `"labelkeep"`: Match `regex` against all label names.
+  typealias RelabelAction = "replace"|"lowercase"|"uppercase"|"keep"|"drop"|"keepequal"|"dropequal"|"hashmod"|"labelmap"|"labeldrop"|"labelkeep"
+//          ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RelabelAction#
+//          documentation
+//          > Which relabel action to perform.
+//          > 
+//          > * `"replace"`: Match `regex` against the concatenated `source_labels`.
+//          >   Then, set `target_label` to `replacement`, with match group references
+//          >   (`${1}`, `${2}`, ...) in `replacement` substituted by their value.
+//          >   If `regex` does not match, no replacement takes place.
+//          > * `"lowercase"`: Maps the concatenated source_labels to their lower case.
+//          > * `"uppercase"`: Maps the concatenated source_labels to their upper case.
+//          > * `"keep"`: Drop targets for which `regex` does not match the concatenated `source_labels`.
+//          > * `"drop"`: Drop targets for which `regex` matches the concatenated `source_labels`.
+//          > * `"keepequal"`: Drop targets for which the concatenated source_labels do not match target_label.
+//          > * `"dropequal"`: Drop targets for which the concatenated source_labels do match target_label.
+//          > * `"hashmod"`: Set `target_label` to the `modulus` of a hash of the concatenated `source_labels`.
+//          > * `"labelmap"`: Match `regex` against all label names.
+//          >   Then copy the values of the matching labels to label names given by `replacement`
+//          >   with match group references (`${1}`, `${2}`, ...) in `replacement` substituted by their value.
+//          > * `"labeldrop"`: Match `regex` against all label names.
+//          >   Any label that matches will be removed from the set of labels.
+//          > * `"labelkeep"`: Match `regex` against all label names.
+  
+  /// Allows specifying a list of targets and a common label set for them.
+  ///
+  /// It is the canonical way to specify static targets in a scrape configuration.
+  ///
+  /// More details: <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#static_config>
+  class StaticConfig {
+//      ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/StaticConfig#
+//      documentation
+//      > Allows specifying a list of targets and a common label set for them.
+//      > 
+//      > It is the canonical way to specify static targets in a scrape configuration.
+//      > 
+//      > More details: <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#static_config>
+    /// The targets specified by the static config.
+    targets: Listing<String>?
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/StaticConfig#targets.
+//  documentation
+//  > The targets specified by the static config.
+//           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Labels assigned to all metrics scraped from the targets.
+    labels: Labels?
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/StaticConfig#labels.
+//  documentation
+//  > Labels assigned to all metrics scraped from the targets.
+//          ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `PrometheusObject.pkl`/Labels#
+  }
+  
+  /// [write_relabel_configs] is relabeling applied to samples
+  /// before sending them to the remote endpoint.
+  ///
+  /// Write relabeling is applied after external labels.
+  /// This could be used to limit which samples are sent.
+  ///
+  /// There is a small demo (/documentation/examples/remote_storage) of how to use this functionality.
+  ///
+  /// More detail: <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#remote_write>
+  class RemoteWriteConfig extends HttpClientConfig {
+//      ^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RemoteWriteConfig#
+//      documentation
+//      > [`write_relabel_configs`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/io.prometheus/Configuration.pkl#L448,C3) is relabeling applied to samples
+//      > before sending them to the remote endpoint.
+//      > 
+//      > Write relabeling is applied after external labels.
+//      > This could be used to limit which samples are sent.
+//      > 
+//      > There is a small demo (/documentation/examples/remote_storage) of how to use this functionality.
+//      > 
+//      > More detail: <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#remote_write>
+//                                ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#
+    /// The URL of the endpoint to send samples to.
+    url: String
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RemoteWriteConfig#url.
+//  documentation
+//  > The URL of the endpoint to send samples to.
+//       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Timeout for requests to the remote write endpoint.
+    ///
+    /// Default if omitted: `30.s`
+    remote_timeout: Duration?
+//  ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RemoteWriteConfig#remote_timeout.
+//  documentation
+//  > Timeout for requests to the remote write endpoint.
+//  > 
+//  > Default if omitted: `30.s`
+//                  ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+  
+    /// Custom HTTP headers to be sent along with each remote write request.
+    ///
+    /// Be aware that headers that are set by Prometheus itself can't be overwritten.
+    headers: Labels?
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RemoteWriteConfig#headers.
+//  documentation
+//  > Custom HTTP headers to be sent along with each remote write request.
+//  > 
+//  > Be aware that headers that are set by Prometheus itself can't be overwritten.
+//           ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `PrometheusObject.pkl`/Labels#
+  
+    /// List of remote write relabel configurations.
+    write_relabel_configs: Listing<RelabelConfig>?
+//  ^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RemoteWriteConfig#write_relabel_configs.
+//  documentation
+//  > List of remote write relabel configurations.
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                 ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RelabelConfig#
+  
+    /// Name of the remote write config, which if specified must be unique among remote write configs.
+    ///
+    /// The name will be used in metrics and logging in place of a generated value
+    /// to help users distinguish between remote write configs.
+    name: String?
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RemoteWriteConfig#name.
+//  documentation
+//  > Name of the remote write config, which if specified must be unique among remote write configs.
+//  > 
+//  > The name will be used in metrics and logging in place of a generated value
+//  > to help users distinguish between remote write configs.
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    send_exemplars: Boolean?
+//  ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RemoteWriteConfig#send_exemplars.
+//                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+    send_native_histograms: Boolean?
+//  ^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RemoteWriteConfig#send_native_histograms.
+//                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+    protobuf_message: ("prometheus.WriteRequest"|"io.prometheus.write.v2.Request")?
+//  ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RemoteWriteConfig#protobuf_message.
+  
+    /// Configures the queue used to write to remote storage.
+    queue_config: QueueConfig?
+//  ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RemoteWriteConfig#queue_config.
+//  documentation
+//  > Configures the queue used to write to remote storage.
+//                ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/QueueConfig#
+  
+    /// Configures the sending of series metadata to remote storage.
+    ///
+    /// Metadata configuration is subject to change at any point or be removed in future releases.
+    metadata_config: MetadataConfig?
+//  ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RemoteWriteConfig#metadata_config.
+//  documentation
+//  > Configures the sending of series metadata to remote storage.
+//  > 
+//  > Metadata configuration is subject to change at any point or be removed in future releases.
+//                   ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/MetadataConfig#
+  
+    local _self = this
+//        ^^^^^ definition local _self_470
+  
+    /// Configures AWS's Signature Verification 4 signing process.
+    ///
+    /// Signature Verification signs requests.
+    /// To use the default credentials from the AWS SDK, use `sigv4 {}`.
+    sigv4: Sigv4Config?(atMostOneSet(List(this, _self.basic_auth, _self.authorization, _self.oauth2)))
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RemoteWriteConfig#sigv4.
+//  documentation
+//  > Configures AWS's Signature Verification 4 signing process.
+//  > 
+//  > Signature Verification signs requests.
+//  > To use the default credentials from the AWS SDK, use `sigv4 {}`.
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/Sigv4Config#
+//                      ^^^^^^^^^^^^ reference local atMostOneSet_797
+//                                   ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                              ^^^^^ reference local _self_470
+//                                                    ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#basic_auth.
+//                                                                ^^^^^ reference local _self_470
+//                                                                      ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#authorization.
+//                                                                                     ^^^^^ reference local _self_470
+//                                                                                           ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#oauth2.
+  }
+  
+  class MetadataConfig {
+//      ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/MetadataConfig#
+    /// Whether metric metadata is sent to remote storage or not.
+    ///
+    /// Default if omitted: [true]
+    send: Boolean?
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/MetadataConfig#send.
+//  documentation
+//  > Whether metric metadata is sent to remote storage or not.
+//  > 
+//  > Default if omitted: `true`
+//        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+    /// How frequently metric metadata is sent to remote storage.
+    ///
+    /// Default if omitted: `1.min`
+    send_interval: Duration?
+//  ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/MetadataConfig#send_interval.
+//  documentation
+//  > How frequently metric metadata is sent to remote storage.
+//  > 
+//  > Default if omitted: `1.min`
+//                 ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+  
+    /// Maximum number of samples per send.
+    ///
+    /// Default if omitted: `2000`
+    max_samples_per_send: Int?
+//  ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/MetadataConfig#max_samples_per_send.
+//  documentation
+//  > Maximum number of samples per send.
+//  > 
+//  > Default if omitted: `2000`
+//                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+  }
+  
+  class QueueConfig {
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/QueueConfig#
+    /// Number of samples to buffer per shard before we block reading of more samples from the WAL.
+    ///
+    /// It is recommended to have enough capacity in each shard to buffer several requests
+    /// to keep throughput up while processing occasional slow remote requests.
+    ///
+    /// Default if omitted: `2500`
+    capacity: Int?
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/QueueConfig#capacity.
+//  documentation
+//  > Number of samples to buffer per shard before we block reading of more samples from the WAL.
+//  > 
+//  > It is recommended to have enough capacity in each shard to buffer several requests
+//  > to keep throughput up while processing occasional slow remote requests.
+//  > 
+//  > Default if omitted: `2500`
+//            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+  
+    /// Maximum number of shards, i.e. amount of concurrency.
+    ///
+    /// Default if omitted: `200`
+    max_shards: Int?
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/QueueConfig#max_shards.
+//  documentation
+//  > Maximum number of shards, i.e. amount of concurrency.
+//  > 
+//  > Default if omitted: `200`
+//              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+  
+    /// Minimum number of shards, i.e. amount of concurrency.
+    ///
+    /// Default if omitted: `1`
+    min_shards: Int?
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/QueueConfig#min_shards.
+//  documentation
+//  > Minimum number of shards, i.e. amount of concurrency.
+//  > 
+//  > Default if omitted: `1`
+//              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+  
+    /// Maximum number of samples per send.
+    ///
+    /// Default if omitted: `500`
+    max_samples_per_send: Int?
+//  ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/QueueConfig#max_samples_per_send.
+//  documentation
+//  > Maximum number of samples per send.
+//  > 
+//  > Default if omitted: `500`
+//                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+  
+    /// Maximum time a sample will wait in buffer.
+    ///
+    /// Default if omitted: `5.s`
+    batch_send_deadline: Duration?
+//  ^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/QueueConfig#batch_send_deadline.
+//  documentation
+//  > Maximum time a sample will wait in buffer.
+//  > 
+//  > Default if omitted: `5.s`
+//                       ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+  
+    /// Initial retry delay. Gets doubled for every retry.
+    ///
+    /// Default if omitted: `30.ms`
+    min_backoff: Duration?
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/QueueConfig#min_backoff.
+//  documentation
+//  > Initial retry delay. Gets doubled for every retry.
+//  > 
+//  > Default if omitted: `30.ms`
+//               ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+  
+    /// Maximum retry delay.
+    ///
+    /// Default if omitted: `100.ms`
+    max_backoff: Duration?
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/QueueConfig#max_backoff.
+//  documentation
+//  > Maximum retry delay.
+//  > 
+//  > Default if omitted: `100.ms`
+//               ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+  
+    /// Consider HTTP 429 responses retry-able.
+    ///
+    /// Default if omitted: [false]
+    retry_on_http_429: Boolean?
+//  ^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/QueueConfig#retry_on_http_429.
+//  documentation
+//  > Consider HTTP 429 responses retry-able.
+//  > 
+//  > Default if omitted: `false`
+//                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+    /// Samples older than the limit will be dropped.
+    ///
+    /// Default if omitted: do not drop old samples
+    sample_age_limit: Duration?
+//  ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/QueueConfig#sample_age_limit.
+//  documentation
+//  > Samples older than the limit will be dropped.
+//  > 
+//  > Default if omitted: do not drop old samples
+//                    ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+  }
+  
+  class AlertingConfig {
+//      ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/AlertingConfig#
+    alertmanagers: Listing<AlertManagerConfig>?
+//  ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/AlertingConfig#alertmanagers.
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                         ^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/AlertManagerConfig#
+  }
+  
+  /// Specifies Alertmanager instances the Prometheus server sends alerts to.
+  ///
+  /// Also provides parameters to configure how to communicate with these Alertmanagers.
+  ///
+  /// Alertmanagers may be statically configured via the [static_configs] parameter
+  /// or dynamically discovered using one of the supported service-discovery mechanisms.
+  ///
+  /// Additionally, [relabel_configs] allow selecting Alertmanagers
+  /// from discovered entities and provide advanced modifications to the used API path,
+  /// which is exposed through the `__alerts_path__` label.
+  ///
+  /// More details: <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#alertmanager_config>
+  class AlertManagerConfig extends HttpClientConfig {
+//      ^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/AlertManagerConfig#
+//      documentation
+//      > Specifies Alertmanager instances the Prometheus server sends alerts to.
+//      > 
+//      > Also provides parameters to configure how to communicate with these Alertmanagers.
+//      > 
+//      > Alertmanagers may be statically configured via the [`static_configs`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/io.prometheus/Configuration.pkl#L592,C3) parameter
+//      > or dynamically discovered using one of the supported service-discovery mechanisms.
+//      > 
+//      > Additionally, [`relabel_configs`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/io.prometheus/Configuration.pkl#L595,C3) allow selecting Alertmanagers
+//      > from discovered entities and provide advanced modifications to the used API path,
+//      > which is exposed through the `__alerts_path__` label.
+//      > 
+//      > More details: <https://prometheus.io/docs/prometheus/latest/configuration/configuration/#alertmanager_config>
+//                                 ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#
+    /// The api version of Alertmanager.
+    ///
+    /// Default if omitted: `"v1"`
+    api_version: String?
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/AlertManagerConfig#api_version.
+//  documentation
+//  > The api version of Alertmanager.
+//  > 
+//  > Default if omitted: `"v1"`
+//               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Prefix for the HTTP path alerts are pushed to.
+    path_prefix: String?
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/AlertManagerConfig#path_prefix.
+//  documentation
+//  > Prefix for the HTTP path alerts are pushed to.
+//               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Configures the protocol scheme used for requests.
+    scheme: Scheme?
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/AlertManagerConfig#scheme.
+//  documentation
+//  > Configures the protocol scheme used for requests.
+//          ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `PrometheusObject.pkl`/Scheme#
+  
+    /// Per-target Alertmanager timeout when pushing alerts.
+    ///
+    /// Default if omitted: `10.s`
+    timeout: Duration?
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/AlertManagerConfig#timeout.
+//  documentation
+//  > Per-target Alertmanager timeout when pushing alerts.
+//  > 
+//  > Default if omitted: `10.s`
+//           ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+  
+    /// List of HTTP service discovery configurations.
+    http_sd_configs: Listing<HttpSdConfig>?
+//  ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/AlertManagerConfig#http_sd_configs.
+//  documentation
+//  > List of HTTP service discovery configurations.
+//                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                           ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpSdConfig#
+  
+    /// List of Kubernetes service discovery configurations.
+    kubernetes_sd_configs: Listing<KubernetesSdConfig>?
+//  ^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/AlertManagerConfig#kubernetes_sd_configs.
+//  documentation
+//  > List of Kubernetes service discovery configurations.
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                 ^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/KubernetesSdConfig#
+  
+    /// List of file service discovery configurations.
+    file_sd_configs: Listing<FileSdConfig>?
+//  ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/AlertManagerConfig#file_sd_configs.
+//  documentation
+//  > List of file service discovery configurations.
+//                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                           ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/FileSdConfig#
+  
+    /// List of DNS-based service discovery configurations.
+    dns_sd_configs: Listing<DnsSdConfig>?
+//  ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/AlertManagerConfig#dns_sd_configs.
+//  documentation
+//  > List of DNS-based service discovery configurations.
+//                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                          ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/DnsSdConfig#
+  
+    /// List of labeled statically configured Alertmanagers.
+    static_configs: Listing<StaticConfig>?
+//  ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/AlertManagerConfig#static_configs.
+//  documentation
+//  > List of labeled statically configured Alertmanagers.
+//                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                          ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/StaticConfig#
+  
+    /// List of Alertmanager relabel configurations.
+    relabel_configs: Listing<RelabelConfig>?
+//  ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/AlertManagerConfig#relabel_configs.
+//  documentation
+//  > List of Alertmanager relabel configurations.
+//                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                           ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RelabelConfig#
+  
+    /// List of alert relabel configurations.
+    alert_relabel_configs: Listing<RelabelConfig>?
+//  ^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/AlertManagerConfig#alert_relabel_configs.
+//  documentation
+//  > List of alert relabel configurations.
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                 ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RelabelConfig#
+  
+    local _self = this
+//        ^^^^^ definition local _self_600
+  
+    /// Configures AWS's Signature Verification 4 signing process.
+    ///
+    /// Signature Verification signs requests.
+    /// To use the default credentials from the AWS SDK, use `sigv4 {}`.
+    sigv4: Sigv4Config?(atMostOneSet(List(this, _self.basic_auth, _self.authorization, _self.oauth2)))
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/AlertManagerConfig#sigv4.
+//  documentation
+//  > Configures AWS's Signature Verification 4 signing process.
+//  > 
+//  > Signature Verification signs requests.
+//  > To use the default credentials from the AWS SDK, use `sigv4 {}`.
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/Sigv4Config#
+//                      ^^^^^^^^^^^^ reference local atMostOneSet_797
+//                                   ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                              ^^^^^ reference local _self_600
+//                                                    ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#basic_auth.
+//                                                                ^^^^^ reference local _self_600
+//                                                                      ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#authorization.
+//                                                                                     ^^^^^ reference local _self_600
+//                                                                                           ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#oauth2.
+  }
+  
+  class RemoteReadConfig extends HttpClientConfig {
+//      ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RemoteReadConfig#
+//                               ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#
+    /// The URL of the endpoint to query from.
+    url: String
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RemoteReadConfig#url.
+//  documentation
+//  > The URL of the endpoint to query from.
+//       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Name of the remote read config, which if specified must be unique among remote read configs.
+    ///
+    /// The name will be used in metrics and logging in place of a generated value
+    /// to help users distinguish between remote read configs.
+    name: String?
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RemoteReadConfig#name.
+//  documentation
+//  > Name of the remote read config, which if specified must be unique among remote read configs.
+//  > 
+//  > The name will be used in metrics and logging in place of a generated value
+//  > to help users distinguish between remote read configs.
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// An optional list of equality matchers which have to be present
+    /// in a selector to query the remote read endpoint.
+    required_matchers: Labels?
+//  ^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RemoteReadConfig#required_matchers.
+//  documentation
+//  > An optional list of equality matchers which have to be present
+//  > in a selector to query the remote read endpoint.
+//                     ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `PrometheusObject.pkl`/Labels#
+  
+    /// Timeout for requests to the remote read endpoint.
+    ///
+    /// Default if omitted: `1.min`
+    remote_timeout: Duration?
+//  ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RemoteReadConfig#remote_timeout.
+//  documentation
+//  > Timeout for requests to the remote read endpoint.
+//  > 
+//  > Default if omitted: `1.min`
+//                  ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+  
+    /// Whether reads should be made for queries for time ranges
+    /// that the local storage should have complete data for.
+    read_recent: Boolean?
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/RemoteReadConfig#read_recent.
+//  documentation
+//  > Whether reads should be made for queries for time ranges
+//  > that the local storage should have complete data for.
+//               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  }
+  
+  class Sigv4Config {
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/Sigv4Config#
+    /// The AWS region (if blank, the region from the default credentials chain is used).
+    region: String?
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/Sigv4Config#region.
+//  documentation
+//  > The AWS region (if blank, the region from the default credentials chain is used).
+//          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// The AWS API access key.
+    access_key: String?
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/Sigv4Config#access_key.
+//  documentation
+//  > The AWS API access key.
+//              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// The AWS API secret key.
+    secret_key: String?
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/Sigv4Config#secret_key.
+//  documentation
+//  > The AWS API secret key.
+//              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// AWS profile used to authenticate.
+    profile: String?
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/Sigv4Config#profile.
+//  documentation
+//  > AWS profile used to authenticate.
+//           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// AWS Role ARN, an alternative to using AWS API Keys.
+    role_arn: String?
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/Sigv4Config#role_arn.
+//  documentation
+//  > AWS Role ARN, an alternative to using AWS API Keys.
+//            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  abstract class ProxyConfig {
+//               ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ProxyConfig#
+    /// Optional proxy URL.
+    proxy_url: String?
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ProxyConfig#proxy_url.
+//  documentation
+//  > Optional proxy URL.
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Comma-separated string that can contain IPs, CIDR notation, domain names
+    /// that should be excluded from proxying. IP and domain names can
+    /// contain port numbers.
+    no_proxy: String?
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ProxyConfig#no_proxy.
+//  documentation
+//  > Comma-separated string that can contain IPs, CIDR notation, domain names
+//  > that should be excluded from proxying. IP and domain names can
+//  > contain port numbers.
+//            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Use proxy URL indicated by environment variables
+    /// (HTTP_PROXY, https_proxy, HTTPs_PROXY, https_proxy, and no_proxy)
+    proxy_from_environment: Boolean?
+//  ^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ProxyConfig#proxy_from_environment.
+//  documentation
+//  > Use proxy URL indicated by environment variables
+//  > (HTTP_PROXY, https_proxy, HTTPs_PROXY, https_proxy, and no_proxy)
+//                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+    /// Specifies headers to send to proxies during CONNECT requests.
+    proxy_connect_haeder: Mapping<String, Listing<String>>?
+//  ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ProxyConfig#proxy_connect_haeder.
+//  documentation
+//  > Specifies headers to send to proxies during CONNECT requests.
+//                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  abstract class HttpClientConfig extends ProxyConfig {
+//               ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#
+//                                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ProxyConfig#
+    /// Sets the `Authorization` header on every request
+    /// with the configured username and password.
+    basic_auth: BasicAuth?(atMostOneSet(List(this, authorization, oauth2, bearer_token, bearer_token_file)))
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#basic_auth.
+//  documentation
+//  > Sets the `Authorization` header on every request
+//  > with the configured username and password.
+//              ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/BasicAuth#
+//                         ^^^^^^^^^^^^ reference local atMostOneSet_797
+//                                      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                                 ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#authorization.
+//                                                                ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#oauth2.
+//                                                                        ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#bearer_token.
+//                                                                                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#bearer_token_file.
+  
+    /// Sets the `Authorization` header on every scrape request with the configured bearer token.
+    ///
+    /// Mutually exclusive with [bearer_token_file].
+    @Deprecated { message = "Deprecated in favor of [Authorization.credentials]" }
+//   ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Deprecated#
+//                ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#message.
+    bearer_token: String?
+//  ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#bearer_token.
+//  documentation
+//  > Sets the `Authorization` header on every scrape request with the configured bearer token.
+//  > 
+//  > Mutually exclusive with [`bearer_token_file`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/io.prometheus/Configuration.pkl#L683,C3).
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Sets the `Authorization` header on every scrape request
+    /// with the bearer token read from the configured file.
+    ///
+    /// Mutually exclusive with [bearer_token].
+    @Deprecated { message = "Deprecated in favor of [Authorization.credentials_file]" }
+//   ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Deprecated#
+//                ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#message.
+    bearer_token_file: String?
+//  ^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#bearer_token_file.
+//  documentation
+//  > Sets the `Authorization` header on every scrape request
+//  > with the bearer token read from the configured file.
+//  > 
+//  > Mutually exclusive with [`bearer_token`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/io.prometheus/Configuration.pkl#L676,C3).
+//                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Sets the `Authorization` header on every request with the configured credentials.
+    authorization: Authorization?
+//  ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#authorization.
+//  documentation
+//  > Sets the `Authorization` header on every request with the configured credentials.
+//                 ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/Authorization#
+  
+    /// Optional OAuth 2.0 configuration.
+    /// Cannot be used at the same time as basic_auth or authorization.
+    oauth2: OAuth2?
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#oauth2.
+//  documentation
+//  > Optional OAuth 2.0 configuration.
+//  > Cannot be used at the same time as basic_auth or authorization.
+//          ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/OAuth2#
+  
+    /// Configures the remote read request's TLS settings.
+    tls_config: TLSConfig?
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#tls_config.
+//  documentation
+//  > Configures the remote read request's TLS settings.
+//              ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/TLSConfig#
+  
+    /// Configure whether scrape requests follow HTTP 3xx redirects.
+    ///
+    /// Defaults to [true]
+    follow_redirects: Boolean?
+//  ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#follow_redirects.
+//  documentation
+//  > Configure whether scrape requests follow HTTP 3xx redirects.
+//  > 
+//  > Defaults to `true`
+//                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+    /// Whether to enable HTTP2.
+    ///
+    /// Defaults to [true]
+    enable_http2: Boolean?
+//  ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/HttpClientConfig#enable_http2.
+//  documentation
+//  > Whether to enable HTTP2.
+//  > 
+//  > Defaults to `true`
+//                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  }
+  
+  class BasicAuth {
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/BasicAuth#
+    username: String(username_file == null)?
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/BasicAuth#username.
+//            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                   ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/BasicAuth#username_file.
+  
+    username_file: String?
+//  ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/BasicAuth#username_file.
+//                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Mutually exclusive with [password_file].
+    password: String(password_file == null)?
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/BasicAuth#password.
+//  documentation
+//  > Mutually exclusive with [`password_file`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/io.prometheus/Configuration.pkl#L715,C3).
+//            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                   ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/BasicAuth#password_file.
+  
+    /// Mutually exclusive with [password].
+    password_file: String?
+//  ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/BasicAuth#password_file.
+//  documentation
+//  > Mutually exclusive with [`password`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/io.prometheus/Configuration.pkl#L712,C3).
+//                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  class Authorization {
+//      ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/Authorization#
+    /// Sets the authentication type.
+    ///
+    /// Defaults to `"Bearer"`
+    type: String?
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/Authorization#type.
+//  documentation
+//  > Sets the authentication type.
+//  > 
+//  > Defaults to `"Bearer"`
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Sets the credentals.
+    credentials: String(credentials_file == null)?
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/Authorization#credentials.
+//  documentation
+//  > Sets the credentals.
+//               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                      ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/Authorization#credentials_file.
+  
+    /// Sets the credentals to read from the configured file.
+    credentials_file: String?
+//  ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/Authorization#credentials_file.
+//  documentation
+//  > Sets the credentals to read from the configured file.
+//                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  class OAuth2 extends ProxyConfig {
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/OAuth2#
+//                     ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/ProxyConfig#
+    /// Sets the OAuth2 client ID.
+    client_id: String
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/OAuth2#client_id.
+//  documentation
+//  > Sets the OAuth2 client ID.
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Sets the OAuth2 client secret.
+    client_secret: String(client_secret_file == null)?
+//  ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/OAuth2#client_secret.
+//  documentation
+//  > Sets the OAuth2 client secret.
+//                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                        ^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/OAuth2#client_secret_file.
+  
+    /// Read the OAuth2 client secret from a file.
+    client_secret_file: String?
+//  ^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/OAuth2#client_secret_file.
+//  documentation
+//  > Read the OAuth2 client secret from a file.
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Scopes for the token request.
+    scopes: Listing<String>?
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/OAuth2#scopes.
+//  documentation
+//  > Scopes for the token request.
+//          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// The URL to fetch the token from
+    token_url: String
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/OAuth2#token_url.
+//  documentation
+//  > The URL to fetch the token from
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Optional parameters to append to the token URL.
+    endpoint_params: Mapping<String, String>
+//  ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/OAuth2#endpoint_params.
+//  documentation
+//  > Optional parameters to append to the token URL.
+//                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Configures the token request's TLS settings
+    tls_config: TLSConfig?
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/OAuth2#tls_config.
+//  documentation
+//  > Configures the token request's TLS settings
+//              ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/TLSConfig#
+  }
+  
+  /// Allows configuring TLS connections.
+  class TLSConfig {
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/TLSConfig#
+//      documentation
+//      > Allows configuring TLS connections.
+    /// CA certificate to validate API server certificate with.
+    ca: String(ca_file == null)?
+//  ^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/TLSConfig#ca.
+//  documentation
+//  > CA certificate to validate API server certificate with.
+//      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//             ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/TLSConfig#ca_file.
+  
+    /// Certificate for client cert authentication to the server.
+    cert: String(cert_file == null)?
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/TLSConfig#cert.
+//  documentation
+//  > Certificate for client cert authentication to the server.
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//               ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/TLSConfig#cert_file.
+  
+    /// Key for client cert authentication to the server.
+    key: String(key_file == null)?
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/TLSConfig#key.
+//  documentation
+//  > Key for client cert authentication to the server.
+//       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//              ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/TLSConfig#key_file.
+  
+    /// CA certificate file to validate API server certificate with.
+    ca_file: String?
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/TLSConfig#ca_file.
+//  documentation
+//  > CA certificate file to validate API server certificate with.
+//           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Certificate file for client cert authentication to the server.
+    cert_file: String?
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/TLSConfig#cert_file.
+//  documentation
+//  > Certificate file for client cert authentication to the server.
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Key file for client cert authentication to the server.
+    key_file: String?
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/TLSConfig#key_file.
+//  documentation
+//  > Key file for client cert authentication to the server.
+//            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// ServerName extension to indicate the name of the server.
+    ///
+    /// <https://tools.ietf.org/html/rfc4366#section-3.1>
+    server_name: String?
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/TLSConfig#server_name.
+//  documentation
+//  > ServerName extension to indicate the name of the server.
+//  > 
+//  > <https://tools.ietf.org/html/rfc4366#section-3.1>
+//               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Disable validation of the server certificate.
+    insecure_skip_verify: Boolean?
+//  ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/TLSConfig#insecure_skip_verify.
+//  documentation
+//  > Disable validation of the server certificate.
+//                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+    /// Minimum acceptable TLS version
+    ///
+    /// If unset, Prometheus will use Go default minimum version, which is TLS 1.2.
+    /// See MinVersion in <https://pkg.go.dev/crypto/tls#Config>.
+    min_version: TLSVersion?
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/TLSConfig#min_version.
+//  documentation
+//  > Minimum acceptable TLS version
+//  > 
+//  > If unset, Prometheus will use Go default minimum version, which is TLS 1.2.
+//  > See MinVersion in <https://pkg.go.dev/crypto/tls#Config>.
+//               ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/TLSVersion#
+  
+    /// Maximum acceptable TLS version.
+    ///
+    /// If unset, Prometheus will use Go default maximum version, which is TLS 1.3.
+    /// See MaxVersion in <https://pkg.go.dev/crypto/tls#Config>.
+    max_version: TLSVersion?
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/TLSConfig#max_version.
+//  documentation
+//  > Maximum acceptable TLS version.
+//  > 
+//  > If unset, Prometheus will use Go default maximum version, which is TLS 1.3.
+//  > See MaxVersion in <https://pkg.go.dev/crypto/tls#Config>.
+//               ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/TLSVersion#
+  }
+  
+  typealias TLSVersion = "TLS10"|"TLS11"|"TLS12"|"TLS13"
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `Configuration.pkl`/TLSVersion#
+  
+  /// Tells if only one of the values is not null.
+  local const function atMostOneSet(values: List<Any>): Boolean =
+//                     ^^^^^^^^^^^^ definition local atMostOneSet_797
+//                     documentation
+//                     > Tells if only one of the values is not null.
+//                                  ^^^^^^ definition local values_798
+//                                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                               ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+    values.filterNonNull().length <= 1
+//  ^^^^^^ reference local values_798
+//         ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#filterNonNull().
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#length.
+  

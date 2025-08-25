@@ -1,0 +1,86 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// This [OpenTelemetry input plugin](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/opentelemetry)
+  /// receives traces, metrics and logs from OpenTelemetry clients and agents via gRPC.
+  @ModuleInfo { minPklVersion = "0.25.0" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleInfo#
+//              ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/OpenTelemetry.pkl`/minPklVersion.
+  module com.influxdata.telegraf.plugins.inputs.OpenTelemetry
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/OpenTelemetry.pkl`/
+  
+  extends "Input.pkl"
+  
+  /// Address and port to listen on.
+  ///
+  /// Default if unset: `0.0.0.0:4317`
+  service_address: String?
+//^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/OpenTelemetry.pkl`/service_address.
+//documentation
+//> Address and port to listen on.
+//> 
+//> Default if unset: `0.0.0.0:4317`
+//                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// New connection timeout
+  ///
+  /// Default if unset: 5s
+  timeout: Duration?
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/OpenTelemetry.pkl`/timeout.
+//documentation
+//> New connection timeout
+//> 
+//> Default if unset: 5s
+//         ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+  
+  /// Supports: "prometheus-v1", "prometheus-v2"
+  ///
+  /// Default: "prometheus-v1"
+  metrics_schema: (*"prometheus-v1"|"prometheus-v2")?
+//^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/OpenTelemetry.pkl`/metrics_schema.
+//documentation
+//> Supports: "prometheus-v1", "prometheus-v2"
+//> 
+//> Default: "prometheus-v1"
+  
+  /// Optional TLS Config.
+  ///
+  /// Set one or more allowed client CA certificate file names to
+  /// enable mutually authenticated TLS connections
+  tls_allowed_cacerts: Listing<String>?
+//^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/OpenTelemetry.pkl`/tls_allowed_cacerts.
+//documentation
+//> Optional TLS Config.
+//> 
+//> Set one or more allowed client CA certificate file names to
+//> enable mutually authenticated TLS connections
+//                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// Add service certificate
+  tls_cert: String?
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/OpenTelemetry.pkl`/tls_cert.
+//documentation
+//> Add service certificate
+//          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// Add service key
+  tls_key: String?
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/OpenTelemetry.pkl`/tls_key.
+//documentation
+//> Add service key
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  

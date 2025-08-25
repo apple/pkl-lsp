@@ -1,0 +1,143 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// Tools for constructing pipelines and one-liners in Pkl.
+  ///
+  /// Example usage:
+  ///
+  /// ```
+  /// # Count characters, like `wc`
+  /// echo 'fourteen chars' | pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/text.pkl -x 'pipe.length'
+  ///
+  /// # Get Pkl filenames as a JSON array (multiple options for JSON-encoding)
+  /// ls | pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/text.pkl -x 'pipe.split("\n").filter((n) -> n.endsWith("pkl")) |> asJSON'
+  /// ls | pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/text.pkl -x 'asJson(pipe.split("\n").filter((n) -> n.endsWith("pkl")))'
+  /// ls | pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/text.pkl -x 'pipe.split("\n").filter((n) -> n.endsWith("pkl")) |> formatted' -f json
+  ///
+  /// # Get all filenames grouped by extension
+  /// ls | pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/text.pkl -x 'asYaml(pipe.split("\n").groupBy((element) -> element.split(".").last))'
+  ///
+  /// # Years since the Unix epoch
+  /// date +"%s" | pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/text.pkl -x 'pipe.trimEnd().toInt().toDuration("s").toUnit("d") / 365'
+  /// ```
+  @ModuleInfo { minPklVersion = "0.24.0" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleInfo#
+//              ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/minPklVersion.
+  open module pkl.pipe.text
+//^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/
+  
+  hidden input: Resource(!this.text.trimEnd().isEmpty) = read("file:/dev/stdin")
+//       ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/input.
+//              ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Resource#
+//                             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Resource#text.
+//                                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#trimEnd().
+//                                            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#isEmpty.
+  
+  hidden pipe: String = input.text.trimEnd()
+//       ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/pipe.
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                      ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/input.
+//                            ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Resource#text.
+//                                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#trimEnd().
+  hidden stdin: String = pipe
+//       ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/stdin.
+//              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/pipe.
+  
+  typealias RenderFunc = (Any) -> (String)
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/RenderFunc#
+//                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  hidden yamlRenderer: YamlRenderer = new { isStream = true }
+//       ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/yamlRenderer.
+//                     ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/YamlRenderer#
+//                                          ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/isStream.
+  function asYaml(value): String = yamlRenderer.renderValue(value)
+//         ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/asYaml().
+//                ^^^^^ definition local value_46
+//                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                 ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/yamlRenderer.
+//                                              ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/YamlRenderer#renderValue().
+//                                                          ^^^^^ reference local value_46
+  hidden asYaml: RenderFunc = (value) -> asYaml(value)
+//       ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/asYaml.
+//               ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/RenderFunc#
+//                             ^^^^^ definition local value_47
+//                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/asYaml().
+//                                              ^^^^^ reference local value_47
+  hidden toYaml: RenderFunc = asYaml
+//       ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/toYaml.
+//               ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/RenderFunc#
+//                            ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/asYaml.
+  hidden asYAML: RenderFunc = asYaml
+//       ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/asYAML.
+//               ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/RenderFunc#
+//                            ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/asYaml.
+  hidden toYAML: RenderFunc = asYaml
+//       ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/toYAML.
+//               ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/RenderFunc#
+//                            ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/asYaml.
+  
+  hidden jsonRenderer: JsonRenderer = new {}
+//       ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/jsonRenderer.
+//                     ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/JsonRenderer#
+  function asJson(value): String = jsonRenderer.renderValue(value)
+//         ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/asJson().
+//                ^^^^^ definition local value_53
+//                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                 ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/jsonRenderer.
+//                                              ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/JsonRenderer#renderValue().
+//                                                          ^^^^^ reference local value_53
+  hidden asJson: RenderFunc = (value) -> asJson(value)
+//       ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/asJson.
+//               ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/RenderFunc#
+//                             ^^^^^ definition local value_54
+//                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/asJson().
+//                                              ^^^^^ reference local value_54
+  hidden toJson: RenderFunc = asJson
+//       ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/toJson.
+//               ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/RenderFunc#
+//                            ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/asJson.
+  hidden asJSON: RenderFunc = asJson
+//       ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/asJSON.
+//               ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/RenderFunc#
+//                            ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/asJson.
+  hidden toJSON: RenderFunc = asJson
+//       ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/toJSON.
+//               ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/RenderFunc#
+//                            ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/asJson.
+  
+  hidden formatted = (value) -> output.renderer.renderValue(value)
+//       ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/formatted.
+//                    ^^^^^ definition local value_59
+//                              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/output.
+//                                     ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/FileOutput#renderer.
+//                                              ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ValueRenderer#renderValue().
+//                                                          ^^^^^ reference local value_59
+  
+  output {
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/output.
+    value = throw("""
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/value.
+      Error: no expression passed to pkl.pipe.text. Use `--expression` or `-x` to pass a Pkl expression.
+  
+      Usage: pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/text.pkl -x <pkl expression>
+  
+      Example:
+      echo 'fourteen chars' | pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/text.pkl -x 'pipe.length'
+    """)
+  }
+  

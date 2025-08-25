@@ -1,0 +1,271 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module org.apache.spark.utils
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `utils.pkl`/
+  
+  /// Match indexed positions in a property.
+  ///
+  /// For example matches `.[0-9]` or `.[Foo]` or `.{Foo}`
+  // language=regexp
+  indexRegex: Regex = Regex(#"""
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `utils.pkl`/indexRegex.
+//documentation
+//> Match indexed positions in a property.
+//> 
+//> For example matches `.`0-9`` or `.`Foo`` or `.{Foo}`
+//            ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex#
+//                    ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+    (?x)          # turn on extended mode
+    \.            # '.' literal
+    (?:
+    \{            # '{' literal
+    ([^}]+)       # capture: any character except for '}'
+    }             # followed by '}'
+    |             # OR
+    \[            # '[' literal
+    ([^]]+)       # capture: any character except for ']'
+    ]             # folowed by ']'
+    )
+    """#)
+  
+  // https://spark.apache.org/docs/latest/configuration.html#spark-properties
+  function convertDuration(dur: Duration): String =
+//         ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `utils.pkl`/convertDuration().
+//                         ^^^ definition local dur_37
+//                              ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+//                                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    if (dur.unit == "ns" || dur.unit == "us") convertDuration(dur.toUnit("ms"))
+//      ^^^ reference local dur_37
+//          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#unit.
+//                          ^^^ reference local dur_37
+//                              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#unit.
+//                                            ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `utils.pkl`/convertDuration().
+//                                                            ^^^ reference local dur_37
+//                                                                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#toUnit().
+    else "\(dur.value)\(dur.unit)"
+//          ^^^ reference local dur_37
+//              ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#value.
+//                      ^^^ reference local dur_37
+//                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#unit.
+  
+  function convertValue(propName: String, propValue: Any): Any =
+//         ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `utils.pkl`/convertValue().
+//                      ^^^^^^^^ definition local propName_41
+//                                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                        ^^^^^^^^^ definition local propValue_41
+//                                                   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+    if (propValue is Duration)
+//      ^^^^^^^^^ reference local propValue_41
+//                   ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+      convertDuration(propValue)
+//    ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `utils.pkl`/convertDuration().
+//                    ^^^^^^^^^ reference local propValue_41
+    else if (propValue is DataSize)
+//           ^^^^^^^^^ reference local propValue_41
+//                        ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/DataSize#
+      if (propName.contains(".kubernetes."))
+//        ^^^^^^^^ reference local propName_41
+//                 ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#contains().
+        // taken from io.k8s.K8sObject
+        let (unit = propValue.unit)
+//           ^^^^ definition local unit_47
+//                  ^^^^^^^^^ reference local propValue_41
+//                            ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/DataSize#unit.
+          let (k8sUnit =
+//             ^^^^^^^ definition local k8sUnit_48
+            if (unit.length == 3) unit[0].toUpperCase() + unit[1]
+//              ^^^^ reference local unit_47
+//                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+//                                ^^^^ reference local unit_47
+//                                                        ^^^^ reference local unit_47
+            else if (unit.length == 2) unit[0].toUpperCase()
+//                   ^^^^ reference local unit_47
+//                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+//                                     ^^^^ reference local unit_47
+            else ""
+          )
+            "\(propValue.value)\(k8sUnit)"
+//             ^^^^^^^^^ reference local propValue_41
+//                       ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/DataSize#value.
+//                               ^^^^^^^ reference local k8sUnit_48
+      else
+        // https://spark.apache.org/docs/latest/configuration.html#spark-properties
+        let (bin = propValue.toBinaryUnit()) "\(bin.value)\(bin.unit.take(1))"
+//           ^^^ definition local bin_56
+//                 ^^^^^^^^^ reference local propValue_41
+//                           ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/DataSize#toBinaryUnit().
+//                                              ^^^ reference local bin_56
+//                                                  ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/DataSize#value.
+//                                                          ^^^ reference local bin_56
+//                                                              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/DataSize#unit.
+//                                                                   ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#take().
+    else propValue
+//       ^^^^^^^^^ reference local propValue_41
+  
+  /// Converts a property to its expanded set of properties.
+  function convertProperty(propName: String, propValue: Any): Map =
+//         ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `utils.pkl`/convertProperty().
+//         documentation
+//         > Converts a property to its expanded set of properties.
+//                         ^^^^^^^^ definition local propName_60
+//                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                           ^^^^^^^^^ definition local propValue_60
+//                                                      ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                                            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+    if (propValue is Mapping)
+//      ^^^^^^^^^ reference local propValue_60
+//                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+      convertIndexedProperty(propName, propValue)
+//    ^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `utils.pkl`/convertIndexedProperty().
+//                           ^^^^^^^^ reference local propName_60
+//                                     ^^^^^^^^^ reference local propValue_60
+    else
+      Map(propName, convertValue(propName, propValue))
+//    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//        ^^^^^^^^ reference local propName_60
+//                  ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `utils.pkl`/convertValue().
+//                               ^^^^^^^^ reference local propName_60
+//                                         ^^^^^^^^^ reference local propValue_60
+  
+  /// Flatten a deeply nested Mapping into a Map where the keys becomes a list
+  ///
+  /// For example:
+  ///
+  ///     new Mapping { ["foo"] = new Mapping { ["bar"] = 100 } }
+  ///
+  /// Becomes:
+  ///
+  ///     Map(List(".foo", ".bar"), 100)
+  ///
+  function flattenMapKeys(value: Mapping<String, unknown>, path: List<String>): Map<List<String>, unknown> =
+//         ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `utils.pkl`/flattenMapKeys().
+//         documentation
+//         > Flatten a deeply nested Mapping into a Map where the keys becomes a list
+//         > 
+//         > For example:
+//         > 
+//         >     new Mapping { `"foo"` = new Mapping { `"bar"` = 100 } }
+//         > 
+//         > Becomes:
+//         > 
+//         >     Map(List(".foo", ".bar"), 100)
+//                        ^^^^^ definition local value_76
+//                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                         ^^^^ definition local path_76
+//                                                               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                                                                                  ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    value
+//  ^^^^^ reference local value_76
+      .toMap()
+//     ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+      .flatMap((key, _value) ->
+//     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#flatMap().
+//              ^^^ definition local key_79
+//                   ^^^^^^ definition local _value_79
+        if (_value is Mapping) flattenMapKeys(_value, path.add("." + key))
+//          ^^^^^^ reference local _value_79
+//                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                             ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `utils.pkl`/flattenMapKeys().
+//                                            ^^^^^^ reference local _value_79
+//                                                    ^^^^ reference local path_76
+//                                                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                                                                   ^^^ reference local key_79
+        else Map(path.add("." + key), _value)
+//           ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//               ^^^^ reference local path_76
+//                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                              ^^^ reference local key_79
+//                                    ^^^^^^ reference local _value_79
+      )
+  
+  /// Performs substituting of indexed positions with the corresponding Mapping keys.
+  ///
+  /// Given prop `foo.bar.[baz].biz.[buz]` and value `new { [1] { [11] = "one" }; [2] { [22] = "two" } }`,
+  /// produces:
+  ///
+  ///     Map(
+  ///       "foo.bar.1.biz.11", "one",
+  ///       "foo.bar.2.biz.22", "two"
+  ///     )
+  function convertIndexedProperty(propName: String, propValue: Mapping): Map =
+//         ^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `utils.pkl`/convertIndexedProperty().
+//         documentation
+//         > Performs substituting of indexed positions with the corresponding Mapping keys.
+//         > 
+//         > Given prop `foo.bar.`baz`.biz.`buz`` and value `new { `1` { `11` = "one" }; `2` { `22` = "two" } }`,
+//         > produces:
+//         > 
+//         >     Map(
+//         >       "foo.bar.1.biz.11", "one",
+//         >       "foo.bar.2.biz.22", "two"
+//         >     )
+//                                ^^^^^^^^ definition local propName_93
+//                                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                  ^^^^^^^^^ definition local propValue_93
+//                                                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+    let (propNameParts = propName.split(indexRegex))
+//       ^^^^^^^^^^^^^ definition local propNameParts_94
+//                       ^^^^^^^^ reference local propName_93
+//                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+//                                      ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `utils.pkl`/indexRegex.
+    let (flattenedMap = flattenMapKeys(propValue, List()))
+//       ^^^^^^^^^^^^ definition local flattenedMap_95
+//                      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `utils.pkl`/flattenMapKeys().
+//                                     ^^^^^^^^^ reference local propValue_93
+//                                                ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+      flattenedMap.map((key, value) ->
+//    ^^^^^^^^^^^^ reference local flattenedMap_95
+//                 ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#map().
+//                      ^^^ definition local key_96
+//                           ^^^^^ definition local value_96
+        let (convertedProperty = propNameParts
+//           ^^^^^^^^^^^^^^^^^ definition local convertedProperty_97
+//                               ^^^^^^^^^^^^^ reference local propNameParts_94
+            .zip(key)
+//           ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#zip().
+//               ^^^ reference local key_96
+            .flatMap((pair) -> List(pair.first, pair.second))
+//           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#flatMap().
+//                    ^^^^ definition local pair_99
+//                             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                  ^^^^ reference local pair_99
+//                                       ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#first.
+//                                              ^^^^ reference local pair_99
+//                                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#second.
+            .join("")
+//           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+          + if (propNameParts.length > key.length) propNameParts.last else ""
+//              ^^^^^^^^^^^^^ reference local propNameParts_94
+//                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#length.
+//                                     ^^^ reference local key_96
+//                                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#length.
+//                                                 ^^^^^^^^^^^^^ reference local propNameParts_94
+//                                                               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#last.
+        )
+          Pair(convertedProperty, convertValue(convertedProperty, value))
+//        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+//             ^^^^^^^^^^^^^^^^^ reference local convertedProperty_97
+//                                ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `utils.pkl`/convertValue().
+//                                             ^^^^^^^^^^^^^^^^^ reference local convertedProperty_97
+//                                                                ^^^^^ reference local value_96
+      )
+  

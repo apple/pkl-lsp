@@ -1,0 +1,670 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  abstract module pkl.experimental.syntax.ExpressionNode
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+  
+  extends "Node.pkl"
+  
+  import "ExpressionNode.pkl"
+  import "ObjectBodyNode.pkl"
+  import "IdentifierNode.pkl"
+  import "TypeNode.pkl"
+  import "operators.pkl"
+  
+  typealias CompoundExpressionNode = BinaryOperatorExpressionNode|PrefixOperatorExpressionNode|IfElseExpressionNode
+//          ^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/CompoundExpressionNode#
+//                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#
+//                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/PrefixOperatorExpressionNode#
+//                                                                                             ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/IfElseExpressionNode#
+  
+  class BinaryOperatorExpressionNode extends ExpressionNode {
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#
+//                                           ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+    local precedences: Mapping<operators.BinaryOperator, Int> = new {
+//        ^^^^^^^^^^^ definition local precedences_29
+//                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                       ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/BinaryOperator#
+//                                                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+      [operators.MULTIPLY] = 1
+//     ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/
+//               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/MULTIPLY.
+      [operators.DIVIDE] = 1
+//     ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/
+//               ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/DIVIDE.
+      [operators.INTEGER_DIVIDE] = 1
+//     ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/
+//               ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/INTEGER_DIVIDE.
+      [operators.MODULO] = 1
+//     ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/
+//               ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/MODULO.
+      [operators.PLUS] = 2
+//     ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/
+//               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/PLUS.
+      [operators.BINARY_MINUS] = 2
+//     ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/
+//               ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/BINARY_MINUS.
+      [operators.GREATER_THAN] = 3
+//     ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/
+//               ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/GREATER_THAN.
+      [operators.LESS_THAN] = 3
+//     ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/
+//               ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/LESS_THAN.
+      [operators.GREATER_THAN_OR_EQUALS] = 3
+//     ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/
+//               ^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/GREATER_THAN_OR_EQUALS.
+      [operators.LESS_THAN_OR_EQUALS] = 3
+//     ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/
+//               ^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/LESS_THAN_OR_EQUALS.
+      [operators.IS] = 4
+//     ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/
+//               ^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/IS.
+      [operators.AS] = 4
+//     ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/
+//               ^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/AS.
+      [operators.EQUALS] = 5
+//     ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/
+//               ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/EQUALS.
+      [operators.NOT_EQUALS] = 5
+//     ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/
+//               ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/NOT_EQUALS.
+      [operators.AND] = 6
+//     ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/
+//               ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/AND.
+      [operators.OR] = 7
+//     ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/
+//               ^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/OR.
+      [operators.PIPE] = 8
+//     ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/
+//               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/PIPE.
+    }
+  
+    local function hasHigherPrecedence(a: String, b: String) = precedences[a] >= precedences[b]
+//                 ^^^^^^^^^^^^^^^^^^^ definition local hasHigherPrecedence_49
+//                                     ^ definition local a_49
+//                                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                ^ definition local b_49
+//                                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                             ^^^^^^^^^^^ reference local precedences_29
+//                                                                         ^ reference local a_49
+//                                                                               ^^^^^^^^^^^ reference local precedences_29
+//                                                                                           ^ reference local b_49
+  
+    operator: operators.BinaryOperator
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#operator.
+//                      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/BinaryOperator#
+  
+    /// The right hand side of the expression
+    lhs: ExpressionNode
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#lhs.
+//  documentation
+//  > The right hand side of the expression
+//       ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+  
+    /// The left hand side of the expression
+    rhs: ExpressionNode
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#rhs.
+//  documentation
+//  > The left hand side of the expression
+//       ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+  
+    local function renderChild(child: ExpressionNode, currentIndent: String) =
+//                 ^^^^^^^^^^^ definition local renderChild_59
+//                             ^^^^^ definition local child_59
+//                                    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+//                                                    ^^^^^^^^^^^^^ definition local currentIndent_59
+//                                                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      let (rendered = child.render(currentIndent))
+//         ^^^^^^^^ definition local rendered_60
+//                    ^^^^^ reference local child_59
+//                          ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                                 ^^^^^^^^^^^^^ reference local currentIndent_59
+        if (
+          !(child is CompoundExpressionNode)
+//          ^^^^^ reference local child_59
+//                   ^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/CompoundExpressionNode#
+          || child is BinaryOperatorExpressionNode && hasHigherPrecedence(operator, child.operator)
+//           ^^^^^ reference local child_59
+//                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#
+//                                                    ^^^^^^^^^^^^^^^^^^^ reference local hasHigherPrecedence_49
+//                                                                        ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#operator.
+//                                                                                  ^^^^^ reference local child_59
+//                                                                                        ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#operator.
+        )
+          rendered
+//        ^^^^^^^^ reference local rendered_60
+        else
+          parenthesize(rendered)
+//        ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/parenthesize().
+//                     ^^^^^^^^ reference local rendered_60
+  
+    function render(currentIndent: String) =
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#render().
+//                  ^^^^^^^^^^^^^ definition local currentIndent_69
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      "\(renderChild(lhs, currentIndent)) \(operator) \(renderChild(rhs, currentIndent))"
+//       ^^^^^^^^^^^ reference local renderChild_59
+//                   ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#lhs.
+//                        ^^^^^^^^^^^^^ reference local currentIndent_69
+//                                          ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#operator.
+//                                                      ^^^^^^^^^^^ reference local renderChild_59
+//                                                                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#rhs.
+//                                                                       ^^^^^^^^^^^^^ reference local currentIndent_69
+  }
+  
+  class BuiltInKeywordExpressionNode extends ExpressionNode {
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BuiltInKeywordExpressionNode#
+//                                           ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+    keyword: "this"|"outer"|"module"
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BuiltInKeywordExpressionNode#keyword.
+  
+    function render(_) = keyword
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BuiltInKeywordExpressionNode#render().
+//                       ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BuiltInKeywordExpressionNode#keyword.
+  }
+  
+  /// Unary operators in the prefix position: "!" and "-".
+  class PrefixOperatorExpressionNode extends ExpressionNode {
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/PrefixOperatorExpressionNode#
+//      documentation
+//      > Unary operators in the prefix position: "!" and "-".
+//                                           ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+    operator: operators.PrefixOperator
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/PrefixOperatorExpressionNode#operator.
+//                      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/PrefixOperator#
+  
+    expression: ExpressionNode
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/PrefixOperatorExpressionNode#expression.
+//              ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+  
+    function render(currentIndent: String) =
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/PrefixOperatorExpressionNode#render().
+//                  ^^^^^^^^^^^^^ definition local currentIndent_85
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      let (body = expression.render(currentIndent))
+//         ^^^^ definition local body_86
+//                ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/PrefixOperatorExpressionNode#expression.
+//                           ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                                  ^^^^^^^^^^^^^ reference local currentIndent_85
+        if (expression is CompoundExpressionNode) operator + parenthesize(body)
+//          ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/PrefixOperatorExpressionNode#expression.
+//                        ^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/CompoundExpressionNode#
+//                                                ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/PrefixOperatorExpressionNode#operator.
+//                                                           ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/parenthesize().
+//                                                                        ^^^^ reference local body_86
+        else operator + body
+//           ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/PrefixOperatorExpressionNode#operator.
+//                      ^^^^ reference local body_86
+  }
+  
+  /// Unary operators in the postfix position: "!!"
+  class PostfixOperatorExpressionNode extends ExpressionNode {
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/PostfixOperatorExpressionNode#
+//      documentation
+//      > Unary operators in the postfix position: "!!"
+//                                            ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+    operator: operators.PostfixOperator
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/PostfixOperatorExpressionNode#operator.
+//                      ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/PostfixOperator#
+  
+    expression: ExpressionNode
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/PostfixOperatorExpressionNode#expression.
+//              ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+  
+    function render(currentIndent: String) =
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/PostfixOperatorExpressionNode#render().
+//                  ^^^^^^^^^^^^^ definition local currentIndent_97
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      let (body = expression.render(currentIndent))
+//         ^^^^ definition local body_98
+//                ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/PostfixOperatorExpressionNode#expression.
+//                           ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                                  ^^^^^^^^^^^^^ reference local currentIndent_97
+        if (expression is CompoundExpressionNode) parenthesize(body) + operator
+//          ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/PostfixOperatorExpressionNode#expression.
+//                        ^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/CompoundExpressionNode#
+//                                                ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/parenthesize().
+//                                                             ^^^^ reference local body_98
+//                                                                     ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/PostfixOperatorExpressionNode#operator.
+        else body + operator
+//           ^^^^ reference local body_98
+//                  ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/PostfixOperatorExpressionNode#operator.
+  }
+  
+  class MemberAccessExpressionNode extends ExpressionNode {
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#
+//                                         ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+    identifier: IdentifierNode
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#identifier.
+//              ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `IdentifierNode.pkl`/
+  
+    arguments: Listing<ExpressionNode>?
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#arguments.
+//             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                     ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+  
+    function renderArguments(currentIndent: String) =
+//           ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#renderArguments().
+//                           ^^^^^^^^^^^^^ definition local currentIndent_108
+//                                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      if (arguments == null) ""
+//        ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#arguments.
+      else
+        let (args = arguments.toList().map((arg) -> arg.render(currentIndent)))
+//           ^^^^ definition local args_111
+//                  ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#arguments.
+//                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+//                                     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                                          ^^^ definition local arg_111
+//                                                  ^^^ reference local arg_111
+//                                                      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                                                             ^^^^^^^^^^^^^ reference local currentIndent_108
+          parenthesize(args.join(", "))
+//        ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/parenthesize().
+//                     ^^^^ reference local args_111
+//                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  
+    function render(currentIndent: String) = "\(identifier.render(currentIndent))\(renderArguments(currentIndent))"
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#render().
+//                  ^^^^^^^^^^^^^ definition local currentIndent_114
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                              ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#identifier.
+//                                                         ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `IdentifierNode.pkl`/render().
+//                                                                ^^^^^^^^^^^^^ reference local currentIndent_114
+//                                                                                 ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#renderArguments().
+//                                                                                                 ^^^^^^^^^^^^^ reference local currentIndent_114
+  }
+  
+  /// Can either be an identifer or a function call.
+  ///
+  /// ```
+  /// foo.bar
+  /// foo.bar()
+  /// ```
+  class QualifiedMemberAccessExpressionNode extends ExpressionNode {
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/QualifiedMemberAccessExpressionNode#
+//      documentation
+//      > Can either be an identifer or a function call.
+//      > 
+//      > ```
+//      > foo.bar
+//      > foo.bar()
+//      > ```
+//                                                  ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+    lhs: ExpressionNode
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/QualifiedMemberAccessExpressionNode#lhs.
+//       ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+  
+    symbol: "."|"?." = "."
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/QualifiedMemberAccessExpressionNode#symbol.
+  
+    rhs: MemberAccessExpressionNode
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/QualifiedMemberAccessExpressionNode#rhs.
+//       ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#
+  
+    local function renderLhs(currentIndent: String) =
+//                 ^^^^^^^^^ definition local renderLhs_130
+//                           ^^^^^^^^^^^^^ definition local currentIndent_130
+//                                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      if (lhs is CompoundExpressionNode)
+//        ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/QualifiedMemberAccessExpressionNode#lhs.
+//               ^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/CompoundExpressionNode#
+        parenthesize(lhs.render(currentIndent))
+//      ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/parenthesize().
+//                   ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/QualifiedMemberAccessExpressionNode#lhs.
+//                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/IfElseExpressionNode#render().
+//                              ^^^^^^^^^^^^^ reference local currentIndent_130
+      else lhs.render(currentIndent)
+//         ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/QualifiedMemberAccessExpressionNode#lhs.
+//             ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                    ^^^^^^^^^^^^^ reference local currentIndent_130
+  
+    function render(currentIndent: String) = "\(renderLhs(currentIndent))\(symbol)\(rhs.render(currentIndent))"
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/QualifiedMemberAccessExpressionNode#render().
+//                  ^^^^^^^^^^^^^ definition local currentIndent_135
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                              ^^^^^^^^^ reference local renderLhs_130
+//                                                        ^^^^^^^^^^^^^ reference local currentIndent_135
+//                                                                         ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/QualifiedMemberAccessExpressionNode#symbol.
+//                                                                                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/QualifiedMemberAccessExpressionNode#rhs.
+//                                                                                      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#render().
+//                                                                                             ^^^^^^^^^^^^^ reference local currentIndent_135
+  }
+  
+  class SuperAccessExpressionNode extends ExpressionNode {
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SuperAccessExpressionNode#
+//                                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+    rhs: MemberAccessExpressionNode
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SuperAccessExpressionNode#rhs.
+//       ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#
+  
+    function render(currentIndent) = "super.\(rhs.render(currentIndent))"
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SuperAccessExpressionNode#render().
+//                  ^^^^^^^^^^^^^ definition local currentIndent_141
+//                                            ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SuperAccessExpressionNode#rhs.
+//                                                ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#render().
+//                                                       ^^^^^^^^^^^^^ reference local currentIndent_141
+  }
+  
+  class SuperSubscriptExpressionNode extends ExpressionNode {
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SuperSubscriptExpressionNode#
+//                                           ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+    subscript: ExpressionNode
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SuperSubscriptExpressionNode#subscript.
+//             ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+  
+    function render(currentIndent) = "super[\(subscript.render(currentIndent))]"
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SuperSubscriptExpressionNode#render().
+//                  ^^^^^^^^^^^^^ definition local currentIndent_147
+//                                            ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SuperSubscriptExpressionNode#subscript.
+//                                                      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                                                             ^^^^^^^^^^^^^ reference local currentIndent_147
+  }
+  
+  class SubscriptExpressionNode extends ExpressionNode {
+//      ^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SubscriptExpressionNode#
+//                                      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+    lhs: ExpressionNode
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SubscriptExpressionNode#lhs.
+//       ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+  
+    subscript: ExpressionNode
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SubscriptExpressionNode#subscript.
+//             ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+  
+    local function renderLhs(currentIndent: String) =
+//                 ^^^^^^^^^ definition local renderLhs_155
+//                           ^^^^^^^^^^^^^ definition local currentIndent_155
+//                                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      if (lhs is CompoundExpressionNode)
+//        ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SubscriptExpressionNode#lhs.
+//               ^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/CompoundExpressionNode#
+        parenthesize(lhs.render(currentIndent))
+//      ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/parenthesize().
+//                   ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SubscriptExpressionNode#lhs.
+//                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/IfElseExpressionNode#render().
+//                              ^^^^^^^^^^^^^ reference local currentIndent_155
+      else lhs.render(currentIndent)
+//         ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SubscriptExpressionNode#lhs.
+//             ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                    ^^^^^^^^^^^^^ reference local currentIndent_155
+  
+    function render(currentIndent: String): String = "\(renderLhs(currentIndent))[\(subscript.render(currentIndent))]"
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SubscriptExpressionNode#render().
+//                  ^^^^^^^^^^^^^ definition local currentIndent_160
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                      ^^^^^^^^^ reference local renderLhs_155
+//                                                                ^^^^^^^^^^^^^ reference local currentIndent_160
+//                                                                                  ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SubscriptExpressionNode#subscript.
+//                                                                                            ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                                                                                                   ^^^^^^^^^^^^^ reference local currentIndent_160
+  }
+  
+  /// Node representing a literal value; e.g. `true` and `"hello"`.
+  class LiteralValueExpressionNode extends ExpressionNode {
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+//      documentation
+//      > Node representing a literal value; e.g. `true` and `"hello"`.
+//                                         ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+    value: String|Boolean|Number|Null
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#value.
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+//                               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Null#
+  
+    function render(_) = pcfRenderer.renderValue(value)
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#render().
+//                       ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/pcfRenderer.
+//                                   ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ValueRenderer#renderValue().
+//                                               ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#value.
+  }
+  
+  /// Node representing `new { ... }` or `new Type { ... }`.
+  class ObjectExpressionNode extends ExpressionNode {
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ObjectExpressionNode#
+//      documentation
+//      > Node representing `new { ... }` or `new Type { ... }`.
+//                                   ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+    body: ObjectBodyNode
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ObjectExpressionNode#body.
+//        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ObjectBodyNode.pkl`/
+  
+    type: TypeNode?
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ObjectExpressionNode#type.
+//        ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/
+  
+    function render(currentIndent: String) = List(
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ObjectExpressionNode#render().
+//                  ^^^^^^^^^^^^^ definition local currentIndent_176
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+      "new",
+      type?.render(currentIndent),
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ObjectExpressionNode#type.
+//          ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                 ^^^^^^^^^^^^^ reference local currentIndent_176
+      body.render(currentIndent)
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ObjectExpressionNode#body.
+//         ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ObjectBodyNode.pkl`/render().
+//                ^^^^^^^^^^^^^ reference local currentIndent_176
+    ).filterNonNull().join(" ")
+//    ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#filterNonNull().
+//                    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  }
+  
+  /// `if (...) ... else ...`
+  ///
+  /// To express `else if`, [elseBranch] should also be an [IfElseExpressionNode].
+  class IfElseExpressionNode extends ExpressionNode {
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/IfElseExpressionNode#
+//      documentation
+//      > `if (...) ... else ...`
+//      > 
+//      > To express `else if`, [`elseBranch`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.syntax/ExpressionNode.pkl#L191,C3) should also be an [`IfElseExpressionNode`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.syntax/ExpressionNode.pkl#L186,C7).
+//                                   ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+    condition: ExpressionNode
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/IfElseExpressionNode#condition.
+//             ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+  
+    ifBranch: ExpressionNode
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/IfElseExpressionNode#ifBranch.
+//            ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+  
+    elseBranch: ExpressionNode
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/IfElseExpressionNode#elseBranch.
+//              ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+  
+    function renderElseBranch(currentIndent: String) =
+//           ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/IfElseExpressionNode#renderElseBranch().
+//                            ^^^^^^^^^^^^^ definition local currentIndent_193
+//                                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      if (elseBranch is IfElseExpressionNode)
+//        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/IfElseExpressionNode#elseBranch.
+//                      ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/IfElseExpressionNode#
+        "\(currentIndent)else \(elseBranch.render(currentIndent))"
+//         ^^^^^^^^^^^^^ reference local currentIndent_193
+//                              ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/IfElseExpressionNode#elseBranch.
+//                                         ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/IfElseExpressionNode#render().
+//                                                ^^^^^^^^^^^^^ reference local currentIndent_193
+      else
+        """
+        \(currentIndent)else
+//        ^^^^^^^^^^^^^ reference local currentIndent_193
+        \(currentIndent + indent)\(elseBranch.render(currentIndent + indent))
+//        ^^^^^^^^^^^^^ reference local currentIndent_193
+//                        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/indent.
+//                                 ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/IfElseExpressionNode#elseBranch.
+//                                            ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                                                   ^^^^^^^^^^^^^ reference local currentIndent_193
+//                                                                   ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/indent.
+        """
+  
+    function render(currentIndent: String) = """
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/IfElseExpressionNode#render().
+//                  ^^^^^^^^^^^^^ definition local currentIndent_202
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      if \(parenthesize(condition.render(currentIndent)))
+//         ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/parenthesize().
+//                      ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/IfElseExpressionNode#condition.
+//                                ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                                       ^^^^^^^^^^^^^ reference local currentIndent_202
+      \(currentIndent + indent)\(ifBranch.render(currentIndent))
+//      ^^^^^^^^^^^^^ reference local currentIndent_202
+//                      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/indent.
+//                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/IfElseExpressionNode#ifBranch.
+//                                        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                                               ^^^^^^^^^^^^^ reference local currentIndent_202
+      \(renderElseBranch(currentIndent))
+//      ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/IfElseExpressionNode#renderElseBranch().
+//                       ^^^^^^^^^^^^^ reference local currentIndent_202
+      """
+  }
+  
+  class ImportExpressionNode extends ExpressionNode {
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ImportExpressionNode#
+//                                   ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+    value: String
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ImportExpressionNode#value.
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    keyword: "import"|"import*" = "import"
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ImportExpressionNode#keyword.
+  
+    fixed stringLiteralNode: LiteralValueExpressionNode = new { value = outer.value }
+//        ^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ImportExpressionNode#stringLiteralNode.
+//                           ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+//                                                              ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ImportExpressionNode#value.
+  
+    function render(currentIndent: String) = "\(keyword)(\(stringLiteralNode.render(currentIndent)))"
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ImportExpressionNode#render().
+//                  ^^^^^^^^^^^^^ definition local currentIndent_216
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                              ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ImportExpressionNode#keyword.
+//                                                         ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ImportExpressionNode#stringLiteralNode.
+//                                                                           ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#render().
+//                                                                                  ^^^^^^^^^^^^^ reference local currentIndent_216
+  }
+  
+  class ReadExpressionNode extends ExpressionNode {
+//      ^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ReadExpressionNode#
+//                                 ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+    value: ExpressionNode
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ReadExpressionNode#value.
+//         ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+  
+    keyword: "read"|"read*"|"read?" = "read"
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ReadExpressionNode#keyword.
+  
+    function render(currentIndent: String) = "\(keyword)(\(value.render(currentIndent)))"
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ReadExpressionNode#render().
+//                  ^^^^^^^^^^^^^ definition local currentIndent_224
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                              ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ReadExpressionNode#keyword.
+//                                                         ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ReadExpressionNode#value.
+//                                                               ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                                                                      ^^^^^^^^^^^^^ reference local currentIndent_224
+  }
+  
+  class TraceExpressionNode extends ExpressionNode {
+//      ^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/TraceExpressionNode#
+//                                  ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+    value: ExpressionNode
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/TraceExpressionNode#value.
+//         ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+  
+    function render(currentIndent: String) = "trace(\(value.render(currentIndent)))"
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/TraceExpressionNode#render().
+//                  ^^^^^^^^^^^^^ definition local currentIndent_230
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                    ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/TraceExpressionNode#value.
+//                                                          ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                                                                 ^^^^^^^^^^^^^ reference local currentIndent_230
+  }
+  
+  /// Provides interpolation and multi-line strings that are not available using [LiteralValueExpressionNode].
+  class StringExpressionNode extends ExpressionNode {
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/StringExpressionNode#
+//      documentation
+//      > Provides interpolation and multi-line strings that are not available using [`LiteralValueExpressionNode`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.syntax/ExpressionNode.pkl#L164,C7).
+//                                   ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+    isMultiLine: Boolean = false
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/StringExpressionNode#isMultiLine.
+//               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+    stringParts: Listing<String|ExpressionNode>
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/StringExpressionNode#stringParts.
+//               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                              ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+  
+    function renderStringContents(currentIndent: String) = new Listing {
+//           ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/StringExpressionNode#renderStringContents().
+//                                ^^^^^^^^^^^^^ definition local currentIndent_239
+//                                               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+      for (part in stringParts) {
+//         ^^^^ definition local part_240
+//                 ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/StringExpressionNode#stringParts.
+        when (part is ExpressionNode) {
+//            ^^^^ reference local part_240
+//                    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+          #"\("#
+          part.render(currentIndent)
+//        ^^^^ reference local part_240
+//             ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                    ^^^^^^^^^^^^^ reference local currentIndent_239
+          ")"
+        } else {
+          if (isMultiLine) part.replaceAll("\n", "\n\(currentIndent)")
+//            ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/StringExpressionNode#isMultiLine.
+//                         ^^^^ reference local part_240
+//                              ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+//                                                    ^^^^^^^^^^^^^ reference local currentIndent_239
+          else part.replaceAll("\n", "\\n")
+//             ^^^^ reference local part_240
+//                  ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+        }
+      }
+    }.join("")
+//    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#join().
+  
+    function render(currentIndent: String) =
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/StringExpressionNode#render().
+//                  ^^^^^^^^^^^^^ definition local currentIndent_252
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      if (!isMultiLine) #""\#(renderStringContents(currentIndent))""#
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/StringExpressionNode#isMultiLine.
+//                            ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/StringExpressionNode#renderStringContents().
+//                                                 ^^^^^^^^^^^^^ reference local currentIndent_252
+      else
+        let (newIndent = currentIndent + indent)
+//           ^^^^^^^^^ definition local newIndent_255
+//                       ^^^^^^^^^^^^^ reference local currentIndent_252
+//                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/indent.
+          new Listing {
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+            "\"\"\""
+            newIndent + renderStringContents(newIndent)
+//          ^^^^^^^^^ reference local newIndent_255
+//                      ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/StringExpressionNode#renderStringContents().
+//                                           ^^^^^^^^^ reference local newIndent_255
+            "\(newIndent)\"\"\""
+//             ^^^^^^^^^ reference local newIndent_255
+          }.join("\n")
+//          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#join().
+  }
+  

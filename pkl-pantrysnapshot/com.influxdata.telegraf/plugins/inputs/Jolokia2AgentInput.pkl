@@ -1,0 +1,174 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// [Jolokia Agent Input Plugin](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/jolokia2_agent)
+  ///
+  /// Reads JMX metrics from one or more Jolokia agent REST endpoints.
+  /// See [docs](https://github.com/influxdata/telegraf/blob/master/plugins/inputs/jolokia2_agent/README.md) for examples.
+  module com.influxdata.telegraf.plugins.inputs.Jolokia2AgentInput
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/Jolokia2AgentInput.pkl`/
+  
+  extends "Input.pkl"
+  
+  /// List of endpoints to read JMX metrics from a Jolokia REST agent.
+  urls: Listing<String>(length > 0)
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/Jolokia2AgentInput.pkl`/urls.
+//documentation
+//> List of endpoints to read JMX metrics from a Jolokia REST agent.
+//      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#length.
+  
+  username: String?
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/Jolokia2AgentInput.pkl`/username.
+//          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  password: String?
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/Jolokia2AgentInput.pkl`/password.
+//          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// Origin URL to include as a header in the request.
+  origin: String?
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/Jolokia2AgentInput.pkl`/origin.
+//documentation
+//> Origin URL to include as a header in the request.
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  response_timeout: Duration?
+//^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/Jolokia2AgentInput.pkl`/response_timeout.
+//                  ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+  
+  tls_ca: String?
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/Jolokia2AgentInput.pkl`/tls_ca.
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  tls_cert: String?
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/Jolokia2AgentInput.pkl`/tls_cert.
+//          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  tls_key: String?
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/Jolokia2AgentInput.pkl`/tls_key.
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  insecure_skip_verify: Boolean?
+//^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/Jolokia2AgentInput.pkl`/insecure_skip_verify.
+//                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+  /// String to prepend to the field names produced by all metric declarations.
+  default_field_prefix: String?
+//^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/Jolokia2AgentInput.pkl`/default_field_prefix.
+//documentation
+//> String to prepend to the field names produced by all metric declarations.
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// Character to use to join Mbean attributes when creating fields.
+  default_field_separator: String?
+//^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/Jolokia2AgentInput.pkl`/default_field_separator.
+//documentation
+//> Character to use to join Mbean attributes when creating fields.
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// String to prepend to the tag names produced by all metric declarations
+  default_tag_prefix: String?
+//^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/Jolokia2AgentInput.pkl`/default_tag_prefix.
+//documentation
+//> String to prepend to the tag names produced by all metric declarations
+//                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// Metrics to collect from the Jolokia agent.
+  ///
+  /// Each metric declaration generates a Jolokia request to fetch telemetry from a JMX MBean.
+  metric: Listing<MetricConfig>
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/Jolokia2AgentInput.pkl`/metric.
+//documentation
+//> Metrics to collect from the Jolokia agent.
+//> 
+//> Each metric declaration generates a Jolokia request to fetch telemetry from a JMX MBean.
+//        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/Jolokia2AgentInput.pkl`/MetricConfig#
+  
+  class MetricConfig {
+//      ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/Jolokia2AgentInput.pkl`/MetricConfig#
+    /// Metric name.
+    name: String
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/Jolokia2AgentInput.pkl`/MetricConfig#name.
+//  documentation
+//  > Metric name.
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    
+    /// The object name of a JMX MBean.
+    ///
+    /// MBean property-key values can contain a wildcard `*`, allowing to fetch multiple MBeans with one declaration.
+    mbean: String
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/Jolokia2AgentInput.pkl`/MetricConfig#mbean.
+//  documentation
+//  > The object name of a JMX MBean.
+//  > 
+//  > MBean property-key values can contain a wildcard `*`, allowing to fetch multiple MBeans with one declaration.
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    
+    /// List of MBean attributes to read.
+    paths: Listing<String>
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/Jolokia2AgentInput.pkl`/MetricConfig#paths.
+//  documentation
+//  > List of MBean attributes to read.
+//         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    
+    /// String to set as the name of the field produced by this metric.
+    ///
+    /// This can contain substitutions.
+    field_name: String?
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/Jolokia2AgentInput.pkl`/MetricConfig#field_name.
+//  documentation
+//  > String to set as the name of the field produced by this metric.
+//  > 
+//  > This can contain substitutions.
+//              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    
+    /// String to prepend to the field names produced by this metric declaration.
+    ///
+    /// This can contain substitutions.
+    field_prefix: String?
+//  ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/Jolokia2AgentInput.pkl`/MetricConfig#field_prefix.
+//  documentation
+//  > String to prepend to the field names produced by this metric declaration.
+//  > 
+//  > This can contain substitutions.
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Character to use to join Mbean attributes when creating fields.
+    field_separator: String?
+//  ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/Jolokia2AgentInput.pkl`/MetricConfig#field_separator.
+//  documentation
+//  > Character to use to join Mbean attributes when creating fields.
+//                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    
+    /// String to prepend to the tag names produced by this metric declaration.
+    tag_prefix: String?
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/Jolokia2AgentInput.pkl`/MetricConfig#tag_prefix.
+//  documentation
+//  > String to prepend to the tag names produced by this metric declaration.
+//              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// List of MBean property-key names to convert into tags.
+    ///
+    /// The property-key name becomes the tag name, while the property-key value becomes the tag value.
+    tag_keys: Listing<String>
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/inputs/Jolokia2AgentInput.pkl`/MetricConfig#tag_keys.
+//  documentation
+//  > List of MBean property-key names to convert into tags.
+//  > 
+//  > The property-key name becomes the tag name, while the property-key value becomes the tag value.
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  

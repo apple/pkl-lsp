@@ -1,0 +1,150 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// Generate Pkl sources from JSON Schema documents.
+  ///
+  /// Limitations:
+  /// - Cannot generate `not`, `allOf`, or `anyOf` combinators correctly due to limitations in Pkl's model.
+  ///   * Union types exist, but they are logically the same as `oneOf` (only one subschema can match).
+  ///   * Intersection types do not exist (can use this to model `allOf`).
+  /// - Doesn't generate correct types for schemas that use both [JsonSchema.properties] and
+  ///   [JsonSchema.additionalProperties] because classes cannot contain entries
+  ///   (known limitation, will be addressed in a future Pkl release). Some possible workarounds:
+  ///   * Add a child Mapping property to represent "additional properties" and add a renderer to inline them/
+  ///   * Add an option to the generator to control whether a class or a Mapping gets generated.
+  /// - Cannot generate [JsonSchema.patternProperties] fully (this is a limitation of Pkl).
+  ///   If there is just one pattern property, it gets generated as a [Mapping].
+  ///   Otherwise, this falls back to [Dynamic], which is the loosest constraint.
+  /// - Cannot generate tuple types (this is missing in Pkl).
+  /// - Properties called `default` cannot be generated (currently a limitation of the json parser).
+  /// - `allOf` schemas have several limitations
+  ///   * `default` will only be combined when all subschemas have the same value
+  ///   * `deprecated` will be [true] if an only if all subschemas have it set to [true], otherwise it will be null
+  ///   * `readOnly` and `writeOnly` must be identical for all subschemas
+  ///   * `type` must be identical (or null) for all subschemas
+  ///   * `const` must be identical (or null) for all subschemas
+  ///   * if multiple subschemas set `multipleOf`, all must be integers
+  ///   * `format` must be identical (or null) for all subschemas
+  ///   * overlapping `properties` and `patternProperties` entries are merged as `allOf` according to these rules
+  ///   * fields that accept [JsonSchema.Schema] values must all be [JsonSchema] values (or null)
+  ///   * `items` must be [JsonSchema] or null, not [Listing]<[JsonSchema]>
+  ///   * there must be precise overlap between elements of `oneOf` and `anyOf`
+  ///
+  /// TODO:
+  /// - Copy doc comments from a class or typealias to its usage sites if there isn't a doc comment already.
+  /// - Handle if schema root is not an object type (Example: ansible's schema root has `"type": "array"`).
+  /// - Handle if schema root should be a mapping (it has `additionalProperties` or `patternProperties` set).
+  ///
+  /// Sample CLI usage:
+  ///
+  /// ```
+  /// pkl eval package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib@<version>#/generate.pkl \
+  ///   -m . \
+  ///   -p source="https://json.schemastore.org/github-action.json"
+  /// ```
+  @ModuleInfo { minPklVersion = "0.25.0" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleInfo#
+//              ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `generate.pkl`/minPklVersion.
+  module org.json_schema.contrib.generate
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `generate.pkl`/
+  
+  import "pkl:platform"
+  
+  import "@jsonschema/Parser.pkl"
+  import "@jsonschema/JsonSchema.pkl"
+  import "@uri/URI.pkl"
+  import "internal/ModulesGenerator.pkl"
+  
+  local sourceProperty = read("prop:source")
+//      ^^^^^^^^^^^^^^ definition local sourceProperty_67
+  local sourceUri =
+//      ^^^^^^^^^ definition local sourceUri_68
+    if (sourceProperty.startsWith(Regex(#"\w+:"#))) sourceProperty      // absolute URI
+//      ^^^^^^^^^^^^^^ reference local sourceProperty_67
+//                     ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#startsWith().
+//                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+//                                                  ^^^^^^^^^^^^^^ reference local sourceProperty_67
+    else if (sourceProperty.startsWith("/")) "file://\(sourceProperty)" // absolute file path
+//           ^^^^^^^^^^^^^^ reference local sourceProperty_67
+//                          ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#startsWith().
+//                                                     ^^^^^^^^^^^^^^ reference local sourceProperty_67
+    else                                                // relative file path
+      let (pwd = read("env:PWD"))
+//         ^^^ definition local pwd_72
+        let (path =
+//           ^^^^ definition local path_73
+          if (platform.current.operatingSystem.name == "Windows") "/\(pwd)/\(sourceProperty)".replaceAll("\\", "/")
+//            ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.platform`/
+//                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.platform`/current.
+//                             ^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.platform`/Platform#operatingSystem.
+//                                             ^^^^ reference pkl . pkl 0.29.0 `pkl.platform`/OperatingSystem#name.
+//                                                                    ^^^ reference local pwd_72
+//                                                                           ^^^^^^^^^^^^^^ reference local sourceProperty_67
+//                                                                                            ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+          else "\(pwd)/\(sourceProperty)"
+//                ^^^ reference local pwd_72
+//                       ^^^^^^^^^^^^^^ reference local sourceProperty_67
+        )
+          "file://\(URI.encode(path))"
+//                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/encode().
+//                             ^^^^ reference local path_73
+  
+  local schema = read(URI.encode(sourceUri))
+//      ^^^^^^ definition local schema_79
+//                    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/encode().
+//                               ^^^^^^^^^ reference local sourceUri_68
+  
+  local parsedJsonSchema = Parser.parse(schema)
+//      ^^^^^^^^^^^^^^^^ definition local parsedJsonSchema_81
+//                         ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/
+//                                ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/parse().
+//                                      ^^^^^^ reference local schema_79
+  
+  local modulesGenerator = new ModulesGenerator {
+//      ^^^^^^^^^^^^^^^^ definition local modulesGenerator_83
+//                             ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModulesGenerator.pkl`/
+    rootSchema = parsedJsonSchema as JsonSchema
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `generate.pkl`/rootSchema.
+//               ^^^^^^^^^^^^^^^^ reference local parsedJsonSchema_81
+//                                   ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+    baseUri = URI.parse(sourceUri)!!
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `generate.pkl`/baseUri.
+//            ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+//                      ^^^^^^^^^ reference local sourceUri_68
+  }
+  
+  output {
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `generate.pkl`/output.
+    text = throw("The JSON Schema generator only works with multiple-file output. Try running again with the -m option.")
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `generate.pkl`/text.
+    files {
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `generate.pkl`/files.
+      for (mod in modulesGenerator.modules) {
+//         ^^^ definition local mod_91
+//                ^^^^^^^^^^^^^^^^ reference local modulesGenerator_83
+//                                 ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModulesGenerator.pkl`/modules.
+        ["\(mod.moduleName).pkl"] = mod.moduleNode.output
+//          ^^^ reference local mod_91
+//              ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleName.
+//                                  ^^^ reference local mod_91
+//                                      ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleNode.
+//                                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#output.
+      }
+    }
+  }
+  

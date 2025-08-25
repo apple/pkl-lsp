@@ -1,0 +1,53 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  amends "../JsonSchema.pkl"
+  
+  $id = "https://example.com/person.schema.json"
+//^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `examples/basic.pkl`/$id.
+  
+  $schema = "https://json-schema.org/draft/2020-12/schema"
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `examples/basic.pkl`/$schema.
+  
+  title = "Person"
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `examples/basic.pkl`/title.
+  
+  type = "object"
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `examples/basic.pkl`/type.
+  
+  properties {
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `examples/basic.pkl`/properties.
+    ["firstName"] {
+      type = "string"
+//    ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `examples/basic.pkl`/type.
+      description = "The person's first name"
+//    ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `examples/basic.pkl`/description.
+    }
+    ["lastName"] {
+      type = "string"
+//    ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `examples/basic.pkl`/type.
+      description = "The person's last name"
+//    ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `examples/basic.pkl`/description.
+    }
+    ["age"] {
+      type = "integer"
+//    ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `examples/basic.pkl`/type.
+      description = "Age in years which must be equal to or greater than zero."
+//    ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `examples/basic.pkl`/description.
+      minimum = 0
+//    ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `examples/basic.pkl`/minimum.
+    }
+  }
+  

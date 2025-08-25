@@ -1,0 +1,831 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// The Schema object as defined by the OpenAPI v3.0 Specification.
+  ///
+  /// The [Schema] object allows the definition of input and output data types.
+  /// These types can be objects, but also primitives and arrays.
+  /// This object is an extended subset of
+  /// [JSON Schema Specification Wright Draft 00](http://json-schema.org/specification-links.html#draft-5)
+  /// (a.k.a. JSON Schema Draft 5).
+  ///
+  /// For more information about the properties, see
+  /// [JSON Schema Core](https://tools.ietf.org/html/draft-wright-json-schema-00) and
+  /// [JSON Schema Validation](https://tools.ietf.org/html/draft-wright-json-schema-validation-00).
+  ///
+  /// **NOTE**: OpenAPI v3.0's schema object is incompatible with OpenAPI v3.1's schema object.
+  /// For example, [nullable] is valid on v3.0, but is invalid in v3.1.
+  ///
+  /// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#schema-object>
+  open module org.openapis.v3.Schema
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/
+  
+  import "Extension.pkl"
+  import "Reference.pkl"
+  import "Schema.pkl"
+  
+  /// The basic type of the value represented by this schema.
+  ///
+  /// If this property is not defined, the value may be of any type.
+  type: ("string"|"number"|"integer"|"boolean"|"object"|"array")?
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/type.
+//documentation
+//> The basic type of the value represented by this schema.
+//> 
+//> If this property is not defined, the value may be of any type.
+  
+  /// An additional descriptor for the value represented by this schema.
+  ///
+  /// OAS uses several known formats to define in fine detail the data type being used.
+  ///
+  /// However, to support documentation needs, the [format] property is an open `string`-valued property, and can have any value.
+  /// Formats such as `"email"`, `"uuid"`, and so on, *may* be used even though undefined by this specification.
+  /// Types that are not accompanied by a `format` property follow the type definition in the JSON Schema. Tools that do
+  /// not recognize a specific [format] *may* default to the [type] alone, as if the [format] is not specified.
+  ///
+  /// The formats defined by the OAS are:
+  ///
+  /// Common Name | [type] | [format] | Comments
+  /// ----------- | ------ | -------- | --------
+  /// integer | `integer` | `int32` | signed 32 bits
+  /// long | `integer` | `int64` | signed 64 bits
+  /// float | `number` | `float` | |
+  /// double | `number` | `double` | |
+  /// string | `string` | | |
+  /// byte | `string` | `byte` | base64 encoded characters
+  /// binary | `string` | `binary` | any sequence of octets
+  /// boolean | `boolean` | | |
+  /// date | `string` | `date` | As defined by `full-date` - [RFC3339](http://xml2rfc.ietf.org/public/rfc/html/rfc3339.html#anchor14)
+  /// dateTime | `string` | `date-time` | As defined by `date-time` - [RFC3339](http://xml2rfc.ietf.org/public/rfc/html/rfc3339.html#anchor14)
+  /// password | `string` | `password` | A hint to UIs to obscure input.
+  ///
+  /// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#dataTypeFormat>
+  format: ("int32"|"int64"|"float"|"double"|"byte"|"binary"|"date"|"date-time"|"password"|String)?
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/format.
+//documentation
+//> An additional descriptor for the value represented by this schema.
+//> 
+//> OAS uses several known formats to define in fine detail the data type being used.
+//> 
+//> However, to support documentation needs, the [`format`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L69,C1) property is an open `string`-valued property, and can have any value.
+//> Formats such as `"email"`, `"uuid"`, and so on, *may* be used even though undefined by this specification.
+//> Types that are not accompanied by a `format` property follow the type definition in the JSON Schema. Tools that do
+//> not recognize a specific [`format`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L69,C1) *may* default to the [`type`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L41,C1) alone, as if the [`format`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L69,C1) is not specified.
+//> 
+//> The formats defined by the OAS are:
+//> 
+//> Common Name | [`type`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L41,C1) | [`format`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L69,C1) | Comments
+//> ----------- | ------ | -------- | --------
+//> integer | `integer` | `int32` | signed 32 bits
+//> long | `integer` | `int64` | signed 64 bits
+//> float | `number` | `float` | |
+//> double | `number` | `double` | |
+//> string | `string` | | |
+//> byte | `string` | `byte` | base64 encoded characters
+//> binary | `string` | `binary` | any sequence of octets
+//> boolean | `boolean` | | |
+//> date | `string` | `date` | As defined by `full-date` - [RFC3339](http://xml2rfc.ietf.org/public/rfc/html/rfc3339.html#anchor14)
+//> dateTime | `string` | `date-time` | As defined by `date-time` - [RFC3339](http://xml2rfc.ietf.org/public/rfc/html/rfc3339.html#anchor14)
+//> password | `string` | `password` | A hint to UIs to obscure input.
+//> 
+//> <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#dataTypeFormat>
+//                                                                                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// A short descriptor of this schema.
+  ///
+  /// <https://json-schema.org/understanding-json-schema/reference/generic.html#annotations>
+  title: String?
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/title.
+//documentation
+//> A short descriptor of this schema.
+//> 
+//> <https://json-schema.org/understanding-json-schema/reference/generic.html#annotations>
+//       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// A long descriptor of this schema. Maybe written in Markdown.
+  ///
+  /// <https://json-schema.org/understanding-json-schema/reference/generic.html#annotations>
+  description: String?
+//^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/description.
+//documentation
+//> A long descriptor of this schema. Maybe written in Markdown.
+//> 
+//> <https://json-schema.org/understanding-json-schema/reference/generic.html#annotations>
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// Specifies a default value.
+  ///
+  /// This value is not used to fill in missing values during the validation process.
+  /// Non-validation tools such as documentation generators or form
+  /// generators may use this value to give hints to users about how to use
+  /// a value. However, [default] is typically used to express that if a
+  /// value is missing, then the value is semantically the same as if the
+  /// value was present with the default value. The value of [default]
+  /// should validate against the schema in which it resides, but that isn't
+  /// required.
+  ///
+  /// <https://json-schema.org/understanding-json-schema/reference/generic.html#annotations>
+  default: Any?
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/default.
+//documentation
+//> Specifies a default value.
+//> 
+//> This value is not used to fill in missing values during the validation process.
+//> Non-validation tools such as documentation generators or form
+//> generators may use this value to give hints to users about how to use
+//> a value. However, [`default`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L93,C1) is typically used to express that if a
+//> value is missing, then the value is semantically the same as if the
+//> value was present with the default value. The value of [`default`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L93,C1)
+//> should validate against the schema in which it resides, but that isn't
+//> required.
+//> 
+//> <https://json-schema.org/understanding-json-schema/reference/generic.html#annotations>
+//         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+  
+  /// Restricts the value specified by this schema to a fixed set of values.
+  ///
+  /// It must be an array with at least one element, where each element is unique.
+  ///
+  /// You can use enum even without a type, to accept values of different types.
+  ///
+  /// Elements in the array might be of any type, including [null].
+  /// <https://json-schema.org/understanding-json-schema/reference/generic.html#enumerated-values>
+  enum: Listing<Any>(!isEmpty && isDistinct)?
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/enum.
+//documentation
+//> Restricts the value specified by this schema to a fixed set of values.
+//> 
+//> It must be an array with at least one element, where each element is unique.
+//> 
+//> You can use enum even without a type, to accept values of different types.
+//> 
+//> Elements in the array might be of any type, including `null`.
+//> <https://json-schema.org/understanding-json-schema/reference/generic.html#enumerated-values>
+//      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#isEmpty.
+//                               ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#isDistinct.
+  
+  // === Numeric type validators ===
+  
+  /// Restricts to a number that is a multiple of this value.
+  ///
+  /// It may be set to any positive number.
+  ///
+  /// <https://json-schema.org/understanding-json-schema/reference/numeric.html#multiples>
+  multipleOf: Number(type is ("number"|"integer") && isPositive)?
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/multipleOf.
+//documentation
+//> Restricts to a number that is a multiple of this value.
+//> 
+//> It may be set to any positive number.
+//> 
+//> <https://json-schema.org/understanding-json-schema/reference/numeric.html#multiples>
+//            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+//                   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/type.
+//                                                   ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#isPositive.
+  
+  /// Represent a number that is greater or equal to this value.
+  ///
+  /// <https://json-schema.org/understanding-json-schema/reference/numeric.html#range>
+  minimum: Number(type is ("number"|"integer"))?
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/minimum.
+//documentation
+//> Represent a number that is greater or equal to this value.
+//> 
+//> <https://json-schema.org/understanding-json-schema/reference/numeric.html#range>
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+//                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/type.
+  
+  /// Represent a number that is greater than this value.
+  ///
+  /// <https://json-schema.org/understanding-json-schema/reference/numeric.html#range>
+  exclusiveMinimum: Number(type is ("number"|"integer"))?
+//^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/exclusiveMinimum.
+//documentation
+//> Represent a number that is greater than this value.
+//> 
+//> <https://json-schema.org/understanding-json-schema/reference/numeric.html#range>
+//                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+//                         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/type.
+  
+  /// Represent a number that is less than or equal to this value.
+  ///
+  /// <https://json-schema.org/understanding-json-schema/reference/numeric.html#range>
+  maximum: Number(type is ("number"|"integer"))?
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/maximum.
+//documentation
+//> Represent a number that is less than or equal to this value.
+//> 
+//> <https://json-schema.org/understanding-json-schema/reference/numeric.html#range>
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+//                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/type.
+  
+  /// Represent a number that is less than this value.
+  ///
+  /// <https://json-schema.org/understanding-json-schema/reference/numeric.html#range>
+  exclusiveMaximum: Number(type is ("number"|"integer"))?
+//^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/exclusiveMaximum.
+//documentation
+//> Represent a number that is less than this value.
+//> 
+//> <https://json-schema.org/understanding-json-schema/reference/numeric.html#range>
+//                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+//                         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/type.
+  
+  // === String validators ===
+  
+  /// Represent a string that adheres to a regex pattern.
+  ///
+  /// The regular expression must conform to [ECMA 262](https://262.ecma-international.org/5.1/#sec-7.8.5).
+  ///
+  /// <https://json-schema.org/understanding-json-schema/reference/string.html#regular-expressions>
+  pattern: String(isRegex && type == "string")?
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/pattern.
+//documentation
+//> Represent a string that adheres to a regex pattern.
+//> 
+//> The regular expression must conform to [ECMA 262](https://262.ecma-international.org/5.1/#sec-7.8.5).
+//> 
+//> <https://json-schema.org/understanding-json-schema/reference/string.html#regular-expressions>
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#isRegex.
+//                           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/type.
+  
+  /// Represent a string that has a minimum length.
+  ///
+  /// <https://json-schema.org/understanding-json-schema/reference/string.html#length>
+  minLength: UInt(type == "string")?
+//^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/minLength.
+//documentation
+//> Represent a string that has a minimum length.
+//> 
+//> <https://json-schema.org/understanding-json-schema/reference/string.html#length>
+//           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+//                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/type.
+  
+  /// Represent a string that has a maximum length.
+  ///
+  /// <https://json-schema.org/understanding-json-schema/reference/string.html#length>
+  maxLength: UInt(type == "string")?
+//^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/maxLength.
+//documentation
+//> Represent a string that has a maximum length.
+//> 
+//> <https://json-schema.org/understanding-json-schema/reference/string.html#length>
+//           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+//                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/type.
+  
+  // == Array validators ==
+  
+  /// Represent that each item in an array must conform to the specified schema.
+  ///
+  /// If the type is array, [items] must be specified.
+  items: (Schema|Reference)(type == "array")?
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/items.
+//documentation
+//> Represent that each item in an array must conform to the specified schema.
+//> 
+//> If the type is array, [`items`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L158,C1) must be specified.
+//        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/
+//               ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Reference.pkl`/
+//                          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/type.
+  
+  /// Represent an array that has a minumum length.
+  ///
+  /// <https://json-schema.org/understanding-json-schema/reference/array.html#length>
+  minItems: UInt(type == "array")?
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/minItems.
+//documentation
+//> Represent an array that has a minumum length.
+//> 
+//> <https://json-schema.org/understanding-json-schema/reference/array.html#length>
+//          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+//               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/type.
+  
+  /// Represent an array that has a maximum length.
+  ///
+  /// <https://json-schema.org/understanding-json-schema/reference/array.html#length>
+  maxItems: UInt(type == "array")?
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/maxItems.
+//documentation
+//> Represent an array that has a maximum length.
+//> 
+//> <https://json-schema.org/understanding-json-schema/reference/array.html#length>
+//          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+//               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/type.
+  
+  /// Represent an array where each item is unique.
+  ///
+  /// <https://json-schema.org/understanding-json-schema/reference/array.html#uniqueness>
+  uniqueItems: Boolean?
+//^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/uniqueItems.
+//documentation
+//> Represent an array where each item is unique.
+//> 
+//> <https://json-schema.org/understanding-json-schema/reference/array.html#uniqueness>
+//             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+  // == Objects ==
+  
+  /// Represent an object that must have at minimum a certain number of properties.
+  ///
+  /// <https://json-schema.org/understanding-json-schema/reference/object.html#size>
+  minProperties: UInt(type == "object")?
+//^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/minProperties.
+//documentation
+//> Represent an object that must have at minimum a certain number of properties.
+//> 
+//> <https://json-schema.org/understanding-json-schema/reference/object.html#size>
+//               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+//                    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/type.
+  
+  /// Represent an object that must have at maximum a certain number of properties.
+  maxProperties: UInt(type == "object")?
+//^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/maxProperties.
+//documentation
+//> Represent an object that must have at maximum a certain number of properties.
+//               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+//                    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/type.
+  
+  /// Represent an object that have properties that conform to a
+  /// certain schema.
+  ///
+  /// <https://json-schema.org/understanding-json-schema/reference/object.html#properties>
+  properties: Mapping<String, *PropertySchema|Reference>(type == "object")?
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/properties.
+//documentation
+//> Represent an object that have properties that conform to a
+//> certain schema.
+//> 
+//> <https://json-schema.org/understanding-json-schema/reference/object.html#properties>
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                             ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/PropertySchema#
+//                                            ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Reference.pkl`/
+//                                                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/type.
+  
+  /// Represent an object that has additional properties.
+  ///
+  /// The value of [additionalProperties] is a schema that
+  /// will be used to validate any properties in the instance that are not
+  /// matched by [properties]. Setting the
+  /// [additionalProperties] schema to [false] means no additional
+  /// properties will be allowed.
+  ///
+  /// <https://json-schema.org/understanding-json-schema/reference/object.html#additional-properties>
+  additionalProperties: (*PropertySchema|Boolean|Reference)(type == "object")?
+//^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/additionalProperties.
+//documentation
+//> Represent an object that has additional properties.
+//> 
+//> The value of [`additionalProperties`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L200,C1) is a schema that
+//> will be used to validate any properties in the instance that are not
+//> matched by [`properties`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L189,C1). Setting the
+//> [`additionalProperties`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L200,C1) schema to `false` means no additional
+//> properties will be allowed.
+//> 
+//> <https://json-schema.org/understanding-json-schema/reference/object.html#additional-properties>
+//                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/PropertySchema#
+//                                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                                               ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Reference.pkl`/
+//                                                          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/type.
+  
+  /// Represent an object that has certain properties defined on it.
+  ///
+  /// By default, no properties are required.
+  ///
+  /// <https://json-schema.org/understanding-json-schema/reference/object.html#required-properties>
+  required: Listing<String>(type == "object", isDistinct)?
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/required.
+//documentation
+//> Represent an object that has certain properties defined on it.
+//> 
+//> By default, no properties are required.
+//> 
+//> <https://json-schema.org/understanding-json-schema/reference/object.html#required-properties>
+//          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/type.
+//                                            ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#isDistinct.
+  
+  // == Composition ==
+  
+  /// Represent a value that must match against **exactly** one of the subschemas.
+  ///
+  /// <https://json-schema.org/understanding-json-schema/reference/combining.html#oneof>
+  oneOf: Listing<Schema|Reference>(length > 0)?
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/oneOf.
+//documentation
+//> Represent a value that must match against **exactly** one of the subschemas.
+//> 
+//> <https://json-schema.org/understanding-json-schema/reference/combining.html#oneof>
+//       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//               ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/
+//                      ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Reference.pkl`/
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#length.
+  
+  /// Represent a value that must match **at least one** of the subschemas.
+  ///
+  /// <https://json-schema.org/understanding-json-schema/reference/combining.html#anyof>
+  anyOf: Listing<Schema|Reference>(length > 0)?
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/anyOf.
+//documentation
+//> Represent a value that must match **at least one** of the subschemas.
+//> 
+//> <https://json-schema.org/understanding-json-schema/reference/combining.html#anyof>
+//       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//               ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/
+//                      ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Reference.pkl`/
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#length.
+  
+  /// Represent a value that must match **all** of the subschemas.
+  ///
+  /// <https://json-schema.org/understanding-json-schema/reference/combining.html#allof>
+  allOf: Listing<Schema|Reference>(length > 0)?
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/allOf.
+//documentation
+//> Represent a value that must match **all** of the subschemas.
+//> 
+//> <https://json-schema.org/understanding-json-schema/reference/combining.html#allof>
+//       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//               ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/
+//                      ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Reference.pkl`/
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#length.
+  
+  /// Represent a value that must not match the given schema.
+  ///
+  /// <https://json-schema.org/understanding-json-schema/reference/combining.html#not>
+  not: (Schema|Reference)?
+//^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/not.
+//documentation
+//> Represent a value that must not match the given schema.
+//> 
+//> <https://json-schema.org/understanding-json-schema/reference/combining.html#not>
+//      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/
+//             ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Reference.pkl`/
+  
+  // == OpenAPI v3.0 specific fields ==
+  
+  /// Represent that the value may optionally be [null].
+  ///
+  /// Default value is [false].
+  ///
+  /// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#fixed-fields-20>
+  nullable: Boolean?
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/nullable.
+//documentation
+//> Represent that the value may optionally be `null`.
+//> 
+//> Default value is `false`.
+//> 
+//> <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#fixed-fields-20>
+//          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+  /// Helps inform of alternative schemas.
+  ///
+  /// When request bodies or response payloads may be one of a number of different
+  /// schemas, a discriminator object can be used to aid in serialization,
+  /// deserialization, and validation. The discriminator is a specific object in
+  /// a schema which is used to inform the consumer of the specification of an
+  /// alternative schema based on the value associated with it.
+  ///
+  /// When using the discriminator, inline schemas will not be considered.
+  ///
+  /// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#discriminator-object>
+  discriminator: Discriminator?
+//^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/discriminator.
+//documentation
+//> Helps inform of alternative schemas.
+//> 
+//> When request bodies or response payloads may be one of a number of different
+//> schemas, a discriminator object can be used to aid in serialization,
+//> deserialization, and validation. The discriminator is a specific object in
+//> a schema which is used to inform the consumer of the specification of an
+//> alternative schema based on the value associated with it.
+//> 
+//> When using the discriminator, inline schemas will not be considered.
+//> 
+//> <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#discriminator-object>
+//               ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/Discriminator#
+  
+  /// Declares the property as "read only".
+  ///
+  /// Relevant only for Schema [properties] definitions. This means that
+  /// it *may* be sent as part of a response but *should not* be sent as part
+  /// of the request. If the property is marked as [readOnly] and is in the
+  /// [required] list, [required] only effects the response. A property
+  /// *may not* be marked as both [readOnly] and [writeOnly].
+  ///
+  /// Default value is [false].
+  ///
+  /// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#fixed-fields-20>
+  readOnly: Boolean?
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/readOnly.
+//documentation
+//> Declares the property as "read only".
+//> 
+//> Relevant only for Schema [`properties`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L189,C1) definitions. This means that
+//> it *may* be sent as part of a response but *should not* be sent as part
+//> of the request. If the property is marked as [`readOnly`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L264,C1) and is in the
+//> [`required`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L207,C1) list, [`required`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L207,C1) only effects the response. A property
+//> *may not* be marked as both [`readOnly`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L264,C1) and [`writeOnly`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L277,C1).
+//> 
+//> Default value is `false`.
+//> 
+//> <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#fixed-fields-20>
+//          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+  /// Declares the property as "write only".
+  ///
+  /// This is relevant only for Schema [properties] definitions. Therefore, it
+  /// it *may* be sent as part of a response but *should not* be sent as part
+  /// If the property is marked as [writeOnly] being [true] and is in the [required] list,
+  /// the [required] will take effect on the request only. A property *may not* be marked
+  /// as both [readOnly] and [writeOnly] being [true].
+  ///
+  /// Default value is [false].
+  ///
+  /// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#fixed-fields-20>
+  writeOnly: Boolean(implies(readOnly != true))?
+//^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/writeOnly.
+//documentation
+//> Declares the property as "write only".
+//> 
+//> This is relevant only for Schema [`properties`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L189,C1) definitions. Therefore, it
+//> it *may* be sent as part of a response but *should not* be sent as part
+//> If the property is marked as [`writeOnly`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L277,C1) being `true` and is in the [`required`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L207,C1) list,
+//> the [`required`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L207,C1) will take effect on the request only. A property *may not* be marked
+//> as both [`readOnly`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L264,C1) and [`writeOnly`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L277,C1) being `true`.
+//> 
+//> Default value is `false`.
+//> 
+//> <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#fixed-fields-20>
+//           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#implies().
+//                           ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/readOnly.
+  
+  /// Additional external documentation for this schema.
+  externalDocs: ExternalDocumentation?
+//^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/externalDocs.
+//documentation
+//> Additional external documentation for this schema.
+//              ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/ExternalDocumentation#
+  
+  /// Indicates that this property is deprecated.
+  ///
+  /// Default value is [false].
+  ///
+  /// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#fixed-fields-20>
+  deprecated: Boolean?
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/deprecated.
+//documentation
+//> Indicates that this property is deprecated.
+//> 
+//> Default value is `false`.
+//> 
+//> <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#fixed-fields-20>
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+  /// A free-form property to include an example of an instance for this schema.
+  ///
+  /// To represent examples that cannot be naturally represented in JSON or YAML, a string
+  /// value can be used to contain the example with escaping where necessary.
+  example: Any?
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/example.
+//documentation
+//> A free-form property to include an example of an instance for this schema.
+//> 
+//> To represent examples that cannot be naturally represented in JSON or YAML, a string
+//> value can be used to contain the example with escaping where necessary.
+//         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+  
+  /// Custom properties starting with x- extend OpenAPI with additional information
+  /// or functionality.
+  ///
+  /// This is a child property because Pkl modules cannot express both known names
+  /// and arbitrary names.
+  ///
+  /// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#specification-extensions>
+  hidden extensions: Mapping<Extension.Key, Any>?
+//       ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/extensions.
+//       documentation
+//       > Custom properties starting with x- extend OpenAPI with additional information
+//       > or functionality.
+//       > 
+//       > This is a child property because Pkl modules cannot express both known names
+//       > and arbitrary names.
+//       > 
+//       > <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#specification-extensions>
+//                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Extension.pkl`/Key#
+//                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+  
+  /// Helps inform of alternative schemas.
+  ///
+  /// When request bodies or response payloads may be one of a number of different
+  /// schemas, a discriminator object can be used to aid in serialization,
+  /// deserialization, and validation. The discriminator is a specific object in
+  /// a schema which is used to inform the consumer of the specification of an
+  /// alternative schema based on the value associated with it.
+  ///
+  /// When using the discriminator, inline schemas will not be considered.
+  ///
+  /// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#discriminator-object>
+  class Discriminator {
+//      ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/Discriminator#
+//      documentation
+//      > Helps inform of alternative schemas.
+//      > 
+//      > When request bodies or response payloads may be one of a number of different
+//      > schemas, a discriminator object can be used to aid in serialization,
+//      > deserialization, and validation. The discriminator is a specific object in
+//      > a schema which is used to inform the consumer of the specification of an
+//      > alternative schema based on the value associated with it.
+//      > 
+//      > When using the discriminator, inline schemas will not be considered.
+//      > 
+//      > <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#discriminator-object>
+    /// The name of the property in the payload that holds the discriminator value.
+    propertyName: String
+//  ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/Discriminator#propertyName.
+//  documentation
+//  > The name of the property in the payload that holds the discriminator value.
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// A mapping from payload values to schema names or references.
+    mapping: Mapping<String, String>?
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/Discriminator#mapping.
+//  documentation
+//  > A mapping from payload values to schema names or references.
+//           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  /// Reference to an external resource for extended documentation.
+  ///
+  /// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#externalDocumentationObject>
+  class ExternalDocumentation {
+//      ^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/ExternalDocumentation#
+//      documentation
+//      > Reference to an external resource for extended documentation.
+//      > 
+//      > <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#externalDocumentationObject>
+    /// A short description of the target documentation.
+    ///
+    /// [CommonMark syntax](https://spec.commonmark.org) *may* be used for rich text representation.
+    description: String?
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/ExternalDocumentation#description.
+//  documentation
+//  > A short description of the target documentation.
+//  > 
+//  > [CommonMark syntax](https://spec.commonmark.org) *may* be used for rich text representation.
+//               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// The URL for the target documentation.
+    ///
+    /// Value *must* be in the format of a URL.
+    uri: Uri
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/ExternalDocumentation#uri.
+//  documentation
+//  > The URL for the target documentation.
+//  > 
+//  > Value *must* be in the format of a URL.
+//       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Uri#
+  }
+  
+  /// A metadata object that allows for more fine-tuned XML model definitions.
+  ///
+  /// When using arrays, XML element names are not inferred (for singular/plural
+  /// forms) and the [name] property **should** be used to add that information.
+  ///
+  /// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#xmlObject>
+  class Xml {
+//      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/Xml#
+//      documentation
+//      > A metadata object that allows for more fine-tuned XML model definitions.
+//      > 
+//      > When using arrays, XML element names are not inferred (for singular/plural
+//      > forms) and the [`name`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L350,C3) property **should** be used to add that information.
+//      > 
+//      > <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#xmlObject>
+    /// Replaces the name of the element/attribute used for the described schema property.
+    ///
+    /// When defined within [items], it affects the name of the individual XML elements within the list.
+    /// When defined alongside [type] being `array` (outside the [items]), it affects the wrapping element
+    /// and only if [wrapped] is [true]. If [wrapped] is [false], it is ignored.
+    name: String?
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/Xml#name.
+//  documentation
+//  > Replaces the name of the element/attribute used for the described schema property.
+//  > 
+//  > When defined within [`items`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L158,C1), it affects the name of the individual XML elements within the list.
+//  > When defined alongside [`type`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L41,C1) being `array` (outside the [`items`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L158,C1)), it affects the wrapping element
+//  > and only if [`wrapped`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L369,C3) is `true`. If [`wrapped`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L369,C3) is `false`, it is ignored.
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// The URI of the namespace definition. Value MUST be in the form of an absolute URI.
+    namespace: Uri?
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/Xml#namespace.
+//  documentation
+//  > The URI of the namespace definition. Value MUST be in the form of an absolute URI.
+//             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Uri#
+  
+    /// The prefix used for the [name].
+    prefix: String?
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/Xml#prefix.
+//  documentation
+//  > The prefix used for the [`name`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L350,C3).
+//          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Declares whether the property definition translates to an attribute instead of an element.
+    ///
+    /// Default value is [false].
+    attribute: Boolean?
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/Xml#attribute.
+//  documentation
+//  > Declares whether the property definition translates to an attribute instead of an element.
+//  > 
+//  > Default value is `false`.
+//             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+    /// Signifies whether the array is wrapped (for example, `<books><book/><book/></books>`)
+    /// or unwrapped (`<book/><book/>`).
+    ///
+    /// *May* be used only for an array definition. Default value is [false].
+    ///
+    /// The definition takes effect only when defined alongside [type] being `array` (outside the items).
+    wrapped: Boolean?
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/Xml#wrapped.
+//  documentation
+//  > Signifies whether the array is wrapped (for example, `<books><book/><book/></books>`)
+//  > or unwrapped (`<book/><book/>`).
+//  > 
+//  > *May* be used only for an array definition. Default value is `false`.
+//  > 
+//  > The definition takes effect only when defined alongside [`type`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L41,C1) being `array` (outside the items).
+//           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  }
+  
+  /// Property schemas are [Schema]s that optionally include XML metadata.
+  class PropertySchema extends Schema {
+//      ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/PropertySchema#
+//      documentation
+//      > Property schemas are [`Schema`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L32,C1)s that optionally include XML metadata.
+//                             ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/
+    /// Adds additional metadata to describe the XML representation of this property.
+    ///
+    /// This *may* be used only on properties schemas. It has no effect on root schemas.
+    xml: Xml?
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/PropertySchema#xml.
+//  documentation
+//  > Adds additional metadata to describe the XML representation of this property.
+//  > 
+//  > This *may* be used only on properties schemas. It has no effect on root schemas.
+//       ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/Xml#
+  }
+  
+  output {
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/output.
+    // It's pretty common to have OpenAPI written in YAML. Therefore, we support the YAML format too.
+    // noinspection TypeMismatch
+    local const format: "json"|"yaml"|"pcf" = read?("prop:pkl.outputFormat") ?? "json"
+//              ^^^^^^ definition local format_383
+  
+    local const renderers: Mapping<String, ValueRenderer> = new {
+//              ^^^^^^^^^ definition local renderers_385
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                         ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ValueRenderer#
+      ["json"] = new JsonRenderer {}
+//                   ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/JsonRenderer#
+      ["yaml"] = new YamlRenderer {}
+//                   ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/YamlRenderer#
+      ["pcf"] = new PcfRenderer {}
+//                  ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/PcfRenderer#
+    }
+  
+    renderer = (renderers[format]) {
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/renderer.
+//              ^^^^^^^^^ reference local renderers_385
+//                        ^^^^^^ reference local format_383
+      converters = Extension.converters
+//    ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/converters.
+//                 ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Extension.pkl`/
+//                           ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Extension.pkl`/converters.
+    }
+  }
+  

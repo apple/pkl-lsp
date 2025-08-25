@@ -1,0 +1,81 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// CLI tool for working with YAML in Pkl, kind of like [yq](https://github.com/mikefarah/yq) or
+  /// [yq](https://github.com/kislyuk/yq).
+  ///
+  /// Example usage:
+  ///
+  ///     # Get the number of replicas in a Kubernetes deployment YAML file
+  ///     pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/yaml.pkl -x 'pipe.spec.replicas' < deployment.yaml
+  ///
+  @ModuleInfo { minPklVersion = "0.24.0" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleInfo#
+//              ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `yaml.pkl`/minPklVersion.
+  module pkl.pipe.yaml
+//^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `yaml.pkl`/
+  extends "./text.pkl"
+  
+  import "pkl:yaml"
+  
+  hidden parser: yaml.Parser = new {
+//       ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `yaml.pkl`/parser.
+//                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.yaml`/Parser#
+    useMapping = read?("prop:useMapping")?.toBoolean() ?? false
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `yaml.pkl`/useMapping.
+//                                         ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toBoolean().
+  }
+  
+  local yamlDocs: List<yaml.Value> = parser.parseAll(input)
+//      ^^^^^^^^ definition local yamlDocs_34
+//                ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.yaml`/Value#
+//                                   ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `yaml.pkl`/parser.
+//                                          ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.yaml`/Parser#parseAll().
+//                                                   ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/input.
+  
+  pipe: (List<yaml.Value>|yaml.Value)? =
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `yaml.pkl`/pipe.
+//       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                 ^^^^^ reference pkl . pkl 0.29.0 `pkl.yaml`/Value#
+//                             ^^^^^ reference pkl . pkl 0.29.0 `pkl.yaml`/Value#
+    if (yamlDocs.isEmpty) null
+//      ^^^^^^^^ reference local yamlDocs_34
+//               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#isEmpty.
+    // If there is a single document, set pipe to the value of the single doc,
+    // rather than force the user to always use `pipe[0]`
+    else yamlDocs.singleOrNull ?? yamlDocs
+//       ^^^^^^^^ reference local yamlDocs_34
+//                ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#singleOrNull.
+//                                ^^^^^^^^ reference local yamlDocs_34
+  stdin: (List<yaml.Value>|yaml.Value)? = pipe
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `yaml.pkl`/stdin.
+//        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                  ^^^^^ reference pkl . pkl 0.29.0 `pkl.yaml`/Value#
+//                              ^^^^^ reference pkl . pkl 0.29.0 `pkl.yaml`/Value#
+//                                        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `yaml.pkl`/pipe.
+  
+  output {
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `yaml.pkl`/output.
+    value = pipe
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `yaml.pkl`/value.
+//          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `yaml.pkl`/pipe.
+    when (read?("prop:pkl.outputFormat") == null) {
+      renderer = module.yamlRenderer
+//    ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `yaml.pkl`/renderer.
+//                      ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/yamlRenderer.
+    }
+  }
+  

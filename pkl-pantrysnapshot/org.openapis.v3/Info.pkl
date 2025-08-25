@@ -1,0 +1,102 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// The object provides metadata about the API.
+  ///
+  /// The metadata MAY be used by the clients if needed, and MAY be presented in editing or documentation generation
+  /// tools for convenience.
+  module org.openapis.v3.Info
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Info.pkl`/
+  
+  import "Extension.pkl"
+  import "Contact.pkl"
+  import "License.pkl"
+  
+  /// The title of the API
+  title: String 
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Info.pkl`/title.
+//documentation
+//> The title of the API
+//       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// The version of the OpenAPI document (which is distinct from the OpenAPI Specification version or the API
+  /// implementation version).
+  version: String
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Info.pkl`/version.
+//documentation
+//> The version of the OpenAPI document (which is distinct from the OpenAPI Specification version or the API
+//> implementation version).
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// A short description of the API.
+  ///
+  /// CommonMark syntax MAY be used for rich text representation.
+  @SourceCode { language = "Markdown" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/SourceCode#
+//              ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Info.pkl`/language.
+  description: String?
+//^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Info.pkl`/description.
+//documentation
+//> A short description of the API.
+//> 
+//> CommonMark syntax MAY be used for rich text representation.
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// A URL to the Terms of Service for the API.
+  ///
+  /// MUST be in the format of a URL.
+  termsOfService: Uri?
+//^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Info.pkl`/termsOfService.
+//documentation
+//> A URL to the Terms of Service for the API.
+//> 
+//> MUST be in the format of a URL.
+//                ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Uri#
+  
+  /// The contact information for the exposed API.
+  contact: Contact?
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Info.pkl`/contact.
+//documentation
+//> The contact information for the exposed API.
+//         ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Contact.pkl`/
+  
+  /// The license information for the exposed API.
+  license: License?
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Info.pkl`/license.
+//documentation
+//> The license information for the exposed API.
+//         ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `License.pkl`/
+  
+  /// Custom properties starting with x- extend OpenAPI with additional information
+  /// or functionality.
+  ///
+  /// This is a child property because Pkl modules cannot express both known names
+  /// and arbitrary names.
+  ///
+  /// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#specification-extensions>
+  hidden extensions: Mapping<Extension.Key, Any>?
+//       ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Info.pkl`/extensions.
+//       documentation
+//       > Custom properties starting with x- extend OpenAPI with additional information
+//       > or functionality.
+//       > 
+//       > This is a child property because Pkl modules cannot express both known names
+//       > and arbitrary names.
+//       > 
+//       > <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#specification-extensions>
+//                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Extension.pkl`/Key#
+//                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+  

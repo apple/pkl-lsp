@@ -1,0 +1,1290 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module pkl.lua.tests.renderer
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/
+  
+  amends "pkl:test"
+  
+  import "../lua.pkl"
+  
+  local function RenderDirective(text_: String): RenderDirective = new { text = text_ }
+//               ^^^^^^^^^^^^^^^ definition local RenderDirective_22
+//                               ^^^^^ definition local text__22
+//                                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                               ^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/RenderDirective#
+//                                                                       ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/text.
+//                                                                              ^^^^^ reference local text__22
+  local function LuaRenderDirective(before_: String?, value_: Any, after_: String?): lua.RenderDirective = new { before = before_; value = value_; after = after_ }
+//               ^^^^^^^^^^^^^^^^^^ definition local LuaRenderDirective_23
+//                                  ^^^^^^^ definition local before__23
+//                                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                    ^^^^^^ definition local value__23
+//                                                            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                                                 ^^^^^^ definition local after__23
+//                                                                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                                       ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/RenderDirective#
+//                                                                                                               ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/before.
+//                                                                                                                        ^^^^^^^ reference local before__23
+//                                                                                                                                 ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/value.
+//                                                                                                                                         ^^^^^^ reference local value__23
+//                                                                                                                                                 ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/after.
+//                                                                                                                                                         ^^^^^^ reference local after__23
+  
+  facts {
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/facts.
+    ["base.RenderDirective"] {
+      new lua.Renderer {}.renderDocument(RenderDirective("foo")) == "foo\n"
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                       ^^^^^^^^^^^^^^^ reference local RenderDirective_22
+      new lua.Renderer {}.renderDocument(new Dynamic { [RenderDirective("foo bar")] = 1}) == "foo bar = 1\n"
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                      ^^^^^^^^^^^^^^^ reference local RenderDirective_22
+      new lua.Renderer {}.renderValue(Map(RenderDirective("a.b"), 1)) == "{ a.b = 1; }"
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                        ^^^^^^^^^^^^^^^ reference local RenderDirective_22
+      new lua.Renderer {}.renderValue(Map(RenderDirective("]["), 1)) == "{ ][ = 1; }"
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                        ^^^^^^^^^^^^^^^ reference local RenderDirective_22
+      new lua.Renderer {}.renderValue(Map(RenderDirective("a"), 1)) == #"{ a = 1; }"#
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                        ^^^^^^^^^^^^^^^ reference local RenderDirective_22
+      new lua.Renderer {}.renderValue(List(1, RenderDirective("foo bar"), 2)) == "{ 1, foo bar, 2 }"
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                            ^^^^^^^^^^^^^^^ reference local RenderDirective_22
+      new lua.Renderer {}.renderValue(Map("a", RenderDirective("1 + 2"))) == "{ a = 1 + 2; }"
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                             ^^^^^^^^^^^^^^^ reference local RenderDirective_22
+      new lua.Renderer { multilineThreshold = 1 }.renderValue(new Dynamic { a { [RenderDirective("a\nb")] = RenderDirective("c\nd") }}) == "{\n  a = {\n    a\nb = c\nd;\n  };\n}"
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                       ^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/multilineThreshold.
+//                                                ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                          ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                               ^^^^^^^^^^^^^^^ reference local RenderDirective_22
+//                                                                                                          ^^^^^^^^^^^^^^^ reference local RenderDirective_22
+    }
+    ["lua.RenderDirective"] {
+      new lua.Renderer {}.renderDocument(LuaRenderDirective(null, 1, null)) == "1\n"
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                       ^^^^^^^^^^^^^^^^^^ reference local LuaRenderDirective_23
+      new lua.Renderer {}.renderDocument(LuaRenderDirective(null, new Dynamic { a = 1 }, null)) == "{ a = 1; }\n"
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                       ^^^^^^^^^^^^^^^^^^ reference local LuaRenderDirective_23
+//                                                                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                              ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+      new lua.Renderer {}.renderDocument(LuaRenderDirective("x", new Dynamic { a = 1 }, "y")) == "x{ a = 1; }y\n"
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                       ^^^^^^^^^^^^^^^^^^ reference local LuaRenderDirective_23
+//                                                                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                             ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+      new lua.Renderer {}.renderDocument(new Dynamic { a = LuaRenderDirective(null, 1, null) }) == "a = 1\n"
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                     ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                         ^^^^^^^^^^^^^^^^^^ reference local LuaRenderDirective_23
+      new lua.Renderer {}.renderDocument(new Dynamic { a = LuaRenderDirective("x", 1, "y") }) == "a = x1y\n"
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                     ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                         ^^^^^^^^^^^^^^^^^^ reference local LuaRenderDirective_23
+      new lua.Renderer {}.renderDocument(new Dynamic { [LuaRenderDirective(null, "a", null)] = 1 }) == #"_ENV["a"] = 1\#n"#
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                      ^^^^^^^^^^^^^^^^^^ reference local LuaRenderDirective_23
+      new lua.Renderer {}.renderDocument(new Dynamic { [LuaRenderDirective("x", "a", "y")] = 1 }) == #"_ENV[x"a"y] = 1\#n"#
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                      ^^^^^^^^^^^^^^^^^^ reference local LuaRenderDirective_23
+      new lua.Renderer {}.renderDocument(new Dynamic { [LuaRenderDirective("x", RenderDirective("a"), "y")] = 1 }) == #"_ENV[xay] = 1\#n"#
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                      ^^^^^^^^^^^^^^^^^^ reference local LuaRenderDirective_23
+//                                                                              ^^^^^^^^^^^^^^^ reference local RenderDirective_22
+      new lua.Renderer {}.renderValue(new Dynamic { [LuaRenderDirective(null, "a", null)] = 1 }) == #"{ ["a"] = 1; }"#
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                   ^^^^^^^^^^^^^^^^^^ reference local LuaRenderDirective_23
+      new lua.Renderer {}.renderValue(new Dynamic { [LuaRenderDirective("x", "a", "y")] = 1 }) == #"{ [x"a"y] = 1; }"#
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                   ^^^^^^^^^^^^^^^^^^ reference local LuaRenderDirective_23
+      new lua.Renderer {}.renderValue(new Dynamic { [LuaRenderDirective("x", RenderDirective("a"), "y")] = 1 }) == #"{ [xay] = 1; }"#
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                   ^^^^^^^^^^^^^^^^^^ reference local LuaRenderDirective_23
+//                                                                           ^^^^^^^^^^^^^^^ reference local RenderDirective_22
+    }
+    ["Lua indexes are 1-based"] {
+      new lua.Renderer {}.renderDocument(new Dynamic { 1; 2 }) == "_ENV[1] = 1\n_ENV[2] = 2\n"
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+    }
+    ["omitNullProperties"] {
+      new lua.Renderer { omitNullProperties = true }.renderDocument(new Dynamic {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                       ^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/omitNullProperties.
+//                                                   ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+        type = "Dynamic"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/type.
+        a = 1
+//      ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+        b = null
+//      ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+        ["c"] = null // language limitation means this is treated like a property
+        [42] = null
+        [true] = null
+        nest {
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/nest.
+          a = 1
+//        ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+          b = null
+//        ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+          ["c"] = null // language limitation means this is treated like a property
+          [42] = null
+          [true] = null
+          mapping = new Mapping {
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/mapping.
+//                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+            ["a"] = 1
+            ["b"] = null
+            [42] = null
+            [true] = null
+          }
+          map = Map("a", 1, "b", null)
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/map.
+//              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+          listing = new Listing {
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/listing.
+//                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+            1
+            null
+          }
+          list = List(1, null)
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/list.
+//               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+        }
+        foo = new Foo {
+//      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/foo.
+//                ^^^ reference local Foo_322
+          a = 1
+//        ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+        }
+      }) == new lua.Renderer {}.renderDocument(new Dynamic {
+//                  ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                              ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+        type = "Dynamic"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/type.
+        a = 1
+//      ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+        [42] = null
+        [true] = null
+        nest {
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/nest.
+          a = 1
+//        ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+          [42] = null
+          [true] = null
+          mapping = new Mapping {
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/mapping.
+//                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+            ["a"] = 1
+            ["b"] = null
+            [42] = null
+            [true] = null
+          }
+          map = Map("a", 1, "b", null)
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/map.
+//              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+          listing = new Listing {
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/listing.
+//                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+            1
+            null
+          }
+          list = List(1, null)
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/list.
+//               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+        }
+        foo {
+//      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/foo.
+          type = "class Foo"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/type.
+          a = 1
+//        ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+        }
+      })
+      new lua.Renderer { omitNullProperties = true }.renderDocument(new Mapping {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                       ^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/omitNullProperties.
+//                                                   ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+        ["type"] = "Mapping"
+        ["a"] = 1
+        ["b"] = null // this is a Mapping, it won't be omitted
+        ["dynamic"] {
+          a = 1
+//        ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+          b = null
+//        ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+          ["c"] = null // language limitation means this is treated like a property
+        }
+        ["foo"] = new Foo {
+//                    ^^^ reference local Foo_322
+          a = 1
+//        ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+        }
+      }) == new lua.Renderer {}.renderDocument(new Mapping {
+//                  ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                              ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+        ["type"] = "Mapping"
+        ["a"] = 1
+        ["b"] = null
+        ["dynamic"] {
+          a = 1
+//        ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+        }
+        ["foo"] {
+          type = "class Foo"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/type.
+          a = 1
+//        ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+        }
+      })
+    }
+    ["default key"] {
+      // A Typed with a `default` key should render just fine even though Dynamic has `hidden default`
+      local renderer = new lua.Renderer { omitNullProperties = true }
+//          ^^^^^^^^ definition local renderer_136
+//                             ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                        ^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/omitNullProperties.
+      // Check Dynamic with ["default"] first so ensure we can use Dynamic to generate valid cases
+      renderer.renderDocument(new Dynamic { ["default"] = 1 }) == "default = 1\n"
+//    ^^^^^^^^ reference local renderer_136
+//             ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+      renderer.renderValue(new Dynamic { ["default"] = 1 }) == "{ default = 1; }"
+//    ^^^^^^^^ reference local renderer_136
+//             ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+      // Now everything else can just validate against the equivalent Dynamic
+      // Note that we need to use entries exclusively for ordering reasons
+      renderer.renderDocument(new WithDefault { default = 1 }) == renderer.renderDocument(new Dynamic { ["default"] = 1 })
+//    ^^^^^^^^ reference local renderer_136
+//             ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                ^^^^^^^^^^^ reference local WithDefault_329
+//                                              ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/default.
+//                                                                ^^^^^^^^ reference local renderer_136
+//                                                                         ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                                            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+      renderer.renderDocument(new WithDefault { default = 1; a = 2 }) == renderer.renderDocument(new Dynamic { ["default"] = 1; ["a"]= 2 })
+//    ^^^^^^^^ reference local renderer_136
+//             ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                ^^^^^^^^^^^ reference local WithDefault_329
+//                                              ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/default.
+//                                                           ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                       ^^^^^^^^ reference local renderer_136
+//                                                                                ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                                                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+      renderer.renderDocument(new Dynamic { a = new WithDefault { default = 1 } }) == renderer.renderDocument(new Dynamic { ["a"] { ["default"] = 1 } })
+//    ^^^^^^^^ reference local renderer_136
+//             ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                          ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                  ^^^^^^^^^^^ reference local WithDefault_329
+//                                                                ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/default.
+//                                                                                    ^^^^^^^^ reference local renderer_136
+//                                                                                             ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+      renderer.renderDocument(new Dynamic { a = new WithDefault { default = 1; a = 2 } }) == renderer.renderDocument(new Dynamic { ["a"] { ["default"] = 1; ["a"] = 2 } })
+//    ^^^^^^^^ reference local renderer_136
+//             ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                          ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                  ^^^^^^^^^^^ reference local WithDefault_329
+//                                                                ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/default.
+//                                                                             ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                                           ^^^^^^^^ reference local renderer_136
+//                                                                                                    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                                                                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+      renderer.renderValue(new WithDefault { default = 1 }) == renderer.renderValue(new Dynamic { ["default"] = 1 })
+//    ^^^^^^^^ reference local renderer_136
+//             ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                             ^^^^^^^^^^^ reference local WithDefault_329
+//                                           ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/default.
+//                                                             ^^^^^^^^ reference local renderer_136
+//                                                                      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                                                                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+      renderer.renderValue(new WithDefault { default = 1; a = 2 }) == renderer.renderValue(new Dynamic { ["default"] = 1; ["a"] = 2 })
+//    ^^^^^^^^ reference local renderer_136
+//             ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                             ^^^^^^^^^^^ reference local WithDefault_329
+//                                           ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/default.
+//                                                        ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                    ^^^^^^^^ reference local renderer_136
+//                                                                             ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                                                                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+    }
+    ["path converters"] {
+      new lua.Renderer {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+        converters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/converters.
+          ["^"] = (_) -> new Dynamic { a = 1 }
+//                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                     ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+        }
+      }.renderDocument(new Dynamic { b = 2 }) == "a = 1\n"
+//      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                   ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+      new lua.Renderer {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+        converters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/converters.
+          [""] = (_) -> new Dynamic { a = 1 }
+//                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                    ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+        }
+      }.renderDocument(new Dynamic { b = 2 }) == "a = 1\n"
+//      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                   ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+      new lua.Renderer {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+        converters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/converters.
+          ["*"] = (it) -> if (it is Int) it + 1 else it
+//                 ^^ definition local it_162
+//                            ^^ reference local it_162
+//                                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                                       ^^ reference local it_162
+//                                                   ^^ reference local it_162
+        }
+      }.renderDocument(new Dynamic { 1; a = 1; b { 1; c = 1; d { e = 1 } } }) == new lua.Renderer {}.renderDocument(new Dynamic { 1; a = 2; b { 1; c = 2; d { e = 2 } } })
+//      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                      ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                             ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                                    ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+//                                                           ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/d.
+//                                                               ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/e.
+//                                                                                       ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                                                                                   ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                                                                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                                                                                   ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                                                                                          ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                                                                                                                                 ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+//                                                                                                                                                        ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/d.
+//                                                                                                                                                            ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/e.
+      new lua.Renderer {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+        converters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/converters.
+          ["a.b"] = (it) -> it + 1
+//                   ^^ definition local it_167
+//                          ^^ reference local it_167
+        }
+      }.renderDocument(new Dynamic { a { b = 1; c { b = 1 } }; b = 1; c { a { b = 1 } } }) == new lua.Renderer {}.renderDocument(new Dynamic { a { b = 2; c { b = 1 } }; b = 1; c { a { b = 2 } } })
+//      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                   ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                       ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                              ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+//                                                  ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                                             ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                                                    ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+//                                                                        ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                            ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                                                                                    ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                                                                                                ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                                                                                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                                                                                             ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                                                                                                 ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                                                                                                                                        ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+//                                                                                                                                                            ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                                                                                                                                                       ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                                                                                                                                                              ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+//                                                                                                                                                                                  ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                                                                                                                                      ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+      new lua.Renderer {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+        converters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/converters.
+          ["^a.b"] = (it) -> it + 1
+//                    ^^ definition local it_172
+//                           ^^ reference local it_172
+        }
+      }.renderDocument(new Dynamic { a { b = 1; c { b = 1 } }; b = 1; c { a { b = 1 } } }) == new lua.Renderer {}.renderDocument(new Dynamic { a { b = 2; c { b = 1 } }; b = 1; c { a { b = 1 } } })
+//      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                   ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                       ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                              ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+//                                                  ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                                             ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                                                    ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+//                                                                        ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                            ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                                                                                    ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                                                                                                ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                                                                                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                                                                                             ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                                                                                                 ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                                                                                                                                        ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+//                                                                                                                                                            ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                                                                                                                                                       ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                                                                                                                                                              ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+//                                                                                                                                                                                  ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                                                                                                                                      ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+      new lua.Renderer {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+        converters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/converters.
+          ["a"] = (it) -> new Dynamic { b = it }
+//                 ^^ definition local it_177
+//                            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                      ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                          ^^ reference local it_177
+          ["b"] = (it) -> new Dynamic { c = it }
+//                 ^^ definition local it_178
+//                            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                      ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+//                                          ^^ reference local it_178
+        }
+      }.renderDocument(new Dynamic { a = 1 }) == new lua.Renderer {}.renderDocument(new Dynamic { a { b { c = 1 } } })
+//      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                   ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                       ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                                                   ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                                                ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                                                    ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                                                                                        ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+      new lua.Renderer {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+        converters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/converters.
+          ["[*]"] = (it) -> if (it is Int) it + 1 else it
+//                   ^^ definition local it_183
+//                              ^^ reference local it_183
+//                                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                                         ^^ reference local it_183
+//                                                     ^^ reference local it_183
+        }
+      }.renderDocument(new Mapping { ["a"] = 1; ["b"] = new Mapping { ["c"] = 1 } }) == new lua.Renderer {}.renderDocument(new Dynamic { a = 2; b { c = 2 } })
+//      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                                                              ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                                                                                          ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                                                                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                                                                                       ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                                                                                              ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                                                                                                                                  ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+      new lua.Renderer {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+        converters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/converters.
+          ["[*]"] = (it) -> if (it is Int) it + 1 else it
+//                   ^^ definition local it_188
+//                              ^^ reference local it_188
+//                                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                                         ^^ reference local it_188
+//                                                     ^^ reference local it_188
+        }
+      }.renderDocument(new Dynamic { a = 1; 1; new Listing { 1; 2 }; 2 }) == new lua.Renderer {}.renderDocument(new Dynamic { a = 1; 2; new Listing { 2; 3 }; 3 })
+//      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                   ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                                                                   ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                                                                               ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                                                                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                                                                            ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                                                                                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+      new lua.Renderer {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+        converters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/converters.
+          ["[a]"] = (it) -> it + 1
+//                   ^^ definition local it_193
+//                          ^^ reference local it_193
+        }
+      }.renderDocument(new Dynamic { a = 1; map = new Mapping { ["a"] = 1 } }) == new lua.Renderer {}.renderDocument(new Dynamic { a = 1; map { ["a"] = 2 } })
+//      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                   ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                          ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/map.
+//                                                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                                                        ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                                                                                    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                                                                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                                                                                 ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                                                                                        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/map.
+      // check that path like "[1]" matches string key "1" and not list idx or int key or funky property
+      let (source = new Dynamic { 1; 1; new Dynamic { 1; 1 }; new Listing { 1; 1 }; new Mapping { [1] = 1; ["1"] = 1 }; new Dynamic { `[1]` = 1; `["1"]` = 1 } })
+//         ^^^^^^ definition local source_197
+//                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                                                                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                                                                                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                                                                                    ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/`[1]`.
+//                                                                                                                                               ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/`["1"]`.
+      let (expected = new Dynamic { 1; 1; new Dynamic { 1; 1 }; new Listing { 1; 1 }; new Mapping { [1] = 1; ["1"] = 2 }; new Dynamic { `[1]` = 1; `["1"]` = 1 } })
+//         ^^^^^^^^ definition local expected_198
+//                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                                                                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                                                                                            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                                                                                      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/`[1]`.
+//                                                                                                                                                 ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/`["1"]`.
+      new lua.Renderer {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+        converters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/converters.
+          ["[1]"] = (it) -> it + 1
+//                   ^^ definition local it_201
+//                          ^^ reference local it_201
+        }
+      }.renderDocument(source) == new lua.Renderer {}.renderDocument(expected)
+//      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                     ^^^^^^ reference local source_197
+//                                        ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                                    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                   ^^^^^^^^ reference local expected_198
+      // check for string vs int key on Dynamic too; note that Dynamic treats all string keys as properties, so the converter shouldn't run
+      let (source = new Dynamic { [1] = 1; ["1"] = 1; nest { [1] = 1; ["1"] = 1 } })
+//         ^^^^^^ definition local source_205
+//                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                    ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/nest.
+      let (expected = new Dynamic { [1] = 1; ["1"] = 1; nest { [1] = 1; ["1"] = 1 } })
+//         ^^^^^^^^ definition local expected_206
+//                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/nest.
+      new lua.Renderer {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+        converters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/converters.
+          ["[1]"] = (it) -> it + 1
+//                   ^^ definition local it_209
+//                          ^^ reference local it_209
+        }
+      }.renderDocument(source) == new lua.Renderer {}.renderDocument(expected)
+//      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                     ^^^^^^ reference local source_205
+//                                        ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                                    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                   ^^^^^^^^ reference local expected_206
+    }
+    ["path converters apply after converting keys"] {
+      // first validate that "x.42" matches a string key but not an integral key, and "x[42]" doesn't match
+      new lua.Renderer {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+        converters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/converters.
+          ["x[42]"] = (it) -> "unexpected match: \(it)"
+//                     ^^ definition local it_217
+//                                                 ^^ reference local it_217
+          ["x.42"] = (it) -> "matched: \(it)"
+//                    ^^ definition local it_218
+//                                       ^^ reference local it_218
+        }
+      }.renderDocument(new Dynamic { x { [42] = true; ["42"] = true } }) == new lua.Renderer {}.renderDocument(new Dynamic { x { [42] = true; ["42"] = "matched: true" } })
+//      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                   ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/x.
+//                                                                                  ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                                                                              ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                                                                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                                                                           ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/x.
+      // now validate that converting the key makes it match "x[42]" instead of "x.42" (as we know it's a key, not a property)
+      new lua.Renderer {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+        converters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/converters.
+          [Int] = (it) -> it.toString()
+//         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                 ^^ definition local it_224
+//                        ^^ reference local it_224
+//                           ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toString().
+          ["x.42"] = (it) -> "unexpected match: \(it)"
+//                    ^^ definition local it_225
+//                                                ^^ reference local it_225
+          ["x[42]"] = (it) -> "matched: \(it)"
+//                     ^^ definition local it_226
+//                                        ^^ reference local it_226
+        }
+      }.renderDocument(new Dynamic { x { [42] = true } }) == new lua.Renderer {}.renderDocument(new Dynamic { x { ["42"] = "matched: true" } })
+//      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                   ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/x.
+//                                                                   ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                                                               ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                                                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                                                            ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/x.
+      // same thing with Mapping, validate that "x[42]" matches a string key but not an integral key, and "x.42" doesn't match
+      new lua.Renderer {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+        converters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/converters.
+          ["x.42"] = (it) -> "unexpected match: \(it)"
+//                    ^^ definition local it_232
+//                                                ^^ reference local it_232
+          ["x[42]"] = (it) -> "matched: \(it)"
+//                     ^^ definition local it_233
+//                                        ^^ reference local it_233
+        }
+      }.renderDocument(new Dynamic { x = new Mapping { [42] = true; ["42"] = true } }) == new lua.Renderer {}.renderDocument(new Dynamic { x { [42] = true; ["42"] = "matched: true" } })
+//      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                   ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/x.
+//                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                                                                ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                                                                                            ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                                                                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                                                                                         ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/x.
+      // now validate that converting the key makes it match "x[42]" (but not "x.42")
+      new lua.Renderer {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+        converters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/converters.
+          [Int] = (it) -> it.toString()
+//         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                 ^^ definition local it_239
+//                        ^^ reference local it_239
+//                           ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toString().
+          ["x.42"] = (it) -> "unexpected match: \(it)"
+//                    ^^ definition local it_240
+//                                                ^^ reference local it_240
+          ["x[42]"] = (it) -> "matched: \(it)"
+//                     ^^ definition local it_241
+//                                        ^^ reference local it_241
+        }
+      }.renderDocument(new Dynamic { x = new Mapping { [42] = true } }) == new lua.Renderer {}.renderDocument(new Dynamic { x { ["42"] = "matched: true" } })
+//      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                   ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/x.
+//                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                                                 ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                                                                             ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                                                                          ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/x.
+    }
+    ["path converters in objects used as mapping keys"] {
+      let (source = new Dynamic { a = 1; [new Dynamic { a = 1; b { a = 1; c = 1 }; c = 1 }] = 1 })
+//         ^^^^^^ definition local source_246
+//                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                      ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                             ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                                                 ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                        ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+//                                                                                 ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+      let (expected = new Dynamic { a = 11; [new Dynamic { a = 2; b { a = 2; c = 3 }; c = 1 }] = 1 })
+//         ^^^^^^^^ definition local expected_247
+//                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                  ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                         ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                                                    ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                           ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+//                                                                                    ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+      new lua.Renderer {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+        converters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/converters.
+          ["^a"] = (it) -> it + 10 // ^ won't match in table key
+//                  ^^ definition local it_250
+//                         ^^ reference local it_250
+          ["a"] = (it) -> it + 1
+//                 ^^ definition local it_251
+//                        ^^ reference local it_251
+          ["b.c"] = (it) -> it + 2
+//                   ^^ definition local it_252
+//                          ^^ reference local it_252
+        }
+      }.renderDocument(source) == new lua.Renderer {}.renderDocument(expected)
+//      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                     ^^^^^^ reference local source_246
+//                                        ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                                    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                   ^^^^^^^^ reference local expected_247
+      let (source = new Dynamic { foo { a = 1; [new Dynamic { a = 1; b { a = 1; c = 1 }; c = 1 }] = 1 } })
+//         ^^^^^^ definition local source_255
+//                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/foo.
+//                                      ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                            ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                   ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                                                       ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                              ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+//                                                                                       ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+      let (expected = new Dynamic { foo { a = 11; [new Dynamic { a = 2; b { a = 2; c = 3 }; c = 1 }] = 1 } })
+//         ^^^^^^^^ definition local expected_256
+//                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/foo.
+//                                        ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                               ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                      ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                                                          ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                                 ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+//                                                                                          ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+      new lua.Renderer {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+        converters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/converters.
+          ["^*.a"] = (it) -> it + 10 // ^ won't match in table key
+//                    ^^ definition local it_259
+//                           ^^ reference local it_259
+          ["a"] = (it) -> it + 1
+//                 ^^ definition local it_260
+//                        ^^ reference local it_260
+          ["b.c"] = (it) -> it + 2
+//                   ^^ definition local it_261
+//                          ^^ reference local it_261
+        }
+      }.renderDocument(source) == new lua.Renderer {}.renderDocument(expected)
+//      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                     ^^^^^^ reference local source_255
+//                                        ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                                    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                   ^^^^^^^^ reference local expected_256
+    }
+    ["class converters"] {
+      let (source = new Dynamic { a = 1; b = "two"; c = true; nest { 1; "one"; a = 1; b = "two"; c = true }; map = new Mapping { ["a"] = 1; ["b"] = "two"; ["c"] = true }; list = new Listing { 1; "two"; true } })
+//         ^^^^^^ definition local source_266
+//                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                       ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                                  ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+//                                                            ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/nest.
+//                                                                             ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                                    ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                                                                               ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+//                                                                                                           ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/map.
+//                                                                                                                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                                                                                                                                         ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/list.
+//                                                                                                                                                                                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+      let (expected = new Dynamic { a = 2; b = "two!"; c = true; nest { 2; "one!"; a = 2; b = "two!"; c = true }; map { ["a!"] = 2; ["b!"] = "two!"; ["c!"] = true }; list { 2; "two!"; true } })
+//         ^^^^^^^^ definition local expected_267
+//                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                  ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                         ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                                     ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+//                                                               ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/nest.
+//                                                                                 ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                                        ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+//                                                                                                    ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+//                                                                                                                ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/map.
+//                                                                                                                                                                    ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/list.
+      new lua.Renderer {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+        converters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/converters.
+          [Int] = (it) -> it + 1
+//         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                 ^^ definition local it_270
+//                        ^^ reference local it_270
+          [String] = (it) -> "\(it)!"
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                    ^^ definition local it_271
+//                              ^^ reference local it_271
+        }
+      }.renderDocument(source) == new lua.Renderer {}.renderDocument(expected)
+//      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                     ^^^^^^ reference local source_266
+//                                        ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                                    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                   ^^^^^^^^ reference local expected_267
+      // class converters prefer the most specific class
+      new lua.Renderer {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+        converters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/converters.
+          [Base] = (_) -> "base"
+//         ^^^^ reference local Base_334
+          [Child] = (_) -> "child"
+//         ^^^^^ reference local Child_335
+        }
+      }.renderDocument(new Dynamic { base = new Base {}; child = new Child {} }) == new lua.Renderer {}.renderDocument(new Dynamic { base = "base"; child = "child" })
+//      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                   ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/base.
+//                                              ^^^^ reference local Base_334
+//                                                       ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/child.
+//                                                                   ^^^^^ reference local Child_335
+//                                                                                          ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                                                                                      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                                                                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                                                                                   ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/base.
+//                                                                                                                                                  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/child.
+      // class converters match subclasses
+      new lua.Renderer {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+        converters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/converters.
+          [Base] = (_) -> "base"
+//         ^^^^ reference local Base_334
+        }
+      }.renderDocument(new Dynamic { child = new Child {} }) == new lua.Renderer {}.renderDocument(new Dynamic { child = "base" })
+//      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                   ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/child.
+//                                               ^^^^^ reference local Child_335
+//                                                                      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                                                                  ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                                                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                                                               ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/child.
+    }
+    ["class converters in mapping keys"] {
+      // remember, string mapping keys in Dynamic are treated as properties
+      let (source = new Dynamic { [5] = 1; ["a"] = true; foo { [5] = 1; ["a"] = true }; map = new Mapping { [5] = 1; ["a"] = true } })
+//         ^^^^^^ definition local source_290
+//                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                       ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/foo.
+//                                                                                      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/map.
+//                                                                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+      let (expected = new Dynamic { [6] = 2; ["a"] = true; foo { [6] = 2; ["a"] = true }; map { [6] = 2; ["a!"] = true } })
+//         ^^^^^^^^ definition local expected_291
+//                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                         ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/foo.
+//                                                                                        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/map.
+      new lua.Renderer {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+        converters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/converters.
+          [Int] = (it) -> it + 1
+//         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                 ^^ definition local it_294
+//                        ^^ reference local it_294
+          [String] = (it) -> "\(it)!"
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                    ^^ definition local it_295
+//                              ^^ reference local it_295
+        }
+      }.renderDocument(source) == new lua.Renderer {}.renderDocument(expected)
+//      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                     ^^^^^^ reference local source_290
+//                                        ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                                    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                   ^^^^^^^^ reference local expected_291
+    }
+    ["NaN and Infinity"] {
+      new lua.Renderer {}.renderValue(Infinity) == "(1/0)"
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                    ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Infinity.
+      new lua.Renderer {}.renderValue(-Infinity) == "(-1/0)"
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                     ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Infinity.
+      new lua.Renderer {}.renderValue(NaN) == "(0/0)"
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/NaN.
+    }
+    ["table keys can be anything but nil or NaN"] {
+      // check all other types first
+      module.catchOrNull(() -> new lua.Renderer {}.renderDocument(new Dynamic { [1] = 1; [1.0] = 1; [Infinity] = 1; ["a"] = 1; [true] = 1; [Map()] = 1})) == null
+//           ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catchOrNull().
+//                                     ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                                 ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                                                   ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Infinity.
+//                                                                                                                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+      module.catchOrNull(() -> new lua.Renderer {}.renderDocument(new Mapping { [1] = 1; [1.0] = 1; [Infinity] = 1; ["a"] = 1; [true] = 1; [Map()] = 1})) == null
+//           ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catchOrNull().
+//                                     ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                                 ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                                                                   ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Infinity.
+//                                                                                                                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+      module.catchOrNull(() -> new lua.Renderer {}.renderValue(new Dynamic { [1] = 1; [1.0] = 1; [Infinity] = 1; ["a"] = 1; [true] = 1; [Map()] = 1})) == null
+//           ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catchOrNull().
+//                                     ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                                 ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                                                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                                                ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Infinity.
+//                                                                                                                                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+      module.catchOrNull(() -> new lua.Renderer {}.renderValue(new Mapping { [1] = 1; [1.0] = 1; [Infinity] = 1; ["a"] = 1; [true] = 1; [Map()] = 1})) == null
+//           ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catchOrNull().
+//                                     ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                                 ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                                                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                                                                ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Infinity.
+//                                                                                                                                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+      module.catch(() -> new lua.Renderer {}.renderDocument(new Dynamic { [null] = 1 })) == "Lua table keys cannot be null"
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                           ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+      module.catch(() -> new lua.Renderer {}.renderDocument(new Dynamic { [NaN] = 1 })) == "Lua table keys cannot be NaN"
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                           ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/NaN.
+      module.catch(() -> new lua.Renderer {}.renderDocument(new Mapping { [null] = 1 })) == "Lua table keys cannot be null"
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                           ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+      module.catch(() -> new lua.Renderer {}.renderDocument(new Mapping { [NaN] = 1 })) == "Lua table keys cannot be NaN"
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                           ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                                              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/NaN.
+      module.catch(() -> new lua.Renderer {}.renderValue(new Dynamic { [null] = 1 })) == "Lua table keys cannot be null"
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                           ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+      module.catch(() -> new lua.Renderer {}.renderValue(new Dynamic { [NaN] = 1 })) == "Lua table keys cannot be NaN"
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                           ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                      ^^^ reference pkl . pkl 0.29.0 `pkl.base`/NaN.
+      module.catch(() -> new lua.Renderer {}.renderValue(new Mapping { [null] = 1 })) == "Lua table keys cannot be null"
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                           ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+      module.catch(() -> new lua.Renderer {}.renderValue(new Mapping { [NaN] = 1 })) == "Lua table keys cannot be NaN"
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                                           ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                                      ^^^ reference pkl . pkl 0.29.0 `pkl.base`/NaN.
+    }
+  }
+  
+  // Helper class for tests
+  local class Foo {
+//            ^^^ definition local Foo_322
+    fixed type = "class Foo"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/Foo#type.
+    a: Int?
+//  ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/Foo#a.
+//     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+    b: String?
+//  ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/Foo#b.
+//     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  // Helper class for tests
+  local class WithDefault {
+//            ^^^^^^^^^^^ definition local WithDefault_329
+    default: Any
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/WithDefault#default.
+//           ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+    a: Any?
+//  ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/WithDefault#a.
+//     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+  }
+  
+  local open class Base {}
+//                 ^^^^ definition local Base_334
+  local class Child extends Base {}
+//            ^^^^^ definition local Child_335
+//                          ^^^^ reference local Base_334
+  
+  examples {
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/examples.
+    ["default render document"] {
+      new lua.Renderer {}.renderDocument(new Dynamic {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+        int = 1
+//      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/int.
+        float = 1.0
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/float.
+        string = "two"
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/string.
+        bool = true
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/bool.
+        `null` = null
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/null.
+        list = List(1, 2, 3)
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/list.
+//             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+        listing = new Listing {
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/listing.
+//                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+          "one"
+          "two"
+          "three"
+        }
+        map = Map("a", 1, "b", 2)
+//      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/map.
+//            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+        mapping = new Mapping {
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/mapping.
+//                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+          ["a"] = 1
+          ["b"] = 2
+        }
+        dynamic {
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/dynamic.
+          a = 1
+//        ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+          b = 2
+//        ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+          nested {
+//        ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/nested.
+            c = 3
+//          ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/c.
+            d = 4
+//          ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/d.
+          }
+        }
+        foo = new Foo {
+//      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/foo.
+//                ^^^ reference local Foo_322
+          a = 1
+//        ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+        }
+      })
+      new lua.Renderer {}.renderDocument(new Dynamic {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+        a = 1
+//      ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+        ["b"] = 2
+        "three"
+        `weird-key` = "hello"
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/weird-key.
+        fáncy = true
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/`fáncy`.
+        `if` = "keyword"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/if.
+        [""] = null
+      })
+      new lua.Renderer {}.renderDocument(new Mapping {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+        ["a"] = 1
+        ["b"] = 2
+        ["weird key"] = 3
+        [""] = null
+      })
+      new lua.Renderer {}.renderDocument(new Foo { a = 1 })
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                           ^^^ reference local Foo_322
+//                                                 ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+    }
+    ["default render value"] {
+      new lua.Renderer {}.renderValue(123)
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+      new lua.Renderer {}.renderValue(123.5)
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+      new lua.Renderer {}.renderValue("hello")
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+      new lua.Renderer {}.renderValue(new Listing { 1; 2; 3 })
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+      new lua.Renderer {}.renderValue(List(1, 2, 3))
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+      new lua.Renderer {}.renderValue(new Mapping { ["a"] = 1; ["b"] = 2 })
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+      new lua.Renderer {}.renderValue(Map("a", 1, "b", 2))
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+      new lua.Renderer {}.renderValue(null)
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+      new lua.Renderer {}.renderValue(true)
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+      new lua.Renderer {}.renderValue(new Dynamic { a = 1; b = 2 })
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                  ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                         ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+      new lua.Renderer {}.renderValue(new Dynamic { "one"; "two" })
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+      new lua.Renderer {}.renderValue(new Foo { a = 1 })
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                        ^^^ reference local Foo_322
+//                                              ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+    }
+    ["empty documents"] {
+      new lua.Renderer {}.renderDocument(new Dynamic {})
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+      new lua.Renderer {}.renderDocument(new Mapping {})
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+      new lua.Renderer {}.renderDocument(Map())
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderDocument().
+//                                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+    }
+    ["empty values"] {
+      new lua.Renderer {}.renderValue(new Dynamic {})
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+      new lua.Renderer {}.renderValue(new Mapping {})
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+      new lua.Renderer {}.renderValue(new Listing {})
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+      new lua.Renderer {}.renderValue(Map())
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+      new lua.Renderer {}.renderValue(List())
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+    }
+    ["multiline threshold"] {
+      new lua.Renderer {}.renderValue(new Dynamic { threshold = 2 })
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/threshold.
+      new lua.Renderer {}.renderValue(new Dynamic { threshold = 2; a = 1 })
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/threshold.
+//                                                                 ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+      new lua.Renderer { multilineThreshold = 1 }.renderValue(new Dynamic { threshold = 1 })
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                       ^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/multilineThreshold.
+//                                                ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                          ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/threshold.
+      new lua.Renderer { multilineThreshold = 3 }.renderValue(new Dynamic { threshold = 3 })
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                       ^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/multilineThreshold.
+//                                                ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                          ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/threshold.
+      new lua.Renderer { multilineThreshold = 3 }.renderValue(new Dynamic { threshold = 3; a = 1 })
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                       ^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/multilineThreshold.
+//                                                ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                          ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/threshold.
+//                                                                                         ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+      new lua.Renderer { multilineThreshold = 3 }.renderValue(new Dynamic { threshold = 3; a = 1; b = 2 })
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                       ^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/multilineThreshold.
+//                                                ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                          ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/threshold.
+//                                                                                         ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                                                                                                ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+    }
+    ["funky table keys"] {
+      new lua.Renderer {}.renderValue(new Mapping {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+        ["a b"] = "space"
+        ["if"] = "keyword"
+        [List(1,2)] = "list"
+//       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+        [12] = "int"
+        [12.1] = "float"
+        [true] = "boolean"
+        [new Dynamic { a = 1; b = 2 }] = "dynamic"
+//           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                     ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/a.
+//                            ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/renderer.pkl`/b.
+      })
+    }
+    ["string escapes"] {
+      new lua.Renderer {}.renderValue(new Listing {
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Renderer#renderValue().
+//                                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+        "'"
+        "\""
+        "'\""
+        "\nfoo\n"
+        "foo\nbar"
+        "\nfoo\nbar\n"
+        "[[foo\nbar]]"
+        "[[=[foo\nbar]=]]"
+        "foo\n\tbar"
+        "\u{7}\u{8}\u{c}\n\r\t\u{b}"
+        "\u{1}\u{7f}"
+      })
+    }
+  }
+  

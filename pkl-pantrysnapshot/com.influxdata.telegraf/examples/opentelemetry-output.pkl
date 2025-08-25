@@ -1,0 +1,59 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  amends "../Telegraf.pkl"
+  
+  outputs {
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/opentelemetry-output.pkl`/outputs.
+    opentelemetry {
+//  ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/opentelemetry-output.pkl`/opentelemetry.
+      new {
+        service_address = "localhost:4312"
+//      ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/opentelemetry-output.pkl`/service_address.
+        timeout = 10.s
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/opentelemetry-output.pkl`/timeout.
+//                   ^ reference pkl . pkl 0.29.0 `pkl.base`/Int#s.
+        tls_ca = "/path/to/ca/cert"
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/opentelemetry-output.pkl`/tls_ca.
+        tls_cert = "/path/to/cert"
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/opentelemetry-output.pkl`/tls_cert.
+        tls_key = "/path/to/key"
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/opentelemetry-output.pkl`/tls_key.
+        tls_server_name = "tls-server.com"
+//      ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/opentelemetry-output.pkl`/tls_server_name.
+        compression = "gzip"
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/opentelemetry-output.pkl`/compression.
+        coralogix {
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/opentelemetry-output.pkl`/coralogix.
+          application = "myapp"
+//        ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/opentelemetry-output.pkl`/application.
+          private_key = "my secret value"
+//        ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/opentelemetry-output.pkl`/private_key.
+          subsystem = "my subsystem"
+//        ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/opentelemetry-output.pkl`/subsystem.
+        }
+        attributes {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/opentelemetry-output.pkl`/attributes.
+          ["service.name"] = "foo"
+          ["service.version"] = "1.0.0"
+        }
+        headers {
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/opentelemetry-output.pkl`/headers.
+          ["x-api-key"] = "my-api-key"
+        }
+      }
+    }
+  }
+  

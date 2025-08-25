@@ -1,0 +1,484 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// Utility methods for parsing values into [JsonSchema].
+  @ModuleInfo { minPklVersion = "0.25.0" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleInfo#
+//              ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/minPklVersion.
+  module org.json_schema.Parser
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/
+  
+  import "pkl:json"
+  import "pkl:reflect"
+  
+  import "JsonSchema.pkl"
+  
+  local jsonParser = new json.Parser { useMapping = true }
+//      ^^^^^^^^^^ definition local jsonParser_25
+//                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.json`/Parser#
+//                                     ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/useMapping.
+  
+  local knownSchemaKeys: Set<String> = reflect.Module(JsonSchema).moduleClass.properties.keys
+//      ^^^^^^^^^^^^^^^ definition local knownSchemaKeys_27
+//                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#
+//                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Module().
+//                                                    ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                                ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Module#moduleClass.
+//                                                                            ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#properties.
+//                                                                                       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#keys.
+  
+  local function toJsonSchema(
+//               ^^^^^^^^^^^^ definition local toJsonSchema_29
+    raw: Mapping|Boolean,
+//  ^^^ definition local raw_30
+//       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+    baseSchema: JsonSchema?,
+//  ^^^^^^^^^^ definition local baseSchema_31
+//              ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+    path: List<String|Int>
+//  ^^^^ definition local path_32
+//        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+  ): JsonSchema.Schema =
+//              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+    if (raw is Boolean)
+//      ^^^ reference local raw_30
+//             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+      raw
+//    ^^^ reference local raw_30
+    else
+      new {
+        $$baseSchema = baseSchema ?? this
+//      ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/$$baseSchema.
+//                     ^^^^^^^^^^ reference local baseSchema_31
+        $id = raw.getOrNull("$id")
+//      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/$id.
+//            ^^^ reference local raw_30
+//                ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        $ref = raw.getOrNull("$ref")
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/$ref.
+//             ^^^ reference local raw_30
+//                 ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        $schema = raw.getOrNull("$schema")
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/$schema.
+//                ^^^ reference local raw_30
+//                    ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        $comment = raw.getOrNull("$comment")
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/$comment.
+//                 ^^^ reference local raw_30
+//                     ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        $defs = (raw.getOrNull("$defs") as Mapping?)
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/$defs.
+//               ^^^ reference local raw_30
+//                   ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+//                                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+          ?.toMap()
+//          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+          ?.map((key, value) -> Pair(key, toJsonSchema(value, $$baseSchema, path.add("definitions").add(key))))
+//          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#map().
+//               ^^^ definition local key_45
+//                    ^^^^^ definition local value_45
+//                              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+//                                   ^^^ reference local key_45
+//                                        ^^^^^^^^^^^^ reference local toJsonSchema_29
+//                                                     ^^^^^ reference local value_45
+//                                                            ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/$$baseSchema.
+//                                                                          ^^^^ reference local path_32
+//                                                                               ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                                                                                                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                                                                                                      ^^^ reference local key_45
+          ?.toMapping()
+//          ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#toMapping().
+        definitions = (raw.getOrNull("definitions") as Mapping?)
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/definitions.
+//                     ^^^ reference local raw_30
+//                         ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+//                                                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+          ?.toMap()
+//          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+          ?.map((key, value) -> Pair(key, toJsonSchema(value, $$baseSchema, path.add("$defs").add(key))))
+//          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#map().
+//               ^^^ definition local key_49
+//                    ^^^^^ definition local value_49
+//                              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+//                                   ^^^ reference local key_49
+//                                        ^^^^^^^^^^^^ reference local toJsonSchema_29
+//                                                     ^^^^^ reference local value_49
+//                                                            ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/$$baseSchema.
+//                                                                          ^^^^ reference local path_32
+//                                                                               ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                                                                                            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                                                                                                ^^^ reference local key_49
+          ?.toMapping()
+//          ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#toMapping().
+        type = raw.getOrNull("type")
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/type.
+//             ^^^ reference local raw_30
+//                 ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        format = raw.getOrNull("format")
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/format.
+//               ^^^ reference local raw_30
+//                   ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        pattern = raw.getOrNull("pattern")
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/pattern.
+//                ^^^ reference local raw_30
+//                    ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        maxLength = raw.getOrNull("maxLength")
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/maxLength.
+//                  ^^^ reference local raw_30
+//                      ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        minLength = raw.getOrNull("minLength")
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/minLength.
+//                  ^^^ reference local raw_30
+//                      ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        title = raw.getOrNull("title")
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/title.
+//              ^^^ reference local raw_30
+//                  ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        description = raw.getOrNull("description")
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/description.
+//                    ^^^ reference local raw_30
+//                        ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        multipleOf = raw.getOrNull("multipleOf")
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/multipleOf.
+//                   ^^^ reference local raw_30
+//                       ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        minimum = raw.getOrNull("minimum")
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/minimum.
+//                ^^^ reference local raw_30
+//                    ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        maximum = raw.getOrNull("maximum")
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/maximum.
+//                ^^^ reference local raw_30
+//                    ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        exclusiveMinimum = raw.getOrNull("exclusiveMinimum")
+//      ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/exclusiveMinimum.
+//                         ^^^ reference local raw_30
+//                             ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        exclusiveMaximum = raw.getOrNull("exclusiveMaximum")
+//      ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/exclusiveMaximum.
+//                         ^^^ reference local raw_30
+//                             ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        examples = raw.getOrNull("examples")
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/examples.
+//                 ^^^ reference local raw_30
+//                     ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        allOf = (raw.getOrNull("allOf") as Listing?)
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/allOf.
+//               ^^^ reference local raw_30
+//                   ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+//                                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+          ?.toList()
+//          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+          ?.mapIndexed((idx, elem) -> toJsonSchema(elem, $$baseSchema, path.add("allOf").add(idx)))
+//          ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#mapIndexed().
+//                      ^^^ definition local idx_66
+//                           ^^^^ definition local elem_66
+//                                    ^^^^^^^^^^^^ reference local toJsonSchema_29
+//                                                 ^^^^ reference local elem_66
+//                                                       ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/$$baseSchema.
+//                                                                     ^^^^ reference local path_32
+//                                                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                                                                                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                                                                                           ^^^ reference local idx_66
+          ?.toListing()
+//          ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#toListing().
+        anyOf = (raw.getOrNull("anyOf") as Listing?)
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/anyOf.
+//               ^^^ reference local raw_30
+//                   ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+//                                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+          ?.toList()
+//          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+          ?.mapIndexed((idx, elem) -> toJsonSchema(elem, $$baseSchema, path.add("anyOf").add(idx)))
+//          ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#mapIndexed().
+//                      ^^^ definition local idx_70
+//                           ^^^^ definition local elem_70
+//                                    ^^^^^^^^^^^^ reference local toJsonSchema_29
+//                                                 ^^^^ reference local elem_70
+//                                                       ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/$$baseSchema.
+//                                                                     ^^^^ reference local path_32
+//                                                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                                                                                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                                                                                           ^^^ reference local idx_70
+          ?.toListing()
+//          ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#toListing().
+        oneOf = (raw.getOrNull("oneOf") as Listing?)
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/oneOf.
+//               ^^^ reference local raw_30
+//                   ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+//                                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+          ?.toList()
+//          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+          ?.mapIndexed((idx, elem) -> toJsonSchema(elem, $$baseSchema, path.add("oneOf").add(idx)))
+//          ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#mapIndexed().
+//                      ^^^ definition local idx_74
+//                           ^^^^ definition local elem_74
+//                                    ^^^^^^^^^^^^ reference local toJsonSchema_29
+//                                                 ^^^^ reference local elem_74
+//                                                       ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/$$baseSchema.
+//                                                                     ^^^^ reference local path_32
+//                                                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                                                                                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                                                                                           ^^^ reference local idx_74
+          ?.toListing()
+//          ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#toListing().
+        not = if (raw.containsKey("not")) toJsonSchema(raw["not"], $$baseSchema, path.add("not")) else null
+//      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/not.
+//                ^^^ reference local raw_30
+//                    ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#containsKey().
+//                                        ^^^^^^^^^^^^ reference local toJsonSchema_29
+//                                                     ^^^ reference local raw_30
+//                                                                 ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/$$baseSchema.
+//                                                                               ^^^^ reference local path_32
+//                                                                                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+        properties = (raw.getOrNull("properties") as Mapping?)
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/properties.
+//                    ^^^ reference local raw_30
+//                        ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+//                                                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+          ?.toMap()
+//          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+          ?.map((key, value) -> Pair(key, toJsonSchema(value, $$baseSchema, path.add("properties").add(key))))
+//          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#map().
+//               ^^^ definition local key_79
+//                    ^^^^^ definition local value_79
+//                              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+//                                   ^^^ reference local key_79
+//                                        ^^^^^^^^^^^^ reference local toJsonSchema_29
+//                                                     ^^^^^ reference local value_79
+//                                                            ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/$$baseSchema.
+//                                                                          ^^^^ reference local path_32
+//                                                                               ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                                                                                                 ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                                                                                                     ^^^ reference local key_79
+          ?.toMapping()
+//          ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#toMapping().
+        items =
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/items.
+          let (rawItems = raw.getOrNull("items"))
+//             ^^^^^^^^ definition local rawItems_82
+//                        ^^^ reference local raw_30
+//                            ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+            if (rawItems == null) null
+//              ^^^^^^^^ reference local rawItems_82
+            else if (rawItems is Listing)
+//                   ^^^^^^^^ reference local rawItems_82
+//                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+              rawItems
+//            ^^^^^^^^ reference local rawItems_82
+                .toList()
+//               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+                .mapIndexed((idx, elem) -> toJsonSchema(elem, $$baseSchema, path.add("items").add(idx)))
+//               ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#mapIndexed().
+//                           ^^^ definition local idx_87
+//                                ^^^^ definition local elem_87
+//                                         ^^^^^^^^^^^^ reference local toJsonSchema_29
+//                                                      ^^^^ reference local elem_87
+//                                                            ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/$$baseSchema.
+//                                                                          ^^^^ reference local path_32
+//                                                                               ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                                                                                            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                                                                                                ^^^ reference local idx_87
+                .toListing()
+//               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#toListing().
+            else toJsonSchema(rawItems, $$baseSchema, path.add("items"))
+//               ^^^^^^^^^^^^ reference local toJsonSchema_29
+//                            ^^^^^^^^ reference local rawItems_82
+//                                      ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/$$baseSchema.
+//                                                    ^^^^ reference local path_32
+//                                                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+        additionalItems =
+//      ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/additionalItems.
+          let (rawAdditionalItems = raw.getOrNull("additionalItems"))
+//             ^^^^^^^^^^^^^^^^^^ definition local rawAdditionalItems_91
+//                                  ^^^ reference local raw_30
+//                                      ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+            if (rawAdditionalItems == null) null
+//              ^^^^^^^^^^^^^^^^^^ reference local rawAdditionalItems_91
+            else toJsonSchema(rawAdditionalItems, $$baseSchema, path.add("additionalItems"))
+//               ^^^^^^^^^^^^ reference local toJsonSchema_29
+//                            ^^^^^^^^^^^^^^^^^^ reference local rawAdditionalItems_91
+//                                                ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/$$baseSchema.
+//                                                              ^^^^ reference local path_32
+//                                                                   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+        contains =
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/contains.
+          let (rawContains = raw.getOrNull("contains"))
+//             ^^^^^^^^^^^ definition local rawContains_95
+//                           ^^^ reference local raw_30
+//                               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+            if (rawContains == null) null
+//              ^^^^^^^^^^^ reference local rawContains_95
+            else toJsonSchema(rawContains, $$baseSchema, path.add("contains"))
+//               ^^^^^^^^^^^^ reference local toJsonSchema_29
+//                            ^^^^^^^^^^^ reference local rawContains_95
+//                                         ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/$$baseSchema.
+//                                                       ^^^^ reference local path_32
+//                                                            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+        minItems = raw.getOrNull("minItems")
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/minItems.
+//                 ^^^ reference local raw_30
+//                     ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        maxItems = raw.getOrNull("maxItems")
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/maxItems.
+//                 ^^^ reference local raw_30
+//                     ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        uniqueItems = raw.getOrNull("uniqueItems")
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/uniqueItems.
+//                    ^^^ reference local raw_30
+//                        ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        default = raw.getOrNull("default")
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/default.
+//                ^^^ reference local raw_30
+//                    ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        deprecated = raw.getOrNull("deprecated")
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/deprecated.
+//                   ^^^ reference local raw_30
+//                       ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        readOnly = raw.getOrNull("readOnly")
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/readOnly.
+//                 ^^^ reference local raw_30
+//                     ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        writeOnly = raw.getOrNull("writeOnly")
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/writeOnly.
+//                  ^^^ reference local raw_30
+//                      ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        enum = raw.getOrNull("enum")
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/enum.
+//             ^^^ reference local raw_30
+//                 ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        required = raw.getOrNull("required")
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/required.
+//                 ^^^ reference local raw_30
+//                     ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        `const` = raw.getOrNull("const")
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/const.
+//                ^^^ reference local raw_30
+//                    ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        propertyNames = let (_raw = raw.getOrNull("propertyNames"))
+//      ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/propertyNames.
+//                           ^^^^ definition local _raw_108
+//                                  ^^^ reference local raw_30
+//                                      ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+            if (_raw == null) null
+//              ^^^^ reference local _raw_108
+            else toJsonSchema(_raw, $$baseSchema, path.add("propertyNames"))
+//               ^^^^^^^^^^^^ reference local toJsonSchema_29
+//                            ^^^^ reference local _raw_108
+//                                  ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/$$baseSchema.
+//                                                ^^^^ reference local path_32
+//                                                     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+        maxProperties = raw.getOrNull("maxProperties")
+//      ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/maxProperties.
+//                      ^^^ reference local raw_30
+//                          ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        minProperties = raw.getOrNull("minProperties")
+//      ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/minProperties.
+//                      ^^^ reference local raw_30
+//                          ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+        additionalProperties =
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/additionalProperties.
+          let (rawAdditionalProperties = raw.getOrNull("additionalProperties"))
+//             ^^^^^^^^^^^^^^^^^^^^^^^ definition local rawAdditionalProperties_114
+//                                       ^^^ reference local raw_30
+//                                           ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+            if (rawAdditionalProperties == null) null
+//              ^^^^^^^^^^^^^^^^^^^^^^^ reference local rawAdditionalProperties_114
+            else toJsonSchema(rawAdditionalProperties, $$baseSchema, path.add("additionalProperties"))
+//               ^^^^^^^^^^^^ reference local toJsonSchema_29
+//                            ^^^^^^^^^^^^^^^^^^^^^^^ reference local rawAdditionalProperties_114
+//                                                     ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/$$baseSchema.
+//                                                                   ^^^^ reference local path_32
+//                                                                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+        patternProperties = (raw.getOrNull("patternProperties") as Mapping?)
+//      ^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/patternProperties.
+//                           ^^^ reference local raw_30
+//                               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+//                                                                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+          ?.toMap()
+//          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+          ?.map((key, value) -> Pair(key, toJsonSchema(value, $$baseSchema, path.add("patternProperties").add(key))))
+//          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#map().
+//               ^^^ definition local key_119
+//                    ^^^^^ definition local value_119
+//                              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+//                                   ^^^ reference local key_119
+//                                        ^^^^^^^^^^^^ reference local toJsonSchema_29
+//                                                     ^^^^^ reference local value_119
+//                                                            ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/$$baseSchema.
+//                                                                          ^^^^ reference local path_32
+//                                                                               ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                                                                                                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                                                                                                            ^^^ reference local key_119
+          ?.toMapping()
+//          ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#toMapping().
+        _inline_ = raw.toMap()
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/_inline_.
+//                 ^^^ reference local raw_30
+//                     ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+          .filter((key, value) -> !knownSchemaKeys.contains(key) && value is Boolean|Mapping)
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#filter().
+//                 ^^^ definition local key_122
+//                      ^^^^^ definition local value_122
+//                                 ^^^^^^^^^^^^^^^ reference local knownSchemaKeys_27
+//                                                 ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#contains().
+//                                                          ^^^ reference local key_122
+//                                                                  ^^^^^ reference local value_122
+//                                                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                                                                                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+          .map((key, value) -> Pair(key, toJsonSchema(value, $$baseSchema, path.add(key))))
+//         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#map().
+//              ^^^ definition local key_123
+//                   ^^^^^ definition local value_123
+//                             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+//                                  ^^^ reference local key_123
+//                                       ^^^^^^^^^^^^ reference local toJsonSchema_29
+//                                                    ^^^^^ reference local value_123
+//                                                           ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/$$baseSchema.
+//                                                                         ^^^^ reference local path_32
+//                                                                              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                                                                                  ^^^ reference local key_123
+          .toMapping()
+//         ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#toMapping().
+      }
+  
+  /// Given a JSON string or [Resource], parse it into a [JsonSchema.Schema] instance.
+  function parse(src: Resource|String): JsonSchema.Schema =
+//         ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/parse().
+//         documentation
+//         > Given a JSON string or [`Resource`](pkl-lsp://stdlib/base.pkl#L519,C7), parse it into a [`JsonSchema.Schema`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.json_schema/JsonSchema.pkl#L46,C11) instance.
+//               ^^^ definition local src_128
+//                    ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Resource#
+//                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                 ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+    let (jsonParsed: Mapping|Boolean = jsonParser.parse(src) as Mapping|Boolean)
+//       ^^^^^^^^^^ definition local jsonParsed_129
+//                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                                     ^^^^^^^^^^ reference local jsonParser_25
+//                                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.json`/Parser#parse().
+//                                                      ^^^ reference local src_128
+//                                                              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+      toJsonSchema(jsonParsed, null, List())
+//    ^^^^^^^^^^^^ reference local toJsonSchema_29
+//                 ^^^^^^^^^^ reference local jsonParsed_129
+//                                   ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+  

@@ -1,0 +1,73 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  amends "../Telegraf.pkl"
+  
+  import "../plugins/serializers/JsonOutputDataFormat.pkl"
+  
+  global_tags {
+//^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/simple.pkl`/global_tags.
+    ["user"] = "alice"
+  }
+  
+  inputs {
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/simple.pkl`/inputs.
+    http {
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/simple.pkl`/http.
+      new {
+        method = "GET"
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/simple.pkl`/method.
+        urls {
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/simple.pkl`/urls.
+          "https://server.company.org/metrics"
+        }
+      }
+    }
+    cpu {
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/simple.pkl`/cpu.
+      new {
+        percpu = false
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/simple.pkl`/percpu.
+        totalcpu = true
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/simple.pkl`/totalcpu.
+        tags {
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/simple.pkl`/tags.
+          ["tag1"] = "foo"
+          ["tag2"] = "bar"
+        }
+      }
+    }
+  }
+  
+  outputs {
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/simple.pkl`/outputs.
+    file {
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/simple.pkl`/file.
+      new {
+        files {
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/simple.pkl`/files.
+          "my/file.txt"
+        }
+        data_format = new JsonOutputDataFormat {
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/simple.pkl`/data_format.
+//                        ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/serializers/JsonOutputDataFormat.pkl`/
+          json_timestamp_units = 5.s
+//        ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/simple.pkl`/json_timestamp_units.
+//                                 ^ reference pkl . pkl 0.29.0 `pkl.base`/Int#s.
+        }
+      }
+    }
+  }
+  

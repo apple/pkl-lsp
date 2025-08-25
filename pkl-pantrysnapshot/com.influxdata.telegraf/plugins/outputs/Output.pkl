@@ -1,0 +1,96 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// Telegraf processor plugins write metrics to various destinations
+  @ModuleInfo { minPklVersion = "0.25.0" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleInfo#
+//              ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/Output.pkl`/minPklVersion.
+  abstract module com.influxdata.telegraf.plugins.outputs.Output
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/Output.pkl`/
+  
+  extends "../Plugin.pkl"
+  
+  /// Name an instance of a plugin.
+  alias: String?
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/Output.pkl`/alias.
+//documentation
+//> Name an instance of a plugin.
+//       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// The maximum time between flushes.
+  ///
+  /// Use this setting to override the agent `flush_interval` on a per plugin basis.
+  flush_interval: Duration?
+//^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/Output.pkl`/flush_interval.
+//documentation
+//> The maximum time between flushes.
+//> 
+//> Use this setting to override the agent `flush_interval` on a per plugin basis.
+//                ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+  
+  /// The amount of time to jitter the flush interval.
+  ///
+  /// Use this setting to override the agent `flush_jitter` on a per plugin basis.
+  flush_jitter: Duration?
+//^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/Output.pkl`/flush_jitter.
+//documentation
+//> The amount of time to jitter the flush interval.
+//> 
+//> Use this setting to override the agent `flush_jitter` on a per plugin basis.
+//              ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+  
+  /// The maximum number of metrics to send at once.
+  ///
+  /// Use this setting to override the agent `metric_batch_size` on a per plugin basis.
+  metric_batch_size: Number?
+//^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/Output.pkl`/metric_batch_size.
+//documentation
+//> The maximum number of metrics to send at once.
+//> 
+//> Use this setting to override the agent `metric_batch_size` on a per plugin basis.
+//                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+  
+  /// The maximum number of unsent metrics to buffer.
+  ///
+  /// Use this setting to override the agent `metric_buffer_limit` on a per plugin basis.
+  metric_buffer_limit: Number?
+//^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/Output.pkl`/metric_buffer_limit.
+//documentation
+//> The maximum number of unsent metrics to buffer.
+//> 
+//> Use this setting to override the agent `metric_buffer_limit` on a per plugin basis.
+//                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+  
+  /// Override the original name of the measurement.
+  name_override: String?
+//^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/Output.pkl`/name_override.
+//documentation
+//> Override the original name of the measurement.
+//               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// Specifies a prefix to attach to the measurement name.
+  name_prefix: String?
+//^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/Output.pkl`/name_prefix.
+//documentation
+//> Specifies a prefix to attach to the measurement name.
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// Specifies a suffix to attach to the measurement name.
+  name_suffix: String?
+//^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/Output.pkl`/name_suffix.
+//documentation
+//> Specifies a suffix to attach to the measurement name.
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  

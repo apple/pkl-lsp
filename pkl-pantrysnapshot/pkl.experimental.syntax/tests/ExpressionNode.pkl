@@ -1,0 +1,423 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module pkl.experimental.syntax.tests.ExpressionNode
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/
+  
+  amends "pkl:test"
+  
+  import "../ExpressionNode.pkl"
+  
+  examples {
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/examples.
+    ["binary operators - basic"] {
+      new ExpressionNode.BinaryOperatorExpressionNode {
+//                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#
+        lhs = new ExpressionNode.LiteralValueExpressionNode {
+//      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/lhs.
+//                               ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+          value = "foo"
+//        ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+        }
+        operator = "+"
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/operator.
+        rhs = new ExpressionNode.LiteralValueExpressionNode {
+//      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/rhs.
+//                               ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+          value = "bar"
+//        ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+        }
+      }.render("")
+//      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#render().
+    }
+    ["binary operators - precedence: no parentheses when child precedence is higher"] {
+      new ExpressionNode.BinaryOperatorExpressionNode {
+//                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#
+        operator = "+"
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/operator.
+        lhs = new ExpressionNode.BinaryOperatorExpressionNode {
+//      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/lhs.
+//                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#
+          lhs = new ExpressionNode.LiteralValueExpressionNode {
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/lhs.
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+            value = 5
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+          }
+          rhs = new ExpressionNode.LiteralValueExpressionNode {
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/rhs.
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+            value = 5
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+          }
+          operator = "*"
+//        ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/operator.
+        }
+        rhs = new ExpressionNode.BinaryOperatorExpressionNode {
+//      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/rhs.
+//                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#
+          lhs = new ExpressionNode.LiteralValueExpressionNode {
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/lhs.
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+            value = 5
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+          }
+          rhs = new ExpressionNode.LiteralValueExpressionNode {
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/rhs.
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+            value = 5
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+          }
+          operator = "*"
+//        ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/operator.
+        }
+      }.render("")
+//      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#render().
+    }
+    ["binary operators - precedence: parenthese added when child precedence is lower"] {
+      new ExpressionNode.BinaryOperatorExpressionNode {
+//                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#
+        operator = "*"
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/operator.
+        lhs = new ExpressionNode.BinaryOperatorExpressionNode {
+//      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/lhs.
+//                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#
+          lhs = new ExpressionNode.LiteralValueExpressionNode {
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/lhs.
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+            value = 5
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+          }
+          rhs = new ExpressionNode.LiteralValueExpressionNode {
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/rhs.
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+            value = 5
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+          }
+          operator = "+"
+//        ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/operator.
+        }
+        rhs = new ExpressionNode.BinaryOperatorExpressionNode {
+//      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/rhs.
+//                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#
+          lhs = new ExpressionNode.LiteralValueExpressionNode {
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/lhs.
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+            value = 5
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+          }
+          rhs = new ExpressionNode.LiteralValueExpressionNode {
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/rhs.
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+            value = 5
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+          }
+          operator = "+"
+//        ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/operator.
+        }
+      }.render("")
+//      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#render().
+    }
+    ["unary operators"] {
+      new ExpressionNode.PrefixOperatorExpressionNode {
+//                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/PrefixOperatorExpressionNode#
+        operator = "!"
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/operator.
+        expression = new ExpressionNode.LiteralValueExpressionNode { value = false }
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/expression.
+//                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+//                                                                   ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+      }.render("")
+//      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/PrefixOperatorExpressionNode#render().
+    }
+    ["unary operators - parenthesizes binary expressions"] {
+      new ExpressionNode.PrefixOperatorExpressionNode {
+//                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/PrefixOperatorExpressionNode#
+        operator = "-"
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/operator.
+        expression = new ExpressionNode.BinaryOperatorExpressionNode {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/expression.
+//                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#
+          operator = "+"
+//        ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/operator.
+          lhs = new ExpressionNode.LiteralValueExpressionNode {
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/lhs.
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+            value = 5
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+          }
+          rhs = new ExpressionNode.LiteralValueExpressionNode {
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/rhs.
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+            value = 10
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+          }
+        }
+      }.render("")
+//      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/PrefixOperatorExpressionNode#render().
+    }
+    ["member access - single identifier"] {
+      new ExpressionNode.MemberAccessExpressionNode {
+//                       ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#
+        identifier {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/identifier.
+          value = "foo"
+//        ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+        }
+      }.render("")
+//      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#render().
+    }
+    ["member access - method call"] {
+      new ExpressionNode.MemberAccessExpressionNode {
+//                       ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#
+        identifier {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/identifier.
+          value = "foo"
+//        ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+        }
+        arguments {
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/arguments.
+          new ExpressionNode.MemberAccessExpressionNode {
+//                           ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#
+            identifier {
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/identifier.
+              value = "bar"
+//            ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+            }
+          }
+          new ExpressionNode.MemberAccessExpressionNode {
+//                           ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#
+            identifier {
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/identifier.
+              value = "biz"
+//            ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+            }
+          }
+        }
+      }.render("")
+//      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#render().
+    }
+    ["if/else"] {
+      new ExpressionNode.IfElseExpressionNode {
+//                       ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/IfElseExpressionNode#
+        condition = new ExpressionNode.BinaryOperatorExpressionNode {
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/condition.
+//                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#
+          lhs = new ExpressionNode.MemberAccessExpressionNode {
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/lhs.
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#
+            identifier {
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/identifier.
+              value = "foo"
+//            ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+            }
+          }
+          operator = "=="
+//        ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/operator.
+          rhs = new ExpressionNode.LiteralValueExpressionNode {
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/rhs.
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+            value = "foo"
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+          }
+        }
+        ifBranch = new ExpressionNode.LiteralValueExpressionNode { value = "foo" }
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/ifBranch.
+//                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+//                                                                 ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+        elseBranch = new ExpressionNode.LiteralValueExpressionNode { value = "bar" }
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/elseBranch.
+//                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+//                                                                   ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+      }.render("")
+//      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/IfElseExpressionNode#render().
+  
+      new ExpressionNode.IfElseExpressionNode {
+//                       ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/IfElseExpressionNode#
+        condition = new ExpressionNode.BinaryOperatorExpressionNode {
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/condition.
+//                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#
+          lhs = new ExpressionNode.MemberAccessExpressionNode {
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/lhs.
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#
+            identifier {
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/identifier.
+              value = "foo"
+//            ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+            }
+          }
+          operator = "=="
+//        ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/operator.
+          rhs = new ExpressionNode.LiteralValueExpressionNode {
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/rhs.
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+            value = "foo"
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+          }
+        }
+        ifBranch = new ExpressionNode.LiteralValueExpressionNode { value = "foo" }
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/ifBranch.
+//                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+//                                                                 ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+        elseBranch = new ExpressionNode.LiteralValueExpressionNode { value = "bar" }
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/elseBranch.
+//                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+//                                                                   ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+      }.render("  ")
+//      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/IfElseExpressionNode#render().
+    }
+    ["super access"] {
+      new ExpressionNode.SuperAccessExpressionNode {
+//                       ^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SuperAccessExpressionNode#
+        rhs {
+//      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/rhs.
+          identifier { value = "someProperty" }
+//        ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/identifier.
+//                     ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+        }
+      }.render("")
+//      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SuperAccessExpressionNode#render().
+      new ExpressionNode.SuperAccessExpressionNode {
+//                       ^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SuperAccessExpressionNode#
+        rhs {
+//      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/rhs.
+          identifier { value = "someProperty" }
+//        ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/identifier.
+//                     ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+          arguments {
+//        ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/arguments.
+            new ExpressionNode.LiteralValueExpressionNode { value = true }
+//                             ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+//                                                          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+          }
+        }
+      }.render("")
+//      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SuperAccessExpressionNode#render().
+    }
+    ["super subscript"] {
+      new ExpressionNode.SuperSubscriptExpressionNode {
+//                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SuperSubscriptExpressionNode#
+        subscript = new ExpressionNode.LiteralValueExpressionNode { value = "test" }
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/subscript.
+//                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+//                                                                  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+      }.render("")
+//      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SuperSubscriptExpressionNode#render().
+    }
+    ["subscript"] {
+      new ExpressionNode.SubscriptExpressionNode {
+//                       ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SubscriptExpressionNode#
+        lhs = new ExpressionNode.MemberAccessExpressionNode {
+//      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/lhs.
+//                               ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#
+          identifier { value = "test" }
+//        ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/identifier.
+//                     ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+        }
+        subscript = new ExpressionNode.LiteralValueExpressionNode { value = "key" }
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/subscript.
+//                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+//                                                                  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+      }.render("")
+//      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SubscriptExpressionNode#render().
+      new ExpressionNode.SubscriptExpressionNode {
+//                       ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SubscriptExpressionNode#
+        lhs = new ExpressionNode.IfElseExpressionNode {
+//      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/lhs.
+//                               ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/IfElseExpressionNode#
+          condition = new ExpressionNode.MemberAccessExpressionNode {
+//        ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/condition.
+//                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#
+            identifier { value = "test" }
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/identifier.
+//                       ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+          }
+          ifBranch = new ExpressionNode.MemberAccessExpressionNode {
+//        ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/ifBranch.
+//                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#
+            identifier { value = "testTrue" }
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/identifier.
+//                       ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+          }
+          elseBranch = new ExpressionNode.MemberAccessExpressionNode {
+//        ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/elseBranch.
+//                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#
+            identifier { value = "testFalse" }
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/identifier.
+//                       ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+          }
+        }
+        subscript = new ExpressionNode.BinaryOperatorExpressionNode {
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/subscript.
+//                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/BinaryOperatorExpressionNode#
+          operator = "+"
+//        ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/operator.
+          lhs = new ExpressionNode.LiteralValueExpressionNode { value = "test" }
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/lhs.
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+//                                                              ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+          rhs = new ExpressionNode.LiteralValueExpressionNode { value = "Key" }
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/rhs.
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+//                                                              ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+        }
+      }.render("")
+//      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/SubscriptExpressionNode#render().
+    }
+    ["read"] {
+      new ExpressionNode.ReadExpressionNode {
+//                       ^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ReadExpressionNode#
+        value = new ExpressionNode.LiteralValueExpressionNode { value = "env:HOME" }
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+//                                                              ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+      }.render("")
+//      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ReadExpressionNode#render().
+      new ExpressionNode.ReadExpressionNode {
+//                       ^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ReadExpressionNode#
+        keyword = "read*"
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/keyword.
+        value = new ExpressionNode.LiteralValueExpressionNode { value = "env:HOME" }
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+//                                                              ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+      }.render("")
+//      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ReadExpressionNode#render().
+      new ExpressionNode.ReadExpressionNode {
+//                       ^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ReadExpressionNode#
+        keyword = "read?"
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/keyword.
+        value = new ExpressionNode.LiteralValueExpressionNode { value = "env:HOME" }
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/LiteralValueExpressionNode#
+//                                                              ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+      }.render("")
+//      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/ReadExpressionNode#render().
+    }
+    ["trace"] {
+      new ExpressionNode.TraceExpressionNode {
+//                       ^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/TraceExpressionNode#
+        value = new ExpressionNode.MemberAccessExpressionNode {
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/MemberAccessExpressionNode#
+          identifier { value = "test" }
+//        ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/identifier.
+//                     ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `tests/ExpressionNode.pkl`/value.
+        }
+      }.render("")
+//      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/TraceExpressionNode#render().
+    }
+  }
+  

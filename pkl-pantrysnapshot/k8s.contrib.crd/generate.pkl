@@ -1,0 +1,285 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// Generate Pkl sources from CustomResourceDefinition documents.
+  ///
+  /// Limitations:
+  /// - Cannot generate `not`, `allOf`, or `anyOf` combinators correctly due to limitations in Pkl's model.
+  ///   * Union types exist, but they are logically the same as `oneOf` (only one subschema can match).
+  ///   * Intersection types do not exist (can use this to model `allOf`).
+  /// - Cannot generate tuple types (this is missing in Pkl).
+  /// - Properties called `default` cannot be generated (currently a limitation of the json parser).
+  ///
+  /// TODO:
+  /// - Handle usages of `allOf`. We can do this by merging subschemas into a larger schema.
+  /// - Copy doc comments from a class or typealias to its usage sites if there isn't a doc comment already.
+  /// - Handle if schema root is not an object type (Example: ansible's schema root has `"type": "array"`).
+  /// - Handle if schema root should be a mapping (it has `additionalProperties` or `patternProperties` set).
+  ///
+  /// Sample CLI usage:
+  ///
+  /// ```
+  /// pkl eval package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd@<version>#/generate.pkl \
+  ///   -m . \
+  ///   -p source="https://raw.githubusercontent.com/monzo/egress-operator/master/config/crd/bases/egress.monzo.com_externalservices.yaml"
+  /// ```
+  ///
+  /// Setting up replacement of Kube native types with types from the k8s standard library can be done with amending:
+  ///
+  /// ```pkl
+  /// amends "package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd@<version>#/generate.pkl"
+  ///
+  /// import "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.1#/api/core/v1/ResourceRequirements.pkl"
+  ///
+  /// source = "https://raw.githubusercontent.com/monzo/egress-operator/master/config/crd/bases/egress.monzo.com_externalservices.yaml"
+  ///
+  /// converters {
+  ///   ["externalservices.egress.monzo.com"] {
+  ///     [List("spec", "resources")] = ResourceRequirements
+  ///   }
+  /// }
+  /// ```
+  ///
+  /// To figure out which paths you need to override, try running with `-p logPaths`.
+  ///
+  @ModuleInfo { minPklVersion = "0.25.0" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleInfo#
+//              ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/minPklVersion.
+  module k8s.contrib.crd.generate
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/
+  
+  import "pkl:yaml"
+  import "pkl:semver"
+  import "pkl:platform"
+  import "@deepToTyped/deepToTyped.pkl"
+  import "@uri/URI.pkl"
+  
+  import "internal/ModuleGenerator.pkl"
+  
+  /// The version of the Pkl Kubernetes package to import.
+  ///
+  /// This property is not used if [k8sImportPath] is set directly.
+  k8sVersion: String(semver.isValid(this)) = "1.0.1"
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/k8sVersion.
+//documentation
+//> The version of the Pkl Kubernetes package to import.
+//> 
+//> This property is not used if [`k8sImportPath`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/k8s.contrib.crd/generate.pkl#L83,C1) is set directly.
+//            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.semver`/
+//                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.semver`/isValid().
+  
+  /// The base path to use for the Kubernetes imports.
+  ///
+  /// Examples:
+  /// ```
+  /// // Change the version
+  /// k8sImportPath = "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.0.0#"
+  ///
+  /// // Use dependency notation, assuming the dependency is called `@k8s`.
+  /// k8sImportPath = "@k8s"
+  /// ```
+  k8sImportPath: String = read?("prop:k8sImportPath") ?? "package://pkg.pkl-lang.org/pkl-k8s/k8s@\(k8sVersion)#"
+//^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/k8sImportPath.
+//               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                                                 ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/k8sVersion.
+  
+  baseApiGroup: String = read?("prop:baseApiGroup") ?? "k8s.io"
+//^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/baseApiGroup.
+//              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// Where to find the CRDs; can be a URI (`https:`, `file:` etc), an absolute file path, or a relative file path
+  source: String = read("prop:source")
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/source.
+//documentation
+//> Where to find the CRDs; can be a URI (`https:`, `file:` etc), an absolute file path, or a relative file path
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  local sourceUri =
+//      ^^^^^^^^^ definition local sourceUri_90
+    if (source.startsWith(Regex(#"\w+:"#))) source      // absolute URI
+//      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/source.
+//             ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#startsWith().
+//                        ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+//                                          ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/source.
+    else if (source.startsWith("/")) "file://\(source)" // absolute file path
+//           ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/source.
+//                  ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#startsWith().
+//                                             ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/source.
+    else                                                // relative file path
+      let (pwd = read("env:PWD"))
+//         ^^^ definition local pwd_94
+      let (path =
+//         ^^^^ definition local path_95
+        if (platform.current.operatingSystem.name == "Windows") "/\(pwd)/\(source)".replaceAll("\\", "/")
+//          ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.platform`/
+//                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.platform`/current.
+//                           ^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.platform`/Platform#operatingSystem.
+//                                           ^^^^ reference pkl . pkl 0.29.0 `pkl.platform`/OperatingSystem#name.
+//                                                                  ^^^ reference local pwd_94
+//                                                                         ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/source.
+//                                                                                  ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+        else "\(pwd)/\(source)"
+//              ^^^ reference local pwd_94
+//                     ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/source.
+      )
+        "file://\(URI.encode(path))"
+//                ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                    ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/encode().
+//                           ^^^^ reference local path_95
+  
+  /// The CRD's source contents, as computed from [source].
+  sourceContents: String|Resource = read(URI.encode(sourceUri))
+//^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/sourceContents.
+//documentation
+//> The CRD's source contents, as computed from [`source`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/k8s.contrib.crd/generate.pkl#L88,C1).
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                       ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Resource#
+//                                       ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                                           ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/encode().
+//                                                  ^^^^^^^^^ reference local sourceUri_90
+  
+  /// Whether to log out every path we find in each CRD to aid in setting converters.
+  ///
+  /// Default: `false`.
+  logPaths: Boolean? = read?("prop:logPaths")?.toBoolean()
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/logPaths.
+//          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                                             ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toBoolean().
+  
+  local crds: Listing<ModuleGenerator.CRD> =
+//      ^^^^ definition local crds_109
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/CRD#
+    let (parser = new yaml.Parser { useMapping = true })
+//       ^^^^^^ definition local parser_110
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.yaml`/Parser#
+//                                  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/useMapping.
+      new {
+        for (crd in parser.parseAll(sourceContents)) {
+//           ^^^ definition local crd_112
+//                  ^^^^^^ reference local parser_110
+//                         ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.yaml`/Parser#parseAll().
+//                                  ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/sourceContents.
+          when (crd is Mapping && crd.getOrNull("kind") == "CustomResourceDefinition") {
+//              ^^^ reference local crd_112
+//                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                ^^^ reference local crd_112
+//                                    ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+            deepToTyped.apply(ModuleGenerator.CRD, crd) as ModuleGenerator.CRD
+//          ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/
+//                      ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/apply().
+//                            ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/
+//                                            ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/CRD#
+//                                                 ^^^ reference local crd_112
+//                                                                         ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/CRD#
+          }
+        }
+      }
+  
+  /// Type conversions when generating property types.
+  ///
+  /// This is a two-dimensional mapping, where top-level entries designate CRD names (for example,
+  /// "restateclusters.restate.dev").
+  ///
+  /// The inner mapping specifies how individual paths within a CRD should be mapped to a custom type.
+  ///
+  /// Example:
+  /// ```
+  /// converters {
+  ///   ["restateclusters.restate.dev"] {
+  ///     [List("spec", "compute", "env", "env")] = EnvVar
+  ///   }
+  /// }
+  /// ```
+  converters: Mapping<String, Mapping<List<String>, Module|Class|TypeAlias>>?
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/converters.
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#
+//                                                         ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                                                               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/TypeAlias#
+  
+  fixed modules: Listing<ModuleGenerator> = new {
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/modules.
+//               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                       ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/
+    for (_crd in crds) {
+//       ^^^^ definition local _crd_137
+//               ^^^^ reference local crds_109
+      for (_version in _crd.spec.versions) {
+//         ^^^^^^^^ definition local _version_138
+//                     ^^^^ reference local _crd_137
+//                          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1/CustomResourceDefinition.pkl`/spec.
+//                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1/CustomResourceDefinition.pkl`/CustomResourceDefinitionSpec#versions.
+        new ModuleGenerator {
+//          ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/
+          k8sImportPath = module.k8sImportPath
+//        ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/k8sImportPath.
+//                               ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/k8sImportPath.
+          crd = _crd
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/crd.
+//              ^^^^ reference local _crd_137
+          version = _version
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/version.
+//                  ^^^^^^^^ reference local _version_138
+          baseUri = URI.parse(sourceUri)!!
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/baseUri.
+//                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                      ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+//                            ^^^^^^^^^ reference local sourceUri_90
+          converters = module.converters?.getOrNull(crd.metadata.name) ?? new Mapping {}
+//        ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/converters.
+//                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/converters.
+//                                        ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+//                                                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/crd.
+//                                                      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1/CustomResourceDefinition.pkl`/metadata.
+//                                                               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl`/name.
+//                                                                            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+          logPaths = module.logPaths ?? false
+//        ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/logPaths.
+//                          ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/logPaths.
+        }
+      }
+    }
+  }
+  
+  output {
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/output.
+    text = throw("The JSON Schema generator only works with multiple-file output. Try running again with the -m option.")
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/text.
+    files {
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/files.
+      for (mod in modules) {
+//         ^^^ definition local mod_154
+//                ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/modules.
+        ["\(mod.moduleName.replaceFirst(Regex(#"^\#(baseApiGroup)\."#), "").split(".").join("/")).pkl"] = mod.moduleNode.output
+//          ^^^ reference local mod_154
+//              ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/moduleName.
+//                         ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceFirst().
+//                                      ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+//                                                  ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/baseApiGroup.
+//                                                                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+//                                                                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+//                                                                                                        ^^^ reference local mod_154
+//                                                                                                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/moduleNode.
+//                                                                                                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#output.
+      }
+    }
+  }
+  

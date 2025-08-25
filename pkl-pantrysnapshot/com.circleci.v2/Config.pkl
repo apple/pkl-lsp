@@ -1,0 +1,1843 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// Schema for CircleCI's `config.yml`.
+  ///
+  /// This module is a work in progress, if you find some unsuported feature
+  /// feel free to add it.
+  module com.circleci.v2.Config
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/
+  
+  /// Version of the `config.yml` schema to target.
+  ///
+  /// Currently, only version 2.1 is supported by this template.
+  version: "2.1"
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/version.
+//documentation
+//> Version of the `config.yml` schema to target.
+//> 
+//> Currently, only version 2.1 is supported by this template.
+  
+  /// Designates the config.yaml for use of CircleCI’s
+  /// [dynamic configuration](https://circleci.com/docs/dynamic-config/) feature.
+  setup: Boolean?
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/setup.
+//documentation
+//> Designates the config.yaml for use of CircleCI’s
+//> [dynamic configuration](https://circleci.com/docs/dynamic-config/) feature.
+//       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+  /// A map of user-selected names to either: orb references (strings) or orb definitions (maps).
+  ///
+  /// Orb definitions must be the orb-relevant subset of 2.1 config.
+  /// See the [Creating Orbs](https://circleci.com/docs/creating-orbs/) documentation for details.
+  orbs: Mapping<String, Orb|String>?
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/orbs.
+//documentation
+//> A map of user-selected names to either: orb references (strings) or orb definitions (maps).
+//> 
+//> Orb definitions must be the orb-relevant subset of 2.1 config.
+//> See the [Creating Orbs](https://circleci.com/docs/creating-orbs/) documentation for details.
+//      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                      ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Orb#
+//                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// Executors define the execution environment in which the steps of a job will be run,
+  /// allowing you to reuse a single executor definition across multiple jobs.
+  ///
+  /// See [executors in the CircleCI documentation](https://circleci.com/docs/configuration-reference/#executors).
+  /// Also see [Using Workspaces to Share Data between Jobs](https://circleci.com/docs/workspaces/) for information on
+  /// how to use executors to share state between jobs.
+  executors: Mapping<String, Executor>?
+//^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/executors.
+//documentation
+//> Executors define the execution environment in which the steps of a job will be run,
+//> allowing you to reuse a single executor definition across multiple jobs.
+//> 
+//> See [executors in the CircleCI documentation](https://circleci.com/docs/configuration-reference/#executors).
+//> Also see [Using Workspaces to Share Data between Jobs](https://circleci.com/docs/workspaces/) for information on
+//> how to use executors to share state between jobs.
+//           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                           ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Executor#
+  
+  /// A command defines a sequence of steps as a map to be executed in a job, enabling you to reuse
+  /// a single command definition across multiple jobs.
+  ///
+  /// For more information see the
+  /// [Reusable Config Reference Guide](https://circleci.com/docs/reusing-config/).
+  commands: Mapping<String, Command>?
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/commands.
+//documentation
+//> A command defines a sequence of steps as a map to be executed in a job, enabling you to reuse
+//> a single command definition across multiple jobs.
+//> 
+//> For more information see the
+//> [Reusable Config Reference Guide](https://circleci.com/docs/reusing-config/).
+//          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                          ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Command#
+  
+  /// A Workflow is comprised of one or more uniquely named jobs.
+  ///
+  /// Jobs are specified in the jobs map, see
+  /// [Sample config.yml](https://circleci.com/docs/sample-config/) for two examples of a job map.
+  /// The name of the job is the key in the map, and the value is a map describing the job.
+  jobs: Mapping<String(matches(Regex("^[A-Za-z][A-Za-z\\s\\d_-]*$"))), Job>?
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/jobs.
+//documentation
+//> A Workflow is comprised of one or more uniquely named jobs.
+//> 
+//> Jobs are specified in the jobs map, see
+//> [Sample config.yml](https://circleci.com/docs/sample-config/) for two examples of a job map.
+//> The name of the job is the key in the map, and the value is a map describing the job.
+//      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#matches().
+//                             ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+//                                                                     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Job#
+  
+  /// Used for orchestrating all jobs.
+  ///
+  /// Each workflow consists of the workflow name as a key and a map as a value.
+  /// A name should be unique within the current config.yml.
+  /// The top-level keys for the Workflows configuration are version and jobs.
+  /// For more information, see the
+  /// [Using Workflows to Orchestrate Jobs](https://circleci.com/docs/workflows/) page.
+  workflows: Mapping<String, Workflow>?
+//^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/workflows.
+//documentation
+//> Used for orchestrating all jobs.
+//> 
+//> Each workflow consists of the workflow name as a key and a map as a value.
+//> A name should be unique within the current config.yml.
+//> The top-level keys for the Workflows configuration are version and jobs.
+//> For more information, see the
+//> [Using Workflows to Orchestrate Jobs](https://circleci.com/docs/workflows/) page.
+//           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                           ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Workflow#
+  
+  /// Pipeline parameters declared for use in the configuration.
+  ///
+  /// See [Pipeline Values and Parameters](https://circleci.com/docs/pipeline-variables/#pipeline-parameters-in-configuration)
+  /// for usage details.
+  parameters: Mapping<String, Parameter>?
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/parameters.
+//documentation
+//> Pipeline parameters declared for use in the configuration.
+//> 
+//> See [Pipeline Values and Parameters](https://circleci.com/docs/pipeline-variables/#pipeline-parameters-in-configuration)
+//> for usage details.
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                            ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Parameter#
+  
+  class Orb {
+//      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Orb#
+    /// A map of user-selected names to either: orb references (strings) or orb definitions (maps).
+    ///
+    /// Orb definitions must be the orb-relevant subset of 2.1 config.
+    /// See the [Creating Orbs](https://circleci.com/docs/creating-orbs/) documentation for details.
+    orbs: Mapping<String, Orb|String>?
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Orb#orbs.
+//  documentation
+//  > A map of user-selected names to either: orb references (strings) or orb definitions (maps).
+//  > 
+//  > Orb definitions must be the orb-relevant subset of 2.1 config.
+//  > See the [Creating Orbs](https://circleci.com/docs/creating-orbs/) documentation for details.
+//        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                        ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Orb#
+//                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// A command defines a sequence of steps as a map to be executed in a job, enabling you to reuse
+    /// a single command definition across multiple jobs.
+    ///
+    /// For more information see the
+    /// [Reusable Config Reference Guide](https://circleci.com/docs/reusing-config/).
+    commands: Mapping<String, Command>?
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Orb#commands.
+//  documentation
+//  > A command defines a sequence of steps as a map to be executed in a job, enabling you to reuse
+//  > a single command definition across multiple jobs.
+//  > 
+//  > For more information see the
+//  > [Reusable Config Reference Guide](https://circleci.com/docs/reusing-config/).
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                            ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Command#
+  
+    /// A Workflow is comprised of one or more uniquely named jobs.
+    ///
+    /// Jobs are specified in the jobs map, see
+    /// [Sample config.yml](https://circleci.com/docs/sample-config/) for two examples of a job map.
+    /// The name of the job is the key in the map, and the value is a map describing the job.
+    jobs: Mapping<String, Job>?
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Orb#jobs.
+//  documentation
+//  > A Workflow is comprised of one or more uniquely named jobs.
+//  > 
+//  > Jobs are specified in the jobs map, see
+//  > [Sample config.yml](https://circleci.com/docs/sample-config/) for two examples of a job map.
+//  > The name of the job is the key in the map, and the value is a map describing the job.
+//        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                        ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Job#
+  }
+  
+  class Executor {
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Executor#
+    /// Which resource class to use which further determines the amount of CPU and RAM allocated to each container in a
+    /// job.
+    resource_class: ResourceClass?
+//  ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Executor#resource_class.
+//  documentation
+//  > Which resource class to use which further determines the amount of CPU and RAM allocated to each container in a
+//  > job.
+//                  ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/ResourceClass#
+  
+    /// Shell to use for execution command in all steps.
+    /// Can be overridden by shell in each step (default: See [Default Shell Options](https://circleci.com/docs/configuration-reference/#default-shell-options))
+    shell: String?
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Executor#shell.
+//  documentation
+//  > Shell to use for execution command in all steps.
+//  > Can be overridden by shell in each step (default: See [Default Shell Options](https://circleci.com/docs/configuration-reference/#default-shell-options))
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// In which directory to run the steps. Will be interpreted as an absolute path.
+    working_directory: String?
+//  ^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Executor#working_directory.
+//  documentation
+//  > In which directory to run the steps. Will be interpreted as an absolute path.
+//                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// A map of environment variable names and values.
+    environment: Mapping<String, String>?
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Executor#environment.
+//  documentation
+//  > A map of environment variable names and values.
+//               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Options for [docker executor](https://circleci.com/docs/configuration-reference/#docker)
+    docker: Listing<DockerImage>(!isEmpty)?(onlyOneSet(List(this, macos, machine)))
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Executor#docker.
+//  documentation
+//  > Options for [docker executor](https://circleci.com/docs/configuration-reference/#docker)
+//          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                  ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/DockerImage#
+//                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#isEmpty.
+//                                          ^^^^^^^^^^ reference local onlyOneSet_708
+//                                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                                                ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Executor#macos.
+//                                                                       ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Executor#machine.
+  
+    /// Options for [macOS executor](https://circleci.com/docs/configuration-reference/#macos)
+    macos: MacOSExecutor?
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Executor#macos.
+//  documentation
+//  > Options for [macOS executor](https://circleci.com/docs/configuration-reference/#macos)
+//         ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/MacOSExecutor#
+  
+    /// Options for [machine executor](https://circleci.com/docs/configuration-reference/#machine)
+    machine: Machine?
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Executor#machine.
+//  documentation
+//  > Options for [machine executor](https://circleci.com/docs/configuration-reference/#machine)
+//           ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Machine#
+  }
+  
+  class Job {
+//      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Job#
+    /// Shell to use for execution command in all steps.
+    ///
+    /// Can be overridden by shell in each step (default: See Default Shell Options)
+    shell: String?
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Job#shell.
+//  documentation
+//  > Shell to use for execution command in all steps.
+//  > 
+//  > Can be overridden by shell in each step (default: See Default Shell Options)
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// A list of [steps](https://circleci.com/docs/configuration-reference/#steps) to be performed
+    steps: Listing<Step>(!isEmpty)
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Job#steps.
+//  documentation
+//  > A list of [steps](https://circleci.com/docs/configuration-reference/#steps) to be performed
+//         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                 ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Step#
+//                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#isEmpty.
+  
+    /// A pre-defined executor from the defined executors or orbs in which to execute this job.
+    ///
+    /// Can be used to share data between jobs.
+    /// See [Using Workspaces to Share Data between Jobs](https://circleci.com/docs/workspaces/) for information on how to
+    /// use executors to share state between jobs.
+    executor: String?
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Job#executor.
+//  documentation
+//  > A pre-defined executor from the defined executors or orbs in which to execute this job.
+//  > 
+//  > Can be used to share data between jobs.
+//  > See [Using Workspaces to Share Data between Jobs](https://circleci.com/docs/workspaces/) for information on how to
+//  > use executors to share state between jobs.
+//            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// In which directory to run the steps.
+    ///
+    /// Will be interpreted as an absolute path.
+    ///
+    /// Default: `~/project` (where project is a literal string, not the name of your specific project).
+    ///
+    /// Processes run during the job can use the `$CIRCLE_WORKING_DIRECTORY` environment variable to
+    /// refer to this directory.
+    ///
+    /// Note: Paths written in your YAML configuration file will not be expanded; if your
+    /// store_test_results.path is $CIRCLE_WORKING_DIRECTORY/tests, then CircleCI will attempt to
+    /// store the test subdirectory of the directory literally named $CIRCLE_WORKING_DIRECTORY,
+    /// dollar sign $ and all. working_directory will be created automatically if it doesn’t exist.
+    working_directory: String?
+//  ^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Job#working_directory.
+//  documentation
+//  > In which directory to run the steps.
+//  > 
+//  > Will be interpreted as an absolute path.
+//  > 
+//  > Default: `~/project` (where project is a literal string, not the name of your specific project).
+//  > 
+//  > Processes run during the job can use the `$CIRCLE_WORKING_DIRECTORY` environment variable to
+//  > refer to this directory.
+//  > 
+//  > Note: Paths written in your YAML configuration file will not be expanded; if your
+//  > store_test_results.path is $CIRCLE_WORKING_DIRECTORY/tests, then CircleCI will attempt to
+//  > store the test subdirectory of the directory literally named $CIRCLE_WORKING_DIRECTORY,
+//  > dollar sign $ and all. working_directory will be created automatically if it doesn’t exist.
+//                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Number of parallel instances of this job to run (default: 1)
+    parallelism: Int?
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Job#parallelism.
+//  documentation
+//  > Number of parallel instances of this job to run (default: 1)
+//               ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+  
+    /// Job-level parameters can be used when calling a job in a workflow
+    parameters: Mapping<String, Parameter>?
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Job#parameters.
+//  documentation
+//  > Job-level parameters can be used when calling a job in a workflow
+//              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                              ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Parameter#
+  
+    /// A map of environment variable names and values.
+    environment: Mapping<String, String>?
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Job#environment.
+//  documentation
+//  > A map of environment variable names and values.
+//               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// The [resource_class](https://circleci.com/docs/resource-class-overview/) feature allows you to configure CPU and RAM resources for each job.
+    ///
+    /// Resource classes are available for each execution environment, as described in the tables below.
+    ///
+    /// We implement soft concurrency limits for each resource class to ensure our system remains
+    /// stable for all customers.
+    /// If you are on a Performance or custom plan and experience queuing for certain resource
+    /// classes, it is possible you are hitting these limits.
+    /// Contact [CircleCI support](https://support.circleci.com/hc/en-us/requests/new) to request a
+    /// raise on these limits for your account.
+    ///
+    /// If you do not specify a resource class, CircleCI will use a default value that is subject
+    /// to change.
+    /// It is best practice to specify a resource class as opposed to relying on a default.
+    resource_class: ResourceClass?
+//  ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Job#resource_class.
+//  documentation
+//  > The [resource_class](https://circleci.com/docs/resource-class-overview/) feature allows you to configure CPU and RAM resources for each job.
+//  > 
+//  > Resource classes are available for each execution environment, as described in the tables below.
+//  > 
+//  > We implement soft concurrency limits for each resource class to ensure our system remains
+//  > stable for all customers.
+//  > If you are on a Performance or custom plan and experience queuing for certain resource
+//  > classes, it is possible you are hitting these limits.
+//  > Contact [CircleCI support](https://support.circleci.com/hc/en-us/requests/new) to request a
+//  > raise on these limits for your account.
+//  > 
+//  > If you do not specify a resource class, CircleCI will use a default value that is subject
+//  > to change.
+//  > It is best practice to specify a resource class as opposed to relying on a default.
+//                  ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/ResourceClass#
+  
+    /// Options for [docker executor](https://circleci.com/docs/configuration-reference/#docker)
+    docker: Listing<DockerImage>(!isEmpty)?(onlyOneSet(List(this, executor, macos, machine)))
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Job#docker.
+//  documentation
+//  > Options for [docker executor](https://circleci.com/docs/configuration-reference/#docker)
+//          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                  ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/DockerImage#
+//                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#isEmpty.
+//                                          ^^^^^^^^^^ reference local onlyOneSet_708
+//                                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                                                ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Job#executor.
+//                                                                          ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Job#macos.
+//                                                                                 ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Job#machine.
+  
+    /// CircleCI supports running jobs on macOS, to allow you to build, test, and deploy apps for
+    /// macOS, iOS, tvOS and watchOS.
+    ///
+    /// To run a job in a macOS virtual machine, add the macos key to the top-level configuration
+    /// for your job and specify the version of Xcode you would like to use.
+    macos: MacOSExecutor?
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Job#macos.
+//  documentation
+//  > CircleCI supports running jobs on macOS, to allow you to build, test, and deploy apps for
+//  > macOS, iOS, tvOS and watchOS.
+//  > 
+//  > To run a job in a macOS virtual machine, add the macos key to the top-level configuration
+//  > for your job and specify the version of Xcode you would like to use.
+//         ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/MacOSExecutor#
+  
+    /// Options for [machine executor](https://circleci.com/docs/configuration-reference/#machine)
+    machine: Machine?
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Job#machine.
+//  documentation
+//  > Options for [machine executor](https://circleci.com/docs/configuration-reference/#machine)
+//           ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Machine#
+  }
+  
+  typealias ResourceClass =
+//          ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/ResourceClass#
+    "small"
+    |"medium"
+    |"medium+"
+    |"large"
+    |"xlarge"
+    |"2xlarge"
+    |"2xlarge+"
+    |"arm.medium"
+    |"arm.large"
+    |"arm.xlarge"
+    |"arm.2xlarge"
+    |"macos.m1.medium.gen1"
+    |"macos.m1.large.gen1"
+    |"m2pro.medium"
+    |"m2pro.large"
+    |"windows.medium"
+    |"windows.large"
+    |"windows.xlarge"
+    |"windows.2xlarge"
+    |"gpu.nvidia.small"
+    |"gpu.nvidia.small.gen2"
+    |"gpu.nvidia.small.multi"
+    |"gpu.nvidia.medium.multi"
+    |"gpu.nvidia.medium"
+    |"gpu.nvidia.large"
+    |"windows.gpu.nvidia.medium"
+  
+  
+  class MacOSExecutor {
+//      ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/MacOSExecutor#
+    /// The version of Xcode that is installed on the virtual machine, see the
+    /// [Supported Xcode Versions section of the Testing iOS document](https://circleci.com/docs/using-macos/#supported-xcode-versions)
+    /// for the complete list.
+    xcode: String
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/MacOSExecutor#xcode.
+//  documentation
+//  > The version of Xcode that is installed on the virtual machine, see the
+//  > [Supported Xcode Versions section of the Testing iOS document](https://circleci.com/docs/using-macos/#supported-xcode-versions)
+//  > for the complete list.
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  class Machine {
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Machine#
+    /// The virtual machine image to use.
+    ///
+    /// View [available images](https://circleci.com/developer/images?imageType=machine).
+    ///
+    /// Note: This key is *not* supported for Linux VMs on installations of CircleCI server.
+    /// For information about customizing `machine` executor images on CircleCI installed on your
+    /// servers, see our [VM Service documentation](https://circleci.com/docs/server/v4.1/operator/manage-virtual-machines-with-vm-service/)
+    image: String
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Machine#image.
+//  documentation
+//  > The virtual machine image to use.
+//  > 
+//  > View [available images](https://circleci.com/developer/images?imageType=machine).
+//  > 
+//  > Note: This key is *not* supported for Linux VMs on installations of CircleCI server.
+//  > For information about customizing `machine` executor images on CircleCI installed on your
+//  > servers, see our [VM Service documentation](https://circleci.com/docs/server/v4.1/operator/manage-virtual-machines-with-vm-service/)
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Set this to `true` to enable [Docker Layer Caching](https://circleci.com/docs/docker-layer-caching/).
+    docker_layer_caching: Boolean?
+//  ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Machine#docker_layer_caching.
+//  documentation
+//  > Set this to `true` to enable [Docker Layer Caching](https://circleci.com/docs/docker-layer-caching/).
+//                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  }
+  
+  class DockerImage {
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/DockerImage#
+    /// The name of a custom docker image to use.
+    ///
+    /// The first `image` listed under a job defines the job’s own primary container image where all
+    /// steps will run.
+    image: String
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/DockerImage#image.
+//  documentation
+//  > The name of a custom docker image to use.
+//  > 
+//  > The first `image` listed under a job defines the job’s own primary container image where all
+//  > steps will run.
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// `name` defines the the hostname for the container (the default is `localhost`), which is used
+    /// for reaching secondary (service) containers.
+    ///
+    /// By default, all services are exposed directly on `localhost`.
+    /// This field is useful if you would rather have a different hostname instead of `localhost`,
+    /// for example, if you are starting multiple versions of the same service.
+    name: String?
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/DockerImage#name.
+//  documentation
+//  > `name` defines the the hostname for the container (the default is `localhost`), which is used
+//  > for reaching secondary (service) containers.
+//  > 
+//  > By default, all services are exposed directly on `localhost`.
+//  > This field is useful if you would rather have a different hostname instead of `localhost`,
+//  > for example, if you are starting multiple versions of the same service.
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// The command used as executable when launching the container.
+    ///
+    /// [entrypoint] overrides the image’s `ENTRYPOINT`
+    entrypoint: (*Listing<String>|String)?
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/DockerImage#entrypoint.
+//  documentation
+//  > The command used as executable when launching the container.
+//  > 
+//  > [`entrypoint`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/com.circleci.v2/Config.pkl#L259,C3) overrides the image’s `ENTRYPOINT`
+//                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// The command used as pid 1 (or args for entrypoint) when launching the container.
+    ///
+    /// [command] overrides the image’s `COMMAND`.
+    /// It will be used as arguments to the image `ENTRYPOINT` if it has one, or as the executable
+    /// if the image has no `ENTRYPOINT`.
+    command: (*Listing<String>|String)?
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/DockerImage#command.
+//  documentation
+//  > The command used as pid 1 (or args for entrypoint) when launching the container.
+//  > 
+//  > [`command`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/com.circleci.v2/Config.pkl#L266,C3) overrides the image’s `COMMAND`.
+//  > It will be used as arguments to the image `ENTRYPOINT` if it has one, or as the executable
+//  > if the image has no `ENTRYPOINT`.
+//             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Which user to run commands as within the Docker container
+    user: String?
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/DockerImage#user.
+//  documentation
+//  > Which user to run commands as within the Docker container
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// environment variable names and values.
+    ///
+    /// The [environment] settings apply to the entrypoint/command run by the docker container, not
+    /// the job steps
+    environment: Mapping<String, String>?
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/DockerImage#environment.
+//  documentation
+//  > environment variable names and values.
+//  > 
+//  > The [`environment`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/com.circleci.v2/Config.pkl#L275,C3) settings apply to the entrypoint/command run by the docker container, not
+//  > the job steps
+//               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Authentication for registries using standard docker login credentials
+    auth: Mapping<String, String>?
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/DockerImage#auth.
+//  documentation
+//  > Authentication for registries using standard docker login credentials
+//        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Authentication for AWS Elastic Container Registry (ECR)
+    aws_auth: Mapping<String, String>?
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/DockerImage#aws_auth.
+//  documentation
+//  > Authentication for AWS Elastic Container Registry (ECR)
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  class ScheduleTrigger {
+//      ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/ScheduleTrigger#
+    /// The cron key is defined using POSIX crontab syntax
+    @SourceCode { language = "cronexp" }
+//   ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/SourceCode#
+//                ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/ScheduleTrigger#language.
+    cron: String
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/ScheduleTrigger#cron.
+//  documentation
+//  > The cron key is defined using POSIX crontab syntax
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Trigger Filters can have the key branches.
+    filters: ScheduleTriggerFilter
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/ScheduleTrigger#filters.
+//  documentation
+//  > Trigger Filters can have the key branches.
+//           ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/ScheduleTriggerFilter#
+  }
+  
+  class ScheduleTriggerFilter {
+//      ^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/ScheduleTriggerFilter#
+    /// The `branches` key controls whether the _current_ branch should have a schedule trigger
+    /// created for it, where _current_ branch is the branch containing the `config.yml` file with
+    /// the trigger stanza.
+    /// That is, a push on the `main` branch will only schedule a
+    /// [workflow](https://circleci.com/docs/workflows/#using-contexts-and-filtering-in-your-workflows)
+    /// for the `main` branch.
+    ///
+    /// Branches can have the keys only and ignore which each map to a single string naming a branch.
+    /// You may also use regular expressions to match against branches by enclosing them with `/`’s,
+    /// or map to a list of such strings. Regular expressions must match the **entire** string.
+    ///
+    /// * Any branches that match only will run the job.
+    /// * Any branches that match ignore will not run the job.
+    /// * If neither only nor ignore are specified then all branches will run the job.
+    ///   If both only and ignore are specified, the only is used and ignore will have no effect.
+    branches: ScheduleTriggerFilterBranches
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/ScheduleTriggerFilter#branches.
+//  documentation
+//  > The `branches` key controls whether the _current_ branch should have a schedule trigger
+//  > created for it, where _current_ branch is the branch containing the `config.yml` file with
+//  > the trigger stanza.
+//  > That is, a push on the `main` branch will only schedule a
+//  > [workflow](https://circleci.com/docs/workflows/#using-contexts-and-filtering-in-your-workflows)
+//  > for the `main` branch.
+//  > 
+//  > Branches can have the keys only and ignore which each map to a single string naming a branch.
+//  > You may also use regular expressions to match against branches by enclosing them with `/`’s,
+//  > or map to a list of such strings. Regular expressions must match the **entire** string.
+//  > 
+//  > * Any branches that match only will run the job.
+//  > * Any branches that match ignore will not run the job.
+//  > * If neither only nor ignore are specified then all branches will run the job.
+//  >   If both only and ignore are specified, the only is used and ignore will have no effect.
+//            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/ScheduleTriggerFilterBranches#
+  }
+  
+  class ScheduleTriggerFilterBranches {
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/ScheduleTriggerFilterBranches#
+    /// Either a single branch specifier, or a list of branch specifiers
+    only: *Listing<String>|String
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/ScheduleTriggerFilterBranches#only.
+//  documentation
+//  > Either a single branch specifier, or a list of branch specifiers
+//         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Either a single branch specifier, or a list of branch specifiers
+    ignore: (*Listing<String>|String)?
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/ScheduleTriggerFilterBranches#ignore.
+//  documentation
+//  > Either a single branch specifier, or a list of branch specifiers
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  class Workflow {
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Workflow#
+    /// A job can have the keys `requires`, `name`, `context`, `type`, and `filters`.
+    jobs: Listing<*Mapping<String, WorkflowJob>(length == 1)|String>(!isEmpty)
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Workflow#jobs.
+//  documentation
+//  > A job can have the keys `requires`, `name`, `context`, `type`, and `filters`.
+//        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                 ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/WorkflowJob#
+//                                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#length.
+//                                                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#isEmpty.
+  
+    /// Specifies which triggers will cause this workflow to be executed.
+    ///
+    /// Default behavior is to trigger the workflow when pushing to a branch
+    triggers: Listing<ScheduleTrigger>?
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Workflow#triggers.
+//  documentation
+//  > Specifies which triggers will cause this workflow to be executed.
+//  > 
+//  > Default behavior is to trigger the workflow when pushing to a branch
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                    ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/ScheduleTrigger#
+  
+    `when`: (*LogicStatement|Boolean|String)?
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Workflow#when.
+//            ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/LogicStatement#
+//                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    `unless`: (*LogicStatement|Boolean|String)?
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Workflow#unless.
+//              ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/LogicStatement#
+//                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  class WorkflowJob {
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/WorkflowJob#
+    /// The name key can be used to invoke reusable jobs across any number of workflows.
+    ///
+    /// Using the name key ensures numbers are not appended to your job name (i.e. sayhello-1,
+    /// sayhello-2, etc.).
+    /// The name you assign to the name key needs to be unique, otherwise the numbers will still be
+    /// appended to the job name.
+    name: String?
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/WorkflowJob#name.
+//  documentation
+//  > The name key can be used to invoke reusable jobs across any number of workflows.
+//  > 
+//  > Using the name key ensures numbers are not appended to your job name (i.e. sayhello-1,
+//  > sayhello-2, etc.).
+//  > The name you assign to the name key needs to be unique, otherwise the numbers will still be
+//  > appended to the job name.
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// A list of jobs that must succeed for the job to start.
+    ///
+    /// Note: When jobs in the current workflow that are listed as dependencies are not executed
+    /// (due to a filter function for example), their requirement as a dependency for other jobs will
+    /// be ignored by the requires option.
+    /// However, if all dependencies of a job are filtered, then that job will not be executed either.
+    requires: Listing<String>?
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/WorkflowJob#requires.
+//  documentation
+//  > A list of jobs that must succeed for the job to start.
+//  > 
+//  > Note: When jobs in the current workflow that are listed as dependencies are not executed
+//  > (due to a filter function for example), their requirement as a dependency for other jobs will
+//  > be ignored by the requires option.
+//  > However, if all dependencies of a job are filtered, then that job will not be executed either.
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// The name of the context(s).
+    ///
+    /// Jobs may be configured to use global environment variables set for an organization, see the
+    /// [Contexts](https://circleci.com/docs/contexts/) document for adding a context in the
+    /// application settings.
+    ///
+    /// The initial default name is org-global.
+    /// Each context name must be unique.
+    /// If using CircleCI Server, only a single Context per workflow is supported.
+    /// Note: A maximum of 100 unique contexts across all workflows is allowed
+    context: (*Listing<String>|String)?
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/WorkflowJob#context.
+//  documentation
+//  > The name of the context(s).
+//  > 
+//  > Jobs may be configured to use global environment variables set for an organization, see the
+//  > [Contexts](https://circleci.com/docs/contexts/) document for adding a context in the
+//  > application settings.
+//  > 
+//  > The initial default name is org-global.
+//  > Each context name must be unique.
+//  > If using CircleCI Server, only a single Context per workflow is supported.
+//  > Note: A maximum of 100 unique contexts across all workflows is allowed
+//             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// A job may have a type of `approval` indicating it must be manually approved before downstream
+    /// jobs may proceed.
+    ///
+    /// For more information see the Using Workflows to Orchestrate Jobs page.
+    type: "approval"?
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/WorkflowJob#type.
+//  documentation
+//  > A job may have a type of `approval` indicating it must be manually approved before downstream
+//  > jobs may proceed.
+//  > 
+//  > For more information see the Using Workflows to Orchestrate Jobs page.
+  
+    /// Run a parameterized job multiple times with different arguments.
+    ///
+    /// For more information see the how-to guide on [Using Matrix Jobs](https://circleci.com/docs/using-matrix-jobs/).
+    ///
+    /// In order to use the matrix stanza, you must use parameterized jobs.
+    matrix: JobMatrix?
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/WorkflowJob#matrix.
+//  documentation
+//  > Run a parameterized job multiple times with different arguments.
+//  > 
+//  > For more information see the how-to guide on [Using Matrix Jobs](https://circleci.com/docs/using-matrix-jobs/).
+//  > 
+//  > In order to use the matrix stanza, you must use parameterized jobs.
+//          ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/JobMatrix#
+  
+    /// Job Filters can have the key branches or tags
+    filters: JobFilters?
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/WorkflowJob#filters.
+//  documentation
+//  > Job Filters can have the key branches or tags
+//           ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/JobFilters#
+  
+    /// Supplemental job-level parameters to be specified when
+    /// [calling a `job` in `workflow`](https://circleci.com/docs/configuration-reference/#jobs-in-workflow).
+    ///
+    /// There are several reserved parameter names that cannot be used from CircleCI users.
+    hidden parameters: Mapping<
+//         ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/WorkflowJob#parameters.
+//         documentation
+//         > Supplemental job-level parameters to be specified when
+//         > [calling a `job` in `workflow`](https://circleci.com/docs/configuration-reference/#jobs-in-workflow).
+//         > 
+//         > There are several reserved parameter names that cannot be used from CircleCI users.
+//                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+      String(!(this is "name"|"context"|"filters"|"matrix"|"requires"|"type")),
+//    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      *Listing<Step>|String|Number|Boolean
+//     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Step#
+//                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+//                                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+    >?
+  }
+  
+  class JobFilters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/JobFilters#
+    /// Branches can have the keys only and ignore which either map to a single string naming a branch.
+    /// You may also use regular expressions to match against branches by enclosing them with slashes,
+    /// or map to a list of such strings.
+    /// Regular expressions must match the *entire* string.
+    ///
+    /// Any branches that match `only` will run the job.
+    /// Any branches that match `ignore` will not run the job.
+    /// If neither `only` nor `ignore` are specified then all branches will run the job.
+    /// If both `only` and `ignore` are specified the `only` is considered before `ignore`.
+    branches: FilterSpec?
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/JobFilters#branches.
+//  documentation
+//  > Branches can have the keys only and ignore which either map to a single string naming a branch.
+//  > You may also use regular expressions to match against branches by enclosing them with slashes,
+//  > or map to a list of such strings.
+//  > Regular expressions must match the *entire* string.
+//  > 
+//  > Any branches that match `only` will run the job.
+//  > Any branches that match `ignore` will not run the job.
+//  > If neither `only` nor `ignore` are specified then all branches will run the job.
+//  > If both `only` and `ignore` are specified the `only` is considered before `ignore`.
+//            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/FilterSpec#
+  
+    /// CircleCI does not run workflows for tags unless you explicitly specify tag filters.
+    /// Additionally, if a job requires any other jobs (directly or indirectly), you must specify tag
+    /// filters for those jobs.
+    ///
+    /// Tags can have the keys only and ignore.
+    /// You may also use regular expressions to match against tags by enclosing them with slashes,
+    /// or map to a list of such strings.
+    /// Regular expressions must match the entire string.
+    /// Both lightweight and annotated tags are supported.
+    ///
+    /// Any tags that match only will run the job.
+    /// Any tags that match ignore will not run the job.
+    /// If neither only nor ignore are specified then the job is skipped for all tags.
+    /// If both only and ignore are specified the only is considered before ignore.
+    tags: FilterSpec?
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/JobFilters#tags.
+//  documentation
+//  > CircleCI does not run workflows for tags unless you explicitly specify tag filters.
+//  > Additionally, if a job requires any other jobs (directly or indirectly), you must specify tag
+//  > filters for those jobs.
+//  > 
+//  > Tags can have the keys only and ignore.
+//  > You may also use regular expressions to match against tags by enclosing them with slashes,
+//  > or map to a list of such strings.
+//  > Regular expressions must match the entire string.
+//  > Both lightweight and annotated tags are supported.
+//  > 
+//  > Any tags that match only will run the job.
+//  > Any tags that match ignore will not run the job.
+//  > If neither only nor ignore are specified then the job is skipped for all tags.
+//  > If both only and ignore are specified the only is considered before ignore.
+//        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/FilterSpec#
+  }
+  
+  class FilterSpec {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/FilterSpec#
+    /// Either a single branch specifier, or a list of branch specifiers
+    only: (String|Listing<String>)?(this != null || ignore != null)
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/FilterSpec#only.
+//  documentation
+//  > Either a single branch specifier, or a list of branch specifiers
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                  ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/FilterSpec#ignore.
+  
+    /// Either a single branch specifier, or a list of branch specifiers
+    ignore: (String|Listing<String>)?
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/FilterSpec#ignore.
+//  documentation
+//  > Either a single branch specifier, or a list of branch specifiers
+//           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  class JobMatrix {
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/JobMatrix#
+    /// A map of parameter names to every value the job should be called with
+    parameters: Mapping<String, Listing<String|Number|Boolean>>
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/JobMatrix#parameters.
+//  documentation
+//  > A map of parameter names to every value the job should be called with
+//              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+//                                                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+    /// Argument maps that should be excluded from the matrix
+    exclude: Listing<Mapping<String, String>>?
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/JobMatrix#exclude.
+//  documentation
+//  > Argument maps that should be excluded from the matrix
+//           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// An alias for the matrix, usable from another job’s requires stanza.
+    ///
+    /// Defaults to the name of the job being executed
+    alias: String?
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/JobMatrix#alias.
+//  documentation
+//  > An alias for the matrix, usable from another job’s requires stanza.
+//  > 
+//  > Defaults to the name of the job being executed
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  typealias Step = AbstractStep|SimpleStepName|OrbStep
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Step#
+//                 ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/AbstractStep#
+//                              ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/SimpleStepName#
+//                                             ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/OrbStep#
+  
+  typealias SimpleStepName = "checkout"|"setup_remote_docker"|"add_ssh_keyes"|String
+//          ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/SimpleStepName#
+//                                                                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  abstract class AbstractStep {
+//               ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/AbstractStep#
+    fixed hidden __name__: String
+//               ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/AbstractStep#__name__.
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  typealias OrbStep = Dynamic(hasProperty("__name__"))
+//          ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/OrbStep#
+//                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                            ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#hasProperty().
+  
+  function OrbStep(name: String): OrbStep = new {
+//         ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/OrbStep().
+//                 ^^^^ definition local name_449
+//                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/OrbStep#
+    __name__ = name
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/__name__.
+//             ^^^^ reference local name_449
+  }
+  
+  function run(_command: String): RunStep = new {
+//         ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/run().
+//             ^^^^^^^^ definition local _command_453
+//                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RunStep#
+    command = _command
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/command.
+//            ^^^^^^^^ reference local _command_453
+  }
+  
+  /// Used for invoking all command-line programs.
+  ///
+  /// Run commands are executed using non-login shells by default, so you must explicitly source any
+  /// dotfiles as part of the command.
+  class RunStep extends AbstractStep {
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RunStep#
+//      documentation
+//      > Used for invoking all command-line programs.
+//      > 
+//      > Run commands are executed using non-login shells by default, so you must explicitly source any
+//      > dotfiles as part of the command.
+//                      ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/AbstractStep#
+    fixed hidden __name__ = "run"
+//               ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RunStep#__name__.
+  
+    /// Command to run via the shell
+    command: String(!isEmpty)
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RunStep#command.
+//  documentation
+//  > Command to run via the shell
+//           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#isEmpty.
+  
+    /// Title of the step to be shown in the CircleCI UI (default: full [command])
+    name: String?
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RunStep#name.
+//  documentation
+//  > Title of the step to be shown in the CircleCI UI (default: full [`command`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/com.circleci.v2/Config.pkl#L465,C3))
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Shell to use for execution command (default: See [Default Shell Options](https://circleci.com/docs/configuration-reference/#default-shell-options))
+    shell: String?
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RunStep#shell.
+//  documentation
+//  > Shell to use for execution command (default: See [Default Shell Options](https://circleci.com/docs/configuration-reference/#default-shell-options))
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Additional environmental variables, locally scoped to command
+    environment: Mapping<String, String>?
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RunStep#environment.
+//  documentation
+//  > Additional environmental variables, locally scoped to command
+//               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Whether or not this step should run in the background (default: [false])
+    background: Boolean?
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RunStep#background.
+//  documentation
+//  > Whether or not this step should run in the background (default: `false`)
+//              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+    /// In which directory to run this step.
+    ///
+    /// Will be interpreted relative to the working_directory
+    /// of the job. (default: `.`)
+    working_directory: String?
+//  ^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RunStep#working_directory.
+//  documentation
+//  > In which directory to run this step.
+//  > 
+//  > Will be interpreted relative to the working_directory
+//  > of the job. (default: `.`)
+//                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Elapsed time the command can run without output.
+    ///
+    /// The default is 10 minutes and the maximum is governed by the maximum time a job is allowed to run.
+    no_output_timeout: Duration?
+//  ^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RunStep#no_output_timeout.
+//  documentation
+//  > Elapsed time the command can run without output.
+//  > 
+//  > The default is 10 minutes and the maximum is governed by the maximum time a job is allowed to run.
+//                     ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+  
+    /// Specify when to enable or disable the step.
+    ///
+    /// Takes the following values: `always`, `on_success`, `on_fail` (default: on_success)
+    `when`: ("always"|"on_success"|"on_fail")?
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RunStep#when.
+//  documentation
+//  > Specify when to enable or disable the step.
+//  > 
+//  > Takes the following values: `always`, `on_success`, `on_fail` (default: on_success)
+  }
+  
+  /// Generates and stores a cache of a file or directory of files such as dependencies or source
+  /// code in our object storage.
+  ///
+  /// Later jobs can [restore this cache](https://circleci.com/docs/configuration-reference/#restore_cache).
+  /// Learn more on the [Caching Dependencies](https://circleci.com/docs/caching/) page.
+  ///
+  /// Cache retention can be customized on the [CircleCI web app](https://app.circleci.com/) by
+  /// navigating to Plan > Usage Controls.
+  class SaveCacheStep extends AbstractStep {
+//      ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/SaveCacheStep#
+//      documentation
+//      > Generates and stores a cache of a file or directory of files such as dependencies or source
+//      > code in our object storage.
+//      > 
+//      > Later jobs can [restore this cache](https://circleci.com/docs/configuration-reference/#restore_cache).
+//      > Learn more on the [Caching Dependencies](https://circleci.com/docs/caching/) page.
+//      > 
+//      > Cache retention can be customized on the [CircleCI web app](https://app.circleci.com/) by
+//      > navigating to Plan > Usage Controls.
+//                            ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/AbstractStep#
+    fixed hidden __name__ = "save_cache"
+//               ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/SaveCacheStep#__name__.
+  
+    /// List of directories which should be added to the cache
+    paths: Listing<String>
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/SaveCacheStep#paths.
+//  documentation
+//  > List of directories which should be added to the cache
+//         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Unique identifier for this cache
+    key: String
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/SaveCacheStep#key.
+//  documentation
+//  > Unique identifier for this cache
+//       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Title of the step to be shown in the CircleCI UI (default: “Saving Cache”)
+    name: String?
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/SaveCacheStep#name.
+//  documentation
+//  > Title of the step to be shown in the CircleCI UI (default: “Saving Cache”)
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// [Specify when to enable or disable the step](https://circleci.com/docs/configuration-reference/#the-when-attribute).
+    ///
+    /// Takes the following values: always, on_success, on_fail (default: on_success)
+    `when`: ("always"|"on_success"|"on_fail")?
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/SaveCacheStep#when.
+//  documentation
+//  > [Specify when to enable or disable the step](https://circleci.com/docs/configuration-reference/#the-when-attribute).
+//  > 
+//  > Takes the following values: always, on_success, on_fail (default: on_success)
+  }
+  
+  /// Restores a previously saved cache based on a key.
+  ///
+  /// Cache needs to have been saved first for this key using the [save_cache] step.
+  ///
+  /// Learn more in [the caching documentation](https://circleci.com/docs/caching/).
+  class RestoreCacheStep extends AbstractStep {
+//      ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RestoreCacheStep#
+//      documentation
+//      > Restores a previously saved cache based on a key.
+//      > 
+//      > Cache needs to have been saved first for this key using the `save_cache` step.
+//      > 
+//      > Learn more in [the caching documentation](https://circleci.com/docs/caching/).
+//                               ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/AbstractStep#
+    fixed hidden __name__ = "restore_cache"
+//               ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RestoreCacheStep#__name__.
+  
+    /// Single cache key to restore
+    key: String?(this != null || keys != null)
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RestoreCacheStep#key.
+//  documentation
+//  > Single cache key to restore
+//       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RestoreCacheStep#keys.
+  
+    /// List of cache keys to lookup for a cache to restore.
+    ///
+    /// Only first existing key will be restored.
+    keys: Listing<String>?
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RestoreCacheStep#keys.
+//  documentation
+//  > List of cache keys to lookup for a cache to restore.
+//  > 
+//  > Only first existing key will be restored.
+//        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Title of the step to be shown in the CircleCI UI (default: “Restoring Cache”)
+    name: String?
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RestoreCacheStep#name.
+//  documentation
+//  > Title of the step to be shown in the CircleCI UI (default: “Restoring Cache”)
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  /// Allows Docker commands to be run locally.
+  ///
+  /// See [Running Docker Commands](https://circleci.com/docs/building-docker-images/) for details.
+  class SetupRemoteDockerStep extends AbstractStep {
+//      ^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/SetupRemoteDockerStep#
+//      documentation
+//      > Allows Docker commands to be run locally.
+//      > 
+//      > See [Running Docker Commands](https://circleci.com/docs/building-docker-images/) for details.
+//                                    ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/AbstractStep#
+    fixed hidden __name__ = "setup_remote_docker"
+//               ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/SetupRemoteDockerStep#__name__.
+  
+    /// Version string of Docker you would like to use (default: 24.0.9).
+    ///
+    /// View the list of supported docker versions
+    /// [here](https://circleci.com/docs/building-docker-images/#docker-version).
+    version: String?
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/SetupRemoteDockerStep#version.
+//  documentation
+//  > Version string of Docker you would like to use (default: 24.0.9).
+//  > 
+//  > View the list of supported docker versions
+//  > [here](https://circleci.com/docs/building-docker-images/#docker-version).
+//           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Set this to true to enable [Docker Layer Caching](https://circleci.com/docs/docker-layer-caching/)
+    /// in the Remote Docker Environment (default: false)
+    docker_layer_caching: Boolean?
+//  ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/SetupRemoteDockerStep#docker_layer_caching.
+//  documentation
+//  > Set this to true to enable [Docker Layer Caching](https://circleci.com/docs/docker-layer-caching/)
+//  > in the Remote Docker Environment (default: false)
+//                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  }
+  
+  /// Special step used to persist a temporary file to be used by another job in the workflow.
+  /// For more information on using workspaces, see the
+  /// [Using Workspaces to Share Data Between Jobs](https://circleci.com/docs/workspaces/) page.
+  ///
+  /// `persist_to_workspace` adopts the storage settings from the storage customization controls on
+  /// the CircleCI web app.
+  /// If no custom setting is provided, `persist_to_workspace` defaults to 15 days.
+  ///
+  /// Workspace storage retention can be customized on the CircleCI web app by navigating to Plan > Usage Controls.
+  class PersistToWorkspaceStep extends AbstractStep {
+//      ^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PersistToWorkspaceStep#
+//      documentation
+//      > Special step used to persist a temporary file to be used by another job in the workflow.
+//      > For more information on using workspaces, see the
+//      > [Using Workspaces to Share Data Between Jobs](https://circleci.com/docs/workspaces/) page.
+//      > 
+//      > `persist_to_workspace` adopts the storage settings from the storage customization controls on
+//      > the CircleCI web app.
+//      > If no custom setting is provided, `persist_to_workspace` defaults to 15 days.
+//      > 
+//      > Workspace storage retention can be customized on the CircleCI web app by navigating to Plan > Usage Controls.
+//                                     ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/AbstractStep#
+    fixed hidden __name__ = "persist_to_workspace"
+//               ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PersistToWorkspaceStep#__name__.
+  
+    /// Either an absolute path or a path relative to `working_directory`
+    root: String
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PersistToWorkspaceStep#root.
+//  documentation
+//  > Either an absolute path or a path relative to `working_directory`
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Glob identifying file(s), or a non-glob path to a directory to add to the shared workspace.
+    ///
+    /// Interpreted as relative to the workspace root.
+    /// Must not be the workspace root itself
+    paths: Listing<String>
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PersistToWorkspaceStep#paths.
+//  documentation
+//  > Glob identifying file(s), or a non-glob path to a directory to add to the shared workspace.
+//  > 
+//  > Interpreted as relative to the workspace root.
+//  > Must not be the workspace root itself
+//         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  /// Special step used to attach the workflow’s workspace to the current container.
+  ///
+  /// The full contents of the workspace are downloaded and copied into the directory the workspace
+  /// is being attached at.
+  /// For more information on using workspaces, see the
+  /// [Using Workspaces to Share Data Between Jobs](https://circleci.com/docs/workspaces/) page.
+  class AttachWorkspaceStep extends AbstractStep {
+//      ^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/AttachWorkspaceStep#
+//      documentation
+//      > Special step used to attach the workflow’s workspace to the current container.
+//      > 
+//      > The full contents of the workspace are downloaded and copied into the directory the workspace
+//      > is being attached at.
+//      > For more information on using workspaces, see the
+//      > [Using Workspaces to Share Data Between Jobs](https://circleci.com/docs/workspaces/) page.
+//                                  ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/AbstractStep#
+    fixed hidden __name__ = "attach_workspace"
+//               ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/AttachWorkspaceStep#__name__.
+  
+    /// Directory to attach the workspace to.
+    at: String
+//  ^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/AttachWorkspaceStep#at.
+//  documentation
+//  > Directory to attach the workspace to.
+//      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  /// A conditional step consists of a step with the key `when`.
+  ///
+  /// Under the `when` key are the subkeys `condition` and `steps`.
+  /// The purpose of the `when` step is customizing commands and job configuration to run on custom
+  /// conditions (determined at config-compile time) that are checked before a workflow runs.
+  /// See the [Conditional Steps section of the Reusing Config](https://circleci.com/docs/reusing-config/#defining-conditional-steps)
+  /// document for more details.
+  class WhenStep {
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/WhenStep#
+//      documentation
+//      > A conditional step consists of a step with the key `when`.
+//      > 
+//      > Under the `when` key are the subkeys `condition` and `steps`.
+//      > The purpose of the `when` step is customizing commands and job configuration to run on custom
+//      > conditions (determined at config-compile time) that are checked before a workflow runs.
+//      > See the [Conditional Steps section of the Reusing Config](https://circleci.com/docs/reusing-config/#defining-conditional-steps)
+//      > document for more details.
+    fixed hidden __name__ = "when"
+//               ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/WhenStep#__name__.
+  
+    /// The logic statement that determines whether to execute.
+    condition: (*LogicStatement|Boolean|String)?
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/WhenStep#condition.
+//  documentation
+//  > The logic statement that determines whether to execute.
+//               ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/LogicStatement#
+//                              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// A list of steps to execute when the condition is true
+    steps: Listing<AbstractStep|SimpleStepName>?
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/WhenStep#steps.
+//  documentation
+//  > A list of steps to execute when the condition is true
+//         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                 ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/AbstractStep#
+//                              ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/SimpleStepName#
+  }
+  
+  /// A conditional step consists of a step with the key `unless`.
+  ///
+  /// Under the `unless` key are the subkeys `condition` and `steps`.
+  /// The purpose of the `unless` step is customizing commands and job configuration to run on custom
+  /// conditions (determined at config-compile time) that are checked before a workflow runs.
+  /// See the [Conditional Steps section of the Reusing Config](https://circleci.com/docs/reusing-config/#defining-conditional-steps)
+  /// document for more details.
+  class UnlessStep {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/UnlessStep#
+//      documentation
+//      > A conditional step consists of a step with the key `unless`.
+//      > 
+//      > Under the `unless` key are the subkeys `condition` and `steps`.
+//      > The purpose of the `unless` step is customizing commands and job configuration to run on custom
+//      > conditions (determined at config-compile time) that are checked before a workflow runs.
+//      > See the [Conditional Steps section of the Reusing Config](https://circleci.com/docs/reusing-config/#defining-conditional-steps)
+//      > document for more details.
+    fixed hidden __name__ = "unless"
+//               ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/UnlessStep#__name__.
+  
+    /// The logic statement that determines whether to execute.
+    condition: (*LogicStatement|Boolean|String)?
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/UnlessStep#condition.
+//  documentation
+//  > The logic statement that determines whether to execute.
+//               ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/LogicStatement#
+//                              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// A list of steps to execute when the condition is true
+    steps: Listing<AbstractStep|SimpleStepName>?
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/UnlessStep#steps.
+//  documentation
+//  > A list of steps to execute when the condition is true
+//         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                 ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/AbstractStep#
+//                              ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/SimpleStepName#
+  }
+  
+  class Command {
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Command#
+    /// A sequence of steps run inside the calling job of the command.
+    steps: Listing<Step>(!isEmpty)
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Command#steps.
+//  documentation
+//  > A sequence of steps run inside the calling job of the command.
+//         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                 ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Step#
+//                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#isEmpty.
+  
+    /// A map of parameter keys.
+    ///
+    /// See the [Parameter Syntax](https://circleci.com/docs/reusing-config/#parameter-syntax)
+    /// section of the [Reusing Config](https://circleci.com/docs/reusing-config/) document for details.
+    parameters: Mapping<String, Parameter>?
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Command#parameters.
+//  documentation
+//  > A map of parameter keys.
+//  > 
+//  > See the [Parameter Syntax](https://circleci.com/docs/reusing-config/#parameter-syntax)
+//  > section of the [Reusing Config](https://circleci.com/docs/reusing-config/) document for details.
+//              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                              ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Parameter#
+  
+    /// A string that describes the purpose of the command.
+    description: String?
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Command#description.
+//  documentation
+//  > A string that describes the purpose of the command.
+//               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  class Parameter {
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Parameter#
+    /// Optional. Used to generate documentation for your orb.
+    description: String?
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Parameter#description.
+//  documentation
+//  > Optional. Used to generate documentation for your orb.
+//               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// The default value for the parameter. If not present, the parameter is implied to be required.
+    default: (String|Number|Boolean)?
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Parameter#default.
+//  documentation
+//  > The default value for the parameter. If not present, the parameter is implied to be required.
+//            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+//                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+    /// Required. See [Parameter Types](https://circleci.com/docs/reusing-config/#parameter-types)
+    /// for details.
+    type: "string"|"boolean"|"integer"|"enum"|"executor"|"steps"|"env_var_name"
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Parameter#type.
+//  documentation
+//  > Required. See [Parameter Types](https://circleci.com/docs/reusing-config/#parameter-types)
+//  > for details.
+  }
+  
+  /// Special step used to upload and store test results for a build.
+  ///
+  /// Test results are visible on the CircleCI web application under each build’s *Test Summary*
+  /// section.
+  /// Storing test results is useful for timing analysis of your test suites.
+  /// For more information on storing test results, see the
+  /// [Collecting Test Data](https://circleci.com/docs/collect-test-data/) page.
+  ///
+  /// It is also possible to store test results as a build artifact; to do so, please refer to the
+  /// [store_artifacts] step.
+  class StoreTestResults extends AbstractStep {
+//      ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/StoreTestResults#
+//      documentation
+//      > Special step used to upload and store test results for a build.
+//      > 
+//      > Test results are visible on the CircleCI web application under each build’s *Test Summary*
+//      > section.
+//      > Storing test results is useful for timing analysis of your test suites.
+//      > For more information on storing test results, see the
+//      > [Collecting Test Data](https://circleci.com/docs/collect-test-data/) page.
+//      > 
+//      > It is also possible to store test results as a build artifact; to do so, please refer to the
+//      > `store_artifacts` step.
+//                               ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/AbstractStep#
+    fixed hidden __name__ = "store_test_results"
+//               ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/StoreTestResults#__name__.
+  
+    /// Path (absolute, or relative to your `working_directory`) to directory containing JUnit XML
+    /// test metadata files, or to a single test file.
+    path: String
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/StoreTestResults#path.
+//  documentation
+//  > Path (absolute, or relative to your `working_directory`) to directory containing JUnit XML
+//  > test metadata files, or to a single test file.
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  /// Step to store artifacts (for example logs, binaries, etc) to be available in the web app
+  /// or through the API.
+  ///
+  /// See the [Uploading Artifacts](https://circleci.com/docs/artifacts/) document for more information.
+  class StoreArtifacts extends AbstractStep {
+//      ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/StoreArtifacts#
+//      documentation
+//      > Step to store artifacts (for example logs, binaries, etc) to be available in the web app
+//      > or through the API.
+//      > 
+//      > See the [Uploading Artifacts](https://circleci.com/docs/artifacts/) document for more information.
+//                             ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/AbstractStep#
+    fixed hidden __name__ = "store_artifacts"
+//               ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/StoreArtifacts#__name__.
+  
+    /// Directory in the primary container to save as job artifacts
+    path: String
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/StoreArtifacts#path.
+//  documentation
+//  > Directory in the primary container to save as job artifacts
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Prefix added to the artifact paths in the artifacts API (default: the directory of the file
+    /// specified in path)
+    destination: String?
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/StoreArtifacts#destination.
+//  documentation
+//  > Prefix added to the artifact paths in the artifacts API (default: the directory of the file
+//  > specified in path)
+//               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  /// Certain dynamic configuration features accept logic statements as arguments.
+  ///
+  /// Logic statements are evaluated to boolean values at configuration compilation time, that is,
+  /// before the workflow is run.
+  class LogicStatement {
+//      ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/LogicStatement#
+//      documentation
+//      > Certain dynamic configuration features accept logic statements as arguments.
+//      > 
+//      > Logic statements are evaluated to boolean values at configuration compilation time, that is,
+//      > before the workflow is run.
+    /// True if all arguments are truthy.
+    and: Listing<*LogicStatement|Boolean|String>?(onlyOneSet(List(this, or, not, equal, matches)))
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/LogicStatement#and.
+//  documentation
+//  > True if all arguments are truthy.
+//       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/LogicStatement#
+//                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                ^^^^^^^^^^ reference local onlyOneSet_708
+//                                                           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                                                      ^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/LogicStatement#or.
+//                                                                          ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/LogicStatement#not.
+//                                                                               ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/LogicStatement#equal.
+//                                                                                      ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/LogicStatement#matches.
+  
+    /// True if any arguments are truthy.
+    or: Listing<*LogicStatement|Boolean|String>?
+//  ^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/LogicStatement#or.
+//  documentation
+//  > True if any arguments are truthy.
+//      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//               ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/LogicStatement#
+//                              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// True if the argument is not truthy.
+    not: (*LogicStatement|Boolean|String)?
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/LogicStatement#not.
+//  documentation
+//  > True if the argument is not truthy.
+//         ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/LogicStatement#
+//                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// True if all arguments evaluate to equal values.
+    equal: Listing<Boolean|String|Number>?
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/LogicStatement#equal.
+//  documentation
+//  > True if all arguments evaluate to equal values.
+//         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+  
+    /// True if [value][Match.value] matches the [pattern][Match.pattern].
+    matches: Match?
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/LogicStatement#matches.
+//  documentation
+//  > True if [`value`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/com.circleci.v2/Config.pkl#L714,C3) matches the [`pattern`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/com.circleci.v2/Config.pkl#L722,C3).
+//           ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Match#
+  }
+  
+  /// Tells if only one of the values is not null.
+  local const function onlyOneSet(values: List<Any>): Boolean =
+//                     ^^^^^^^^^^ definition local onlyOneSet_708
+//                     documentation
+//                     > Tells if only one of the values is not null.
+//                                ^^^^^^ definition local values_709
+//                                        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+    values.filter((it) -> it != null).length == 1
+//  ^^^^^^ reference local values_709
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#filter().
+//                 ^^ definition local it_710
+//                        ^^ reference local it_710
+//                                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#length.
+  
+  class Match {
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Match#
+    /// The value to match against
+    value: String
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Match#value.
+//  documentation
+//  > The value to match against
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// A [Java regular expression](https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html)
+    /// used to test against the value.
+    ///
+    /// A full match pattern must be provided, prefix matching is not an option.
+    /// Though, it is recommended to enclose a pattern in `^` and `$` to avoid accidental partial matches.
+    @SourceCode { language = "RegExp" }
+//   ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/SourceCode#
+//                ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Match#language.
+    pattern: String
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/Match#pattern.
+//  documentation
+//  > A [Java regular expression](https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html)
+//  > used to test against the value.
+//  > 
+//  > A full match pattern must be provided, prefix matching is not an option.
+//  > Though, it is recommended to enclose a pattern in `^` and `$` to avoid accidental partial matches.
+//           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  typealias CalledCommand = Mapping<String, CommandCall>(length == 1)
+//          ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/CalledCommand#
+//                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                          ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/CommandCall#
+//                                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#length.
+  
+  typealias CommandCall = Mapping<String, String|Number|Boolean>
+//          ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/CommandCall#
+//                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+//                                                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+  class PipelineValues {
+//      ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#
+    /// A globally unique id representing for the pipeline.
+    ///
+    /// Type: string
+    `pipeline.id`: "<< pipeline.id >>"
+//  ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.id`.
+//  documentation
+//  > A globally unique id representing for the pipeline.
+//  > 
+//  > Type: string
+  
+    /// A project unique integer id for the pipeline.
+    ///
+    /// Type: integer
+    `pipeline.number`: "<< pipeline.number >>"
+//  ^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.number`.
+//  documentation
+//  > A project unique integer id for the pipeline.
+//  > 
+//  > Type: integer
+  
+    /// The URL where the current project is hosted.
+    ///
+    /// For example, `https://github.com/circleci/circleci-docs`.
+    `pipeline.project.git_url`: "<< pipeline.project.git_url >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.project.git_url`.
+//  documentation
+//  > The URL where the current project is hosted.
+//  > 
+//  > For example, `https://github.com/circleci/circleci-docs`.
+    `pipeline.project.type`: "<< pipeline.project.type >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.project.type`.
+    `pipeline.git.tag`: "<< pipeline.git.tag >>"
+//  ^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.git.tag`.
+    `pipeline.git.branch`: "<< pipeline.git.branch >>"
+//  ^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.git.branch`.
+    `pipeline.git.revision`: "<< pipeline.git.revision >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.git.revision`.
+    `pipeline.git.base_revision`: "<< pipeline.git.base_revision >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.git.base_revision`.
+    `pipeline.in_setup`: "<< pipeline.in_setup >>"
+//  ^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.in_setup`.
+    `pipeline.trigger_source`: "<< pipeline.trigger_source >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_source`.
+    `pipeline.schedule.name`: "<< pipeline.schedule.name >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.schedule.name`.
+    `pipeline.schedule.id`: "<< pipeline.schedule.id >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.schedule.id`.
+    `pipeline.trigger_parameters.circleci.trigger_type`: "<< pipeline.trigger_parameters.circleci.trigger_type >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.circleci.trigger_type`.
+    `pipeline.trigger_parameters.circleci.event_time`: "<< pipeline.trigger_parameters.circleci.event_time >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.circleci.event_time`.
+    `pipeline.trigger_parameters.circleci.event_type`: "<< pipeline.trigger_parameters.circleci.event_type >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.circleci.event_type`.
+    `pipeline.trigger_parameters.circleci.project_id`: "<< pipeline.trigger_parameters.circleci.project_id >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.circleci.project_id`.
+    `pipeline.trigger_parameters.circleci.actor_id`: "<< pipeline.trigger_parameters.circleci.actor_id >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.circleci.actor_id`.
+    `pipeline.trigger_parameters.gitlab.type`: "<< pipeline.trigger_parameters.gitlab.type >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.gitlab.type`.
+    `pipeline.trigger_parameters.github_app.type`: "<< pipeline.trigger_parameters.github_app.type >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.github_app.type`.
+    `pipeline.trigger_parameters.gitlab.project_id`: "<< pipeline.trigger_parameters.gitlab.project_id >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.gitlab.project_id`.
+    `pipeline.trigger_parameters.github_app.project_id`: "<< pipeline.trigger_parameters.github_app.project_id >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.github_app.project_id`.
+    `pipeline.trigger_parameters.gitlab.ref`: "<< pipeline.trigger_parameters.gitlab.ref >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.gitlab.ref`.
+    `pipeline.trigger_parameters.github_app.ref`: "<< pipeline.trigger_parameters.github_app.ref >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.github_app.ref`.
+    `pipeline.trigger_parameters.gitlab.checkout_sha`: "<< pipeline.trigger_parameters.gitlab.checkout_sha >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.gitlab.checkout_sha`.
+    `pipeline.trigger_parameters.github_app.checkout_sha`: "<< pipeline.trigger_parameters.github_app.checkout_sha >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.github_app.checkout_sha`.
+    `pipeline.trigger_parameters.gitlab.user_id`: "<< pipeline.trigger_parameters.gitlab.user_id >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.gitlab.user_id`.
+    `pipeline.trigger_parameters.github_app.user_id`: "<< pipeline.trigger_parameters.github_app.user_id >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.github_app.user_id`.
+    `pipeline.trigger_parameters.gitlab.user_name`: "<< pipeline.trigger_parameters.gitlab.user_name >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.gitlab.user_name`.
+    `pipeline.trigger_parameters.github_app.user_name`: "<< pipeline.trigger_parameters.github_app.user_name >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.github_app.user_name`.
+    `pipeline.trigger_parameters.gitlab.user_username`: "<< pipeline.trigger_parameters.gitlab.user_username >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.gitlab.user_username`.
+    `pipeline.trigger_parameters.github_app.user_username`: "<< pipeline.trigger_parameters.github_app.user_username >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.github_app.user_username`.
+    `pipeline.trigger_parameters.gitlab.user_avatar`: "<< pipeline.trigger_parameters.gitlab.user_avatar >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.gitlab.user_avatar`.
+    `pipeline.trigger_parameters.github_app.user_avatar`: "<< pipeline.trigger_parameters.github_app.user_avatar >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.github_app.user_avatar`.
+    `pipeline.trigger_parameters.gitlab.repo_name`: "<< pipeline.trigger_parameters.gitlab.repo_name >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.gitlab.repo_name`.
+    `pipeline.trigger_parameters.github_app.repo_name`: "<< pipeline.trigger_parameters.github_app.repo_name >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.github_app.repo_name`.
+    `pipeline.trigger_parameters.gitlab.repo_url`: "<< pipeline.trigger_parameters.gitlab.repo_url >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.gitlab.repo_url`.
+    `pipeline.trigger_parameters.github_app.repo_url`: "<< pipeline.trigger_parameters.github_app.repo_url >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.github_app.repo_url`.
+    `pipeline.trigger_parameters.gitlab.web_url`: "<< pipeline.trigger_parameters.gitlab.web_url >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.gitlab.web_url`.
+    `pipeline.trigger_parameters.github_app.web_url`: "<< pipeline.trigger_parameters.github_app.web_url >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.github_app.web_url`.
+    `pipeline.trigger_parameters.gitlab.commit_sha`: "<< pipeline.trigger_parameters.gitlab.commit_sha >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.gitlab.commit_sha`.
+    `pipeline.trigger_parameters.github_app.commit_sha`: "<< pipeline.trigger_parameters.github_app.commit_sha >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.github_app.commit_sha`.
+    `pipeline.trigger_parameters.gitlab.commit_title`: "<< pipeline.trigger_parameters.gitlab.commit_title >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.gitlab.commit_title`.
+    `pipeline.trigger_parameters.github_app.commit_title`: "<< pipeline.trigger_parameters.github_app.commit_title >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.github_app.commit_title`.
+    `pipeline.trigger_parameters.gitlab.commit_message`: "<< pipeline.trigger_parameters.gitlab.commit_message >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.gitlab.commit_message`.
+    `pipeline.trigger_parameters.github_app.commit_message`: "<< pipeline.trigger_parameters.github_app.commit_message >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.github_app.commit_message`.
+    `pipeline.trigger_parameters.gitlab.commit_timestamp`: "<< pipeline.trigger_parameters.gitlab.commit_timestamp >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.gitlab.commit_timestamp`.
+    `pipeline.trigger_parameters.github_app.commit_timestamp`: "<< pipeline.trigger_parameters.github_app.commit_timestamp >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.github_app.commit_timestamp`.
+    `pipeline.trigger_parameters.gitlab.commit_author_name`: "<< pipeline.trigger_parameters.gitlab.commit_author_name >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.gitlab.commit_author_name`.
+    `pipeline.trigger_parameters.github_app.commit_author_name`: "<< pipeline.trigger_parameters.github_app.commit_author_name >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.github_app.commit_author_name`.
+    `pipeline.trigger_parameters.gitlab.commit_author_email`: "<< pipeline.trigger_parameters.gitlab.commit_author_email >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.gitlab.commit_author_email`.
+    `pipeline.trigger_parameters.github_app.commit_author_email`: "<< pipeline.trigger_parameters.github_app.commit_author_email >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.github_app.commit_author_email`.
+    `pipeline.trigger_parameters.gitlab.total_commits_count`: "<< pipeline.trigger_parameters.gitlab.total_commits_count >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.gitlab.total_commits_count`.
+    `pipeline.trigger_parameters.github_app.total_commits_count`: "<< pipeline.trigger_parameters.github_app.total_commits_count >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.github_app.total_commits_count`.
+    `pipeline.trigger_parameters.gitlab.branch`: "<< pipeline.trigger_parameters.gitlab.branch >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.gitlab.branch`.
+    `pipeline.trigger_parameters.github_app.branch`: "<< pipeline.trigger_parameters.github_app.branch >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.github_app.branch`.
+    `pipeline.trigger_parameters.gitlab.default_branch`: "<< pipeline.trigger_parameters.gitlab.default_branch >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.gitlab.default_branch`.
+    `pipeline.trigger_parameters.github_app.default_branch`: "<< pipeline.trigger_parameters.github_app.default_branch >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.github_app.default_branch`.
+    `pipeline.trigger_parameters.gitlab.x_gitlab_event_id`: "<< pipeline.trigger_parameters.gitlab.x_gitlab_event_id >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.gitlab.x_gitlab_event_id`.
+    `pipeline.trigger_parameters.gitlab.is_fork_merge_request`: "<< pipeline.trigger_parameters.gitlab.is_fork_merge_request >>"
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#`pipeline.trigger_parameters.gitlab.is_fork_merge_request`.
+  }
+  
+  /// Pipeline values are available to all pipeline configurations and can be used without previous
+  /// declaration.
+  ///
+  /// For a full list of values and built-in environment variables, see the
+  /// [Project values and variables guide](https://circleci.com/docs/variables/).
+  ///
+  /// For more reference: <https://circleci.com/docs/pipeline-variables/#pipeline-values>
+  hidden pipelineValues: PipelineValues
+//       ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/pipelineValues.
+//       documentation
+//       > Pipeline values are available to all pipeline configurations and can be used without previous
+//       > declaration.
+//       > 
+//       > For a full list of values and built-in environment variables, see the
+//       > [Project values and variables guide](https://circleci.com/docs/variables/).
+//       > 
+//       > For more reference: <https://circleci.com/docs/pipeline-variables/#pipeline-values>
+//                       ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PipelineValues#
+  
+  output {
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/output.
+    text = "# Generated from CircleCI.pkl. DO NOT EDIT.\n" + super.text
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/text.
+//                                                                 ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/FileOutput#text.
+    renderer = new YamlRenderer {
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/renderer.
+//                 ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/YamlRenderer#
+      converters {
+//    ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/converters.
+        [AbstractStep] = (it) -> Map(it.__name__, it.toMap())
+//       ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/AbstractStep#
+//                        ^^ definition local it_815
+//                               ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                   ^^ reference local it_815
+//                                      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/AbstractStep#__name__.
+//                                                ^^ reference local it_815
+//                                                   ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#toMap().
+        [Dynamic] = (it) ->
+//       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                   ^^ definition local it_816
+          if (it.hasProperty("__name__"))
+//            ^^ reference local it_816
+//               ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#hasProperty().
+            Map(it.__name__, it.toMap().remove("__name__"))
+//          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//              ^^ reference local it_816
+//                           ^^ reference local it_816
+//                              ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toMap().
+//                                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#remove().
+          else it
+//             ^^ reference local it_816
+        [WorkflowJob] = (it) ->
+//       ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/WorkflowJob#
+//                       ^^ definition local it_820
+          it.toMap() + (it.parameters ?? Map()).toMap()
+//        ^^ reference local it_820
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#toMap().
+//                      ^^ reference local it_820
+//                         ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/WorkflowJob#parameters.
+//                                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                              ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#toMap().
+      }
+    }
+  }
+  

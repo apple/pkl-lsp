@@ -1,0 +1,172 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module org.json_schema.contrib.internal.ModulesGenerator
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModulesGenerator.pkl`/
+  
+  import "@jsonschema/JsonSchema.pkl"
+  import "@jsonschema/Parser.pkl"
+  import "@uri/URI.pkl"
+  import "utils.pkl"
+  import "ModuleGenerator.pkl"
+  
+  /// The root schema, used to resolve [JsonSchema.$ref] values.
+  rootSchema: JsonSchema
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModulesGenerator.pkl`/rootSchema.
+//            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+  
+  /// The URI representing the root schema, used to resolve [JsonSchema.$ref] values.
+  baseUri: URI
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModulesGenerator.pkl`/baseUri.
+//         ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+  
+  local isExternalSchema = (baseUri: URI) -> (schema: JsonSchema) ->
+//      ^^^^^^^^^^^^^^^^ definition local isExternalSchema_30
+//                          ^^^^^^^ definition local baseUri_30
+//                                   ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                                            ^^^^^^ definition local schema_30
+//                                                    ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+    if (schema.$$refUri == null) false
+//      ^^^^^^ reference local schema_30
+//             ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/$$refUri.
+    else
+      let (resolvedUri = baseUri.resolveUri(schema.$$refUri!!))
+//         ^^^^^^^^^^^ definition local resolvedUri_33
+//                       ^^^^^^^ reference local baseUri_30
+//                               ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/resolveUri().
+//                                          ^^^^^^ reference local schema_30
+//                                                 ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/$$refUri.
+        baseUri.scheme != resolvedUri.scheme
+//      ^^^^^^^ reference local baseUri_30
+//              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/scheme.
+//                        ^^^^^^^^^^^ reference local resolvedUri_33
+//                                    ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/scheme.
+        || baseUri.authority() != resolvedUri.authority()
+//         ^^^^^^^ reference local baseUri_30
+//                 ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/authority().
+//                                ^^^^^^^^^^^ reference local resolvedUri_33
+//                                            ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/authority().
+        || baseUri.path != resolvedUri.path
+//         ^^^^^^^ reference local baseUri_30
+//                 ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/path.
+//                         ^^^^^^^^^^^ reference local resolvedUri_33
+//                                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/path.
+  
+  function gatherAllSchemas(schema: JsonSchema, baseUri: URI): List<Pair<JsonSchema, URI>> =
+//         ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModulesGenerator.pkl`/gatherAllSchemas().
+//                          ^^^^^^ definition local schema_38
+//                                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                              ^^^^^^^ definition local baseUri_38
+//                                                       ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                                                             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                                  ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#
+//                                                                       ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                                                   ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+    let (externalSchemas = utils.findMatchingSubschemas(schema, isExternalSchema.apply(baseUri)))
+//       ^^^^^^^^^^^^^^^ definition local externalSchemas_39
+//                         ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/
+//                               ^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/findMatchingSubschemas().
+//                                                      ^^^^^^ reference local schema_38
+//                                                              ^^^^^^^^^^^^^^^^ reference local isExternalSchema_30
+//                                                                               ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Function1#apply().
+//                                                                                     ^^^^^^^ reference local baseUri_38
+      externalSchemas.values.flatMap((it) ->
+//    ^^^^^^^^^^^^^^^ reference local externalSchemas_39
+//                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#values.
+//                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#flatMap().
+//                                    ^^ definition local it_40
+        let (resolvedUri = baseUri.resolveUri(it.$$refUri!!).basePath)
+//           ^^^^^^^^^^^ definition local resolvedUri_41
+//                         ^^^^^^^ reference local baseUri_38
+//                                 ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/resolveUri().
+//                                            ^^ reference local it_40
+//                                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/$$refUri.
+//                                                           ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/basePath.
+        let (jsonSchemaBlob = read?(resolvedUri.toString()))
+//           ^^^^^^^^^^^^^^ definition local jsonSchemaBlob_42
+//                                  ^^^^^^^^^^^ reference local resolvedUri_41
+//                                              ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/toString().
+          if (jsonSchemaBlob == null)
+//            ^^^^^^^^^^^^^^ reference local jsonSchemaBlob_42
+            let (_ = trace("WARN: Failed to read external URI \(resolvedUri)"))
+//                                                              ^^^^^^^^^^^ reference local resolvedUri_41
+              List()
+//            ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+          else
+            let (parsedJsonSchema = (Parser.parse(jsonSchemaBlob)) {
+//               ^^^^^^^^^^^^^^^^ definition local parsedJsonSchema_47
+//                                   ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/
+//                                          ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/parse().
+//                                                ^^^^^^^^^^^^^^ reference local jsonSchemaBlob_42
+              $$baseSchema = this
+//            ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModulesGenerator.pkl`/$$baseSchema.
+            })
+              gatherAllSchemas(parsedJsonSchema, resolvedUri)
+//            ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModulesGenerator.pkl`/gatherAllSchemas().
+//                             ^^^^^^^^^^^^^^^^ reference local parsedJsonSchema_47
+//                                               ^^^^^^^^^^^ reference local resolvedUri_41
+      ).add(Pair(schema, baseUri))
+//      ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+//               ^^^^^^ reference local schema_38
+//                       ^^^^^^^ reference local baseUri_38
+  
+  local schemas = gatherAllSchemas(rootSchema, baseUri)
+//      ^^^^^^^ definition local schemas_53
+//                ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModulesGenerator.pkl`/gatherAllSchemas().
+//                                 ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModulesGenerator.pkl`/rootSchema.
+//                                             ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModulesGenerator.pkl`/baseUri.
+  
+  modules: List<ModuleGenerator> = schemas.fold(List(), (acc: List<ModuleGenerator>, schema) ->
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModulesGenerator.pkl`/modules.
+//         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//              ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/
+//                                 ^^^^^^^ reference local schemas_53
+//                                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#fold().
+//                                              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                                       ^^^ definition local acc_55
+//                                                            ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                                 ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/
+//                                                                                   ^^^^^^ definition local schema_55
+    acc.add(new ModuleGenerator {
+//  ^^^ reference local acc_55
+//      ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//              ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/
+      rootSchema = schema.first
+//    ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModulesGenerator.pkl`/rootSchema.
+//                 ^^^^^^ reference local schema_55
+//                        ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#first.
+      baseUri = schema.second
+//    ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModulesGenerator.pkl`/baseUri.
+//              ^^^^^^ reference local schema_55
+//                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#second.
+      existingTypes = acc.flatMap((it) -> it.moduleTypes.entries).toMap((it) -> it.first, (it) -> it.second)
+//    ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModulesGenerator.pkl`/existingTypes.
+//                    ^^^ reference local acc_55
+//                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#flatMap().
+//                                 ^^ definition local it_59
+//                                        ^^ reference local it_59
+//                                           ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleTypes.
+//                                                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#entries.
+//                                                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#toMap().
+//                                                                       ^^ definition local it_59
+//                                                                              ^^ reference local it_59
+//                                                                                 ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#first.
+//                                                                                         ^^ definition local it_59
+//                                                                                                ^^ reference local it_59
+//                                                                                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#second.
+    })
+  )
+  
