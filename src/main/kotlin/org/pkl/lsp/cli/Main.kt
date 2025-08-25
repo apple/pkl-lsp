@@ -20,5 +20,5 @@ package org.pkl.lsp.cli
 import com.github.ajalt.clikt.core.main
 
 internal fun main(args: Array<String>) {
-  LspCommand().main(args)
+  PklLspCliCommand().main(args)
 }
