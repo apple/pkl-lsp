@@ -32,6 +32,7 @@ plugins {
   alias(libs.plugins.shadow)
   alias(libs.plugins.spotless)
   alias(libs.plugins.nexusPublish)
+  alias(libs.plugins.protobuf)
 }
 
 val buildInfo = project.extensions.getByType<BuildInfo>()
@@ -77,10 +78,13 @@ dependencies {
   implementation(libs.kotlinxSerializationJson)
   implementation(libs.jspecify) // used by jtreesitter
   implementation(libs.jtreesitter)
+  implementation(libs.protobuf)
   // stdlib files are included from a one-off configuration then bundled into shadow jar (see
   // shadowJar spec).
   // declare a regular dependency for testing only.
   testRuntimeOnly(libs.pklStdlib)
+  // Add pkl stdlib as runtime dependency for development/debug commands
+  runtimeOnly(libs.pklStdlib)
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
   testImplementation(libs.assertJ)
   testImplementation(libs.junitJupiter)
@@ -95,6 +99,11 @@ dependencies {
 
 val configurePklCliExecutable by
   tasks.registering { doLast { pklCli.singleFile.setExecutable(true) } }
+
+protobuf {
+  protoc { artifact = "com.google.protobuf:protoc:${libs.versions.protobuf.get()}" }
+  generateProtoTasks { all().forEach { it.builtins { create("kotlin") } } }
+}
 
 tasks.jar {
   manifest {

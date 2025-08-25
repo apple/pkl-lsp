@@ -15,7 +15,6 @@
  */
 package org.pkl.lsp.cli
 
-import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.NoOpCliktCommand
 import com.github.ajalt.clikt.core.subcommands
@@ -25,7 +24,7 @@ import org.pkl.lsp.Release
 class PklLspCliCommand : NoOpCliktCommand(name = "pkl-lsp") {
   init {
     versionOption(version = Release.version)
-    subcommands(LspCommand(), ScipCommand(), DebugCommand())
+    subcommands(LspCommand(), ScipCommand())
   }
 
   override fun help(context: Context): String =
