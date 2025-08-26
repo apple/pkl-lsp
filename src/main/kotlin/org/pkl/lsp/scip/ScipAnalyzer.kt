@@ -54,65 +54,37 @@ class ScipAnalyzer(project: Project, rootPath: Path) : Component(project) {
     return docBuilder
   }
 
+  // Extension function to handle common definition node pattern
+  private inline fun PklNode.handleAsDefinition(
+    docBuilder: ScipDocumentBuilder,
+    context: PklProject?,
+    packageInfo: ScipAnalyzer.PackageInfo,
+    crossinline additionalCheck: () -> Boolean = { true }
+  ) {
+    if (additionalCheck()) {
+      val symbol = createSymbolForDefinition(this, packageInfo)
+      addSymbolDefinition(this, symbol, docBuilder, context)
+    }
+    children.forEach { analyzeNode(it, docBuilder, context) }
+  }
+
   private fun analyzeNode(node: PklNode, docBuilder: ScipDocumentBuilder, context: PklProject?) {
     val packageInfo = getPackageInfo(context)
 
     when (node) {
       is PklModule -> {
         val symbol = symbolFormatter.formatSymbol(node, packageInfo.name, packageInfo.version)
-
         addSymbolDefinition(node, symbol, docBuilder, context)
-
-        val moduleDescriptor = symbolFormatter.getDescriptor(node)
         node.children.forEach { child -> analyzeNode(child, docBuilder, context) }
       }
 
-      is PklClass -> {
-        val symbol = createSymbolForDefinition(node, getPackageInfo(context))
-        addSymbolDefinition(node, symbol, docBuilder, context)
-
-        //        val classDescriptor = parentDescriptors + ScipSymbolFormatter.getDescriptor(node)
-        node.children.forEach { child -> analyzeNode(child, docBuilder, context) }
-      }
-
-      is PklClassMethod -> {
-        val symbol = createSymbolForDefinition(node, getPackageInfo(context))
-        addSymbolDefinition(node, symbol, docBuilder, context)
-
-        // Methods don't add to the descriptor chain for their children
-        node.children.forEach { child -> analyzeNode(child, docBuilder, context) }
-      }
-
-      is PklClassProperty -> {
-        val symbol = createSymbolForDefinition(node, getPackageInfo(context))
-        addSymbolDefinition(node, symbol, docBuilder, context)
-
-        // Properties don't add to the descriptor chain for their children
-        node.children.forEach { child -> analyzeNode(child, docBuilder, context) }
-      }
-
-      is PklObjectProperty -> {
-        val symbol = createSymbolForDefinition(node, getPackageInfo(context))
-        addSymbolDefinition(node, symbol, docBuilder, context)
-
-        // Properties don't add to the descriptor chain for their children
-        node.children.forEach { child -> analyzeNode(child, docBuilder, context) }
-      }
-
-      is PklTypeAlias -> {
-        val symbol = createSymbolForDefinition(node, getPackageInfo(context))
-        addSymbolDefinition(node, symbol, docBuilder, context)
-
-        node.children.forEach { child -> analyzeNode(child, docBuilder, context) }
-      }
-
-      is PklTypedIdentifier -> {
-        // Handle method/function parameters
-        node.identifier ?: return
-        val symbol = createSymbolForDefinition(node, getPackageInfo(context))
-        addSymbolDefinition(node, symbol, docBuilder, context)
-
-        node.children.forEach { child -> analyzeNode(child, docBuilder, context) }
+      is PklClass -> node.handleAsDefinition(docBuilder, context, packageInfo)
+      is PklClassMethod -> node.handleAsDefinition(docBuilder, context, packageInfo)
+      is PklClassProperty -> node.handleAsDefinition(docBuilder, context, packageInfo)
+      is PklObjectProperty -> node.handleAsDefinition(docBuilder, context, packageInfo)
+      is PklTypeAlias -> node.handleAsDefinition(docBuilder, context, packageInfo)
+      is PklTypedIdentifier -> node.handleAsDefinition(docBuilder, context, packageInfo) { 
+        node.identifier != null 
       }
 
       is PklAccessExpr -> {
@@ -258,66 +230,44 @@ class ScipAnalyzer(project: Project, rootPath: Path) : Component(project) {
     }
   }
 
+  private fun createSymbolBasedOnScope(
+    definition: PklNode,
+    packageInfo: PackageInfo,
+    nameExtractor: (PklNode) -> String?
+  ): String {
+    val name = nameExtractor(definition) ?: throw Exception("unable to get name")
+    
+    return if ((definition as? PklModifierListOwner)?.isLocal == true) {
+      symbolFormatter.formatLocalSymbol(name, definition.span)
+    } else {
+      val parentDescriptors = getParentDescriptors(definition)
+      symbolFormatter.formatNestedSymbol(definition, parentDescriptors, packageInfo)
+    }
+  }
+
   private fun createSymbolForDefinition(definition: PklNode, packageInfo: PackageInfo): String {
-    // Create the appropriate SCIP symbol based on the definition type
-    val symbol =
-      when (definition) {
-        is PklModule -> {
-          symbolFormatter.formatSymbol(definition, packageInfo.name, packageInfo.version)
-        }
-        is PklClass -> {
-          if (definition.isLocal) {
-            // Local object properties are local variables
-            symbolFormatter.formatLocalSymbol(definition.name, definition.span)
-          } else {
-            val parentDescriptors = getParentDescriptors(definition)
-            symbolFormatter.formatNestedSymbol(definition, parentDescriptors, packageInfo)
-          }
-        }
-        is PklClassMethod -> {
-          if (definition.isLocal) {
-            // Local object properties are local variables
-            symbolFormatter.formatLocalSymbol(definition.name, definition.span)
-          } else {
-            val parentDescriptors = getParentDescriptors(definition)
-            symbolFormatter.formatNestedSymbol(definition, parentDescriptors, packageInfo)
-          }
-        }
-        is PklClassProperty -> {
-          if (definition.isLocal) {
-            // Local object properties are local variables
-            symbolFormatter.formatLocalSymbol(definition.name, definition.span)
-          } else {
-            val parentDescriptors = getParentDescriptors(definition)
-            symbolFormatter.formatNestedSymbol(definition, parentDescriptors, packageInfo)
-          }
-        }
-        is PklObjectProperty -> {
-          if (definition.isLocal) {
-            // Local object properties are local variables
-            symbolFormatter.formatLocalSymbol(definition.name, definition.span)
-          } else {
-            val parentDescriptors = getParentDescriptors(definition)
-            symbolFormatter.formatNestedSymbol(definition, parentDescriptors, packageInfo)
-          }
-        }
-        is PklTypedIdentifier -> {
-          // Parameter or local variable
-          val identifier = definition.identifier ?: throw Exception("unable to get identifier")
-          symbolFormatter.formatLocalSymbol(identifier.text, definition.span)
-        }
-        is PklTypeAlias -> {
-          val parentDescriptors = getParentDescriptors(definition)
-          symbolFormatter.formatNestedSymbol(definition, parentDescriptors, packageInfo)
-        }
-        else -> {
-          throw Exception("unknown definition type")
-        }
+    return when (definition) {
+      is PklModule -> {
+        symbolFormatter.formatSymbol(definition, packageInfo.name, packageInfo.version)
       }
-
-    // ensureSymbolInformation(symbol, definition, getNodeName(definition))
-
-    return symbol
+      is PklClass -> createSymbolBasedOnScope(definition, packageInfo) { (it as PklClass).name }
+      is PklClassMethod -> createSymbolBasedOnScope(definition, packageInfo) { (it as PklClassMethod).name }
+      is PklClassProperty -> createSymbolBasedOnScope(definition, packageInfo) { node ->
+        (node as PklClassProperty).identifier?.text
+      }
+      is PklObjectProperty -> createSymbolBasedOnScope(definition, packageInfo) { node ->
+        (node as PklObjectProperty).identifier?.text
+      }
+      is PklTypedIdentifier -> {
+        val identifier = definition.identifier ?: throw Exception("unable to get identifier")
+        symbolFormatter.formatLocalSymbol(identifier.text, definition.span)
+      }
+      is PklTypeAlias -> {
+        val parentDescriptors = getParentDescriptors(definition)
+        symbolFormatter.formatNestedSymbol(definition, parentDescriptors, packageInfo)
+      }
+      else -> throw Exception("unknown definition type")
+    }
   }
 
   private fun getParentDescriptors(node: PklNode): String {

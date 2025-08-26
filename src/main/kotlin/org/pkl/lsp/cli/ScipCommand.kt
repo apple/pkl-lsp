@@ -26,10 +26,11 @@ import java.io.FileOutputStream
 import java.nio.file.Path
 import kotlin.io.path.*
 import kotlin.system.exitProcess
-import org.eclipse.lsp4j.InitializeParams
-import org.eclipse.lsp4j.InitializedParams
+import org.eclipse.lsp4j.*
+import org.pkl.lsp.PklLanguageClient
 import org.pkl.lsp.PklLspServer
 import org.pkl.lsp.Project
+import org.pkl.lsp.messages.ActionableNotification
 import org.pkl.lsp.scip.ScipAnalyzer
 
 class ScipCommand : CliktCommand(name = "scip") {
@@ -48,166 +49,194 @@ class ScipCommand : CliktCommand(name = "scip") {
     "Generate SCIP (Source Code Intelligence Protocol) index for Pkl source files"
 
   override fun run() {
-    try {
-      val folders = sourceRoots.filter { it.isDirectory() }.map { it.toRealPath() }
-      val files = sourceRoots.filter { it.isRegularFile() }.map { it.toRealPath() }
+    val indexingService = ScipIndexingService()
+    
+    when (val result = indexingService.generateIndex(
+      sourceRoots = sourceRoots,
+      outputFile = outputFile,
+      onProgress = ::echo
+    )) {
+      is IndexingResult.Success -> {
+        echo("SCIP index written to ${result.outputFile}")
+        echo("Index contains ${result.documentCount} documents and ${result.symbolCount} symbols")
+      }
+      is IndexingResult.Failure -> {
+        echo("Error generating SCIP index: ${result.error.message}", err = true)
+        result.error.printStackTrace()
+        exitProcess(1)
+      }
+    }
+  }
 
-      val commonRootForFiles = findCommonRoot(files)
-      val commonRoot = findCommonRoot(folders + commonRootForFiles)
+  // Path resolution with lazy properties
+  class PathResolver(private val sourceRoots: List<Path>) {
+    val folders by lazy { sourceRoots.filter(Path::isDirectory).map(Path::toRealPath) }
+    val files by lazy { sourceRoots.filter(Path::isRegularFile).map(Path::toRealPath) }
+    val commonRoot by lazy { findCommonRoot(folders + findCommonRoot(files)) }
+    val workspaceFolders by lazy { folders + findCommonRoot(files) }
+    val pklFiles by lazy { findPklFiles(files + folders) }
+  }
 
-      val pklFiles = findPklFiles(files + folders)
-      // Use the common function to properly set up the project
-      val (project, server) = createProjectWithServer(folders + commonRootForFiles, verbose = true)
+  // Result sealed class for type-safe results
+  sealed class IndexingResult {
+    data class Success(
+      val documentCount: Int,
+      val symbolCount: Int,
+      val outputFile: Path
+    ) : IndexingResult()
+    
+    data class Failure(val error: Throwable) : IndexingResult()
+  }
 
-      val scipAnalyzer = ScipAnalyzer(project, commonRoot)
-
-      var processedCount = 0
-      for (pklFile in pklFiles) {
-        echo("Processing $pklFile ($processedCount/${pklFiles.size})")
+  // Service class for SCIP indexing logic
+  class ScipIndexingService {
+    fun generateIndex(
+      sourceRoots: List<Path>,
+      outputFile: Path,
+      onProgress: (String) -> Unit = {}
+    ): IndexingResult {
+      return try {
+        val pathResolver = PathResolver(sourceRoots)
+        val (project, server) = createProjectWithServer(pathResolver.workspaceFolders, verbose = true)
+        
         try {
-          val absolutePath = pklFile.toAbsolutePath()
-          val virtualFile = project.virtualFileManager.get(absolutePath.toUri())
-          if (virtualFile != null) {
-            scipAnalyzer.analyzeFile(virtualFile)
-          } else {
-            echo("Warning: Could not load $absolutePath", err = true)
+          val analyzer = ScipAnalyzer(project, pathResolver.commonRoot)
+          
+          pathResolver.pklFiles.forEachIndexed { index, pklFile ->
+            onProgress("Processing $pklFile (${index + 1}/${pathResolver.pklFiles.size})")
+            
+            try {
+              val absolutePath = pklFile.toAbsolutePath()
+              val virtualFile = project.virtualFileManager.get(absolutePath.toUri())
+              if (virtualFile != null) {
+                analyzer.analyzeFile(virtualFile)
+              } else {
+                onProgress("Warning: Could not load $absolutePath")
+              }
+            } catch (e: Exception) {
+              onProgress("Error processing $pklFile: ${e.message}")
+              e.printStackTrace()
+            }
           }
-          processedCount++
-        } catch (e: Exception) {
-          echo("Error processing $pklFile: ${e.message}", err = true)
-          e.printStackTrace()
-          processedCount++
+          
+          val index = analyzer.buildIndex()
+          writeIndex(index, outputFile)
+          
+          IndexingResult.Success(
+            documentCount = index.documentsCount,
+            symbolCount = index.externalSymbolsCount + index.documentsList.sumOf { it.symbolsCount },
+            outputFile = outputFile
+          )
+        } finally {
+          server.shutdown().get()
+          server.exit()
+        }
+      } catch (e: Exception) {
+        IndexingResult.Failure(e)
+      }
+    }
+    
+    private fun writeIndex(index: scip.Scip.Index, outputFile: Path) {
+      outputFile.parent?.createDirectories()
+      outputFile.toFile().outputStream().use { output -> 
+        index.writeTo(output) 
+      }
+    }
+  }
+
+  // Data class for LSP server configuration
+  data class LspServerConfig(
+    val workspaceFolders: List<Path>,
+    val verbose: Boolean = true
+  ) {
+    val workspaceFoldersLsp: List<WorkspaceFolder> by lazy {
+      workspaceFolders.map { folder ->
+        WorkspaceFolder().apply {
+          uri = folder.toUri().toString()
+          name = folder.fileName?.toString() ?: "workspace"
         }
       }
-
-      val index = scipAnalyzer.buildIndex()
-
-      outputFile.parent?.createDirectories()
-      FileOutputStream(outputFile.toFile()).use { output -> index.writeTo(output) }
-
-      val externalSymbols = index.externalSymbolsCount
-      val documentSymbols = index.documentsList.fold(0, { count, doc -> count + doc.symbolsCount })
-
-      echo("SCIP index written to $outputFile")
-      echo(
-        "Index contains ${index.getDocumentsCount()} documents and ${externalSymbols + documentSymbols} symbols [${documentSymbols} internal; ${externalSymbols} external]"
-      )
-
-      server.shutdown().get()
-      server.exit()
-    } catch (e: Exception) {
-      echo("Error generating SCIP index: ${e.message}", err = true)
-      e.printStackTrace()
-      exitProcess(1)
     }
   }
 
   companion object {
     data class ProjectWithServer(val project: Project, val server: PklLspServer)
 
+    // Extension function for server configuration
+    private fun PklLspServer.configureWith(client: PklLanguageClient, config: LspServerConfig) = apply {
+      connect(client)
+      
+      val initParams = InitializeParams().apply {
+        capabilities = ClientCapabilities().apply {
+          workspace = WorkspaceClientCapabilities().apply {
+            workspaceFolders = true
+            didChangeConfiguration = DidChangeConfigurationCapabilities().apply {
+              dynamicRegistration = false
+            }
+          }
+          textDocument = TextDocumentClientCapabilities()
+        }
+        workspaceFolders = config.workspaceFoldersLsp
+      }
+      
+      initialize(initParams).get()
+      initialized(InitializedParams())
+      syncProjects("").get()
+    }
+
+    // Extension for project initialization
+    private fun Project.ensureInitialized() = apply { initialize().get() }
+
+    // Extract client creation
+    private fun createLspClient(config: LspServerConfig) = object : PklLanguageClient {
+      private fun log(message: String) {
+        if (config.verbose) println(message)
+      }
+      
+      override fun sendActionableNotification(params: ActionableNotification) = 
+        log("LSP Actionable Notification: $params")
+      
+      override fun telemetryEvent(`object`: Any?) = 
+        log("LSP Telemetry: $`object`")
+      
+      override fun publishDiagnostics(diagnostics: PublishDiagnosticsParams?) = 
+        log("LSP Diagnostics for ${diagnostics?.uri}: ${diagnostics?.diagnostics}")
+      
+      override fun showMessage(messageParams: MessageParams?) = 
+        log("LSP Message: [${messageParams?.type}] ${messageParams?.message}")
+      
+      override fun showMessageRequest(requestParams: ShowMessageRequestParams?) = 
+        java.util.concurrent.CompletableFuture<MessageActionItem>()
+      
+      override fun logMessage(message: MessageParams) = 
+        log("LSP Log: [${message.type}] ${message.message}")
+      
+      override fun workspaceFolders() = 
+        java.util.concurrent.CompletableFuture.completedFuture(config.workspaceFoldersLsp)
+      
+      override fun configuration(configurationParams: ConfigurationParams): java.util.concurrent.CompletableFuture<MutableList<Any?>> = 
+        java.util.concurrent.CompletableFuture.completedFuture(
+          configurationParams.items.map { com.google.gson.JsonNull.INSTANCE as Any? }.toMutableList()
+        ).also {
+          if (config.verbose) {
+            val sections = configurationParams.items.joinToString { "${it.scopeUri}/${it.section}" }
+            log("Configuration requested: $sections")
+          }
+        }
+    }
+
     /**
-     * Low-level function that creates an LSP server and project for a specific workspace folder.
-     * Most code should use createProjectForFiles() instead for proper file-to-project association.
+     * Creates an LSP server and project for specific workspace folders.
      */
     fun createProjectWithServer(
       workspaceFolders: List<Path>,
-      verbose: Boolean = true,
+      verbose: Boolean = true
     ): ProjectWithServer {
-      val workspaceFoldersLsp =
-        workspaceFolders.map { workspaceFolder ->
-          org.eclipse.lsp4j.WorkspaceFolder().apply {
-            uri = workspaceFolder.toUri().toString()
-            name = workspaceFolder.fileName?.toString() ?: "workspace"
-          }
-        }
-
-      val server = PklLspServer(verbose)
-      val client =
-        object : org.pkl.lsp.PklLanguageClient {
-          override fun sendActionableNotification(
-            params: org.pkl.lsp.messages.ActionableNotification
-          ) {
-            if (verbose) println("LSP Actionable Notification: ${params}")
-          }
-
-          override fun telemetryEvent(`object`: Any?) {
-            if (verbose) println("LSP Telemetry: $`object`")
-          }
-
-          override fun publishDiagnostics(
-            diagnostics: org.eclipse.lsp4j.PublishDiagnosticsParams?
-          ) {
-            if (verbose)
-              println("LSP Diagnostics for ${diagnostics?.uri}: ${diagnostics?.diagnostics}")
-          }
-
-          override fun showMessage(messageParams: org.eclipse.lsp4j.MessageParams?) {
-            if (verbose) println("LSP Message: [${messageParams?.type}] ${messageParams?.message}")
-          }
-
-          override fun showMessageRequest(
-            requestParams: org.eclipse.lsp4j.ShowMessageRequestParams?
-          ) = java.util.concurrent.CompletableFuture<org.eclipse.lsp4j.MessageActionItem>()
-
-          override fun logMessage(message: org.eclipse.lsp4j.MessageParams) {
-            if (verbose) println("LSP Log: [${message.type}] ${message.message}")
-          }
-
-          override fun workspaceFolders() =
-            java.util.concurrent.CompletableFuture.completedFuture(workspaceFoldersLsp)
-
-          override fun configuration(
-            configurationParams: org.eclipse.lsp4j.ConfigurationParams
-          ): java.util.concurrent.CompletableFuture<MutableList<Any>> {
-            if (verbose)
-              println(
-                "Configuration requested: ${configurationParams.items.map { "${it.scopeUri}/${it.section}" }}"
-              )
-            // Return JsonNull for pkl.cli.path to trigger automatic CLI discovery
-            val result = mutableListOf<Any>()
-            configurationParams.items.forEach { _ -> result.add(com.google.gson.JsonNull.INSTANCE) }
-            return java.util.concurrent.CompletableFuture.completedFuture(result)
-          }
-        }
-
-      // Connect client to server
-      server.connect(client)
-
-      // Perform proper LSP initialization handshake
-      val initParams =
-        org.eclipse.lsp4j.InitializeParams().apply {
-          capabilities =
-            org.eclipse.lsp4j.ClientCapabilities().apply {
-              workspace =
-                org.eclipse.lsp4j.WorkspaceClientCapabilities().apply {
-                  this.workspaceFolders = true
-                  didChangeConfiguration =
-                    org.eclipse.lsp4j.DidChangeConfigurationCapabilities().apply {
-                      dynamicRegistration = false
-                    }
-                }
-              textDocument = org.eclipse.lsp4j.TextDocumentClientCapabilities()
-            }
-          this.workspaceFolders = workspaceFoldersLsp
-        }
-
-      // Initialize server (sets up capabilities and workspace folders)
-      server.initialize(initParams).get()
-      server.initialized(InitializedParams())
-
-      // Sync projects to make sure dependencies are downloaded and PklProject files are discovered
-      // and fully resolved without this we can't get accurate package URIs
-      server.syncProjects("").get()
-
-      val project = server.project
-      // Initialize project, this will initialize all the project subcomponents and the returned
-      // future completes once everything is ready. We don't technically need to do this because
-      // server the server initialized method already calls project.initialize, and we don't need
-      // the subcomponents that project.initialize sets up. But it's safer to call it again, and
-      // makse sure we wait for everything to be ready. The alternative is exposing ourselves too
-      // hard to debug race-conditions in the future.
-      project.initialize().get()
-
+      val config = LspServerConfig(workspaceFolders, verbose)
+      val client = createLspClient(config)
+      val server = PklLspServer(verbose).configureWith(client, config)
+      val project = server.project.ensureInitialized()
+      
       return ProjectWithServer(project, server)
     }
 
