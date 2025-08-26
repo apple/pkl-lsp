@@ -23,6 +23,7 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.path
 import java.io.FileOutputStream
+import java.io.IOException
 import java.nio.file.Path
 import kotlin.io.path.*
 import kotlin.system.exitProcess
@@ -32,6 +33,27 @@ import org.pkl.lsp.PklLspServer
 import org.pkl.lsp.Project
 import org.pkl.lsp.messages.ActionableNotification
 import org.pkl.lsp.scip.ScipAnalyzer
+import org.pkl.lsp.scip.ScipAnalysisException
+import org.pkl.lsp.util.PathUtils
+
+// Custom exceptions for CLI operations
+sealed class ScipCommandException(message: String, cause: Throwable? = null) : Exception(message, cause) {
+  
+  class FileProcessingException(
+    filePath: Path, 
+    cause: Throwable
+  ) : ScipCommandException("Failed to process file: $filePath", cause)
+  
+  class IndexWriteException(
+    outputPath: Path, 
+    cause: Throwable
+  ) : ScipCommandException("Failed to write SCIP index to: $outputPath", cause)
+  
+  class ProjectSetupException(
+    message: String, 
+    cause: Throwable
+  ) : ScipCommandException("Failed to set up LSP project: $message", cause)
+}
 
 class ScipCommand : CliktCommand(name = "scip") {
 
@@ -72,9 +94,9 @@ class ScipCommand : CliktCommand(name = "scip") {
   class PathResolver(private val sourceRoots: List<Path>) {
     val folders by lazy { sourceRoots.filter(Path::isDirectory).map(Path::toRealPath) }
     val files by lazy { sourceRoots.filter(Path::isRegularFile).map(Path::toRealPath) }
-    val commonRoot by lazy { findCommonRoot(folders + findCommonRoot(files)) }
-    val workspaceFolders by lazy { folders + findCommonRoot(files) }
-    val pklFiles by lazy { findPklFiles(files + folders) }
+    val commonRoot by lazy { PathUtils.findCommonRoot(folders + PathUtils.findCommonRoot(files)) }
+    val workspaceFolders by lazy { folders + PathUtils.findCommonRoot(files) }
+    val pklFiles by lazy { PathUtils.findPklFiles(files + folders) }
   }
 
   // Result sealed class for type-safe results
@@ -113,8 +135,12 @@ class ScipCommand : CliktCommand(name = "scip") {
               } else {
                 onProgress("Warning: Could not load $absolutePath")
               }
+            } catch (e: ScipAnalysisException) {
+              onProgress("SCIP analysis error in $pklFile: ${e.message}")
+            } catch (e: IOException) {
+              onProgress("I/O error processing $pklFile: ${e.message}")
             } catch (e: Exception) {
-              onProgress("Error processing $pklFile: ${e.message}")
+              onProgress("Unexpected error processing $pklFile: ${e.message}")
               e.printStackTrace()
             }
           }
@@ -131,15 +157,27 @@ class ScipCommand : CliktCommand(name = "scip") {
           server.shutdown().get()
           server.exit()
         }
-      } catch (e: Exception) {
+      } catch (e: ScipCommandException) {
         IndexingResult.Failure(e)
+      } catch (e: ScipAnalysisException) {
+        IndexingResult.Failure(e)
+      } catch (e: IOException) {
+        IndexingResult.Failure(ScipCommandException.IndexWriteException(outputFile, e))
+      } catch (e: Exception) {
+        IndexingResult.Failure(ScipCommandException.ProjectSetupException("Unexpected error", e))
       }
     }
     
     private fun writeIndex(index: scip.Scip.Index, outputFile: Path) {
-      outputFile.parent?.createDirectories()
-      outputFile.toFile().outputStream().use { output -> 
-        index.writeTo(output) 
+      try {
+        outputFile.parent?.createDirectories()
+        outputFile.toFile().outputStream().use { output -> 
+          index.writeTo(output) 
+        }
+      } catch (e: IOException) {
+        throw ScipCommandException.IndexWriteException(outputFile, e)
+      } catch (e: Exception) {
+        throw ScipCommandException.IndexWriteException(outputFile, e)
       }
     }
   }
@@ -240,40 +278,5 @@ class ScipCommand : CliktCommand(name = "scip") {
       return ProjectWithServer(project, server)
     }
 
-    private fun findPklFiles(roots: List<Path>): List<Path> {
-      return roots.flatMap { root ->
-        when {
-          root.isRegularFile() && root.extension == "pkl" -> listOf(root)
-          root.isDirectory() -> {
-            @OptIn(kotlin.io.path.ExperimentalPathApi::class)
-            root
-              .walk()
-              .filter {
-                it.isRegularFile() && (it.extension == "pkl" || it.fileName.name == "PklProject")
-              }
-              .toList()
-          }
-
-          else -> emptyList()
-        }
-      }
-    }
-
-    private fun findCommonRoot(paths: List<Path>): Path {
-      if (paths.isEmpty()) return Path.of("")
-      if (paths.size == 1) return paths[0] ?: Path.of("")
-
-      // Remove empty paths, and make the rest absolute
-      val absolutePaths = paths.filter { it.toString() != "" }.map { it.toAbsolutePath() }
-      var commonRoot = absolutePaths[0] ?: return Path.of("")
-
-      for (path in absolutePaths.drop(1)) {
-        while (!path.startsWith(commonRoot)) {
-          commonRoot = commonRoot.parent ?: return Path.of("")
-        }
-      }
-
-      return commonRoot
-    }
   }
 }

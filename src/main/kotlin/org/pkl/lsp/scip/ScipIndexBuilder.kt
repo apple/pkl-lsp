@@ -157,58 +157,92 @@ object ScipCanonicalizer {
     }
   }
 
+  // Sealed class for descriptor types with pattern matching
+  private sealed class DescriptorPattern(val predicate: (String) -> Boolean) {
+    abstract fun canonicalize(descriptor: String): String
+    
+    data object TypeDescriptor : DescriptorPattern({ it.endsWith("#") }) {
+      override fun canonicalize(descriptor: String): String {
+        val name = descriptor.dropLast(1)
+        return "${canonicalizeIdentifier(name)}#"
+      }
+    }
+    
+    data object TermDescriptor : DescriptorPattern({ it.endsWith(".") && !it.endsWith(").") }) {
+      override fun canonicalize(descriptor: String): String {
+        val name = descriptor.dropLast(1)
+        return "${canonicalizeIdentifier(name)}."
+      }
+    }
+    
+    data object MethodDescriptor : DescriptorPattern({ it.endsWith(").") }) {
+      override fun canonicalize(descriptor: String): String {
+        val beforeParen = descriptor.substringBeforeLast("(")
+        val afterParen = descriptor.substringAfterLast("(")
+        return "${canonicalizeIdentifier(beforeParen)}($afterParen"
+      }
+    }
+    
+    data object NamespaceDescriptor : DescriptorPattern({ it.endsWith("/") }) {
+      override fun canonicalize(descriptor: String): String {
+        val name = descriptor.dropLast(1)
+        return "${canonicalizeIdentifier(name)}/"
+      }
+    }
+    
+    data object MetaDescriptor : DescriptorPattern({ it.endsWith(":") }) {
+      override fun canonicalize(descriptor: String): String {
+        val name = descriptor.dropLast(1)
+        return "${canonicalizeIdentifier(name)}:"
+      }
+    }
+    
+    data object MacroDescriptor : DescriptorPattern({ it.endsWith("!") }) {
+      override fun canonicalize(descriptor: String): String {
+        val name = descriptor.dropLast(1)
+        return "${canonicalizeIdentifier(name)}!"
+      }
+    }
+    
+    data object TypeParameter : DescriptorPattern({ it.startsWith("[") && it.endsWith("]") }) {
+      override fun canonicalize(descriptor: String): String {
+        val name = descriptor.substring(1, descriptor.length - 1)
+        return "[${canonicalizeIdentifier(name)}]"
+      }
+    }
+    
+    data object Parameter : DescriptorPattern({ it.startsWith("(") && it.endsWith(")") }) {
+      override fun canonicalize(descriptor: String): String {
+        val name = descriptor.substring(1, descriptor.length - 1)
+        return "(${canonicalizeIdentifier(name)})"
+      }
+    }
+    
+    companion object {
+      // Order matters - more specific patterns should come first
+      val patterns = listOf(
+        MethodDescriptor,  // Must come before TermDescriptor
+        TypeDescriptor,
+        TermDescriptor,
+        NamespaceDescriptor,
+        MetaDescriptor,
+        MacroDescriptor,
+        TypeParameter,
+        Parameter
+      )
+    }
+  }
+
   /**
-   * Canonicalize SCIP descriptors by applying proper identifier escaping rules. This handles
-   * descriptors like "const#" or "`const`#" to ensure canonical format.
+   * Canonicalize SCIP descriptors using strategy pattern for better maintainability.
    */
   fun canonicalizeDescriptor(descriptor: String): String {
     if (descriptor.isEmpty()) return descriptor
-
-    // Match different descriptor patterns and canonicalize the name part
-    return when {
-      // Type descriptor: name#
-      descriptor.endsWith("#") -> {
-        val name = descriptor.dropLast(1)
-        "${canonicalizeIdentifier(name)}#"
-      }
-      // Term descriptor: name.
-      descriptor.endsWith(".") && !descriptor.endsWith(").") -> {
-        val name = descriptor.dropLast(1)
-        "${canonicalizeIdentifier(name)}."
-      }
-      // Method descriptor: name().
-      descriptor.endsWith(").") -> {
-        val beforeParen = descriptor.substringBeforeLast("(")
-        val afterParen = descriptor.substringAfterLast("(")
-        "${canonicalizeIdentifier(beforeParen)}($afterParen"
-      }
-      // Namespace descriptor: name/
-      descriptor.endsWith("/") -> {
-        val name = descriptor.dropLast(1)
-        "${canonicalizeIdentifier(name)}/"
-      }
-      // Meta descriptor: name:
-      descriptor.endsWith(":") -> {
-        val name = descriptor.dropLast(1)
-        "${canonicalizeIdentifier(name)}:"
-      }
-      // Macro descriptor: name!
-      descriptor.endsWith("!") -> {
-        val name = descriptor.dropLast(1)
-        "${canonicalizeIdentifier(name)}!"
-      }
-      // Type parameter: [name]
-      descriptor.startsWith("[") && descriptor.endsWith("]") -> {
-        val name = descriptor.substring(1, descriptor.length - 1)
-        "[${canonicalizeIdentifier(name)}]"
-      }
-      // Parameter: (name)
-      descriptor.startsWith("(") && descriptor.endsWith(")") -> {
-        val name = descriptor.substring(1, descriptor.length - 1)
-        "(${canonicalizeIdentifier(name)})"
-      }
-      else -> descriptor // Return as-is for unknown patterns
-    }
+    
+    return DescriptorPattern.patterns
+      .find { it.predicate(descriptor) }
+      ?.canonicalize(descriptor)
+      ?: descriptor // Return as-is for unknown patterns
   }
 
   /**
@@ -274,7 +308,7 @@ class ScipSymbolFormatter(val rootPath: Path) {
   fun formatNestedSymbol(
     node: PklNode,
     parentDescriptors: String,
-    packageInfo: ScipAnalyzer.PackageInfo,
+    packageInfo: PklNodeSymbolCreator.PackageInfo,
   ): String {
     val packagePart = "$MANAGER ${packageInfo.name} ${packageInfo.version}"
     val descriptor = getDescriptor(node)

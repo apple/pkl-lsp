@@ -24,26 +24,44 @@ import org.pkl.lsp.packages.dto.PackageUri
 import org.pkl.lsp.packages.dto.PklProject
 import scip.Scip.*
 
+// Custom exception types for better error handling
+sealed class ScipAnalysisException(message: String, cause: Throwable? = null) : Exception(message, cause) {
+  
+  class ReferenceResolutionException(
+    identifier: String, 
+    location: Span, 
+    cause: Throwable? = null
+  ) : ScipAnalysisException("Failed to resolve reference '$identifier' at $location", cause)
+  
+  class ModuleResolutionException(
+    identifier: String, 
+    cause: Throwable? = null
+  ) : ScipAnalysisException("Failed to resolve enclosing module for '$identifier'", cause)
+  
+  class NameExtractionException(
+    nodeType: String, 
+    location: Span
+  ) : ScipAnalysisException("Unable to extract name from $nodeType at $location")
+  
+  class IdentifierExtractionException(
+    nodeType: String, 
+    location: Span
+  ) : ScipAnalysisException("Unable to extract identifier from $nodeType at $location")
+  
+  class UnknownDefinitionTypeException(
+    nodeType: String
+  ) : ScipAnalysisException("Unknown definition type: $nodeType")
+}
+
+
 class ScipAnalyzer(project: Project, rootPath: Path) : Component(project) {
 
   private val indexBuilder = ScipIndexBuilder(rootPath)
   private val symbolFormatter = ScipSymbolFormatter(rootPath)
-  private val UNKNOWN_PACKAGE = PackageInfo(".", ".")
-
-  data class PackageInfo(val name: String, val version: String)
-
-  private fun getPackageInfo(packageUri: PackageUri?): PackageInfo =
-    if (packageUri != null) {
-      val packageName = packageUri.toString().substringBeforeLast("@")
-      val packageVersion = packageUri?.version.toString()
-
-      PackageInfo(packageName, packageVersion)
-    } else {
-      UNKNOWN_PACKAGE
-    }
-
-  private fun getPackageInfo(context: PklProject?): PackageInfo =
-    getPackageInfo(context?.metadata?.packageUri)
+  private val symbolCreator = PklNodeSymbolCreator(symbolFormatter, ::getParentDescriptors)
+  
+  private fun getPackageInfo(context: PklProject?): PklNodeSymbolCreator.PackageInfo =
+    symbolCreator.getPackageInfoForProject(context)
 
   fun analyzeFile(file: VirtualFile): ScipDocumentBuilder {
     val docBuilder = indexBuilder.addDocument(file)
@@ -58,11 +76,11 @@ class ScipAnalyzer(project: Project, rootPath: Path) : Component(project) {
   private inline fun PklNode.handleAsDefinition(
     docBuilder: ScipDocumentBuilder,
     context: PklProject?,
-    packageInfo: ScipAnalyzer.PackageInfo,
+    packageInfo: PklNodeSymbolCreator.PackageInfo,
     crossinline additionalCheck: () -> Boolean = { true }
   ) {
     if (additionalCheck()) {
-      val symbol = createSymbolForDefinition(this, packageInfo)
+      val symbol = symbolCreator.createSymbolForDefinition(this, packageInfo)
       addSymbolDefinition(this, symbol, docBuilder, context)
     }
     children.forEach { analyzeNode(it, docBuilder, context) }
@@ -157,12 +175,19 @@ class ScipAnalyzer(project: Project, rootPath: Path) : Component(project) {
       }
     if (identifier == null) return
     try {
-      if (resolvedDefinition == null) throw Exception("unable to resolve reference")
-      val definitionModule =
-        resolvedDefinition.enclosingModule ?: throw Exception("unable to resolve module")
+      if (resolvedDefinition == null) {
+        throw ScipAnalysisException.ReferenceResolutionException(
+          identifier = identifier.text,
+          location = identifier.span
+        )
+      }
+      val definitionModule = resolvedDefinition.enclosingModule 
+        ?: throw ScipAnalysisException.ModuleResolutionException(
+          identifier = identifier.text
+        )
 
       val symbol =
-        createSymbolForDefinition(resolvedDefinition, getProjectInfoForModule(definitionModule))
+        symbolCreator.createSymbolForDefinition(resolvedDefinition, symbolCreator.getPackageInfoForModule(definitionModule))
 
       val kind =
         when {
@@ -184,11 +209,16 @@ class ScipAnalyzer(project: Project, rootPath: Path) : Component(project) {
           createSymbolInformation(resolvedDefinition, symbol),
         )
       }
-    } catch (e: Exception) {
-      // Log error but continue processing
+    } catch (e: ScipAnalysisException) {
+      // Log specific analysis errors with better context
       project
         .getLogger(this::class)
-        .error("Error processing reference `${identifier.text}` ${reference.span}: ${e.message}")
+        .error("SCIP analysis error for reference `${identifier.text}` at ${reference.span}: ${e.message}")
+    } catch (e: Exception) {
+      // Log unexpected errors for debugging
+      project
+        .getLogger(this::class)
+        .error("Unexpected error processing reference `${identifier.text}` at ${reference.span}: ${e.message}")
     }
   }
 
@@ -214,61 +244,7 @@ class ScipAnalyzer(project: Project, rootPath: Path) : Component(project) {
     }
   }
 
-  private fun getProjectInfoForModule(module: PklModule): PackageInfo {
-    val pklProject = module.containingFile.pklProject
-    val pklPackage = module.containingFile.`package`
 
-    if (module.uri.toString().startsWith("pkl:")) {
-      // For built-in modules
-      return PackageInfo("pkl", module.effectivePklVersion.toString())
-    }
-
-    return when {
-      pklProject != null -> getPackageInfo(pklProject)
-      pklPackage != null -> getPackageInfo(pklPackage.packageUri)
-      else -> UNKNOWN_PACKAGE
-    }
-  }
-
-  private fun createSymbolBasedOnScope(
-    definition: PklNode,
-    packageInfo: PackageInfo,
-    nameExtractor: (PklNode) -> String?
-  ): String {
-    val name = nameExtractor(definition) ?: throw Exception("unable to get name")
-    
-    return if ((definition as? PklModifierListOwner)?.isLocal == true) {
-      symbolFormatter.formatLocalSymbol(name, definition.span)
-    } else {
-      val parentDescriptors = getParentDescriptors(definition)
-      symbolFormatter.formatNestedSymbol(definition, parentDescriptors, packageInfo)
-    }
-  }
-
-  private fun createSymbolForDefinition(definition: PklNode, packageInfo: PackageInfo): String {
-    return when (definition) {
-      is PklModule -> {
-        symbolFormatter.formatSymbol(definition, packageInfo.name, packageInfo.version)
-      }
-      is PklClass -> createSymbolBasedOnScope(definition, packageInfo) { (it as PklClass).name }
-      is PklClassMethod -> createSymbolBasedOnScope(definition, packageInfo) { (it as PklClassMethod).name }
-      is PklClassProperty -> createSymbolBasedOnScope(definition, packageInfo) { node ->
-        (node as PklClassProperty).identifier?.text
-      }
-      is PklObjectProperty -> createSymbolBasedOnScope(definition, packageInfo) { node ->
-        (node as PklObjectProperty).identifier?.text
-      }
-      is PklTypedIdentifier -> {
-        val identifier = definition.identifier ?: throw Exception("unable to get identifier")
-        symbolFormatter.formatLocalSymbol(identifier.text, definition.span)
-      }
-      is PklTypeAlias -> {
-        val parentDescriptors = getParentDescriptors(definition)
-        symbolFormatter.formatNestedSymbol(definition, parentDescriptors, packageInfo)
-      }
-      else -> throw Exception("unknown definition type")
-    }
-  }
 
   private fun getParentDescriptors(node: PklNode): String {
     val parents = mutableListOf<String>()
