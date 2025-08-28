@@ -1,0 +1,790 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module pkl.experimental.structuredRead.structuredRead
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/
+  import "pkl:reflect"
+  import "@deepToTyped/deepToTyped.pkl"
+  
+  /// Configures structureRead to read from environment variables
+  ///
+  /// ```
+  /// import "structuredRead.pkl"
+  ///
+  /// class Environment {
+  ///   SHELL: String
+  ///   PWD: String
+  ///   USER: Int
+  /// }
+  ///
+  /// environment = structuredRead.fromEnv.fill(Environment)
+  /// ```
+  hidden fixed fromEnv: module = (module) {
+//             ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fromEnv.
+//             documentation
+//             > Configures structureRead to read from environment variables
+//             > 
+//             > ```
+//             > import "structuredRead.pkl"
+//             > 
+//             > class Environment {
+//             >   SHELL: String
+//             >   PWD: String
+//             >   USER: Int
+//             > }
+//             > 
+//             > environment = structuredRead.fromEnv.fill(Environment)
+//             > ```
+    inputScheme = "env:"
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/inputScheme.
+//  documentation
+//  > The scheme used to read resources from.
+//  > 
+//  > By default, this is `"prop:"` so values are read from external
+//  > properties passed using the `-p` flag.
+    pathSeparator = "_"
+//  ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/pathSeparator.
+//  documentation
+//  > Path separator used to when building resource URI.
+//  > 
+//  > Default is `.` which means that nested values are passed in
+//  > using a dot seperated path as the key value.
+  }
+  
+  /// Configures structureRead to read from external properties
+  ///
+  /// ```
+  /// import "structuredRead.pkl"
+  ///
+  /// class Config {
+  ///   name: String
+  ///   location: String
+  ///   age: Int
+  /// }
+  ///
+  /// config = structuredRead.fromHttps.fill(Config)
+  /// ```
+  hidden fixed fromExternalProps: module = (module) {
+//             ^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fromExternalProps.
+//             documentation
+//             > Configures structureRead to read from external properties
+//             > 
+//             > ```
+//             > import "structuredRead.pkl"
+//             > 
+//             > class Config {
+//             >   name: String
+//             >   location: String
+//             >   age: Int
+//             > }
+//             > 
+//             > config = structuredRead.fromHttps.fill(Config)
+//             > ```
+    inputScheme = "prop:"
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/inputScheme.
+//  documentation
+//  > The scheme used to read resources from.
+//  > 
+//  > By default, this is `"prop:"` so values are read from external
+//  > properties passed using the `-p` flag.
+    pathSeparator = "."
+//  ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/pathSeparator.
+//  documentation
+//  > Path separator used to when building resource URI.
+//  > 
+//  > Default is `.` which means that nested values are passed in
+//  > using a dot seperated path as the key value.
+  }
+  
+  /// Configures structureRead to read from https:// resources
+  ///
+  /// ```
+  /// import "structuredRead.pkl"
+  ///
+  /// Data {
+  ///   `apple.com` {}
+  /// }
+  ///
+  /// data = structuredRead.fromHttps.fill(Data)
+  /// ```
+  hidden fixed fromHttps: module = (module) {
+//             ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fromHttps.
+//             documentation
+//             > Configures structureRead to read from https:// resources
+//             > 
+//             > ```
+//             > import "structuredRead.pkl"
+//             > 
+//             > Data {
+//             >   `apple.com` {}
+//             > }
+//             > 
+//             > data = structuredRead.fromHttps.fill(Data)
+//             > ```
+    inputScheme = "https:"
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/inputScheme.
+//  documentation
+//  > The scheme used to read resources from.
+//  > 
+//  > By default, this is `"prop:"` so values are read from external
+//  > properties passed using the `-p` flag.
+    pathSeparator = "/"
+//  ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/pathSeparator.
+//  documentation
+//  > Path separator used to when building resource URI.
+//  > 
+//  > Default is `.` which means that nested values are passed in
+//  > using a dot seperated path as the key value.
+    pathTemplate = (path) -> "\(inputScheme)//\(path.join(pathSeparator))"
+//  ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/pathTemplate.
+//  documentation
+//  > Template used to convert a path of elements into a resource URI.
+//  > 
+//  > Default joins the path components with [`pathSeparator`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.structuredRead/structuredRead.pkl#L112,C1) and
+//  > prepends the [`inputScheme`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.structuredRead/structuredRead.pkl#L106,C1).
+//                  ^^^^ definition local path_70
+//                              ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/inputScheme.
+//                                              ^^^^ reference local path_70
+//                                                   ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+//                                                        ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/pathSeparator.
+  }
+  
+  /// Takes a given class or module and attempts to fill the properties from external resources.
+  ///
+  /// Resources are read in by constructing resource URIs from the structure of the provided class
+  /// or modules. The read values are then coerced into the types specified in the class or module, making
+  /// it easy to get external properties (using [fromExternalProps] and passed using the `-p` flag)
+  /// or environment variables (using [fromEnv]) into a structured and typed format.
+  ///
+  /// When embeded in another application, this Pkl module can be used to provide a
+  /// basic ability to override loaded configuration using CLI flags. The application
+  /// will need to parse the passed flags, then provide them to Pkl via a custom
+  /// [Resource Reader](https://pkl-lang.org/main/current/language-reference/index.html#extending-resource-readers),
+  /// or by passing them in as external properties.
+  function fill(target: Class|Module|Dynamic) =
+//         ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fill().
+//         documentation
+//         > Takes a given class or module and attempts to fill the properties from external resources.
+//         > 
+//         > Resources are read in by constructing resource URIs from the structure of the provided class
+//         > or modules. The read values are then coerced into the types specified in the class or module, making
+//         > it easy to get external properties (using [`fromExternalProps`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.structuredRead/structuredRead.pkl#L51,C1) and passed using the `-p` flag)
+//         > or environment variables (using [`fromEnv`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.structuredRead/structuredRead.pkl#L33,C1)) into a structured and typed format.
+//         > 
+//         > When embeded in another application, this Pkl module can be used to provide a
+//         > basic ability to override loaded configuration using CLI flags. The application
+//         > will need to parse the passed flags, then provide them to Pkl via a custom
+//         > [Resource Reader](https://pkl-lang.org/main/current/language-reference/index.html#extending-resource-readers),
+//         > or by passing them in as external properties.
+//              ^^^^^^ definition local target_85
+//                      ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#
+//                                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+    let (targetClass =
+//       ^^^^^^^^^^^ definition local targetClass_86
+      if (!(target is Class))
+//          ^^^^^^ reference local target_85
+//                    ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+        target.getClass()
+//      ^^^^^^ reference local target_85
+//             ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+      else
+        target
+//      ^^^^^^ reference local target_85
+    )
+      let (mappedInputs =
+//         ^^^^^^^^^^^^ definition local mappedInputs_92
+        if (targetClass == Dynamic)
+//          ^^^^^^^^^^^ reference local targetClass_86
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+          applyToDynamic(List(), target)
+//        ^^^^^^^^^^^^^^ reference local applyToDynamic_185
+//                       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                               ^^^^^^ reference local target_85
+        else
+          applyToClass(targetClass, List()))
+//        ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/applyToClass().
+//                     ^^^^^^^^^^^ reference local targetClass_86
+//                                  ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+      if (assertNoFailures(targetClass, mappedInputs) && targetClass != Dynamic)
+//        ^^^^^^^^^^^^^^^^ reference local assertNoFailures_138
+//                         ^^^^^^^^^^^ reference local targetClass_86
+//                                      ^^^^^^^^^^^^ reference local mappedInputs_92
+//                                                       ^^^^^^^^^^^ reference local targetClass_86
+//                                                                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+        deepToTyped.apply(targetClass, mappedInputs)
+//      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/
+//                  ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/apply().
+//                        ^^^^^^^^^^^ reference local targetClass_86
+//                                     ^^^^^^^^^^^^ reference local mappedInputs_92
+      else
+        mappedInputs
+//      ^^^^^^^^^^^^ reference local mappedInputs_92
+  
+  /// The scheme used to read resources from.
+  ///
+  /// By default, this is `"prop:"` so values are read from external
+  /// properties passed using the `-p` flag.
+  hidden inputScheme: String(matches(Regex(#"[\w-]+:"#)))
+//       ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/inputScheme.
+//       documentation
+//       > The scheme used to read resources from.
+//       > 
+//       > By default, this is `"prop:"` so values are read from external
+//       > properties passed using the `-p` flag.
+//                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#matches().
+//                                   ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+  
+  /// Path separator used to when building resource URI.
+  ///
+  /// Default is `.` which means that nested values are passed in
+  /// using a dot seperated path as the key value.
+  hidden pathSeparator: String
+//       ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/pathSeparator.
+//       documentation
+//       > Path separator used to when building resource URI.
+//       > 
+//       > Default is `.` which means that nested values are passed in
+//       > using a dot seperated path as the key value.
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// Template used to convert a path of elements into a resource URI.
+  ///
+  /// Default joins the path components with [pathSeparator] and
+  /// prepends the [inputScheme].
+  hidden pathTemplate: (List<String>) -> String = (path: List<String>) -> "\(inputScheme)\(path.join(pathSeparator))"
+//       ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/pathTemplate.
+//       documentation
+//       > Template used to convert a path of elements into a resource URI.
+//       > 
+//       > Default joins the path components with [`pathSeparator`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.structuredRead/structuredRead.pkl#L112,C1) and
+//       > prepends the [`inputScheme`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.structuredRead/structuredRead.pkl#L106,C1).
+//                      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                 ^^^^ definition local path_118
+//                                                       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                           ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/inputScheme.
+//                                                                                         ^^^^ reference local path_118
+//                                                                                              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+//                                                                                                   ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/pathSeparator.
+  
+  /// Debug hook for overriding how values are read.
+  hidden readFunc = (s) -> read?(s)
+//       ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/readFunc.
+//       documentation
+//       > Debug hook for overriding how values are read.
+//                   ^ definition local s_121
+//                               ^ reference local s_121
+  
+  function applyToClass(target: Class, path: List<String>): Mapping<String, Any?> =
+//         ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/applyToClass().
+//                      ^^^^^^ definition local target_123
+//                              ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                                     ^^^^ definition local path_123
+//                                           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+    let (reflected = reflect.Class(target))
+//       ^^^^^^^^^ definition local reflected_124
+//                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class().
+//                                 ^^^^^^ reference local target_123
+    new Mapping {
+//      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+      for (name, property in reflected.properties) {
+//         ^^^^ definition local name_126
+//               ^^^^^^^^ definition local property_126
+//                           ^^^^^^^^^ reference local reflected_124
+//                                     ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#properties.
+        when (property.type is Coerceable) {
+//            ^^^^^^^^ reference local property_126
+//                     ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#type.
+//                             ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/Coerceable#
+          [name] = let (potentialValue = readValueToTarget(path, name, property))
+//         ^^^^ reference local name_126
+//                      ^^^^^^^^^^^^^^ definition local potentialValue_128
+//                                       ^^^^^^^^^^^^^^^^^ reference local readValueToTarget_247
+//                                                         ^^^^ reference local path_123
+//                                                               ^^^^ reference local name_126
+//                                                                     ^^^^^^^^ reference local property_126
+            if (!(potentialValue is ReadFailure)) potentialValue
+//                ^^^^^^^^^^^^^^ reference local potentialValue_128
+//                                  ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/ReadFailure#
+//                                                ^^^^^^^^^^^^^^ reference local potentialValue_128
+            else if (property.type is reflect.NullableType) property.defaultValue
+//                   ^^^^^^^^ reference local property_126
+//                            ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#type.
+//                                            ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/NullableType#
+//                                                          ^^^^^^^^ reference local property_126
+//                                                                   ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#defaultValue.
+            else property.defaultValue ?? potentialValue
+//               ^^^^^^^^ reference local property_126
+//                        ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#defaultValue.
+//                                        ^^^^^^^^^^^^^^ reference local potentialValue_128
+        }
+      }
+    }
+  
+  typealias Coerceable = reflect.DeclaredType | reflect.NullableType | reflect.TypeAlias | reflect.UnknownType
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/Coerceable#
+//                               ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#
+//                                                      ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/NullableType#
+//                                                                             ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeAlias#
+//                                                                                                 ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/UnknownType#
+  
+  local function assertNoFailures(target: Class, output: Mapping<String, Any?>|Dynamic): Boolean =
+//               ^^^^^^^^^^^^^^^^ definition local assertNoFailures_138
+//                                ^^^^^^ definition local target_138
+//                                        ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                                               ^^^^^^ definition local output_138
+//                                                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                                                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+    let (fails = findFailures(output))
+//       ^^^^^ definition local fails_139
+//               ^^^^^^^^^^^^ reference local findFailures_151
+//                            ^^^^^^ reference local output_138
+      fails.isEmpty ||
+//    ^^^^^ reference local fails_139
+//          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#isEmpty.
+        let (msg = new Listing {
+//           ^^^ definition local msg_141
+//                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+          "Error processing \(if (fails.length > 1) "properties" else "property") in \(target):\n"
+//                                ^^^^^ reference local fails_139
+//                                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#length.
+//                                                                                     ^^^^^^ reference local target_138
+          local maxPathLength = fails.map((f) -> f.path.join(pathSeparator).length).max
+//              ^^^^^^^^^^^^^ definition local maxPathLength_143
+//                              ^^^^^ reference local fails_139
+//                                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                                         ^ definition local f_143
+//                                               ^ reference local f_143
+//                                                 ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/Failure#path.
+//                                                      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+//                                                           ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/pathSeparator.
+//                                                                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+//                                                                                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#max.
+          for (fail in fails) {
+//             ^^^^ definition local fail_144
+//                     ^^^^^ reference local fails_139
+            let (path = fail.path.join(pathSeparator))
+//               ^^^^ definition local path_145
+//                      ^^^^ reference local fail_144
+//                           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/Failure#path.
+//                                ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+//                                     ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/pathSeparator.
+              "\t'\(path)'\(" ".repeat(maxPathLength - path.length)): \(fail.message)"
+//                  ^^^^ reference local path_145
+//                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#repeat().
+//                                     ^^^^^^^^^^^^^ reference local maxPathLength_143
+//                                                     ^^^^ reference local path_145
+//                                                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+//                                                                      ^^^^ reference local fail_144
+//                                                                           ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/Failure#message.
+          }
+        }.join("\n"))
+//        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#join().
+          throw(msg)
+//              ^^^ reference local msg_141
+  
+  local function findFailures(output: Mapping<String, Any?>|Dynamic): List<Failure> =
+//               ^^^^^^^^^^^^ definition local findFailures_151
+//                            ^^^^^^ definition local output_151
+//                                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                                         ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/Failure#
+    findFailureAcc.apply(List(), null, output)
+//  ^^^^^^^^^^^^^^ reference local findFailureAcc_154
+//                 ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Function3#apply().
+//                       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                     ^^^^^^ reference local output_151
+  
+  local findFailureAcc = (result, _, value) ->
+//      ^^^^^^^^^^^^^^ definition local findFailureAcc_154
+//                        ^^^^^^ definition local result_154
+//                                   ^^^^^ definition local value_154
+    if (value is Failure) result.add(value)
+//      ^^^^^ reference local value_154
+//               ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/Failure#
+//                        ^^^^^^ reference local result_154
+//                                   ^^^^^ reference local value_154
+    else if (value is Mapping|Dynamic) value.toMap().fold(result, findFailureAcc)
+//           ^^^^^ reference local value_154
+//                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                     ^^^^^ reference local value_154
+//                                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toMap().
+//                                                   ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#fold().
+//                                                        ^^^^^^ reference local result_154
+//                                                                ^^^^^^^^^^^^^^ reference local findFailureAcc_154
+    else result
+//       ^^^^^^ reference local result_154
+  
+  abstract class Failure {
+//               ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/Failure#
+    message: String
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/Failure#message.
+//           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    path: List<String>
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/Failure#path.
+//        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  class ReadFailure extends Failure
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/ReadFailure#
+//                          ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/Failure#
+  class CoerceFailure extends Failure
+//      ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/CoerceFailure#
+//                            ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/Failure#
+  
+  local function ReadFail(path: List<String>, msg: String) = let (_path = path ) new ReadFailure {
+//               ^^^^^^^^ definition local ReadFail_167
+//                        ^^^^ definition local path_167
+//                              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                            ^^^ definition local msg_167
+//                                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                ^^^^^ definition local _path_167
+//                                                                        ^^^^ reference local path_167
+//                                                                                   ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/ReadFailure#
+    message = msg
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/message.
+//            ^^^ reference local msg_167
+    path = _path
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/path.
+//         ^^^^^ reference local _path_167
+  }
+  
+  local function CoerceFail(path: List<String>, msg: String) = let (_path = path ) new CoerceFailure {
+//               ^^^^^^^^^^ definition local CoerceFail_172
+//                          ^^^^ definition local path_172
+//                                ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                              ^^^ definition local msg_172
+//                                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                  ^^^^^ definition local _path_172
+//                                                                          ^^^^ reference local path_172
+//                                                                                     ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/CoerceFailure#
+    message = msg
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/message.
+//            ^^^ reference local msg_172
+    path = _path
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/path.
+//         ^^^^^ reference local _path_172
+  }
+  
+  local function parseArraySyntax(input: String): Listing = new {
+//               ^^^^^^^^^^^^^^^^ definition local parseArraySyntax_177
+//                                ^^^^^ definition local input_177
+//                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+    when (input.startsWith("{") && input.endsWith("}")) {
+//        ^^^^^ reference local input_177
+//              ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#startsWith().
+//                                 ^^^^^ reference local input_177
+//                                       ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#endsWith().
+      ...input.drop(1).dropLast(1).split(",").map((e) -> e.trim())
+//       ^^^^^ reference local input_177
+//             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#drop().
+//                     ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#dropLast().
+//                                 ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+//                                            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                                                 ^ definition local e_179
+//                                                       ^ reference local e_179
+//                                                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#trim().
+    } else {
+      input
+//    ^^^^^ reference local input_177
+    }
+  }
+  
+  local function applyToDynamic(path, default: Dynamic) =
+//               ^^^^^^^^^^^^^^ definition local applyToDynamic_185
+//                              ^^^^ definition local path_185
+//                                    ^^^^^^^ definition local default_185
+//                                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+    if (default.toList().isEmpty && default.toMap().isEmpty)
+//      ^^^^^^^ reference local default_185
+//              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toList().
+//                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#isEmpty.
+//                                  ^^^^^^^ reference local default_185
+//                                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toMap().
+//                                                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#isEmpty.
+      // Do some special handling for empty dynamic objects
+      let (potentialValue = readValue(path))
+//         ^^^^^^^^^^^^^^ definition local potentialValue_188
+//                          ^^^^^^^^^ reference local readValue_268
+//                                    ^^^^ reference local path_185
+        if (potentialValue is ReadFailure)
+//          ^^^^^^^^^^^^^^ reference local potentialValue_188
+//                            ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/ReadFailure#
+          default
+//        ^^^^^^^ reference local default_185
+        else if (potentialValue is String)
+//               ^^^^^^^^^^^^^^ reference local potentialValue_188
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+          parseArraySyntax(potentialValue)
+//        ^^^^^^^^^^^^^^^^ reference local parseArraySyntax_177
+//                         ^^^^^^^^^^^^^^ reference local potentialValue_188
+        else
+          potentialValue ?? default
+//        ^^^^^^^^^^^^^^ reference local potentialValue_188
+//                          ^^^^^^^ reference local default_185
+    else
+      new Mapping {
+//        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+        for (name, defaultValue in default) {
+//           ^^^^ definition local name_197
+//                 ^^^^^^^^^^^^ definition local defaultValue_197
+//                                 ^^^^^^^ reference local default_185
+          when (defaultValue is Dynamic) {
+//              ^^^^^^^^^^^^ reference local defaultValue_197
+//                              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+            [name] = applyToDynamic(path.add(name.toString()), defaultValue)
+//           ^^^^ reference local name_197
+//                   ^^^^^^^^^^^^^^ reference local applyToDynamic_185
+//                                  ^^^^ reference local path_185
+//                                           ^^^^ reference local name_197
+//                                                             ^^^^^^^^^^^^ reference local defaultValue_197
+          } else {
+            [name] = let (_path = path.add(name.toString()))
+//           ^^^^ reference local name_197
+//                        ^^^^^ definition local _path_201
+//                                ^^^^ reference local path_185
+//                                         ^^^^ reference local name_197
+              let (potentialValue = coerceInput(readValue(_path), defaultValue.getClass(), _path))
+//                 ^^^^^^^^^^^^^^ definition local potentialValue_202
+//                                  ^^^^^^^^^^^ reference local coerceInput_235
+//                                              ^^^^^^^^^ reference local readValue_268
+//                                                        ^^^^^ reference local _path_201
+//                                                                ^^^^^^^^^^^^ reference local defaultValue_197
+//                                                                                         ^^^^^ reference local _path_201
+                if (potentialValue is ReadFailure)
+//                  ^^^^^^^^^^^^^^ reference local potentialValue_202
+//                                    ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/ReadFailure#
+                  defaultValue
+//                ^^^^^^^^^^^^ reference local defaultValue_197
+                else
+                  potentialValue
+//                ^^^^^^^^^^^^^^ reference local potentialValue_202
+          }
+        }
+      }.toMap().toDynamic()
+//      ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+//              ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#toDynamic().
+  
+  hidden classHandlers: Mapping<Class, (String) -> Any> = new {
+//       ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/classHandlers.
+//                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                              ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                 ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+    [Int] = (value) ->
+//   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//           ^^^^^ definition local value_212
+      value.toIntOrNull()
+//    ^^^^^ reference local value_212
+//          ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toIntOrNull().
+  
+    [String] = (value) ->
+//   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//              ^^^^^ definition local value_215
+      value
+//    ^^^^^ reference local value_215
+  
+    [Float] = (value) ->
+//   ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Float#
+//             ^^^^^ definition local value_218
+      value.toFloatOrNull()
+//    ^^^^^ reference local value_218
+//          ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toFloatOrNull().
+  
+    [Number] = (value) ->
+//   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+//              ^^^^^ definition local value_221
+      value.toIntOrNull() ?? value.toFloatOrNull()
+//    ^^^^^ reference local value_221
+//          ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toIntOrNull().
+//                           ^^^^^ reference local value_221
+//                                 ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toFloatOrNull().
+  
+    [Boolean] = (value) ->
+//   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//               ^^^^^ definition local value_224
+      value.toBooleanOrNull()
+//    ^^^^^ reference local value_224
+//          ^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toBooleanOrNull().
+  
+    [Null] = (_) -> throw("""
+//   ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Null#
+      Unable to perform structured read due to ambiguous type in schema.
+      This is normally caused by a schema property having default value of `null`, and no type signature.
+      """)
+  
+    [Resource] = (value) -> value
+//   ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Resource#
+//                ^^^^^ definition local value_232
+//                          ^^^^^ reference local value_232
+  }
+  
+  local function coerceInput(value: String?|Resource?, clazz: Class|TypeAlias, path:List<String>) =
+//               ^^^^^^^^^^^ definition local coerceInput_235
+//                           ^^^^^ definition local value_235
+//                                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                          ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Resource#
+//                                                     ^^^^^ definition local clazz_235
+//                                                            ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                                                                  ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/TypeAlias#
+//                                                                             ^^^^ definition local path_235
+//                                                                                  ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    if (clazz is TypeAlias) coerceInput(value, reflect.TypeAlias(clazz).referent.referent.reflectee, path)
+//      ^^^^^ reference local clazz_235
+//               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/TypeAlias#
+//                          ^^^^^^^^^^^ reference local coerceInput_235
+//                                      ^^^^^ reference local value_235
+//                                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                                                     ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeAlias().
+//                                                               ^^^^^ reference local clazz_235
+//                                                                      ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeAlias#referent.
+//                                                                                                   ^^^^ reference local path_235
+    else if (!classHandlers.containsKey(clazz)) applyToClass(clazz, path)
+//            ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/classHandlers.
+//                          ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#containsKey().
+//                                      ^^^^^ reference local clazz_235
+//                                              ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/applyToClass().
+//                                                           ^^^^^ reference local clazz_235
+//                                                                  ^^^^ reference local path_235
+    else if (value is String)
+//           ^^^^^ reference local value_235
+//                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      classHandlers[clazz].apply(value) ?? CoerceFail(path, "Unable to coerce '\(value)' into type \(clazz.simpleName)")
+//    ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/classHandlers.
+//                  ^^^^^ reference local clazz_235
+//                         ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Function1#apply().
+//                               ^^^^^ reference local value_235
+//                                         ^^^^^^^^^^ reference local CoerceFail_172
+//                                                    ^^^^ reference local path_235
+//                                                                               ^^^^^ reference local value_235
+//                                                                                                   ^^^^^ reference local clazz_235
+//                                                                                                         ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#simpleName.
+    else
+      value ?? ReadFail(
+//    ^^^^^ reference local value_235
+//             ^^^^^^^^ reference local ReadFail_167
+        path,
+//      ^^^^ reference local path_235
+        "Not provided. Make sure you pass the argument '-p \(path.join(pathSeparator))=<\(clazz.simpleName)>' to pkl eval"
+//                                                           ^^^^ reference local path_235
+//                                                                ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+//                                                                     ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/pathSeparator.
+//                                                                                        ^^^^^ reference local clazz_235
+//                                                                                              ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#simpleName.
+      )
+  
+  
+  local function readValueToTarget(path: List<String>, name: String, target: reflect.Property): Any? =
+//               ^^^^^^^^^^^^^^^^^ definition local readValueToTarget_247
+//                                 ^^^^ definition local path_247
+//                                       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                     ^^^^ definition local name_247
+//                                                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                   ^^^^^^ definition local target_247
+//                                                                                   ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#
+//                                                                                              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+    let (path = path.add(name))
+//       ^^^^ definition local path_248
+//              ^^^^ reference local path_247
+//                   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                       ^^^^ reference local name_247
+      let (clazz =
+//         ^^^^^ definition local clazz_249
+        if (target.type is reflect.UnknownType)
+//          ^^^^^^ reference local target_247
+//                 ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#type.
+//                                 ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/UnknownType#
+          target.defaultValue.getClass()
+//        ^^^^^^ reference local target_247
+//               ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#defaultValue.
+//                            ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+        else if (target.type is reflect.NullableType)
+//               ^^^^^^ reference local target_247
+//                      ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#type.
+//                                      ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/NullableType#
+          let (_type = target.type as reflect.NullableType)
+//             ^^^^^ definition local _type_253
+//                     ^^^^^^ reference local target_247
+//                            ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#type.
+//                                            ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/NullableType#
+            _type.member.referent.reflectee
+//          ^^^^^ reference local _type_253
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/NullableType#member.
+        else if (target.type is reflect.DeclaredType)
+//               ^^^^^^ reference local target_247
+//                      ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#type.
+//                                      ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#
+          let (_type = target.type as reflect.DeclaredType)
+//             ^^^^^ definition local _type_256
+//                     ^^^^^^ reference local target_247
+//                            ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#type.
+//                                            ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#
+            _type.referent.reflectee
+//          ^^^^^ reference local _type_256
+//                ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#referent.
+//                         ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeDeclaration#reflectee.
+        else
+          null
+      )
+        if (clazz == Dynamic)
+//          ^^^^^ reference local clazz_249
+//                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+          applyToDynamic(path, target.defaultValue)
+//        ^^^^^^^^^^^^^^ reference local applyToDynamic_185
+//                       ^^^^ reference local path_248
+//                             ^^^^^^ reference local target_247
+//                                    ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#defaultValue.
+        else if (clazz != null)
+//               ^^^^^ reference local clazz_249
+          coerceInput(readValue(path), clazz, path)
+//        ^^^^^^^^^^^ reference local coerceInput_235
+//                    ^^^^^^^^^ reference local readValue_268
+//                              ^^^^ reference local path_248
+//                                     ^^^^^ reference local clazz_249
+//                                            ^^^^ reference local path_248
+        else
+          null
+  
+  local function readValue(path: List<String>) = readFunc.apply(pathTemplate.apply(path))
+//               ^^^^^^^^^ definition local readValue_268
+//                         ^^^^ definition local path_268
+//                               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/readFunc.
+//                                                              ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/pathTemplate.
+//                                                                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Function1#apply().
+//                                                                                 ^^^^ reference local path_268

@@ -1,0 +1,1875 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// We sell IP addresses and IP address accessories
+  /// This module contains types and functions for handling network (IP and MAC) addresses
+  @ModuleInfo { minPklVersion = "0.25.0" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleInfo#
+//              ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/minPklVersion.
+  module pkl.experimental.net.net
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+  
+  import "pkl:math"
+  import "./u128.pkl"
+  import "./net.pkl"
+  
+  // language=RegExp
+  const hidden hex: String = "[0-9a-fA-F]"
+//             ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+//                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  // language=RegExp
+  const hidden decByte: String = #"(25[0-5]|2[0-4][0-9]|[01]?[0-9]{1,2})"#
+//             ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/decByte.
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  // language=RegExp
+  const hidden ipv4String = #"(\#(decByte)\.){3}\#(decByte)"#
+//             ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/ipv4String.
+//                                ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/decByte.
+//                                                 ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/decByte.
+  
+  // language=RegExp
+  const hidden ipv6String = #"""
+//             ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/ipv6String.
+    (?x:
+      (\#(hex){1,4}:){7}\#(hex){1,4}           # x:x:x:x:x:x:x:x
+//        ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+//                         ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+    | (\#(hex){1,4}:){1,7}:                    # x:: … x:x:x:x:x:x:x::
+//        ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+    | (\#(hex){1,4}:){6}:\#(hex){1,4}          # x:x:x:x:x:x::x
+//        ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+//                          ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+    | (\#(hex){1,4}:){5}(:\#(hex){1,4}){1,2}   # x:x:x:x:x::x … x:x:x:x:x::x:x
+//        ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+//                           ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+    | (\#(hex){1,4}:){4}(:\#(hex){1,4}){1,3}   # x:x:x:x::x … x:x:x:x::x:x:x
+//        ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+//                           ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+    | (\#(hex){1,4}:){3}(:\#(hex){1,4}){1,4}   # x:x:x::x … x:x:x::x:x:x:x
+//        ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+//                           ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+    | (\#(hex){1,4}:){2}(:\#(hex){1,4}){1,5}   # x:x::x … x:x::x:x:x:x:x
+//        ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+//                           ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+    | \#(hex){1,4}:(:\#(hex){1,4}){1,6}        # x::x … x::x:x:x:x:x:x
+//       ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+//                      ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+    | :((:\#(hex){1,4}){1,7}|:)                # ::x … ::x:x:x:x:x:x:x, ::
+//           ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+    | (?: # IPv6 with trailing IPv4
+        (\#(hex){1,4}:){6}                      # x:x:x:x:x:x:
+//          ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+      | (\#(hex){1,4}:){5}:                     # x:x:x:x:x::
+//          ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+      | (\#(hex){1,4}:){4}(:\#(hex){1,4})?:     # x:x:x:x:: … x:x:x:x::x:
+//          ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+//                             ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+      | (\#(hex){1,4}:){3}(:\#(hex){1,4}){0,2}: # x:x:x:: … x:x:x::x:x:
+//          ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+//                             ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+      | (\#(hex){1,4}:){2}(:\#(hex){1,4}){0,3}: # x:x:: … x:x::x:x:x:
+//          ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+//                             ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+      | \#(hex){1,4}:(:\#(hex){1,4}){0,4}:      # x:: … x::x:x:x:x:
+//         ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+//                        ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+      | :(:\#(hex){1,4}){0,5}:                  # :: … ::x:x:x:x:x:
+//            ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+      )\#(ipv4String)                           # …d.d.d.d
+//        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/ipv4String.
+    | \#(nonGlobalIPv6String)%[0-9]+ # Scoped address
+//       ^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/nonGlobalIPv6String.
+    )
+    """#
+  
+  // language=RegExp
+  const hidden nonGlobalIPv6String = #"""
+//             ^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/nonGlobalIPv6String.
+    (?xi-U:
+      ff[0-9a-f][0-9a-d](?:                        # multicast (FF00::/8 with "scop" less than E (global scope))
+        (:[0-9a-f]{1,4}){7}                        # FFxx:x:x:x:x:x:x:x
+      | :(:|(:[0-9a-f]{1,4}){1,6})                 # FFxx:: … FFxx::x:x:x:x:x:x
+      | :[0-9a-f]:(:|(:[0-9a-f]{1,4}){1,5})        # FFxx:x:: … FFxx:x::x:x:x:x:x
+      | (:[0-9a-f]){2}:(:|(:[0-9a-f]{1,4}){1,4})   # FFxx:x:x:: … FFxx:x:x::x:x:x:x
+      | (:[0-9a-f]){3}:(:|(:[0-9a-f]{1,4}){1,3})   # FFxx:x:x:x:: … FFxx:x:x:x::x:x:x
+      | (:[0-9a-f]){4}:(:|(:[0-9a-f]{1,4}){1,2})   # FFxx:x:x:x:x:: … FFxx:x:x:x:x::x:x
+      | (:[0-9a-f]){5}:(:|(:[0-9a-f]{1,4}))        # FFxx:x:x:x:x:x:: … FFxx:x:x:x:x:x::x
+      | (:[0-9a-f]){6}::                           # FFxx:x:x:x:x:x:x::
+      )
+    | fe80(?:                                      # link-local unicast (FE80::/10)
+        (:0{1,4}){3}(?:                            # FE80:0:0:0…
+          :: | :(:[0-9a-f]{1,4}){1,3}              # FE80:0:0:0:: … FE80:0:0:0::x:x:x
+        | :[0-9a-f]{1,4}:(:|(:[0-9a-f]{1,4}){1,2}) # FE80:0:0:0:x:: … FE80:0:0:0:x::x:x
+        | (:[0-9a-f]{1,4}){2}::([0-9a-f]{1,4})?    # FE80:0:0:0:x:x:: … FE80:0:0:0:x:x::x
+        | (:[0-9a-f]{1,4}){3}:(:|[0-9a-f]{1,4})    # FE80:0:0:0:x:x:x::, FE80:0:0:0:x:x:x:x
+        )
+      | (:0{1,4}){0,2}:(:|(:[0-9a-f]{1,4}){1,4})   # FE80:: … FE80:0:0::x:x:x:x
+      )
+    )
+    """#
+  
+  /// A string that contains a MAC address
+  // language=RegExp
+  typealias MACAddressString = String(matches(Regex(#"(\#(net.hex){1,2}[\.:-]){5}(\#(net.hex){1,2})"#)))
+//          ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/MACAddressString#
+//          documentation
+//          > A string that contains a MAC address
+//                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#matches().
+//                                            ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+//                                                        ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                                            ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+//                                                                                   ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                                                                       ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/hex.
+  
+  /// A string that contains either an IPv4 or IPv6 address.
+  typealias IPAddressString = IPv4AddressString|IPv6AddressString
+//          ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPAddressString#
+//          documentation
+//          > A string that contains either an IPv4 or IPv6 address.
+//                            ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+//                                              ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+  
+  /// A string that contains either an IPv4 or IPv6 address and port.
+  typealias IPAddressPortString = IPv4AddressPortString|IPv6AddressPortString
+//          ^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPAddressPortString#
+//          documentation
+//          > A string that contains either an IPv4 or IPv6 address and port.
+//                                ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressPortString#
+//                                                      ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressPortString#
+  
+  /// A string that contains either an IPv4 or IPv6 CIDR range.
+  typealias IPCIDRString = IPv4CIDRString|IPv6CIDRString
+//          ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPCIDRString#
+//          documentation
+//          > A string that contains either an IPv4 or IPv6 CIDR range.
+//                         ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4CIDRString#
+//                                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6CIDRString#
+  
+  /// An IPv4 or IPv6 address.
+  typealias IPAddress = IPv4Address|IPv6Address
+//          ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPAddress#
+//          documentation
+//          > An IPv4 or IPv6 address.
+//                      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#
+//                                  ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#
+  
+  /// An IPv4 or IPv6 network.
+  typealias IPNetwork = IPv4Network|IPv6Network
+//          ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPNetwork#
+//          documentation
+//          > An IPv4 or IPv6 network.
+//                      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#
+//                                  ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#
+  
+  /// A string that contains an IPv4 address.
+  // language=RegExp
+  typealias IPv4AddressString = String(matches(Regex(net.ipv4String)))
+//          ^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+//          documentation
+//          > A string that contains an IPv4 address.
+//                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#matches().
+//                                             ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+//                                                   ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                                       ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/ipv4String.
+  
+  /// A string that contains an IPv6 address.
+  ///
+  /// IPv6 unicast and multicast addresses of non-global scope except for the unspecified address and the loopback address
+  /// may include a scope ID suffix, e.g. `"fe80::1234%1"`. Site-local unicast addresses (`fec0::/10`) are deprecated and
+  /// thus are considered to be global unicast addresses.
+  // language=RegExp
+  typealias IPv6AddressString = String(matches(Regex(net.ipv6String)))
+//          ^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+//          documentation
+//          > A string that contains an IPv6 address.
+//          > 
+//          > IPv6 unicast and multicast addresses of non-global scope except for the unspecified address and the loopback address
+//          > may include a scope ID suffix, e.g. `"fe80::1234%1"`. Site-local unicast addresses (`fec0::/10`) are deprecated and
+//          > thus are considered to be global unicast addresses.
+//                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#matches().
+//                                             ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+//                                                   ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                                       ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/ipv6String.
+  
+  /// A string that contains an IPv4 address and port.
+  // language=RegExp
+  typealias IPv4AddressPortString = String(matches(Regex(#"\#(net.ipv4String):[0-9]{1,5}"#)))
+//          ^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressPortString#
+//          documentation
+//          > A string that contains an IPv4 address and port.
+//                                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#matches().
+//                                                 ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+//                                                            ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                                                ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/ipv4String.
+  
+  /// A string that contains an IPv6 address and port.
+  // language=RegExp
+  typealias IPv6AddressPortString = String(matches(Regex(#"\[\#(net.ipv6String)\]:[0-9]{1,5}"#)))
+//          ^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressPortString#
+//          documentation
+//          > A string that contains an IPv6 address and port.
+//                                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#matches().
+//                                                 ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+//                                                              ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                                                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/ipv6String.
+  
+  /// A string that contains an IPv4 address.
+  // language=RegExp
+  typealias IPv4CIDRString = String(matches(Regex(#"\#(net.ipv4String)/[0-9]{1,2}"#)))
+//          ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4CIDRString#
+//          documentation
+//          > A string that contains an IPv4 address.
+//                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#matches().
+//                                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+//                                                     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                                         ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/ipv4String.
+  
+  /// A string that contains an IPv6 address.
+  // language=RegExp
+  typealias IPv6CIDRString = String(matches(Regex(#"\#(net.ipv6String)/[0-9]{1,3}"#)))
+//          ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6CIDRString#
+//          documentation
+//          > A string that contains an IPv6 address.
+//                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#matches().
+//                                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+//                                                     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                                         ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/ipv6String.
+  
+  /// Creates an [IPAddress] from an [IPAddressString].
+  function IP(ip: IPAddressString): IPAddress =
+//         ^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IP().
+//         documentation
+//         > Creates an [`IPAddress`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L98,C11) from an [`IPAddressString`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L89,C11).
+//            ^^ definition local ip_132
+//                ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPAddressString#
+//                                  ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPAddress#
+    if (ip is IPv6AddressString) IPv6Address(ip)
+//      ^^ reference local ip_132
+//            ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+//                               ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                           ^^ reference local ip_132
+    else if (ip is IPv4AddressString) IPv4Address(ip)
+//           ^^ reference local ip_132
+//                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+//                                    ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address().
+//                                                ^^ reference local ip_132
+    else throw("Invalid IP: \(ip)")
+//                            ^^ reference local ip_132
+  
+  /// Creates an [IPv4Address] from an [IPv4AddressString].
+  function IPv4Address(ip: IPv4AddressString): IPv4Address = new {
+//         ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address().
+//         documentation
+//         > Creates an [`IPv4Address`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L147,C7) from an [`IPv4AddressString`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L105,C11).
+//                     ^^ definition local ip_138
+//                         ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+//                                             ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#
+    local parts = ip.split(".")
+//        ^^^^^ definition local parts_139
+//                ^^ reference local ip_138
+//                   ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+    repr = parts[0].toInt().shl(24)
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/repr.
+//         ^^^^^ reference local parts_139
+//                  ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toInt().
+//                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shl().
+      .or(parts[1].toInt().shl(16))
+//     ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//        ^^^^^ reference local parts_139
+//                 ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toInt().
+//                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shl().
+      .or(parts[2].toInt().shl(8))
+//     ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//        ^^^^^ reference local parts_139
+//                 ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toInt().
+//                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shl().
+      .or(parts[3].toInt())
+//     ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//        ^^^^^ reference local parts_139
+//                 ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toInt().
+  }
+  
+  /// An IPv4 address.
+  class IPv4Address {
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#
+//      documentation
+//      > An IPv4 address.
+    repr: UInt32
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#repr.
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt32#
+  
+    const hidden bitWidth: UInt = 32
+//               ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#bitWidth.
+//                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+  
+    local self = this
+//        ^^^^ definition local self_152
+  
+    /// maskHi generates a mask of 1s in the top [prefix] bits of a [UInt32].
+    function maskHi(prefix: UInt(isBetween(0, bitWidth))): UInt32 = mask32Hi(prefix)
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#maskHi().
+//           documentation
+//           > maskHi generates a mask of 1s in the top [`prefix`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L155,C19) bits of a [`UInt32`](pkl-lsp://stdlib/base.pkl#L956,C11).
+//                  ^^^^^^ definition local prefix_155
+//                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+//                               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#isBetween().
+//                                            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#bitWidth.
+//                                                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt32#
+//                                                                  ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/mask32Hi().
+//                                                                           ^^^^^^ reference local prefix_155
+  
+    /// maskLo generates a mask of 1s in the bottom [suffix] bits of a [UInt32].
+    function maskLo(suffix: UInt(isBetween(0, bitWidth))): UInt32 = mask32Lo(suffix)
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#maskLo().
+//           documentation
+//           > maskLo generates a mask of 1s in the bottom [`suffix`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L158,C19) bits of a [`UInt32`](pkl-lsp://stdlib/base.pkl#L956,C11).
+//                  ^^^^^^ definition local suffix_158
+//                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+//                               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#isBetween().
+//                                            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#bitWidth.
+//                                                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt32#
+//                                                                  ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/mask32Lo().
+//                                                                           ^^^^^^ reference local suffix_158
+  
+    /// reverse returns the PTR record name for this address.
+    function reverse(): String = new IPv4Network { base = self; prefix = self.bitWidth }.reverse()
+//           ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#reverse().
+//           documentation
+//           > reverse returns the PTR record name for this address.
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                   ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#
+//                                                 ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#base.
+//                                                        ^^^^ reference local self_152
+//                                                              ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#prefix.
+//                                                                       ^^^^ reference local self_152
+//                                                                            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#bitWidth.
+//                                                                                       ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#reverse().
+  
+    /// return the ip address immediately after this one
+    function next(): IPv4Address = add(1)
+//           ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#next().
+//           documentation
+//           > return the ip address immediately after this one
+//                   ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#
+//                                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#add().
+  
+    /// return the ip address [n] after this one
+    function add(n: UInt32): IPv4Address = new { repr = self.repr + n }
+//           ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#add().
+//           documentation
+//           > return the ip address [`n`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L167,C16) after this one
+//               ^ definition local n_167
+//                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt32#
+//                           ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#
+//                                               ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#repr.
+//                                                      ^^^^ reference local self_152
+//                                                           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#repr.
+//                                                                  ^ reference local n_167
+  
+    function toString(): IPv4AddressString = new Listing<String> {
+//           ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#toString().
+//           documentation
+//           > Returns a string representation of `this`.
+//           > 
+//           > This method is used to convert the values of string interpolation expressions to strings.
+//                       ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+//                                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      repr.ushr(24).and(math.maxUInt8).toString()
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#repr.
+//         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#ushr().
+//                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                      ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                           ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt8.
+//                                     ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toString().
+      repr.ushr(16).and(math.maxUInt8).toString()
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#repr.
+//         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#ushr().
+//                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                      ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                           ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt8.
+//                                     ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toString().
+      repr.ushr(8).and(math.maxUInt8).toString()
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#repr.
+//         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#ushr().
+//                 ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                     ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                          ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt8.
+//                                    ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toString().
+      repr.and(math.maxUInt8).toString()
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#repr.
+//         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//             ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                  ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt8.
+//                            ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toString().
+    }.join(".")
+//    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#join().
+  }
+  
+  // noinspection TypeMismatch
+  /// Creates an [IPv6Address] from an [IPv6AddressString].
+  function IPv6Address(ip: IPv6AddressString): IPv6Address =
+//         ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//         documentation
+//         > Creates an [`IPv6Address`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L199,C7) from an [`IPv6AddressString`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L113,C11).
+//                     ^^ definition local ip_179
+//                         ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+//                                             ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#
+    let (idx = ip.lastIndexOfOrNull("%"))
+//       ^^^ definition local idx_180
+//             ^^ reference local ip_179
+//                ^^^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#lastIndexOfOrNull().
+    let (scope = idx.ifNonNull((it) -> ip.drop(it+1).toInt()))
+//       ^^^^^ definition local scope_181
+//               ^^^ reference local idx_180
+//                   ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#ifNonNull().
+//                              ^^ definition local it_181
+//                                     ^^ reference local ip_179
+//                                        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#drop().
+//                                             ^^ reference local it_181
+//                                                   ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toInt().
+    let (ip = idx.ifNonNull((it) -> ip.take(it)) ?? ip)
+//       ^^ definition local ip_182
+//            ^^^ reference local idx_180
+//                ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#ifNonNull().
+//                           ^^ definition local it_182
+//                                  ^^ reference local ip_179
+//                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#take().
+//                                          ^^ reference local it_182
+//                                                  ^^ reference local ip_179
+    let (ipIdx = ip.indexOfOrNull(Regex(":\(ipv4String)$")))
+//       ^^^^^ definition local ipIdx_183
+//               ^^ reference local ip_182
+//                  ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#indexOfOrNull().
+//                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+//                                          ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/ipv4String.
+    let (ipv4 = ipIdx.ifNonNull((_) -> ip.drop(ipIdx+1).split(".").map((s) -> s.toInt())))
+//       ^^^^ definition local ipv4_184
+//              ^^^^^ reference local ipIdx_183
+//                    ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#ifNonNull().
+//                                     ^^ reference local ip_182
+//                                        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#drop().
+//                                             ^^^^^ reference local ipIdx_183
+//                                                      ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+//                                                                 ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                                                                      ^ definition local s_184
+//                                                                            ^ reference local s_184
+//                                                                              ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toInt().
+    let (ip = ipIdx.ifNonNull((it) -> ip.replaceRange(it, ip.length, ":0:0")) ?? ip)
+//       ^^ definition local ip_185
+//            ^^^^^ reference local ipIdx_183
+//                  ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#ifNonNull().
+//                             ^^ definition local it_185
+//                                    ^^ reference local ip_182
+//                                       ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceRange().
+//                                                    ^^ reference local it_185
+//                                                        ^^ reference local ip_182
+//                                                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+//                                                                               ^^ reference local ip_182
+    let (_ip = expandIPv6AddressString(ip).toLowerCase().split(":"))
+//       ^^^ definition local _ip_186
+//             ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/expandIPv6AddressString().
+//                                     ^^ reference local ip_185
+//                                         ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toLowerCase().
+//                                                       ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+      new {
+        repr = u128.UInt128(
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/repr.
+//             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/
+//                  ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+          parseHex32(_ip[0] + _ip[1]),
+//        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/parseHex32().
+//                   ^^^ reference local _ip_186
+//                            ^^^ reference local _ip_186
+          parseHex32(_ip[2] + _ip[3]),
+//        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/parseHex32().
+//                   ^^^ reference local _ip_186
+//                            ^^^ reference local _ip_186
+          parseHex32(_ip[4] + _ip[5]),
+//        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/parseHex32().
+//                   ^^^ reference local _ip_186
+//                            ^^^ reference local _ip_186
+          if (ipv4 != null) ipv4[0].shl(24) + ipv4[1].shl(16) + ipv4[2].shl(8) + ipv4[3]
+//            ^^^^ reference local ipv4_184
+//                          ^^^^ reference local ipv4_184
+//                                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shl().
+//                                            ^^^^ reference local ipv4_184
+//                                                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shl().
+//                                                              ^^^^ reference local ipv4_184
+//                                                                      ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shl().
+//                                                                               ^^^^ reference local ipv4_184
+          else parseHex32(_ip[6] + _ip[7])
+//             ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/parseHex32().
+//                        ^^^ reference local _ip_186
+//                                 ^^^ reference local _ip_186
+        )
+        scopeId = scope
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/scopeId.
+//                ^^^^^ reference local scope_181
+      }
+  
+  /// An IPv6 address.
+  class IPv6Address {
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#
+//      documentation
+//      > An IPv6 address.
+    repr: u128.UInt128
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//             ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#
+  
+    /// The scope ID associated with this address, or [null] if the scope is unknown or not applicable.
+    ///
+    /// Only addresses of [non-global scope][isNonGlobalScope] are allowed to have a scope ID.
+    scopeId: UInt(isNonGlobalScope)?
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+//  documentation
+//  > The scope ID associated with this address, or `null` if the scope is unknown or not applicable.
+//  > 
+//  > Only addresses of [`non-global scope`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L229,C3) are allowed to have a scope ID.
+//           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+//                ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isNonGlobalScope.
+  
+    const hidden bitWidth: UInt = 128
+//               ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#bitWidth.
+//                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+  
+    /// Tells if this address is the unspecified address (`::`).
+    fixed hidden isUnspecified: Boolean = repr == u128.zero
+//               ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isUnspecified.
+//               documentation
+//               > Tells if this address is the unspecified address (`::`).
+//                              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                                        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                                                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/
+//                                                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/zero.
+  
+    /// Tells if this address is the loopback address (`::1`).
+    fixed hidden isLoopback: Boolean = repr == u128.one
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isLoopback.
+//               documentation
+//               > Tells if this address is the loopback address (`::1`).
+//                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                                             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/
+//                                                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/one.
+  
+    /// Tells if this address is an IPv4-mapped address (`::ffff:0:0/96`).
+    fixed hidden isIPv4Mapped: Boolean =
+//               ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isIPv4Mapped.
+//               documentation
+//               > Tells if this address is an IPv4-mapped address (`::ffff:0:0/96`).
+//                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+      repr.hihi == 0 && repr.hilo == 0 && repr.lohi == 0xffff
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                                             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+  
+    /// Tells if this address is an IPv4-embedded address using the Well-Known Prefix (`64:ff9b::/96`) described by
+    /// [RFC 6052 §2.1](https://tools.ietf.org/html/rfc6052#section-2.1).
+    fixed hidden isIPv4Embedded: Boolean =
+//               ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isIPv4Embedded.
+//               documentation
+//               > Tells if this address is an IPv4-embedded address using the Well-Known Prefix (`64:ff9b::/96`) described by
+//               > [RFC 6052 §2.1](https://tools.ietf.org/html/rfc6052#section-2.1).
+//                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+      repr.hihi == 0x64ff9b && repr.hilo == 0 && repr.lohi == 0
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                                  ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                                                    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+  
+    /// Tells if this address has non-global unicast or multicast scope.
+    ///
+    /// Returns [true] for link-local unicast and for multicast with "scop" field less than global. Returns [false] for
+    /// the [unspecified address][isUnspecified] and the [loopback address][isLoopback], and for site-local addresses as
+    /// per [RFC 4291 §2.5.7](https://tools.ietf.org/html/rfc4291#section-2.5.7).
+    fixed hidden isNonGlobalScope: Boolean =
+//               ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isNonGlobalScope.
+//               documentation
+//               > Tells if this address has non-global unicast or multicast scope.
+//               > 
+//               > Returns `true` for link-local unicast and for multicast with "scop" field less than global. Returns `false` for
+//               > the [`unspecified address`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L210,C3) and the [`loopback address`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L213,C3), and for site-local addresses as
+//               > per [RFC 4291 §2.5.7](https://tools.ietf.org/html/rfc4291#section-2.5.7).
+//                                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+      (repr.hihi == 0xfe800000 && repr.hilo == 0) ||
+//     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+        (repr.hihi.ushr(24) == 0xff && repr.hihi.ushr(16).and(0xF) < 0xE)
+//       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//            ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                 ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#ushr().
+//                                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                                          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                                               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#ushr().
+//                                                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+  
+    local self = this
+//        ^^^^ definition local self_233
+  
+    /// maskHi generates a mask of 1s in the top [prefix] bits of a [u128.UInt128].
+    function maskHi(prefix: UInt(isBetween(0, bitWidth))): u128.UInt128 =
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#maskHi().
+//           documentation
+//           > maskHi generates a mask of 1s in the top [`prefix`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L236,C19) bits of a [`u128.UInt128`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/u128.pkl#L37,C7).
+//                  ^^^^^^ definition local prefix_236
+//                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+//                               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#isBetween().
+//                                            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#bitWidth.
+//                                                              ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#
+      if (prefix <= 32) u128.UInt128(mask32Hi(prefix), 0, 0, 0)
+//        ^^^^^^ reference local prefix_236
+//                      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/
+//                           ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                                   ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/mask32Hi().
+//                                            ^^^^^^ reference local prefix_236
+      else if (prefix <= 64) u128.UInt128(math.maxUInt32, mask32Hi(prefix - 32), 0, 0)
+//             ^^^^^^ reference local prefix_236
+//                           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/
+//                                ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                                        ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                             ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                                        ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/mask32Hi().
+//                                                                 ^^^^^^ reference local prefix_236
+      else if (prefix <= 96) u128.UInt128(math.maxUInt32, math.maxUInt32, mask32Hi(prefix - 64), 0)
+//             ^^^^^^ reference local prefix_236
+//                           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/
+//                                ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                                        ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                             ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                                        ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                             ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                                                        ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/mask32Hi().
+//                                                                                 ^^^^^^ reference local prefix_236
+      else u128.UInt128(math.maxUInt32, math.maxUInt32, math.maxUInt32, mask32Hi(prefix - 96))
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/
+//              ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                      ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                           ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                      ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                           ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                                      ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                           ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                                                      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/mask32Hi().
+//                                                                               ^^^^^^ reference local prefix_236
+  
+    /// maskLo generates a mask of 1s in the bottom [suffix] bits of a [u128.UInt128].
+    function maskLo(suffix: UInt(isBetween(0, bitWidth))): u128.UInt128 =
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#maskLo().
+//           documentation
+//           > maskLo generates a mask of 1s in the bottom [`suffix`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L243,C19) bits of a [`u128.UInt128`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/u128.pkl#L37,C7).
+//                  ^^^^^^ definition local suffix_243
+//                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+//                               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#isBetween().
+//                                            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#bitWidth.
+//                                                              ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#
+      if (suffix <= 32) u128.UInt128(0, 0, 0, mask32Lo(suffix))
+//        ^^^^^^ reference local suffix_243
+//                      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/
+//                           ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                                            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/mask32Lo().
+//                                                     ^^^^^^ reference local suffix_243
+      else if (suffix <= 64) u128.UInt128(0, 0, mask32Lo(suffix - 32), math.maxUInt32)
+//             ^^^^^^ reference local suffix_243
+//                           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/
+//                                ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                                              ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/mask32Lo().
+//                                                       ^^^^^^ reference local suffix_243
+//                                                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                                          ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+      else if (suffix <= 96) u128.UInt128(0, mask32Lo(suffix - 64), math.maxUInt32, math.maxUInt32)
+//             ^^^^^^ reference local suffix_243
+//                           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/
+//                                ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                                           ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/mask32Lo().
+//                                                    ^^^^^^ reference local suffix_243
+//                                                                  ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                                       ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                                                                  ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                                                       ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+      else u128.UInt128(mask32Lo(suffix - 96), math.maxUInt32, math.maxUInt32, math.maxUInt32)
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/
+//              ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/mask32Lo().
+//                               ^^^^^^ reference local suffix_243
+//                                             ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                  ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                                             ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                                  ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                                                             ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                                                  ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+  
+    /// reverse returns the PTR record name for this address.
+    function reverse(): String = new IPv6Network { base = self; prefix = self.bitWidth }.reverse()
+//           ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#reverse().
+//           documentation
+//           > reverse returns the PTR record name for this address.
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                   ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#
+//                                                 ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#base.
+//                                                        ^^^^ reference local self_233
+//                                                              ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#prefix.
+//                                                                       ^^^^ reference local self_233
+//                                                                            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#bitWidth.
+//                                                                                       ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#reverse().
+  
+    /// return the ip address immediately after this one
+    function next(): IPv6Address = add(1)
+//           ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#next().
+//           documentation
+//           > return the ip address immediately after this one
+//                   ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#
+//                                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#add().
+  
+    /// return the ip address [n] after this one
+    function add(n: UInt32): IPv6Address = (self) { repr = self.repr.add(u128.UInt128(0, 0, 0, n)) }
+//           ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#add().
+//           documentation
+//           > return the ip address [`n`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L256,C16) after this one
+//               ^ definition local n_256
+//                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt32#
+//                           ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#
+//                                          ^^^^ reference local self_233
+//                                                  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                                                         ^^^^ reference local self_233
+//                                                              ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                                                                   ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#add().
+//                                                                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/
+//                                                                            ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                                                                                             ^ reference local n_256
+  
+    /// Returns the [IPv6Address] in the canonical style described by [RFC 5952](https://tools.ietf.org/html/rfc5952).
+    ///
+    /// This includes returning the address in the alternative IPv4-suffixed format if it is [IPv4-mapped][isIPv4Mapped]
+    /// or [IPv4-embedded][isIPv4Embedded].
+    function toString(): IPv6AddressString = _compressIPv6Groups(new Listing {
+//           ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#toString().
+//           documentation
+//           > Returns the [`IPv6Address`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L199,C7) in the canonical style described by [RFC 5952](https://tools.ietf.org/html/rfc5952).
+//           > 
+//           > This includes returning the address in the alternative IPv4-suffixed format if it is [`IPv4-mapped`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L216,C3)
+//           > or [`IPv4-embedded`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L221,C3).
+//                       ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+//                                           ^^^^^^^^^^^^^^^^^^^ reference local _compressIPv6Groups_470
+//                                                                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+      repr.hihi.ushr(16).toRadixString(16)
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#ushr().
+//                       ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toRadixString().
+      repr.hihi.and(math.maxUInt16).toRadixString(16)
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                       ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt16.
+//                                  ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toRadixString().
+      repr.hilo.ushr(16).toRadixString(16)
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#ushr().
+//                       ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toRadixString().
+      repr.hilo.and(math.maxUInt16).toRadixString(16)
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                       ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt16.
+//                                  ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toRadixString().
+      repr.lohi.ushr(16).toRadixString(16)
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#ushr().
+//                       ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toRadixString().
+      repr.lohi.and(math.maxUInt16).toRadixString(16)
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                       ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt16.
+//                                  ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toRadixString().
+      when (isIPv4Mapped || isIPv4Embedded) {
+//          ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isIPv4Mapped.
+//                          ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isIPv4Embedded.
+        new Listing {
+//          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+          repr.lolo.ushr(24).toString()
+//        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#ushr().
+//                           ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toString().
+          repr.lolo.ushr(16).and(0xFF).toString()
+//        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#ushr().
+//                           ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                                     ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toString().
+          repr.lolo.ushr(8).and(0xFF).toString()
+//        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#ushr().
+//                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                                    ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toString().
+          repr.lolo.and(0xFF).toString()
+//        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+//                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                            ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toString().
+        }.join(".")
+//        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#join().
+      } else {
+        repr.lolo.ushr(16).toRadixString(16)
+//      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+//                ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#ushr().
+//                         ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toRadixString().
+        repr.lolo.and(math.maxUInt16).toRadixString(16)
+//      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+//                ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                    ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                         ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt16.
+//                                    ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toRadixString().
+      }
+    }.join(":")) + (scopeId.ifNonNull((id) -> "%\(id)") ?? "")
+//    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#join().
+//                  ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+//                          ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#ifNonNull().
+//                                     ^^ definition local id_280
+//                                                ^^ reference local id_280
+  
+    /// Returns the [IPv6Address] as a string in expanded form.
+    ///
+    /// Example:
+    /// ```
+    /// IPv6Address("fe80::1").toExpandedString() == "fe80:0000:0000:0000:0000:0000:0000:0001"
+    /// ```
+    function toExpandedString(): IPv6AddressString = expandIPv6AddressString(new Listing {
+//           ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#toExpandedString().
+//           documentation
+//           > Returns the [`IPv6Address`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L199,C7) as a string in expanded form.
+//           > 
+//           > Example:
+//           > ```
+//           > IPv6Address("fe80::1").toExpandedString() == "fe80:0000:0000:0000:0000:0000:0000:0001"
+//           > ```
+//                               ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+//                                                   ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/expandIPv6AddressString().
+//                                                                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+      repr.hihi.ushr(16).toRadixString(16)
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#ushr().
+//                       ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toRadixString().
+      repr.hihi.and(math.maxUInt16).toRadixString(16)
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                       ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt16.
+//                                  ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toRadixString().
+      repr.hilo.ushr(16).toRadixString(16)
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#ushr().
+//                       ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toRadixString().
+      repr.hilo.and(math.maxUInt16).toRadixString(16)
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                       ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt16.
+//                                  ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toRadixString().
+      repr.lohi.ushr(16).toRadixString(16)
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#ushr().
+//                       ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toRadixString().
+      repr.lohi.and(math.maxUInt16).toRadixString(16)
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                       ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt16.
+//                                  ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toRadixString().
+      repr.lolo.ushr(16).toRadixString(16)
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+//              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#ushr().
+//                       ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toRadixString().
+      repr.lolo.and(math.maxUInt16).toRadixString(16)
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+//              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                       ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt16.
+//                                  ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toRadixString().
+    }.join(":")) + (scopeId.ifNonNull((id) -> "%\(id)") ?? "")
+//    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#join().
+//                  ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+//                          ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#ifNonNull().
+//                                     ^^ definition local id_297
+//                                                ^^ reference local id_297
+  }
+  
+  /// Creates an [IPNetwork] from an IPv4 or IPv6 CIDR block string
+  function IPNetwork(cidr: IPCIDRString): IPNetwork =
+//         ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPNetwork().
+//         documentation
+//         > Creates an [`IPNetwork`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L101,C11) from an IPv4 or IPv6 CIDR block string
+//                   ^^^^ definition local cidr_301
+//                         ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPCIDRString#
+//                                        ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPNetwork#
+    if (cidr is IPv4CIDRString) IPv4Network(cidr)
+//      ^^^^ reference local cidr_301
+//              ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4CIDRString#
+//                              ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network().
+//                                          ^^^^ reference local cidr_301
+    else if (cidr is IPv6CIDRString) IPv6Network(cidr)
+//           ^^^^ reference local cidr_301
+//                   ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6CIDRString#
+//                                   ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network().
+//                                               ^^^^ reference local cidr_301
+    else throw("Invalid network CIDR: \(cidr)")
+//                                      ^^^^ reference local cidr_301
+  
+  /// Creates an [IPv4Network] from an IPv4 CIDR block string
+  function IPv4Network(cidr: IPv4CIDRString): IPv4Network = new {
+//         ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network().
+//         documentation
+//         > Creates an [`IPv4Network`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L313,C7) from an IPv4 CIDR block string
+//                     ^^^^ definition local cidr_307
+//                           ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4CIDRString#
+//                                            ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#
+    base = IPv4Address(cidr.split("/").first)
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/base.
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address().
+//                     ^^^^ reference local cidr_307
+//                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+//                                     ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#first.
+    prefix = cidr.split("/").last.toInt()
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/prefix.
+//           ^^^^ reference local cidr_307
+//                ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+//                           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#last.
+//                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toInt().
+  }
+  
+  /// An IPv4 network.
+  class IPv4Network {
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#
+//      documentation
+//      > An IPv4 network.
+    /// The base address of this network
+    base: IPv4Address
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#base.
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#
+  
+    /// The CIDR prefix of this network
+    prefix: UInt(isBetween(0, bitWidth))
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#prefix.
+//          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+//               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#isBetween().
+//                            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#bitWidth.
+  
+    fixed hidden bitWidth = base.bitWidth
+//               ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#bitWidth.
+//                          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#base.
+//                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#bitWidth.
+  
+    const hidden reverseBitResolution: UInt = 8
+//               ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#reverseBitResolution.
+//                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+  
+    local self = this
+//        ^^^^ definition local self_324
+  
+    /// The first address in this network.
+    /// Will be equivalent to [lastAddress] when [prefix] is equal to [bitWidth].
+    fixed firstAddress: IPv4Address = new { repr = base.repr.and(base.maskHi(prefix)) }
+//        ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#firstAddress.
+//        documentation
+//        > The first address in this network.
+//        > Will be equivalent to [`lastAddress`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L332,C3) when [`prefix`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L318,C3) is equal to [`bitWidth`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L320,C3).
+//                      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#
+//                                          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#repr.
+//                                                 ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#base.
+//                                                      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#repr.
+//                                                           ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                                                               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#base.
+//                                                                    ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#maskHi().
+//                                                                           ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#prefix.
+  
+    /// The last address in this network.
+    /// Will be equivalent to [firstAddress] when [prefix] is equal to [bitWidth].
+    fixed lastAddress: IPv4Address = new { repr = base.repr.or(base.maskLo(bitWidth - prefix)) }
+//        ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#lastAddress.
+//        documentation
+//        > The last address in this network.
+//        > Will be equivalent to [`firstAddress`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L328,C3) when [`prefix`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L318,C3) is equal to [`bitWidth`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L320,C3).
+//                     ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#
+//                                         ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#repr.
+//                                                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#base.
+//                                                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#repr.
+//                                                          ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//                                                             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#base.
+//                                                                  ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#maskLo().
+//                                                                         ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#bitWidth.
+//                                                                                    ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#prefix.
+  
+    /// Return the subnet-mask for this network.
+    function getSubnetMask(): IPv4AddressString = new IPv4Address { repr = base.maskHi(prefix) }.toString()
+//           ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#getSubnetMask().
+//           documentation
+//           > Return the subnet-mask for this network.
+//                            ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+//                                                    ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#
+//                                                                  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#repr.
+//                                                                         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#base.
+//                                                                              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#maskHi().
+//                                                                                     ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#prefix.
+//                                                                                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#toString().
+  
+    /// Return true if this network contains [ip].
+    function contains(ip: IPv4Address): Boolean = firstAddress.repr <= ip.repr && ip.repr <= lastAddress.repr
+//           ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#contains().
+//           documentation
+//           > Return true if this network contains [`ip`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L338,C21).
+//                    ^^ definition local ip_338
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#
+//                                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                                                ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#firstAddress.
+//                                                             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#repr.
+//                                                                     ^^ reference local ip_338
+//                                                                        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#repr.
+//                                                                                ^^ reference local ip_338
+//                                                                                   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#repr.
+//                                                                                           ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#lastAddress.
+//                                                                                                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#repr.
+  
+    /// Generate the name of the reverse DNS zone for this network.
+    function reverse(): String = base.toString().split(".").take(prefix ~/ reverseBitResolution).reverse().join(".") + ".in-addr.arpa"
+//           ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#reverse().
+//           documentation
+//           > Generate the name of the reverse DNS zone for this network.
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#base.
+//                                    ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#toString().
+//                                               ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+//                                                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#take().
+//                                                               ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#prefix.
+//                                                                         ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#reverseBitResolution.
+//                                                                                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#reverse().
+//                                                                                                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  
+    /// Calculate all subnets of this network with prefix [target].
+    /// For example, given IPv4Network("10.53.120.0/21").subdivideTo(24), it outputs 8 /24 networks
+    function subdivideTo(target: UInt(isBetween(0, bitWidth) && this >= prefix)): Listing<IPv4Network> =
+//           ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#subdivideTo().
+//           documentation
+//           > Calculate all subnets of this network with prefix [`target`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L345,C24).
+//           > For example, given IPv4Network("10.53.120.0/21").subdivideTo(24), it outputs 8 /24 networks
+//                       ^^^^^^ definition local target_345
+//                               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+//                                    ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#isBetween().
+//                                                 ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#bitWidth.
+//                                                                      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#prefix.
+//                                                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                                                                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#
+      if (prefix == target) new { self }
+//        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#prefix.
+//                  ^^^^^^ reference local target_345
+//                                ^^^^ reference local self_324
+      else new {
+        ...new IPv4Network { base = self.base; prefix = self.prefix + 1 }.subdivideTo(target)
+//             ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#
+//                           ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#base.
+//                                  ^^^^ reference local self_324
+//                                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#base.
+//                                             ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#prefix.
+//                                                      ^^^^ reference local self_324
+//                                                           ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#prefix.
+//                                                                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#subdivideTo().
+//                                                                                    ^^^^^^ reference local target_345
+        ...new IPv4Network { base = new { repr = self.base.repr + 1.shl(bitWidth - self.prefix - 1) }; prefix = self.prefix + 1 }.subdivideTo(target)
+//             ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#
+//                           ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#base.
+//                                        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#repr.
+//                                               ^^^^ reference local self_324
+//                                                    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#base.
+//                                                         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#repr.
+//                                                                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shl().
+//                                                                      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#bitWidth.
+//                                                                                 ^^^^ reference local self_324
+//                                                                                      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#prefix.
+//                                                                                                     ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#prefix.
+//                                                                                                              ^^^^ reference local self_324
+//                                                                                                                   ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#prefix.
+//                                                                                                                                ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#subdivideTo().
+//                                                                                                                                            ^^^^^^ reference local target_345
+      }
+  
+    function toString(): String = "\(base.toString())/\(prefix)"
+//           ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#toString().
+//           documentation
+//           > Returns a string representation of `this`.
+//           > 
+//           > This method is used to convert the values of string interpolation expressions to strings.
+//                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#base.
+//                                        ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#toString().
+//                                                      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Network#prefix.
+  }
+  
+  /// Produces a listing of IPv4 addresses between [start] and [end], inclusive.
+  function IPv4Range(start: IPv4Address, end: IPv4Address): Listing<IPv4Address> = new {
+//         ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Range().
+//         documentation
+//         > Produces a listing of IPv4 addresses between [`start`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L356,C20) and [`end`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L356,C40), inclusive.
+//                   ^^^^^ definition local start_356
+//                          ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#
+//                                       ^^^ definition local end_356
+//                                            ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#
+//                                                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                                                  ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#
+    for (ipu in IntSeq(start.repr, end.repr)) {
+//       ^^^ definition local ipu_357
+//              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/IntSeq().
+//                     ^^^^^ reference local start_356
+//                           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#repr.
+//                                 ^^^ reference local end_356
+//                                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#repr.
+      new { repr = ipu }
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/repr.
+//                 ^^^ reference local ipu_357
+    }
+  }
+  
+  /// Creates an [IPv6Network] from an IPv6 CIDR block string
+  function IPv6Network(cidr: IPv6CIDRString): IPv6Network = new {
+//         ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network().
+//         documentation
+//         > Creates an [`IPv6Network`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L369,C7) from an IPv6 CIDR block string
+//                     ^^^^ definition local cidr_363
+//                           ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6CIDRString#
+//                                            ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#
+    base = IPv6Address(cidr.split("/").first)
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/base.
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                     ^^^^ reference local cidr_363
+//                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+//                                     ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#first.
+    prefix = cidr.split("/").last.toInt()
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/prefix.
+//           ^^^^ reference local cidr_363
+//                ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+//                           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#last.
+//                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toInt().
+  }
+  
+  /// An IPv6 network.
+  class IPv6Network {
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#
+//      documentation
+//      > An IPv6 network.
+    /// The base address of this network
+    base: IPv6Address
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#base.
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#
+  
+    /// The CIDR prefix of this network
+    prefix: UInt(isBetween(0, bitWidth))
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#prefix.
+//          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+//               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#isBetween().
+//                            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#bitWidth.
+  
+    fixed hidden bitWidth = base.bitWidth
+//               ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#bitWidth.
+//                          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#base.
+//                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#bitWidth.
+  
+    const hidden reverseBitResolution: UInt = 4
+//               ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#reverseBitResolution.
+//                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+  
+    local self = this
+//        ^^^^ definition local self_380
+  
+    /// The first address in this network.
+    /// Will be equivalent to [lastAddress] when [prefix] is equal to [bitWidth].
+    fixed firstAddress: IPv6Address = (base) { repr = base.repr.and(base.maskHi(prefix)) }
+//        ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#firstAddress.
+//        documentation
+//        > The first address in this network.
+//        > Will be equivalent to [`lastAddress`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L388,C3) when [`prefix`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L374,C3) is equal to [`bitWidth`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L376,C3).
+//                      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#
+//                                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#base.
+//                                             ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#repr.
+//                                                    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#base.
+//                                                         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                                                              ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#and().
+//                                                                  ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#base.
+//                                                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#maskHi().
+//                                                                              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#prefix.
+  
+    /// The last address in this network.
+    /// Will be equivalent to [firstAddress] when [prefix] is equal to [bitWidth].
+    fixed lastAddress: IPv6Address = (base) { repr = base.repr.or(base.maskLo(bitWidth - prefix)) }
+//        ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#lastAddress.
+//        documentation
+//        > The last address in this network.
+//        > Will be equivalent to [`firstAddress`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L384,C3) when [`prefix`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L374,C3) is equal to [`bitWidth`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L376,C3).
+//                     ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#
+//                                    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#base.
+//                                            ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#repr.
+//                                                   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#base.
+//                                                        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                                                             ^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#or().
+//                                                                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#base.
+//                                                                     ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#maskLo().
+//                                                                            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#bitWidth.
+//                                                                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#prefix.
+  
+    /// Return true if this network contains [ip].
+    ///
+    /// If both [base.scopeId][IPv6Address.scopeId] and [ip.scopeId][IPv6Address.scopeId] are non-[null], they must match.
+    /// If either is [null] then scope ID is ignored.
+    function contains(ip: IPv6Address): Boolean = firstAddress.repr.le(ip.repr) && ip.repr.le(lastAddress.repr) &&
+//           ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#contains().
+//           documentation
+//           > Return true if this network contains [`ip`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L394,C21).
+//           > 
+//           > If both [`base.scopeId`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L205,C3) and [`ip.scopeId`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L205,C3) are non-`null`, they must match.
+//           > If either is `null` then scope ID is ignored.
+//                    ^^ definition local ip_394
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#
+//                                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                                                ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#firstAddress.
+//                                                             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                                                                  ^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#le().
+//                                                                     ^^ reference local ip_394
+//                                                                        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                                                                                 ^^ reference local ip_394
+//                                                                                    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                                                                                         ^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#le().
+//                                                                                            ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#lastAddress.
+//                                                                                                        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+      (base.scopeId == ip.scopeId || base.scopeId == null || ip.scopeId == null)
+//     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#base.
+//          ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+//                     ^^ reference local ip_394
+//                        ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+//                                   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#base.
+//                                        ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+//                                                           ^^ reference local ip_394
+//                                                              ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+  
+    /// Generate the name of the reverse DNS zone for this network.
+    function reverse(): String = (base) { scopeId = null }.toExpandedString().replaceAll(":", "").chars.take(prefix ~/ reverseBitResolution).reverse().join(".") + ".ip6.arpa"
+//           ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#reverse().
+//           documentation
+//           > Generate the name of the reverse DNS zone for this network.
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#base.
+//                                        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#scopeId.
+//                                                         ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#toExpandedString().
+//                                                                            ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+//                                                                                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#chars.
+//                                                                                                      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#take().
+//                                                                                                           ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#prefix.
+//                                                                                                                     ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#reverseBitResolution.
+//                                                                                                                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#reverse().
+//                                                                                                                                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  
+    /// Calculate all subnets of this network with prefix [target].
+    ///
+    /// For example, given `IPv6Network("2620:149:a:960::/61").subdivideTo(64)`, it outputs 8 /64 networks
+    function subdivideTo(target: UInt(isBetween(0, bitWidth) && this >= prefix)): Listing<IPv6Network> =
+//           ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#subdivideTo().
+//           documentation
+//           > Calculate all subnets of this network with prefix [`target`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L403,C24).
+//           > 
+//           > For example, given `IPv6Network("2620:149:a:960::/61").subdivideTo(64)`, it outputs 8 /64 networks
+//                       ^^^^^^ definition local target_403
+//                               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+//                                    ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#isBetween().
+//                                                 ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#bitWidth.
+//                                                                      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#prefix.
+//                                                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                                                                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#
+      if (prefix == target) new { self }
+//        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#prefix.
+//                  ^^^^^^ reference local target_403
+//                                ^^^^ reference local self_380
+      else new {
+        ...(self) { prefix = self.prefix + 1 }.subdivideTo(target)
+//          ^^^^ reference local self_380
+//                  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#prefix.
+//                           ^^^^ reference local self_380
+//                                ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#prefix.
+//                                             ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#subdivideTo().
+//                                                         ^^^^^^ reference local target_403
+        ...(self) { base { repr = self.base.repr.add(u128.one.shl(bitWidth - self.prefix - 1)) }; prefix = self.prefix + 1 }.subdivideTo(target)
+//          ^^^^ reference local self_380
+//                  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#base.
+//                         ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#repr.
+//                                ^^^^ reference local self_380
+//                                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#base.
+//                                          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                                               ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#add().
+//                                                   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/
+//                                                        ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/one.
+//                                                            ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#shl().
+//                                                                ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#bitWidth.
+//                                                                           ^^^^ reference local self_380
+//                                                                                ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#prefix.
+//                                                                                                ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#prefix.
+//                                                                                                         ^^^^ reference local self_380
+//                                                                                                              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#prefix.
+//                                                                                                                           ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#subdivideTo().
+//                                                                                                                                       ^^^^^^ reference local target_403
+      }
+  
+    function toString(): String = "\(base)/\(prefix)"
+//           ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#toString().
+//           documentation
+//           > Returns a string representation of `this`.
+//           > 
+//           > This method is used to convert the values of string interpolation expressions to strings.
+//                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#base.
+//                                           ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#prefix.
+  }
+  
+  /// Produces a listing of IPv6 addresses between [start] and [end], inclusive.
+  ///
+  /// If both [start.scopeId][IPv6Address.scopeId] and [end.scopeId][IPv6Address.scopeId] are equal, the resulting
+  /// addresses will have the same scope ID, otherwise their [scopeId][IPv6Address.scopeId] will be [null].
+  function IPv6Range(start: IPv6Address, end: IPv6Address): Listing<IPv6Address> = new {
+//         ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Range().
+//         documentation
+//         > Produces a listing of IPv6 addresses between [`start`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L417,C20) and [`end`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L417,C40), inclusive.
+//         > 
+//         > If both [`start.scopeId`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L205,C3) and [`end.scopeId`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L205,C3) are equal, the resulting
+//         > addresses will have the same scope ID, otherwise their [`scopeId`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L205,C3) will be `null`.
+//                   ^^^^^ definition local start_417
+//                          ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#
+//                                       ^^^ definition local end_417
+//                                            ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#
+//                                                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                                                  ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#
+    local _scopeId = if (start.scopeId == end.scopeId) start.scopeId else null
+//        ^^^^^^^^ definition local _scopeId_418
+//                       ^^^^^ reference local start_417
+//                             ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+//                                        ^^^ reference local end_417
+//                                            ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+//                                                     ^^^^^ reference local start_417
+//                                                           ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+    for (ipu in start.repr.seq(end.repr)) {
+//       ^^^ definition local ipu_419
+//              ^^^^^ reference local start_417
+//                    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                         ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#seq().
+//                             ^^^ reference local end_417
+//                                 ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+      new { repr = ipu; scopeId = _scopeId }
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/repr.
+//                 ^^^ reference local ipu_419
+//                      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/scopeId.
+//                                ^^^^^^^^ reference local _scopeId_418
+    }
+  }
+  
+  // noinspection TypeMismatch
+  /// Canonicalizes IPv6 addresses by expanding each component to be 4 digits (zero-padded) and expanding `::`
+  ///
+  /// Given input `"123:45:6::7890"`, the output is `"0123:0045:0006:0000:0000:0000:0000:7890"`.
+  ///
+  /// If the input is in the alternate form with a trailing IPv4 address, the trailing IPv4 address will be kept intact,
+  /// although any leading zeroes on the IPv4 components will be dropped.
+  const function expandIPv6AddressString(_ip: IPv6AddressString): IPv6AddressString =
+//               ^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/expandIPv6AddressString().
+//               documentation
+//               > Canonicalizes IPv6 addresses by expanding each component to be 4 digits (zero-padded) and expanding `::`
+//               > 
+//               > Given input `"123:45:6::7890"`, the output is `"0123:0045:0006:0000:0000:0000:0000:7890"`.
+//               > 
+//               > If the input is in the alternate form with a trailing IPv4 address, the trailing IPv4 address will be kept intact,
+//               > although any leading zeroes on the IPv4 components will be dropped.
+//                                       ^^^ definition local _ip_431
+//                                            ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+//                                                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+    let (idx = _ip.lastIndexOfOrNull("%"))
+//       ^^^ definition local idx_432
+//             ^^^ reference local _ip_431
+//                 ^^^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#lastIndexOfOrNull().
+      if ((idx ?? _ip.length) == 39 && !_ip.contains(".")) _ip // assume it's already canonicalized
+//         ^^^ reference local idx_432
+//                ^^^ reference local _ip_431
+//                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+//                                      ^^^ reference local _ip_431
+//                                          ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#contains().
+//                                                         ^^^ reference local _ip_431
+      else
+        let (scope = idx.ifNonNull((it) -> _ip.drop(it)))
+//           ^^^^^ definition local scope_435
+//                   ^^^ reference local idx_432
+//                       ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#ifNonNull().
+//                                  ^^ definition local it_435
+//                                         ^^^ reference local _ip_431
+//                                             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#drop().
+//                                                  ^^ reference local it_435
+        let (ip = idx.ifNonNull((it) -> _ip.take(it)) ?? _ip)
+//           ^^ definition local ip_436
+//                ^^^ reference local idx_432
+//                    ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#ifNonNull().
+//                               ^^ definition local it_436
+//                                      ^^^ reference local _ip_431
+//                                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#take().
+//                                               ^^ reference local it_436
+//                                                       ^^^ reference local _ip_431
+        let (ipIdx = ip.indexOfOrNull(Regex(":\(ipv4String)$")))
+//           ^^^^^ definition local ipIdx_437
+//                   ^^ reference local ip_436
+//                      ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#indexOfOrNull().
+//                                    ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+//                                              ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/ipv4String.
+        let (ipv4 = ipIdx.ifNonNull((it) -> ip.drop(it).replaceAll(Regex("0+(?=[0-9])"), "")))
+//           ^^^^ definition local ipv4_438
+//                  ^^^^^ reference local ipIdx_437
+//                        ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#ifNonNull().
+//                                   ^^ definition local it_438
+//                                          ^^ reference local ip_436
+//                                             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#drop().
+//                                                  ^^ reference local it_438
+//                                                      ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+//                                                                 ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+        let (ip = ipIdx.ifNonNull((it) -> if (ip[it-1] == ":") ip.take(it+1) else ip.take(it)) ?? ip)
+//           ^^ definition local ip_439
+//                ^^^^^ reference local ipIdx_437
+//                      ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#ifNonNull().
+//                                 ^^ definition local it_439
+//                                            ^^ reference local ip_436
+//                                               ^^ reference local it_439
+//                                                             ^^ reference local ip_436
+//                                                                ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#take().
+//                                                                     ^^ reference local it_439
+//                                                                                ^^ reference local ip_436
+//                                                                                   ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#take().
+//                                                                                        ^^ reference local it_439
+//                                                                                                ^^ reference local ip_436
+        let (ip = if (ip.endsWith("::")) ip + "0" else ip)
+//           ^^ definition local ip_440
+//                    ^^ reference local ip_439
+//                       ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#endsWith().
+//                                       ^^ reference local ip_439
+//                                                     ^^ reference local ip_439
+        let (groupCount = if (ipv4 == null) 8 else 6)
+//           ^^^^^^^^^^ definition local groupCount_441
+//                            ^^^^ reference local ipv4_438
+        let (stuff = ip.split("::").map((half) -> half.split(":").map((octet) -> octet.padStart(4, "0"))))
+//           ^^^^^ definition local stuff_442
+//                   ^^ reference local ip_440
+//                      ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+//                                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                                       ^^^^ definition local half_442
+//                                                ^^^^ reference local half_442
+//                                                     ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+//                                                                ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                                                                     ^^^^^ definition local octet_442
+//                                                                               ^^^^^ reference local octet_442
+//                                                                                     ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#padStart().
+          (if (stuff.length == 1) stuff.first.join(":")
+//             ^^^^^ reference local stuff_442
+//                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#length.
+//                                ^^^^^ reference local stuff_442
+//                                      ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#first.
+//                                            ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+          else if (stuff.length == 2) (stuff.first + List("0000").repeat(groupCount - stuff.first.length - stuff.last.length) + stuff.last).join(":")
+//                 ^^^^^ reference local stuff_442
+//                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#length.
+//                                     ^^^^^ reference local stuff_442
+//                                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#first.
+//                                                   ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                                                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#repeat().
+//                                                                       ^^^^^^^^^^ reference local groupCount_441
+//                                                                                    ^^^^^ reference local stuff_442
+//                                                                                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#first.
+//                                                                                                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#length.
+//                                                                                                         ^^^^^ reference local stuff_442
+//                                                                                                               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#last.
+//                                                                                                                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#length.
+//                                                                                                                              ^^^^^ reference local stuff_442
+//                                                                                                                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#last.
+//                                                                                                                                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+          else throw("unintelligible IPv6 address: " + _ip))
+//                                                     ^^^ reference local _ip_431
+          + (ipv4 ?? "") + (scope ?? "")
+//           ^^^^ reference local ipv4_438
+//                          ^^^^^ reference local scope_435
+  
+  // noinspection TypeMismatch
+  /// Compresses IPv6 addresses by stripping leading zeros from each component and collapsing repeated zero components to `::`.
+  ///
+  /// Given input `"0123:0045:0006:0000:0000:0000:0000:7890"`, the output is `"123:45:6::7890"`.
+  ///
+  /// If there are multiple possible spans of zeroes to collapse, the longest span is chosen. If there are multiple
+  /// candidates for longest span, the first such span is chosen. The output is consistent with
+  /// [RFC5952 §4.2.3](https://datatracker.ietf.org/doc/html/rfc5952#section-4.2.3).
+  const function compressIPv6AddressString(ip: IPv6AddressString): IPv6AddressString =
+//               ^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/compressIPv6AddressString().
+//               documentation
+//               > Compresses IPv6 addresses by stripping leading zeros from each component and collapsing repeated zero components to `::`.
+//               > 
+//               > Given input `"0123:0045:0006:0000:0000:0000:0000:7890"`, the output is `"123:45:6::7890"`.
+//               > 
+//               > If there are multiple possible spans of zeroes to collapse, the longest span is chosen. If there are multiple
+//               > candidates for longest span, the first such span is chosen. The output is consistent with
+//               > [RFC5952 §4.2.3](https://datatracker.ietf.org/doc/html/rfc5952#section-4.2.3).
+//                                         ^^ definition local ip_456
+//                                             ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+//                                                                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+    let (ip = expandIPv6AddressString(ip).toLowerCase())
+//       ^^ definition local ip_457
+//            ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/expandIPv6AddressString().
+//                                    ^^ reference local ip_456
+//                                        ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toLowerCase().
+    let (idx = ip.lastIndexOfOrNull("%"))
+//       ^^^ definition local idx_458
+//             ^^ reference local ip_457
+//                ^^^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#lastIndexOfOrNull().
+    let (scope = idx.ifNonNull((it) -> ip.drop(it).replaceFirst(Regex("^%0+(?=[0-9])"), "%")))
+//       ^^^^^ definition local scope_459
+//               ^^^ reference local idx_458
+//                   ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#ifNonNull().
+//                              ^^ definition local it_459
+//                                     ^^ reference local ip_457
+//                                        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#drop().
+//                                             ^^ reference local it_459
+//                                                 ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceFirst().
+//                                                              ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+    let (ip = idx.ifNonNull((it) -> ip.take(it)) ?? ip)
+//       ^^ definition local ip_460
+//            ^^^ reference local idx_458
+//                ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#ifNonNull().
+//                           ^^ definition local it_460
+//                                  ^^ reference local ip_457
+//                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#take().
+//                                          ^^ reference local it_460
+//                                                  ^^ reference local ip_457
+    let (trimmed = ip.split(":").map((octet) ->
+//       ^^^^^^^ definition local trimmed_461
+//                 ^^ reference local ip_460
+//                    ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+//                               ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                                    ^^^^^ definition local octet_461
+      if (octet == "0000") "0"
+//        ^^^^^ reference local octet_461
+      else if (octet.contains(".")) octet // must be a trailing IPv4 address
+//             ^^^^^ reference local octet_461
+//                   ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#contains().
+//                                  ^^^^^ reference local octet_461
+      else octet.dropWhile((c) -> c == "0")
+//         ^^^^^ reference local octet_461
+//               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#dropWhile().
+//                          ^ definition local c_464
+//                                ^ reference local c_464
+    ).join(":"))
+//    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+    _compressIPv6Groups(trimmed) + (scope ?? "")
+//  ^^^^^^^^^^^^^^^^^^^ reference local _compressIPv6Groups_470
+//                      ^^^^^^^ reference local trimmed_461
+//                                  ^^^^^ reference local scope_459
+  
+  // Performs only the portion of IPv6 address canonicalization that is replacing the longest sequence of zeroes
+  // with `::`.
+  local const function _compressIPv6Groups(ip: String): IPv6AddressString =
+//                     ^^^^^^^^^^^^^^^^^^^ definition local _compressIPv6Groups_470
+//                                         ^^ definition local ip_470
+//                                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+    let (match = Regex(#"(?<=:|^)(?:0:)+0(?=:|$)"#).findMatchesIn(ip).maxByOrNull((it) -> it.value.length))
+//       ^^^^^ definition local match_471
+//               ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+//                                                  ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex#findMatchesIn().
+//                                                                ^^ reference local ip_470
+//                                                                    ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#maxByOrNull().
+//                                                                                 ^^ definition local it_471
+//                                                                                        ^^ reference local it_471
+//                                                                                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/RegexMatch#value.
+//                                                                                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+      if (match == null) ip // no groups to replace with ::
+//        ^^^^^ reference local match_471
+//                       ^^ reference local ip_470
+      else if (match.start == 0 && match.end == ip.length) "::"
+//             ^^^^^ reference local match_471
+//                   ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/RegexMatch#start.
+//                                 ^^^^^ reference local match_471
+//                                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/RegexMatch#end.
+//                                              ^^ reference local ip_470
+//                                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+      else if (match.start == 0 || match.end == ip.length) ip.replaceRange(match.start, match.end, ":")
+//             ^^^^^ reference local match_471
+//                   ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/RegexMatch#start.
+//                                 ^^^^^ reference local match_471
+//                                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/RegexMatch#end.
+//                                              ^^ reference local ip_470
+//                                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+//                                                         ^^ reference local ip_470
+//                                                            ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceRange().
+//                                                                         ^^^^^ reference local match_471
+//                                                                               ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/RegexMatch#start.
+//                                                                                      ^^^^^ reference local match_471
+//                                                                                            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/RegexMatch#end.
+      else ip.replaceRange(match.start, match.end, "")
+//         ^^ reference local ip_470
+//            ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceRange().
+//                         ^^^^^ reference local match_471
+//                               ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/RegexMatch#start.
+//                                      ^^^^^ reference local match_471
+//                                            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/RegexMatch#end.
+  
+  function MACAddress(mac: MACAddressString): MACAddress = new {
+//         ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/MACAddress().
+//                    ^^^ definition local mac_477
+//                         ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/MACAddressString#
+//                                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/MACAddress#
+    repr = mac.split(Regex("[.:-]")).map((octet) -> parseHexOctet(octet))
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/repr.
+//         ^^^ reference local mac_477
+//             ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+//                   ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+//                                   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                                        ^^^^^ definition local octet_478
+//                                                  ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/parseHexOctet().
+//                                                                ^^^^^ reference local octet_478
+  }
+  
+  class MACAddress {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/MACAddress#
+    hidden repr: List<UInt8>(length == 6)
+//         ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/MACAddress#repr.
+//               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                    ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt8#
+//                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#length.
+  
+    local self = this
+//        ^^^^ definition local self_484
+  
+    function toString(): MACAddressString = repr.map((octet) -> octet.toRadixString(16).padStart(2, "0")).join(":")
+//           ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/MACAddress#toString().
+//           documentation
+//           > Returns a string representation of `this`.
+//           > 
+//           > This method is used to convert the values of string interpolation expressions to strings.
+//                       ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/MACAddressString#
+//                                          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/MACAddress#repr.
+//                                               ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                                                    ^^^^^ definition local octet_486
+//                                                              ^^^^^ reference local octet_486
+//                                                                    ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toRadixString().
+//                                                                                      ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#padStart().
+//                                                                                                        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  
+    function eui64(addr: IPv6Address): IPv6Address = new {
+//           ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/MACAddress#eui64().
+//                 ^^^^ definition local addr_488
+//                       ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#
+//                                     ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#
+      repr = u128.UInt128(
+//    ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/MACAddress#repr.
+//           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/
+//                ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+        addr.repr.hihi,
+//      ^^^^ reference local addr_488
+//           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+        addr.repr.hilo,
+//      ^^^^ reference local addr_488
+//           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+        uint32FromBytes(self.repr[0].xor(0x02), self.repr[1], self.repr[2], 0xff),
+//      ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/uint32FromBytes().
+//                      ^^^^ reference local self_484
+//                           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/MACAddress#repr.
+//                                   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#xor().
+//                                              ^^^^ reference local self_484
+//                                                   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/MACAddress#repr.
+//                                                            ^^^^ reference local self_484
+//                                                                 ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/MACAddress#repr.
+        uint32FromBytes(0xfe, self.repr[3], self.repr[4], self.repr[5])
+//      ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/uint32FromBytes().
+//                            ^^^^ reference local self_484
+//                                 ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/MACAddress#repr.
+//                                          ^^^^ reference local self_484
+//                                               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/MACAddress#repr.
+//                                                        ^^^^ reference local self_484
+//                                                             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/MACAddress#repr.
+      )
+    }
+  }
+  
+  /// parseHex tranforms a single hexadecimal character into its unsigned integer representation.
+  function parseHex(digit: Char): UInt8 =
+//         ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/parseHex().
+//         documentation
+//         > parseHex tranforms a single hexadecimal character into its unsigned integer representation.
+//                  ^^^^^ definition local digit_499
+//                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Char#
+//                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt8#
+    let (d = digit.toLowerCase())
+//       ^ definition local d_500
+//           ^^^^^ reference local digit_499
+//                 ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toLowerCase().
+      "0123456789abcdef".chars.findIndexOrNull((it) -> it == d) ??
+//                       ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#chars.
+//                             ^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#findIndexOrNull().
+//                                              ^^ definition local it_501
+//                                                     ^^ reference local it_501
+//                                                           ^ reference local d_500
+        throw("Unrecognized hex digit: \(d)")
+//                                       ^ reference local d_500
+  
+  /// parseHexOctet tranforms a two hexadecimal characters into its unsigned integer representation.
+  function parseHexOctet(octet: String(length == 2)): UInt8 = byteLut[octet.toLowerCase()]
+//         ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/parseHexOctet().
+//         documentation
+//         > parseHexOctet tranforms a two hexadecimal characters into its unsigned integer representation.
+//                       ^^^^^ definition local octet_505
+//                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+//                                                    ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt8#
+//                                                            ^^^^^^^ reference local byteLut_514
+//                                                                    ^^^^^ reference local octet_505
+//                                                                          ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toLowerCase().
+  
+  /// parseHex32 transforms an 8 character hexidecimal string into its UInt32 representation.
+  function parseHex32(s: String(length == 8)): UInt32 =
+//         ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/parseHex32().
+//         documentation
+//         > parseHex32 transforms an 8 character hexidecimal string into its UInt32 representation.
+//                    ^ definition local s_508
+//                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+//                                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt32#
+    IntSeq(0, 7)
+//  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/IntSeq().
+      .step(2)
+//     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/IntSeq#step().
+      .map((it) -> s.substring(it, it + 2))
+//     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/IntSeq#map().
+//          ^^ definition local it_511
+//                 ^ reference local s_508
+//                   ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#substring().
+//                             ^^ reference local it_511
+//                                 ^^ reference local it_511
+      .fold(0, (acc, it) -> acc.shl(8) + parseHexOctet(it))
+//     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#fold().
+//              ^^^ definition local acc_512
+//                   ^^ definition local it_512
+//                          ^^^ reference local acc_512
+//                                       ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/parseHexOctet().
+//                                                     ^^ reference local it_512
+  
+  /// byteLut is a lookup table mapping a string of two lowercase hex digits (zero-padded) to the UInt8 value.
+  const local byteLut = IntSeq(0, 255).map((it) -> it).toMap((it) -> it.toRadixString(16).padStart(2, "0"), (it) -> it)
+//            ^^^^^^^ definition local byteLut_514
+//            documentation
+//            > byteLut is a lookup table mapping a string of two lowercase hex digits (zero-padded) to the UInt8 value.
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/IntSeq().
+//                                     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/IntSeq#map().
+//                                          ^^ definition local it_515
+//                                                 ^^ reference local it_515
+//                                                     ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#toMap().
+//                                                            ^^ definition local it_515
+//                                                                   ^^ reference local it_515
+//                                                                      ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toRadixString().
+//                                                                                        ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#padStart().
+//                                                                                                           ^^ definition local it_515
+//                                                                                                                  ^^ reference local it_515
+  
+  /// mask32Hi generates a mask of 1s in the top [prefix] bits of a [UInt32].
+  const function mask32Hi(prefix: UInt(isBetween(0, 32))): UInt32 = math.maxUInt32.ushr(32-prefix).shl(32-prefix)
+//               ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/mask32Hi().
+//               documentation
+//               > mask32Hi generates a mask of 1s in the top [`prefix`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L518,C25) bits of a [`UInt32`](pkl-lsp://stdlib/base.pkl#L956,C11).
+//                        ^^^^^^ definition local prefix_518
+//                                ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+//                                     ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#isBetween().
+//                                                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt32#
+//                                                                  ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                                       ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                                                                 ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#ushr().
+//                                                                                         ^^^^^^ reference local prefix_518
+//                                                                                                 ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shl().
+//                                                                                                        ^^^^^^ reference local prefix_518
+  /// mask32Lo generates a mask of 1s in the bottom [suffix] bits of a [UInt32].
+  const function mask32Lo(suffix: UInt(isBetween(0, 32))): UInt32 = math.maxUInt32.ushr(32-suffix)
+//               ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/mask32Lo().
+//               documentation
+//               > mask32Lo generates a mask of 1s in the bottom [`suffix`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/net.pkl#L520,C25) bits of a [`UInt32`](pkl-lsp://stdlib/base.pkl#L956,C11).
+//                        ^^^^^^ definition local suffix_520
+//                                ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+//                                     ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#isBetween().
+//                                                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt32#
+//                                                                  ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                                       ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                                                                 ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#ushr().
+//                                                                                         ^^^^^^ reference local suffix_520
+  
+  /// uint32FromBytes constructs a [UInt32] from four [UInt8] values.
+  const function uint32FromBytes(hihi: UInt8, hilo: UInt8, lohi: UInt8, lolo: UInt8): UInt32 =
+//               ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/uint32FromBytes().
+//               documentation
+//               > uint32FromBytes constructs a [`UInt32`](pkl-lsp://stdlib/base.pkl#L956,C11) from four [`UInt8`](pkl-lsp://stdlib/base.pkl#L950,C11) values.
+//                               ^^^^ definition local hihi_523
+//                                     ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt8#
+//                                            ^^^^ definition local hilo_523
+//                                                  ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt8#
+//                                                         ^^^^ definition local lohi_523
+//                                                               ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt8#
+//                                                                      ^^^^ definition local lolo_523
+//                                                                            ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt8#
+//                                                                                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt32#
+    hihi.shl(24).or(hilo.shl(16)).or(lohi.shl(8)).or(lolo)
+//  ^^^^ reference local hihi_523
+//       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shl().
+//               ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//                  ^^^^ reference local hilo_523
+//                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shl().
+//                                ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//                                   ^^^^ reference local lohi_523
+//                                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shl().
+//                                                ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//                                                   ^^^^ reference local lolo_523
+  

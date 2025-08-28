@@ -1,0 +1,212 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module pkl.experimental.syntax.DocCommentNode
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `DocCommentNode.pkl`/
+  
+  extends "Node.pkl"
+  
+  /// The doc comment itself, without the comment tokens (`///`).
+  value: String
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `DocCommentNode.pkl`/value.
+//documentation
+//> The doc comment itself, without the comment tokens (`///`).
+//       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  local function wrapTextImpl(words: List<String>, width: Int) =
+//               ^^^^^^^^^^^^ definition local wrapTextImpl_23
+//                            ^^^^^ definition local words_23
+//                                   ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                 ^^^^^ definition local width_23
+//                                                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+    words.fold(Pair("", ""), (pair, word) ->
+//  ^^^^^ reference local words_23
+//        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#fold().
+//             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+//                            ^^^^ definition local pair_24
+//                                  ^^^^ definition local word_24
+      let (result: String = pair.first)
+//         ^^^^^^ definition local result_25
+//                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                          ^^^^ reference local pair_24
+      let (currentLine: String = pair.second)
+//         ^^^^^^^^^^^ definition local currentLine_26
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                               ^^^^ reference local pair_24
+        if (currentLine.length + word.length > width)
+//          ^^^^^^^^^^^ reference local currentLine_26
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+//                               ^^^^ reference local word_24
+//                                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+//                                             ^^^^^ reference local width_23
+          Pair(
+//        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+            if (result == "") currentLine
+//              ^^^^^^ reference local result_25
+//                            ^^^^^^^^^^^ reference local currentLine_26
+            else result + "\n" + currentLine,
+//               ^^^^^^ reference local result_25
+//                               ^^^^^^^^^^^ reference local currentLine_26
+            word
+//          ^^^^ reference local word_24
+          )
+        else
+          Pair(
+//        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+            result,
+//          ^^^^^^ reference local result_25
+            if (currentLine == "") word
+//              ^^^^^^^^^^^ reference local currentLine_26
+//                                 ^^^^ reference local word_24
+            else currentLine + " " + word
+//               ^^^^^^^^^^^ reference local currentLine_26
+//                                   ^^^^ reference local word_24
+          )
+    )
+  
+  /// Wrap [text] at the specified column [width].
+  local function wrapParagraph(text: String, width: Int) =
+//               ^^^^^^^^^^^^^ definition local wrapParagraph_41
+//               documentation
+//               > Wrap [`text`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.syntax/DocCommentNode.pkl#L42,C30) at the specified column [`width`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.syntax/DocCommentNode.pkl#L42,C44).
+//                             ^^^^ definition local text_42
+//                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                           ^^^^^ definition local width_42
+//                                                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+    let (words = text.split(Regex("\\s+")))
+//       ^^^^^ definition local words_43
+//               ^^^^ reference local text_42
+//                    ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+//                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+    let (result = words.fold(Pair("", ""), (pair, word) ->
+//       ^^^^^^ definition local result_44
+//                ^^^^^ reference local words_43
+//                      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#fold().
+//                           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+//                                          ^^^^ definition local pair_44
+//                                                ^^^^ definition local word_44
+      let (aggregate: String = pair.first)
+//         ^^^^^^^^^ definition local aggregate_45
+//                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                             ^^^^ reference local pair_44
+      let (currentLine: String = pair.second)
+//         ^^^^^^^^^^^ definition local currentLine_46
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                               ^^^^ reference local pair_44
+        if (currentLine.length + word.length > width)
+//          ^^^^^^^^^^^ reference local currentLine_46
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+//                               ^^^^ reference local word_44
+//                                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+//                                             ^^^^^ reference local width_42
+          Pair(
+//        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+            if (aggregate == "") currentLine
+//              ^^^^^^^^^ reference local aggregate_45
+//                               ^^^^^^^^^^^ reference local currentLine_46
+            else aggregate + "\n" + currentLine,
+//               ^^^^^^^^^ reference local aggregate_45
+//                                  ^^^^^^^^^^^ reference local currentLine_46
+            word
+//          ^^^^ reference local word_44
+          )
+        else
+          Pair(
+//        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+            aggregate,
+//          ^^^^^^^^^ reference local aggregate_45
+            if (currentLine == "") word
+//              ^^^^^^^^^^^ reference local currentLine_46
+//                                 ^^^^ reference local word_44
+            else currentLine + " " + word
+//               ^^^^^^^^^^^ reference local currentLine_46
+//                                   ^^^^ reference local word_44
+          )
+      ))
+        List(result.first, result.second).filter((elem) -> !elem.isEmpty).join("\n")
+//      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//           ^^^^^^ reference local result_44
+//                  ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#first.
+//                         ^^^^^^ reference local result_44
+//                                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#second.
+//                                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#filter().
+//                                                ^^^^ definition local elem_60
+//                                                          ^^^^ reference local elem_60
+//                                                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#isEmpty.
+//                                                                        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  
+  local function wrapText(text: String, width: Int) =
+//               ^^^^^^^^ definition local wrapText_62
+//                        ^^^^ definition local text_62
+//                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                      ^^^^^ definition local width_62
+//                                             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+    let (paragraphs = text.split("\n\n"))
+//       ^^^^^^^^^^ definition local paragraphs_63
+//                    ^^^^ reference local text_62
+//                         ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+      paragraphs
+//    ^^^^^^^^^^ reference local paragraphs_63
+        .map((it) -> wrapParagraph(it, width))
+//       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//            ^^ definition local it_65
+//                   ^^^^^^^^^^^^^ reference local wrapParagraph_41
+//                                 ^^ reference local it_65
+//                                     ^^^^^ reference local width_62
+        .join("\n\n")
+//       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  
+  /// Configures this node to wrap lines when rendering.
+  hidden autoWrap: Boolean = false
+//       ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `DocCommentNode.pkl`/autoWrap.
+//       documentation
+//       > Configures this node to wrap lines when rendering.
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+  function render(currentIndent: String) =
+//         ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `DocCommentNode.pkl`/render().
+//                ^^^^^^^^^^^^^ definition local currentIndent_71
+//                               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    let (wrapped =
+//       ^^^^^^^ definition local wrapped_72
+      if (autoWrap) wrapText(value, maxColumnWidth - currentIndent.length)
+//        ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `DocCommentNode.pkl`/autoWrap.
+//                  ^^^^^^^^ reference local wrapText_62
+//                           ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `DocCommentNode.pkl`/value.
+//                                  ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/maxColumnWidth.
+//                                                   ^^^^^^^^^^^^^ reference local currentIndent_71
+//                                                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+      else value
+//         ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `DocCommentNode.pkl`/value.
+    )
+      wrapped
+//    ^^^^^^^ reference local wrapped_72
+        .split("\n")
+//       ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+        .map((line) ->
+//       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//            ^^^^ definition local line_78
+          if (line.isEmpty) "\(currentIndent)///"
+//            ^^^^ reference local line_78
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#isEmpty.
+//                             ^^^^^^^^^^^^^ reference local currentIndent_71
+          else "\(currentIndent)/// \(line)"
+//                ^^^^^^^^^^^^^ reference local currentIndent_71
+//                                    ^^^^ reference local line_78
+        )
+        .join("\n")
+//       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  

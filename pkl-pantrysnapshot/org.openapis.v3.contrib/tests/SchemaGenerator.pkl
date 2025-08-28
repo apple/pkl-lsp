@@ -1,0 +1,155 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module org.openapis.v3.contrib.tests.SchemaGenerator
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `tests/SchemaGenerator.pkl`/
+  
+  amends "pkl:test"
+  
+  import "fixtures/SelfReference.pkl"
+  import "../examples/SwallowSchema.pkl"
+  import "../SchemaGenerator.pkl"
+  import "../examples/Finch.pkl"
+  
+  import "@openapi/Schema.pkl"
+  
+  local schema = SchemaGenerator.generate(SwallowSchema.Swallow)
+//      ^^^^^^ definition local schema_27
+//               ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/
+//                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/generate().
+//                                        ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/
+//                                                      ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/Swallow#
+  
+  facts {
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `tests/SchemaGenerator.pkl`/facts.
+    ["recursive references throw an error"] {
+      module.catch(() -> SchemaGenerator.generate(SelfReference).output.text)
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                       ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/
+//                                       ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/generate().
+//                                                ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `tests/fixtures/SelfReference.pkl`/
+//                                                               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#output.
+//                                                                      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/FileOutput#text.
+        .startsWith("Invalid Schema: Unable to convert a schema that refers to itself.")
+//       ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#startsWith().
+    }
+    ["nullable values show up as nullable"] {
+      (schema.properties!!["airSpeed"] as Schema).nullable == true
+//     ^^^^^^ reference local schema_27
+//            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/properties.
+//                                        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/
+//                                                ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/nullable.
+    }
+    ["deprecated fields show up as deprecated"] {
+      (schema.properties!!["isDuck"] as Schema).deprecated == true
+//     ^^^^^^ reference local schema_27
+//            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/properties.
+//                                      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/
+//                                              ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/deprecated.
+    }
+    ["generates basic metadata"] {
+      schema.title == "Swallow"
+//    ^^^^^^ reference local schema_27
+//           ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/title.
+      schema.description == "This is a Swallow"
+//    ^^^^^^ reference local schema_27
+//           ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/description.
+    }
+    ["listings are encoded as arrays"] {
+      local nicknameSchema = schema.properties!!["nicknames"] as Schema
+//          ^^^^^^^^^^^^^^ definition local nicknameSchema_45
+//                           ^^^^^^ reference local schema_27
+//                                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/properties.
+//                                                               ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/
+      nicknameSchema.type == "array"
+//    ^^^^^^^^^^^^^^ reference local nicknameSchema_45
+//                   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/type.
+      nicknameSchema.items.type == "string"
+//    ^^^^^^^^^^^^^^ reference local nicknameSchema_45
+//                   ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/items.
+//                         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/type.
+    }
+    ["mappings are encoded as objects"] {
+      local tagsSchema = schema.properties!!["tags"] as Schema
+//          ^^^^^^^^^^ definition local tagsSchema_50
+//                       ^^^^^^ reference local schema_27
+//                              ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/properties.
+//                                                      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/
+      tagsSchema.type == "object"
+//    ^^^^^^^^^^ reference local tagsSchema_50
+//               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/type.
+      tagsSchema.additionalProperties.type == "string"
+//    ^^^^^^^^^^ reference local tagsSchema_50
+//               ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/additionalProperties.
+//                                    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/type.
+    }
+    ["classes are encoded as objects"] {
+      local friendSchema = schema.properties!!["bestFriend"] as Schema
+//          ^^^^^^^^^^^^ definition local friendSchema_55
+//                         ^^^^^^ reference local schema_27
+//                                ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/properties.
+//                                                              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/
+      friendSchema.type == "object"
+//    ^^^^^^^^^^^^ reference local friendSchema_55
+//                 ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/type.
+      friendSchema.properties.toMap().keys == Set("name", "isSwallow", "tags")
+//    ^^^^^^^^^^^^ reference local friendSchema_55
+//                 ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/properties.
+//                            ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+//                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#keys.
+//                                            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set().
+    }
+  }
+  
+  examples {
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `tests/SchemaGenerator.pkl`/examples.
+    ["converts a module"] {
+      local generator = new SchemaGenerator {
+//          ^^^^^^^^^ definition local generator_63
+//                          ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/
+        converters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `tests/SchemaGenerator.pkl`/converters.
+          [DataSize] {
+//         ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/DataSize#
+            title = "DataSize"
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `tests/SchemaGenerator.pkl`/title.
+            type = "string"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `tests/SchemaGenerator.pkl`/type.
+            description = "The size of data in [quantity][unit] representation."
+//          ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `tests/SchemaGenerator.pkl`/description.
+          }
+        }
+      }
+      generator.generate(SwallowSchema.Swallow).output.text
+//    ^^^^^^^^^ reference local generator_63
+//              ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/generate().
+//                       ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/
+//                                     ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/Swallow#
+//                                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#output.
+//                                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/FileOutput#text.
+    }
+    ["overwrite a property but inherit its type"] {
+      local generator = new SchemaGenerator {}
+//          ^^^^^^^^^ definition local generator_75
+//                          ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/
+      generator.generate(Finch).output.text
+//    ^^^^^^^^^ reference local generator_75
+//              ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/generate().
+//                       ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/Finch.pkl`/
+//                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#output.
+//                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/FileOutput#text.
+    }
+  }
+  

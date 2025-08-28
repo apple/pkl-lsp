@@ -1,0 +1,113 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module pkl.experimental.syntax.TypeAliasNode
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeAliasNode.pkl`/
+  
+  extends "Node.pkl"
+  
+  import "IdentifierNode.pkl"
+  import "TypeNode.pkl"
+  import "DocCommentNode.pkl"
+  import "AnnotationNode.pkl"
+  
+  docComment: DocCommentNode?
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeAliasNode.pkl`/docComment.
+//            ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `DocCommentNode.pkl`/
+  
+  name: IdentifierNode
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeAliasNode.pkl`/name.
+//      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `IdentifierNode.pkl`/
+  
+  type: TypeNode
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeAliasNode.pkl`/type.
+//      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/
+  
+  annotations: Listing<AnnotationNode>?
+//^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeAliasNode.pkl`/annotations.
+//             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                     ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `AnnotationNode.pkl`/
+  
+  modifiers: Listing<"external"|"local">(isDistinct)?
+//^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeAliasNode.pkl`/modifiers.
+//           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                       ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#isDistinct.
+  
+  local function renderAlias(currentIndent: String) =
+//               ^^^^^^^^^^^ definition local renderAlias_35
+//                           ^^^^^^^^^^^^^ definition local currentIndent_35
+//                                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    let (typeRendered = type.render(currentIndent))
+//       ^^^^^^^^^^^^ definition local typeRendered_36
+//                      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeAliasNode.pkl`/type.
+//                           ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                                  ^^^^^^^^^^^^^ reference local currentIndent_35
+      new Listing {
+//        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+        renderHeader(currentIndent)
+//      ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeAliasNode.pkl`/renderHeader().
+//                   ^^^^^^^^^^^^^ reference local currentIndent_35
+        when (!typeRendered.startsWith("\n")) { // if the type is rendered starting on the next line, do not add a space
+//             ^^^^^^^^^^^^ reference local typeRendered_36
+//                          ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#startsWith().
+          " "
+        }
+        typeRendered
+//      ^^^^^^^^^^^^ reference local typeRendered_36
+      }.join("")
+//      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#join().
+  
+  function renderHeader(currentIndent: String) = new Listing {
+//         ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeAliasNode.pkl`/renderHeader().
+//                      ^^^^^^^^^^^^^ definition local currentIndent_45
+//                                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+    ...?modifiers
+//      ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeAliasNode.pkl`/modifiers.
+    "typealias"
+    name.render(currentIndent)
+//  ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeAliasNode.pkl`/name.
+//       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `IdentifierNode.pkl`/render().
+//              ^^^^^^^^^^^^^ reference local currentIndent_45
+    "="
+  }.join(" ")
+//  ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#join().
+  
+  function render(currentIndent: String) = List(
+//         ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeAliasNode.pkl`/render().
+//                ^^^^^^^^^^^^^ definition local currentIndent_52
+//                               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+    docComment?.render(currentIndent),
+//  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeAliasNode.pkl`/docComment.
+//              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `DocCommentNode.pkl`/render().
+//                     ^^^^^^^^^^^^^ reference local currentIndent_52
+    annotations?.toList()?.map((an) -> an.render(currentIndent))?.join("\n"),
+//  ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeAliasNode.pkl`/annotations.
+//               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+//                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                              ^^ definition local an_54
+//                                     ^^ reference local an_54
+//                                        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `AnnotationNode.pkl`/render().
+//                                               ^^^^^^^^^^^^^ reference local currentIndent_52
+//                                                                ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+    currentIndent + renderAlias(currentIndent)
+//  ^^^^^^^^^^^^^ reference local currentIndent_52
+//                  ^^^^^^^^^^^ reference local renderAlias_35
+//                              ^^^^^^^^^^^^^ reference local currentIndent_52
+  ).filterNonNull().join("\n")
+//  ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#filterNonNull().
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  

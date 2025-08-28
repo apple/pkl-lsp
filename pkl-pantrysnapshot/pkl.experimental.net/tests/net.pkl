@@ -1,0 +1,1353 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module pkl.experimental.net.tests.net
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `tests/net.pkl`/
+  
+  amends "pkl:test"
+  
+  import "../net.pkl"
+  import "../u128.pkl"
+  
+  local baseIP = net.IPv6Address("::")
+//      ^^^^^^ definition local baseIP_23
+//               ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                   ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+  
+  facts {
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `tests/net.pkl`/facts.
+    ["MACAddress"] {
+      net.MACAddress("34:73:5A:FA:AF:22").eui64(baseIP).toExpandedString() == "0000:0000:0000:0000:3673:5aff:fefa:af22"
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/MACAddress().
+//                                        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/MACAddress#eui64().
+//                                              ^^^^^^ reference local baseIP_23
+//                                                      ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#toExpandedString().
+    }
+    // note: IPv4Address() and IPv6Address() must be invoked prior to any tests that reference the IPv[46]AddressString
+    // typealiases. This works around a pkl 0.25 bug that otherwise causes java exceptions.
+    ["IPv4Address =="] {
+      net.IPv4Address("127.0.0.1") != net.IPv4Address("127.0.0.2")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address().
+//                                    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address().
+      net.IPv4Address("127.0.0.1") != net.IPv4Address("127.0.1.1")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address().
+//                                    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address().
+      net.IPv4Address("127.0.0.1") != net.IPv4Address("127.1.0.1")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address().
+//                                    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address().
+      net.IPv4Address("127.0.0.1") != net.IPv4Address("128.0.0.1")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address().
+//                                    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address().
+    }
+    ["IPv6Address =="] {
+      net.IPv6Address("fe80::1") == net.IPv6Address("fe80::1")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+      net.IPv6Address("fe80::1") != net.IPv6Address("fe80::2")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+      net.IPv6Address("fe80::1") != net.IPv6Address("fe80::1:1")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+      net.IPv6Address("fe80::1") != net.IPv6Address("fe80::1:0:1")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+      net.IPv6Address("fe80::1") != net.IPv6Address("fe80::1:0:0:1")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+      net.IPv6Address("fe80::1") != net.IPv6Address("fe80:0:0:1::1")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+      net.IPv6Address("fe80::1") != net.IPv6Address("fe80:0:1::1")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+      net.IPv6Address("fe80::1") != net.IPv6Address("fe80:1::1")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+      net.IPv6Address("fe80::1") != net.IPv6Address("fe81::1")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+      net.IPv6Address("fe80::1%1") == net.IPv6Address("fe80::1%1")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+      net.IPv6Address("fe80::1%1") != net.IPv6Address("fe80::1%2")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+      net.IPv6Address("fe80::1%1") != net.IPv6Address("fe80::1")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+      net.IPv6Address("fe80::1%0") != net.IPv6Address("fe80::1")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+    }
+    // similarly IPv6Network() must be invoked prior to using IPv6CIDRString
+    ["IPv6Network =="] {
+      net.IPv6Network("2001:db8::/96") == net.IPv6Network("2001:db8::/96")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network().
+//                                        ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                            ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network().
+      net.IPv6Network("2001:db8::/96") != net.IPv6Network("2001:db8::/48")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network().
+//                                        ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                            ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network().
+      net.IPv6Network("2001:db8::/96") != net.IPv6Network("2001:db8::1/96")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network().
+//                                        ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                            ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network().
+    }
+    ["IPv4AddressString"] {
+      "0.0.0.0" is net.IPv4AddressString
+//                     ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      "127.0.0.1" is net.IPv4AddressString
+//                       ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      "1.1.1.1" is net.IPv4AddressString
+//                     ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      "000.000.000.000" is net.IPv4AddressString
+//                             ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      "255.255.255.255" is net.IPv4AddressString
+//                             ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      !("0000.0.0.0" is net.IPv4AddressString)
+//                          ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      !("256.0.0.0" is net.IPv4AddressString)
+//                         ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      !("260.0.0.0" is net.IPv4AddressString)
+//                         ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      !("300.0.0.0" is net.IPv4AddressString)
+//                         ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      !("1.1.1" is net.IPv4AddressString)
+//                     ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      !("1.1.1." is net.IPv4AddressString)
+//                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      !("1.1.1.1." is net.IPv4AddressString)
+//                        ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      !("1.a.1.1" is net.IPv4AddressString)
+//                       ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      !("1..1.1" is net.IPv4AddressString)
+//                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      !("1..1.1.1" is net.IPv4AddressString)
+//                        ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      !(".1.1.1" is net.IPv4AddressString)
+//                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      !(".1.1.1.1" is net.IPv4AddressString)
+//                        ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      !("" is net.IPv4AddressString)
+//                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+    }
+    ["IPv6AddressString (pure IPv6)"] {
+      "0:0:0:0:0:0:0:0" is net.IPv6AddressString
+//                             ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "1:2:3:4:5:6:7:8" is net.IPv6AddressString
+//                             ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF" is net.IPv6AddressString
+//                                                     ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "ffff::" is net.IPv6AddressString
+//                    ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "::" is net.IPv6AddressString
+//                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "::1" is net.IPv6AddressString
+//                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "::1:2:3:4:5:6:7" is net.IPv6AddressString
+//                             ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "1::" is net.IPv6AddressString
+//                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "1:2:3:4:5:6:7::" is net.IPv6AddressString
+//                             ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "::1" is net.IPv6AddressString
+//                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "::1:2:3:4:5:6:7" is net.IPv6AddressString
+//                             ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "1:2:3:4:5:6::7" is net.IPv6AddressString
+//                            ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "1:2:3:4:5::6:7" is net.IPv6AddressString
+//                            ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "1:2:3:4::5:6:7" is net.IPv6AddressString
+//                            ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "1:2:3::4:5:6:7" is net.IPv6AddressString
+//                            ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "1:2::3:4:5:6:7" is net.IPv6AddressString
+//                            ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "1::2:3:4:5:6:7" is net.IPv6AddressString
+//                            ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "1:2:3:4:5::6" is net.IPv6AddressString
+//                          ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "1:2:3:4::5" is net.IPv6AddressString
+//                        ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "1:2:3::4" is net.IPv6AddressString
+//                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "1:2::3" is net.IPv6AddressString
+//                    ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "1::2" is net.IPv6AddressString
+//                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("1:2:3:4:5:6:7:8:9" is net.IPv6AddressString)
+//                                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("1:2:3:4:5:6:7:" is net.IPv6AddressString)
+//                              ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("1:2:3:4:5:6:7:8:" is net.IPv6AddressString)
+//                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !(":1:2:3:4:5:6:7" is net.IPv6AddressString)
+//                              ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !(":1:2:3:4:5:6:7:8" is net.IPv6AddressString)
+//                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::1:2:3:4:5:6:7:8" is net.IPv6AddressString)
+//                                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("1:2:3:4:5:6:7:8::" is net.IPv6AddressString)
+//                                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("1::2::" is net.IPv6AddressString)
+//                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::1::2" is net.IPv6AddressString)
+//                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("1::g" is net.IPv6AddressString)
+//                    ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("1:::2" is net.IPv6AddressString)
+//                     ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("FFFFF::" is net.IPv6AddressString)
+//                       ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("1.2.3.4" is net.IPv6AddressString)
+//                       ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("" is net.IPv6AddressString)
+//                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+    }
+    ["IPv6AddressString (IPv4-compatible)"] {
+      "::0.0.0.0" is net.IPv6AddressString
+//                       ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "::000.000.000.000" is net.IPv6AddressString
+//                               ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "::255.255.255.255" is net.IPv6AddressString
+//                               ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::256.0.0.0" is net.IPv6AddressString)
+//                           ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::260.0.0.0" is net.IPv6AddressString)
+//                           ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::300.0.0.0" is net.IPv6AddressString)
+//                           ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::0000.0.0.0" is net.IPv6AddressString)
+//                            ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::a.0.0.0" is net.IPv6AddressString)
+//                         ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::0.0.0" is net.IPv6AddressString)
+//                       ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::0.0.0." is net.IPv6AddressString)
+//                        ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::0.0.0.0." is net.IPv6AddressString)
+//                          ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::0.0.0.0.0" is net.IPv6AddressString)
+//                           ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+    }
+    ["IPv6AddressString (IPv4-mapped)"] {
+      "::ffff:0.0.0.0" is net.IPv6AddressString
+//                            ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "::ffff:000.000.000.000" is net.IPv6AddressString
+//                                    ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "::ffff:255.255.255.255" is net.IPv6AddressString
+//                                    ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::ffff:256.0.0.0" is net.IPv6AddressString)
+//                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::ffff:260.0.0.0" is net.IPv6AddressString)
+//                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::ffff:300.0.0.0" is net.IPv6AddressString)
+//                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::ffff:0000.0.0.0" is net.IPv6AddressString)
+//                                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::ffff:a.0.0.0" is net.IPv6AddressString)
+//                              ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::ffff:0.0.0" is net.IPv6AddressString)
+//                            ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::ffff:0.0.0." is net.IPv6AddressString)
+//                             ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::ffff:0.0.0.0." is net.IPv6AddressString)
+//                               ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::ffff:0.0.0.0.0" is net.IPv6AddressString)
+//                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+    }
+    ["IPv6AddressString (IPv4-translated)"] {
+      "::ffff:0:0.0.0.0" is net.IPv6AddressString
+//                              ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "::ffff:0000:0.0.0.0" is net.IPv6AddressString
+//                                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "::ffff:0:255.255.255.255" is net.IPv6AddressString
+//                                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "::ffff:0:000.000.000.000" is net.IPv6AddressString
+//                                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::ffff:0:256.0.0.0" is net.IPv6AddressString)
+//                                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::ffff:0:260.0.0.0" is net.IPv6AddressString)
+//                                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::ffff:0:300.0.0.0" is net.IPv6AddressString)
+//                                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::ffff:0:0000.0.0.0" is net.IPv6AddressString)
+//                                   ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::ffff:0:a.0.0.0" is net.IPv6AddressString)
+//                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::ffff:0:0.0.0" is net.IPv6AddressString)
+//                              ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::ffff:0:0.0.0." is net.IPv6AddressString)
+//                               ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::ffff:0:0.0.0.0." is net.IPv6AddressString)
+//                                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::ffff:0:0.0.0.0.0" is net.IPv6AddressString)
+//                                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+    }
+    ["IPv6AddressString (IPv4-embedded)"] {
+      "64:ff9b::0.0.0.0" is net.IPv6AddressString
+//                              ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "0::0.0.0.0" is net.IPv6AddressString
+//                        ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "0:0:0:0::0.0.0.0" is net.IPv6AddressString
+//                              ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "ffff:ffff:ffff:ffff::255.255.255.255" is net.IPv6AddressString
+//                                                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "64:ff9b::255.255.255.255" is net.IPv6AddressString
+//                                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "64:ff9b::000.000.000.000" is net.IPv6AddressString
+//                                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("64:ff9b::256.0.0.0" is net.IPv6AddressString)
+//                                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("64:ff9b::260.0.0.0" is net.IPv6AddressString)
+//                                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("64:ff9b::300.0.0.0" is net.IPv6AddressString)
+//                                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("64:ff9b::0000.0.0.0" is net.IPv6AddressString)
+//                                   ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("64:ff9b::a.0.0.0" is net.IPv6AddressString)
+//                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("64:ff9b::0.0.0" is net.IPv6AddressString)
+//                              ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("64:ff9b::0.0.0." is net.IPv6AddressString)
+//                               ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("64:ff9b::0.0.0.0." is net.IPv6AddressString)
+//                                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("64:ff9b::0.0.0.0.0" is net.IPv6AddressString)
+//                                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+    }
+    ["IPv6AddressString (miscellaneous IPv4)"] {
+      "0:0:0:0:0:0:0.0.0.0" is net.IPv6AddressString
+//                                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "1:2:3:4:5:6:1.2.3.4" is net.IPv6AddressString
+//                                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:255.255.255.255" is net.IPv6AddressString
+//                                                           ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "::1:1.2.3.4" is net.IPv6AddressString
+//                         ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "::1:2:3:4:5:1.2.3.4" is net.IPv6AddressString
+//                                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "1::1.2.3.4" is net.IPv6AddressString
+//                        ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "1:2:3:4:5::1.2.3.4" is net.IPv6AddressString
+//                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "1:2:3:4::5:1.2.3.4" is net.IPv6AddressString
+//                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "1:2:3::4:5:1.2.3.4" is net.IPv6AddressString
+//                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "1:2::3:4:5:1.2.3.4" is net.IPv6AddressString
+//                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "1::2:3:4:5:1.2.3.4" is net.IPv6AddressString
+//                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "1:2:3::4:1.2.3.4" is net.IPv6AddressString
+//                              ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "1:2::3:1.2.3.4" is net.IPv6AddressString
+//                            ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "1::2:1.2.3.4" is net.IPv6AddressString
+//                          ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "::1.2.3.4" is net.IPv6AddressString
+//                       ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "::0.0.0.0" is net.IPv6AddressString
+//                       ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("1:2:3:4:5:6:7:1.2.3.4" is net.IPv6AddressString)
+//                                     ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("1:2:3:4:5:6:1.2.3" is net.IPv6AddressString)
+//                                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("1:2:3:4:5:6:1.2.3.4.5" is net.IPv6AddressString)
+//                                     ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("1:2:3:4:5:6::1.2.3.4" is net.IPv6AddressString)
+//                                    ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !(":1:2:3:4:5:1.2.3.4" is net.IPv6AddressString)
+//                                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !(":1:2:3:4:5:6:1.2.3.4" is net.IPv6AddressString)
+//                                    ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::1:2:3:4:5:6:1.2.3.4" is net.IPv6AddressString)
+//                                     ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("1::2::1.2.3.4" is net.IPv6AddressString)
+//                             ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("1::2::3:1.2.3.4" is net.IPv6AddressString)
+//                               ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::1::2:1.2.3.4" is net.IPv6AddressString)
+//                              ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::1::1.2.3.4" is net.IPv6AddressString)
+//                            ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("1:::2:1.2.3.4" is net.IPv6AddressString)
+//                             ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("FFFFF::1.2.3.4" is net.IPv6AddressString)
+//                              ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("1.2.3.4::" is net.IPv6AddressString)
+//                         ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+    }
+    ["Scoped IPv6AddressString (link-local unicast)"] {
+      "fe80::%1" is net.IPv6AddressString
+//                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "FE80::%1" is net.IPv6AddressString
+//                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "fe80::%999" is net.IPv6AddressString
+//                        ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "fe80:0:0:0:0:0:0:0%1" is net.IPv6AddressString
+//                                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "fe80:0:0:0:a:b:c:d%2" is net.IPv6AddressString
+//                                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "fe80::aaaa%0" is net.IPv6AddressString
+//                          ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "fe80:0:0:0:1::%1" is net.IPv6AddressString
+//                              ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "fe80:0:0::1%2" is net.IPv6AddressString
+//                           ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("fe80:1::%0" is net.IPv6AddressString)
+//                          ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("fe80::a:b:c:d:e%0" is net.IPv6AddressString)
+//                                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("fe81::%1" is net.IPv6AddressString)
+//                        ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("febf::%1" is net.IPv6AddressString)
+//                        ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("fe80::%" is net.IPv6AddressString)
+//                       ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("fe80::%a" is net.IPv6AddressString)
+//                        ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("fe80::%eth0" is net.IPv6AddressString)
+//                           ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("fe80:0:0:1::%1" is net.IPv6AddressString)
+//                              ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("fe80::%-1" is net.IPv6AddressString)
+//                         ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("fe80::% 1" is net.IPv6AddressString)
+//                         ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("fe80::%%1" is net.IPv6AddressString)
+//                         ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("fe80::%1%1" is net.IPv6AddressString)
+//                          ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+    }
+    ["Scoped IPv6AddressString (multicast)"] {
+      "ff00::%1" is net.IPv6AddressString
+//                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "FF00::%1" is net.IPv6AddressString
+//                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "ff0d::%1" is net.IPv6AddressString
+//                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "ff1d::%1" is net.IPv6AddressString
+//                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "fffd::%1" is net.IPv6AddressString // we don't restrict flags, for future compatibility reasons
+//                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "ff00::%999" is net.IPv6AddressString
+//                        ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "ff0d:0:0:0:0:0:0:0%0" is net.IPv6AddressString
+//                                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "ff00::7:8%0" is net.IPv6AddressString
+//                         ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      "ff00:2:3:4::8%0" is net.IPv6AddressString
+//                             ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("ff0e::%1" is net.IPv6AddressString) // global scope
+//                        ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("fffe::%1" is net.IPv6AddressString) // global scope
+//                        ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("FF0E::%1" is net.IPv6AddressString) // global scope
+//                        ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("ff00::%-1" is net.IPv6AddressString)
+//                         ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("ff00::% 1" is net.IPv6AddressString)
+//                         ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("ff00::%" is net.IPv6AddressString)
+//                       ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("ff00::%a" is net.IPv6AddressString)
+//                        ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("ff00::%eth0" is net.IPv6AddressString)
+//                           ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("ff00::%1%1" is net.IPv6AddressString)
+//                          ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("ff00:1:2:3:4:5:6:7:8%1" is net.IPv6AddressString)
+//                                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+    }
+    ["Global IPv6AddressString can't be scoped"] {
+      !("::%0" is net.IPv6AddressString) // technically this is implementation-defined, we don't support it
+//                    ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::1%0" is net.IPv6AddressString)
+//                     ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("0:0:0:0:0:0:0:0%0" is net.IPv6AddressString)
+//                                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("a:b:c:d:1:2:3:4%0" is net.IPv6AddressString)
+//                                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("fec0::%1" is net.IPv6AddressString) // site-local unicast is deprecated, considered global now
+//                        ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::1.2.3.4%0" is net.IPv6AddressString) // IPv6+IPv4 syntax implies global scope
+//                           ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::ffff:1.2.3.4%0" is net.IPv6AddressString) // IPv4-mapped can be scoped in some implementations, but not ours
+//                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("0:fe80::%0" is net.IPv6AddressString)
+//                          ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::fe80%0" is net.IPv6AddressString)
+//                        ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("fdff::%0" is net.IPv6AddressString)
+//                        ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+    }
+    ["IPv4CIDRString"] {
+      "0.0.0.0/1" is net.IPv4CIDRString
+//                       ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4CIDRString#
+      "255.255.255.255/32" is net.IPv4CIDRString
+//                                ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4CIDRString#
+      !("0.0.0.0/" is net.IPv4CIDRString)
+//                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4CIDRString#
+      !("0.0.0.0/100" is net.IPv4CIDRString)
+//                           ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4CIDRString#
+      !("0.0.0.0/a" is net.IPv4CIDRString)
+//                         ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4CIDRString#
+      !("/10" is net.IPv4CIDRString)
+//                   ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4CIDRString#
+      !("" is net.IPv4CIDRString)
+//                ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4CIDRString#
+    }
+    ["IPv6CIDRString"] {
+      "fe80::/10" is net.IPv6CIDRString
+//                       ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6CIDRString#
+      "::1/128" is net.IPv6CIDRString
+//                     ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6CIDRString#
+      "::1.2.3.4/96" is net.IPv6CIDRString
+//                          ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6CIDRString#
+      "fe80::%2/10" is net.IPv6CIDRString
+//                         ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6CIDRString#
+      !("fe80::/" is net.IPv6CIDRString)
+//                       ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6CIDRString#
+      !("fe80::/1000" is net.IPv6CIDRString)
+//                           ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6CIDRString#
+      !("fe80::/a" is net.IPv6CIDRString)
+//                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6CIDRString#
+      !("/10" is net.IPv6CIDRString)
+//                   ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6CIDRString#
+      !("" is net.IPv6CIDRString)
+//                ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6CIDRString#
+      !("0.0.0.0/10" is net.IPv6CIDRString)
+//                          ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6CIDRString#
+    }
+    ["IPv4AddressPortString"] {
+      "0.0.0.0:0" is net.IPv4AddressPortString
+//                       ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressPortString#
+      "255.255.255.255:65535" is net.IPv4AddressPortString
+//                                   ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressPortString#
+      !("0.0.0.0:" is net.IPv4AddressPortString)
+//                        ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressPortString#
+      !("0.0.0.0:123456" is net.IPv4AddressPortString)
+//                              ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressPortString#
+      !(":1" is net.IPv4AddressPortString)
+//                  ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressPortString#
+      !("" is net.IPv4AddressPortString)
+//                ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressPortString#
+      !("0.0.0.0:a" is net.IPv4AddressPortString)
+//                         ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressPortString#
+      !("[0.0.0.0]:1" is net.IPv4AddressPortString)
+//                           ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressPortString#
+    }
+    ["IPv6AddressPortString"] {
+      "[::1]:80" is net.IPv6AddressPortString
+//                      ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressPortString#
+      "[::]:1" is net.IPv6AddressPortString
+//                    ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressPortString#
+      "[fe80::]:65535" is net.IPv6AddressPortString
+//                            ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressPortString#
+      "[fe80::%2]:65535" is net.IPv6AddressPortString
+//                              ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressPortString#
+      !("[::1]:" is net.IPv6AddressPortString)
+//                      ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressPortString#
+      !("[::1]:123456" is net.IPv6AddressPortString)
+//                            ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressPortString#
+      !(":1" is net.IPv6AddressPortString)
+//                  ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressPortString#
+      !("" is net.IPv6AddressPortString)
+//                ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressPortString#
+      !("[::1]:a" is net.IPv6AddressPortString)
+//                       ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressPortString#
+      !("0.0.0.0:1" is net.IPv6AddressPortString)
+//                         ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressPortString#
+      !("[0.0.0.0]:1" is net.IPv6AddressPortString)
+//                           ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressPortString#
+      !("::1:10" is net.IPv6AddressPortString)
+//                      ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressPortString#
+    }
+    ["IPv4Address()"] {
+      net.IPv4Address("127.0.0.1").repr == 0x7F000001
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address().
+//                                 ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#repr.
+      net.IPv4Address("0.0.0.0").repr == 0
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address().
+//                               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#repr.
+      net.IPv4Address("255.255.255.255").repr == 0xFFFFFFFF
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address().
+//                                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#repr.
+      net.IPv4Address("126.127.128.129").repr == 0x7E7F8081
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address().
+//                                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#repr.
+      net.IPv4Address("172.16.254.1").repr == 0xAC10FE01
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address().
+//                                    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4Address#repr.
+    }
+    ["IPv6Address()"] {
+      net.IPv6Address("fe80::1").repr == u128.UInt128(0xFE800000, 0, 0, 1)
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/
+//                                            ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+      net.IPv6Address("1:10:100:1000:ff00:0ff0:00ff:f00f").repr == u128.UInt128(0x10010, 0x1001000, 0xff000ff0, 0xfff00f)
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                                         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                                                                 ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/
+//                                                                      ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+      net.IPv6Address("::a:b").repr == u128.UInt128(0, 0, 0, 0xa000b)
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/
+//                                          ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+      net.IPv6Address("2001::").repr == u128.UInt128(0x20010000, 0, 0, 0)
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                              ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                                      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/
+//                                           ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+      net.IPv6Address("::ffff:129.144.52.38").repr == u128.UInt128(0, 0, 0xffff, 0x81903426)
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                            ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                                                    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/
+//                                                         ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+      net.IPv6Address("fe80::127.0.0.1").repr == u128.UInt128(0xfe800000, 0, 0, 0x7f000001)
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#repr.
+//                                               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/
+//                                                    ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+    }
+    ["IPv6Address() scopeId"] {
+      net.IPv6Address("fe80::1").scopeId == null
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                               ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+      net.IPv6Address("fe80::127.0.0.1").scopeId == null
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                       ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+      net.IPv6Address("fe80:3::1ff:fe23:4567:890a").scopeId == null // non-standard alternative we don't support
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                                  ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+      net.IPv6Address("fe80::1%1").scopeId == 1
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                 ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+      net.IPv6Address("ff00::%2").scopeId == 2
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+      net.IPv6Address("fe80::%123").scopeId == 123
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                  ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+      net.IPv6Address("fe80::%0").scopeId == 0
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+      // check that manually-constructed addresses respect restrictions on scopeId
+      let (ip = net.IPv6Address("::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId ) != null
+//         ^^ definition local ip_332
+//              ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                  ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                            ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                                                         ^^ reference local ip_332
+//                                                               ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `tests/net.pkl`/scopeId.
+//                                                                             ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+      let (ip = net.IPv6Address("::1")) module.catch(() -> (ip) { scopeId = 1 }.scopeId ) != null
+//         ^^ definition local ip_333
+//              ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                  ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                             ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                                                          ^^ reference local ip_333
+//                                                                ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `tests/net.pkl`/scopeId.
+//                                                                              ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+      let (ip = net.IPv6Address("fec0::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId ) != null
+//         ^^ definition local ip_334
+//              ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                  ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                                                             ^^ reference local ip_334
+//                                                                   ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `tests/net.pkl`/scopeId.
+//                                                                                 ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+      let (ip = net.IPv6Address("2001:db8::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId ) != null
+//         ^^ definition local ip_335
+//              ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                  ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                                    ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                                                                 ^^ reference local ip_335
+//                                                                       ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `tests/net.pkl`/scopeId.
+//                                                                                     ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+      let (ip = net.IPv6Address("ff0e::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId ) != null
+//         ^^ definition local ip_336
+//              ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                  ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                                                             ^^ reference local ip_336
+//                                                                   ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `tests/net.pkl`/scopeId.
+//                                                                                 ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+      let (ip = net.IPv6Address("ff0f::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId ) != null
+//         ^^ definition local ip_337
+//              ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                  ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                                                             ^^ reference local ip_337
+//                                                                   ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `tests/net.pkl`/scopeId.
+//                                                                                 ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+      let (ip = net.IPv6Address("fe7f::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId ) != null
+//         ^^ definition local ip_338
+//              ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                  ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                                                             ^^ reference local ip_338
+//                                                                   ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `tests/net.pkl`/scopeId.
+//                                                                                 ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+      let (ip = net.IPv6Address("fe80:0:0:1::")) module.catch(() -> (ip) { scopeId = 1 }.scopeId ) != null
+//         ^^ definition local ip_339
+//              ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                  ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                                      ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                                                                   ^^ reference local ip_339
+//                                                                         ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `tests/net.pkl`/scopeId.
+//                                                                                       ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+    }
+    ["IPv6Address methods work with scopeId"] {
+      net.IPv6Address("fe80::%1").next() == net.IPv6Address("fe80::1%1")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#next().
+//                                          ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                              ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+      net.IPv6Address("fe80::1:2%1").reverse() == net.IPv6Address("fe80::1:2").reverse() // scopeId gets ignored here
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                   ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#reverse().
+//                                                ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                                    ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                                                             ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#reverse().
+    }
+    ["IPv6Address.isUnspecified"] {
+      net.IPv6Address("::").isUnspecified
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                          ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isUnspecified.
+      !net.IPv6Address("::1").isUnspecified
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                            ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isUnspecified.
+      !net.IPv6Address("1::").isUnspecified
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                            ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isUnspecified.
+    }
+    ["IPv6Address.isLoopback"] {
+      net.IPv6Address("::1").isLoopback
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                           ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isLoopback.
+      !net.IPv6Address("::").isLoopback
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                           ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isLoopback.
+      !net.IPv6Address("1::").isLoopback
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isLoopback.
+      !net.IPv6Address("::127.0.0.1").isLoopback
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                    ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isLoopback.
+      !net.IPv6Address("::ffff:127.0.0.1").isLoopback
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                         ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isLoopback.
+      !net.IPv6Address("::ffff:0:127.0.0.1").isLoopback
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                           ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isLoopback.
+      !net.IPv6Address("64:ff9b::127.0.0.1").isLoopback
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                           ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isLoopback.
+    }
+    ["IPv6Address.isIPv4Mapped"] {
+      net.IPv6Address("::ffff:192.168.1.1").isIPv4Mapped
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                          ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isIPv4Mapped.
+      net.IPv6Address("::ffff:0.0.0.0").isIPv4Mapped
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                      ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isIPv4Mapped.
+      net.IPv6Address("::ffff:255.255.255.255").isIPv4Mapped
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                              ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isIPv4Mapped.
+      !net.IPv6Address("::192.168.1.1").isIPv4Mapped
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                      ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isIPv4Mapped.
+      !net.IPv6Address("::ffff:0:192.168.1.1").isIPv4Mapped
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                             ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isIPv4Mapped.
+      !net.IPv6Address("::ffff:255.255.255.255").next().isIPv4Mapped
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#next().
+//                                                      ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isIPv4Mapped.
+      !net.IPv6Address("::fffe:255.255.255.255").isIPv4Mapped
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                               ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isIPv4Mapped.
+      !net.IPv6Address("64:ff9b::192.168.1.1").isIPv4Mapped
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                             ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isIPv4Mapped.
+    }
+    ["IPv6Address.isIPv4Embedded"] {
+      net.IPv6Address("64:ff9b::192.168.1.1").isIPv4Embedded
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                            ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isIPv4Embedded.
+      net.IPv6Address("64:ff9b::0.0.0.0").isIPv4Embedded
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isIPv4Embedded.
+      net.IPv6Address("64:ff9b::255.255.255.255").isIPv4Embedded
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                                ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isIPv4Embedded.
+      !net.IPv6Address("64:ff9b::255.255.255.255").next().isIPv4Embedded
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                                 ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#next().
+//                                                        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isIPv4Embedded.
+      !net.IPv6Address("64:ff9a::255.255.255.255").isIPv4Embedded
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                                 ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isIPv4Embedded.
+      !net.IPv6Address("::ffff:192.168.1.1").isIPv4Embedded
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                           ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isIPv4Embedded.
+      !net.IPv6Address("0:64:ff9b::192.168.1.1").isIPv4Embedded
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                               ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isIPv4Embedded.
+    }
+    ["IPv6Address.isNonGlobalScope"] {
+      // link-local unicast
+      net.IPv6Address("fe80::").isNonGlobalScope
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                              ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isNonGlobalScope.
+      net.IPv6Address("fe80::ffff:ffff:ffff:ffff").isNonGlobalScope
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                                 ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isNonGlobalScope.
+      net.IPv6Address("fe80:0:0:0:1::").isNonGlobalScope
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                      ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isNonGlobalScope.
+      !net.IPv6Address("fe80:0:0:1::").isNonGlobalScope
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                     ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isNonGlobalScope.
+      !net.IPv6Address("fe81::").isNonGlobalScope
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                               ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isNonGlobalScope.
+      // multicast
+      net.IPv6Address("ff00::").isNonGlobalScope
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                              ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isNonGlobalScope.
+      net.IPv6Address("ff10::").isNonGlobalScope
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                              ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isNonGlobalScope.
+      net.IPv6Address("fffd::").isNonGlobalScope
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                              ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isNonGlobalScope.
+      !net.IPv6Address("ff0e::").isNonGlobalScope // scop=e
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                               ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isNonGlobalScope.
+      !net.IPv6Address("ff0f::").isNonGlobalScope // scop>e
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                               ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isNonGlobalScope.
+      !net.IPv6Address("fe00::").isNonGlobalScope
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                               ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isNonGlobalScope.
+      // addresses that don't count
+      !net.IPv6Address("::").isNonGlobalScope
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                           ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isNonGlobalScope.
+      !net.IPv6Address("::1").isNonGlobalScope
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                            ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isNonGlobalScope.
+      !net.IPv6Address("fec0::").isNonGlobalScope // site-local, deprecated
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                               ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#isNonGlobalScope.
+    }
+    ["IPv6Network.contains() and scopeId"] {
+      net.IPv6Network("fe80::%1/96").contains(net.IPv6Address("fe80::1"))
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network().
+//                                   ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#contains().
+//                                            ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                                ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+      net.IPv6Network("fe80::%1/96").contains(net.IPv6Address("fe80::1%1"))
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network().
+//                                   ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#contains().
+//                                            ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                                ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+      net.IPv6Network("fe80::/96").contains(net.IPv6Address("fe80::1%1"))
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network().
+//                                 ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#contains().
+//                                          ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                              ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+      !net.IPv6Network("fe80::%1/96").contains(net.IPv6Address("fe80::1%2"))
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network().
+//                                    ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#contains().
+//                                             ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                                 ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+    }
+    ["IPv6Network.subdivideTo() preserves scopeId"] {
+      net.IPv6Network("fe80::%1/64").subdivideTo(67).toList().every((it) -> it.base.scopeId == 1)
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network().
+//                                   ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#subdivideTo().
+//                                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+//                                                            ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#every().
+//                                                                   ^^ definition local it_404
+//                                                                          ^^ reference local it_404
+//                                                                             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#base.
+//                                                                                  ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+      net.IPv6Network("fe80::/64").subdivideTo(67).toList().every((it) -> it.base.scopeId == null)
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network().
+//                                 ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#subdivideTo().
+//                                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+//                                                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#every().
+//                                                                 ^^ definition local it_405
+//                                                                        ^^ reference local it_405
+//                                                                           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#base.
+//                                                                                ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+    }
+    ["IPv6Network first/last address preserves scopeId"] {
+      net.IPv6Network("fe80::%1/64").firstAddress.scopeId == 1
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network().
+//                                   ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#firstAddress.
+//                                                ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+      net.IPv6Network("fe80::%1/64").lastAddress.scopeId == 1
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network().
+//                                   ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#lastAddress.
+//                                               ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+      net.IPv6Network("fe80::/64").firstAddress.scopeId == null
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network().
+//                                 ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#firstAddress.
+//                                              ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+      net.IPv6Network("fe80::/64").lastAddress.scopeId == null
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network().
+//                                 ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Network#lastAddress.
+//                                             ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+    }
+    ["IPv6Range() preserves scopeId as appropriate"] {
+      net.IPv6Range(net.IPv6Address("fe80::%1"), net.IPv6Address("fe80::10%1")).toList().every((ip) -> ip.scopeId == 1)
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Range().
+//                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                               ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                                   ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                                                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+//                                                                                       ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#every().
+//                                                                                              ^^ definition local ip_414
+//                                                                                                     ^^ reference local ip_414
+//                                                                                                        ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+      net.IPv6Range(net.IPv6Address("fe80::%1"), net.IPv6Address("fe80::10%2")).toList().every((ip) -> ip.scopeId == null)
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Range().
+//                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                               ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                                   ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                                                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+//                                                                                       ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#every().
+//                                                                                              ^^ definition local ip_415
+//                                                                                                     ^^ reference local ip_415
+//                                                                                                        ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+      net.IPv6Range(net.IPv6Address("fe80::"), net.IPv6Address("fe80::10%1")).toList().every((ip) -> ip.scopeId == null)
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Range().
+//                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                             ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                                 ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                                                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+//                                                                                     ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#every().
+//                                                                                            ^^ definition local ip_416
+//                                                                                                   ^^ reference local ip_416
+//                                                                                                      ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+      net.IPv6Range(net.IPv6Address("fe80::%1"), net.IPv6Address("fe80::10")).toList().every((ip) -> ip.scopeId == null)
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Range().
+//                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                               ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                                   ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                                                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+//                                                                                     ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#every().
+//                                                                                            ^^ definition local ip_417
+//                                                                                                   ^^ reference local ip_417
+//                                                                                                      ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+      net.IPv6Range(net.IPv6Address("fe80::"), net.IPv6Address("fe80::10")).toList().every((ip) -> ip.scopeId == null)
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Range().
+//                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                             ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//                                                 ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                                                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+//                                                                                   ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#every().
+//                                                                                          ^^ definition local ip_418
+//                                                                                                 ^^ reference local ip_418
+//                                                                                                    ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#scopeId.
+    }
+    ["IPv4AddressString can't contain unicode digits"] {
+      // U+FF11 is FULLWIDTH DIGIT ONE
+      !("25\u{FF11}.0.0.0" is net.IPv4AddressString)
+//                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      !("20\u{FF11}.0.0.0" is net.IPv4AddressString)
+//                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      !("2\u{FF11}0.0.0.0" is net.IPv4AddressString)
+//                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      !("10\u{FF11}.0.0.0" is net.IPv4AddressString)
+//                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      !("1\u{FF11}0.0.0.0" is net.IPv4AddressString)
+//                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      !("\u{FF11}00.0.0.0" is net.IPv4AddressString)
+//                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      !("00\u{FF11}.0.0.0" is net.IPv4AddressString)
+//                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      !("0\u{FF11}0.0.0.0" is net.IPv4AddressString)
+//                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      !("0\u{FF11}.0.0.0" is net.IPv4AddressString)
+//                               ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      !("\u{FF11}0.0.0.0" is net.IPv4AddressString)
+//                               ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+      !("\u{FF11}.0.0.0" is net.IPv4AddressString)
+//                              ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4AddressString#
+    }
+    ["IPv6AddressString can't contain unicode digits"] {
+      !("\u{FF11}::" is net.IPv6AddressString)
+//                          ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("fe80::%\u{FF11}" is net.IPv6AddressString)
+//                               ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::25\u{FF11}.0.0.0" is net.IPv6AddressString)
+//                                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::20\u{FF11}.0.0.0" is net.IPv6AddressString)
+//                                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::2\u{FF11}0.0.0.0" is net.IPv6AddressString)
+//                                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::10\u{FF11}.0.0.0" is net.IPv6AddressString)
+//                                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::1\u{FF11}0.0.0.0" is net.IPv6AddressString)
+//                                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::\u{FF11}00.0.0.0" is net.IPv6AddressString)
+//                                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::00\u{FF11}.0.0.0" is net.IPv6AddressString)
+//                                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::0\u{FF11}0.0.0.0" is net.IPv6AddressString)
+//                                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::0\u{FF11}.0.0.0" is net.IPv6AddressString)
+//                                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::\u{FF11}0.0.0.0" is net.IPv6AddressString)
+//                                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+      !("::\u{FF11}.0.0.0" is net.IPv6AddressString)
+//                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6AddressString#
+    }
+    ["IPv4AddressPortString can't contain unicode digits in the port"] {
+      !("127.0.0.1:\u{FF11}" is net.IPAddressPortString)
+//                                  ^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPAddressPortString#
+    }
+    ["IPv6AddressPortString can't contain unicode digits in the port"] {
+      !("[::1]:\u{FF11}" is net.IPAddressPortString)
+//                              ^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPAddressPortString#
+    }
+    ["IPv4CIDRString can't contain unicode digits in the suffix"] {
+      !("10.0.0.0/\u{FF11}" is net.IPv4CIDRString)
+//                                 ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv4CIDRString#
+    }
+    ["IPv6CIDRString can't contain unicode digits in the suffix"] {
+      !("::1/\u{FF11}" is net.IPv6CIDRString)
+//                            ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6CIDRString#
+    }
+  }
+  
+  examples {
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `tests/net.pkl`/examples.
+    ["expandIPv6AddressString"] {
+      net.expandIPv6AddressString("fe80::")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/expandIPv6AddressString().
+      net.expandIPv6AddressString("fe80::1")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/expandIPv6AddressString().
+      net.expandIPv6AddressString("::aa")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/expandIPv6AddressString().
+    }
+    ["expandIPv6AddressString with scoped addresses"] {
+      net.expandIPv6AddressString("fe80:0000:0000:0000:0000:0000:0000:00%1") // 39 bytes long
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/expandIPv6AddressString().
+      net.expandIPv6AddressString("fe80::%0")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/expandIPv6AddressString().
+      net.expandIPv6AddressString("fe80:0:0:0:5:6:7:8%1")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/expandIPv6AddressString().
+      net.expandIPv6AddressString("fe80::%000") // we don't canonicalize scope ids here
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/expandIPv6AddressString().
+      net.expandIPv6AddressString("fe80::%001") // that happens in compressIPv6AddressString
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/expandIPv6AddressString().
+    }
+    ["expandIPv6AddressString with IPv4 suffix"] {
+      net.expandIPv6AddressString("ffff:ffff:ffff:ffff:0:0:255.255.255.255") // 39 bytes long
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/expandIPv6AddressString().
+      net.expandIPv6AddressString("::1.2.3.4")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/expandIPv6AddressString().
+      net.expandIPv6AddressString("2001:db8::1.2.3.4")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/expandIPv6AddressString().
+      net.expandIPv6AddressString("a:b:c:d:e:f:001.000.030.000")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/expandIPv6AddressString().
+    }
+    ["compressIPv6AddressString"] {
+      net.compressIPv6AddressString("0001:0002:0003:0004:0005:0006:0007:0008")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/compressIPv6AddressString().
+      net.compressIPv6AddressString("fe80:000:000:000:1:000:000:1")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/compressIPv6AddressString().
+      net.compressIPv6AddressString("fe80::0001:0000:0000:0001")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/compressIPv6AddressString().
+      net.compressIPv6AddressString("1:2:3:4:0:6:7:8") // :: shouldn't compress a single field
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/compressIPv6AddressString().
+      net.compressIPv6AddressString("1:2:3:4::6:7:8")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/compressIPv6AddressString().
+      net.compressIPv6AddressString("::")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/compressIPv6AddressString().
+      net.compressIPv6AddressString("::0:0")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/compressIPv6AddressString().
+      net.compressIPv6AddressString("FE80::A:B:C:D:E:F")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/compressIPv6AddressString().
+      net.compressIPv6AddressString("2001:0:0:1:0:0:0:1")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/compressIPv6AddressString().
+      net.compressIPv6AddressString("2001:db8:0:0:1:0:0:1")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/compressIPv6AddressString().
+    }
+    ["compressIPv6AddressString with scoped addresses"] {
+      net.compressIPv6AddressString("fe80:0000:0000:0000:0005:0006:0007:0008%0")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/compressIPv6AddressString().
+      net.compressIPv6AddressString("fe80::1:0%0")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/compressIPv6AddressString().
+      net.compressIPv6AddressString("fe80::%0")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/compressIPv6AddressString().
+      net.compressIPv6AddressString("fe80::%1")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/compressIPv6AddressString().
+      net.compressIPv6AddressString("fe80::%000") // we canonicalize scope ids here
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/compressIPv6AddressString().
+      net.compressIPv6AddressString("fe80::%001")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/compressIPv6AddressString().
+    }
+    ["compressIPv6AddressString with IPv4 suffix"] {
+      net.compressIPv6AddressString("::ffff:1.2.3.4")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/compressIPv6AddressString().
+      net.compressIPv6AddressString("0000:0000:0000:0000:0000:ffff:001.020.000.004")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/compressIPv6AddressString().
+      net.compressIPv6AddressString("fe80:0:0:0::1.2.3.4")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/compressIPv6AddressString().
+      net.compressIPv6AddressString("fe80:0:0:0:0:0:0.0.0.0")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/compressIPv6AddressString().
+      net.compressIPv6AddressString("::0.0.0.0")
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/compressIPv6AddressString().
+    }
+    ["IPv6Address.toString()"] {
+      net.IPv6Address("fe80::1").toString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#toString().
+      net.IPv6Address("101:1001:1010:110:100:1000:1100:1110").toString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                                            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#toString().
+      net.IPv6Address("::").toString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                          ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#toString().
+      net.IPv6Address("::0:1").toString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                             ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#toString().
+      net.IPv6Address("fe80::0").toString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#toString().
+      net.IPv6Address("fe80:0000:0000:0000:0000:0000:0001:0000").toString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#toString().
+      net.IPv6Address("::ffff:7f00:1").toString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                     ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#toString().
+      net.IPv6Address("64:ff9b::c000:0221").toString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                          ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#toString().
+      net.IPv6Address("2001:db8:122:344::192.0.2.33").toString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                                    ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#toString().
+      net.IPv6Address("fe80::1%1").toString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                 ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#toString().
+      net.IPv6Address("ff11::1%02").toString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                  ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#toString().
+      net.IPv6Address("fe80::%0").toString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#toString().
+    }
+    ["IPv6Address.toExpandedString()"] {
+      net.IPv6Address("fe80::1").toExpandedString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                               ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#toExpandedString().
+      net.IPv6Address("::").toExpandedString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                          ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#toExpandedString().
+      net.IPv6Address("::1").toExpandedString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                           ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#toExpandedString().
+      net.IPv6Address("2001:db8::").toExpandedString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                  ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#toExpandedString().
+      net.IPv6Address("fe80::1%1").toExpandedString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                 ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#toExpandedString().
+      net.IPv6Address("fe80::1%0").toExpandedString()
+//    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address().
+//                                 ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `net.pkl`/IPv6Address#toExpandedString().
+    }
+  }

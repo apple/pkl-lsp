@@ -1,0 +1,62 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module io.prometheus.examples.configuration
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/configuration.pkl`/
+  
+  amends "../Configuration.pkl"
+  
+  global {
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/configuration.pkl`/global.
+    scrape_timeout = 10.s
+//  ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/configuration.pkl`/scrape_timeout.
+//                      ^ reference pkl . pkl 0.29.0 `pkl.base`/Int#s.
+  }
+  
+  scrape_configs {
+//^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/configuration.pkl`/scrape_configs.
+    new {
+      job_name = "my-job"
+//    ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/configuration.pkl`/job_name.
+      kubernetes_sd_configs {
+//    ^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/configuration.pkl`/kubernetes_sd_configs.
+        new {
+          role = "pod"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/configuration.pkl`/role.
+        }
+      }
+      relabel_configs {
+//    ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/configuration.pkl`/relabel_configs.
+        new {
+          regex = ".*?"
+//        ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/configuration.pkl`/regex.
+        }
+      }
+    }
+  }
+  
+  remote_write {
+//^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/configuration.pkl`/remote_write.
+    new {
+      url = "https://example.com/remote_write"
+//    ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/configuration.pkl`/url.
+      sigv4 {
+//    ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/configuration.pkl`/sigv4.
+        region = "us-west-2"
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/io.prometheus 1.4.0 `examples/configuration.pkl`/region.
+      }
+    }
+  }
+  

@@ -1,0 +1,688 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// Who was it that said we'd never need more than 64 bits??
+  /// Some tasks work best with unsigned 128-bit integers, eg. working with IPv6 addresses.
+  /// This module implements a [UInt128] type composed out of 4 [UInt]s that can handle limited bit-wise and arithmetic operations.
+  /// NB: this task is a better fit for [UInt32], but it cannot be used here as we rely on shifting bits off the significant end and Pkl's implementation doesn't permit this
+  module pkl.experimental.net.u128
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/
+  
+  import "pkl:math"
+  
+  /// A [UInt128] with value 0.
+  const zero: UInt128 = UInt128(0, 0, 0, 0)
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/zero.
+//      documentation
+//      > A [`UInt128`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/u128.pkl#L37,C7) with value 0.
+//            ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#
+//                      ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+  /// A [UInt128] with value 1.
+  const one: UInt128 = UInt128(0, 0, 0, 1)
+//      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/one.
+//      documentation
+//      > A [`UInt128`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/u128.pkl#L37,C7) with value 1.
+//           ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#
+//                     ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+  /// The maximum [UInt128] value.
+  const maxUInt128: UInt128 = UInt128(math.maxUInt32, math.maxUInt32, math.maxUInt32, math.maxUInt32)
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/maxUInt128.
+//      documentation
+//      > The maximum [`UInt128`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/u128.pkl#L37,C7) value.
+//                  ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#
+//                            ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                         ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                         ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                                         ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                                                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                                                         ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+  
+  /// Creates a [UInt128] with components [UInt32]s [high], [midHigh], [midLow], and [low]
+  const function UInt128(high: UInt32, midHigh: UInt32, midLow: UInt32, low: UInt32): UInt128 = new {
+//               ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//               documentation
+//               > Creates a [`UInt128`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/u128.pkl#L37,C7) with components [`UInt32`](pkl-lsp://stdlib/base.pkl#L956,C11)s [`high`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/u128.pkl#L32,C24), [`midHigh`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/u128.pkl#L32,C38), [`midLow`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/u128.pkl#L32,C55), and [`low`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/u128.pkl#L32,C71)
+//                       ^^^^ definition local high_32
+//                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt32#
+//                                     ^^^^^^^ definition local midHigh_32
+//                                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt32#
+//                                                      ^^^^^^ definition local midLow_32
+//                                                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt32#
+//                                                                      ^^^ definition local low_32
+//                                                                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt32#
+//                                                                                    ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#
+    words = List(low, midLow, midHigh, high)
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/words.
+//          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//               ^^^ reference local low_32
+//                    ^^^^^^ reference local midLow_32
+//                            ^^^^^^^ reference local midHigh_32
+//                                     ^^^^ reference local high_32
+  }
+  
+  /// An unsigned 128-bit integer.
+  class UInt128 {
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#
+//      documentation
+//      > An unsigned 128-bit integer.
+    words: List<UInt>(length == 4)
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#words.
+//         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+//                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#length.
+    hidden hihi: UInt = words[3]
+//         ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+//                      ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#words.
+    hidden hilo: UInt = words[2]
+//         ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+//                      ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#words.
+    hidden lohi: UInt = words[1]
+//         ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+//                      ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#words.
+    hidden lolo: UInt = words[0]
+//         ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+//               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+//                      ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#words.
+  
+    local self = this
+//        ^^^^ definition local self_44
+  
+    function toString(): String = new Listing<String> {
+//           ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#toString().
+//           documentation
+//           > Returns a string representation of `this`.
+//           > 
+//           > This method is used to convert the values of string interpolation expressions to strings.
+//                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      hihi.toRadixString(16).padStart(8, "0")
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//         ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toRadixString().
+//                           ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#padStart().
+      hilo.toRadixString(16).padStart(8, "0")
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//         ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toRadixString().
+//                           ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#padStart().
+      lohi.toRadixString(16).padStart(8, "0")
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//         ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toRadixString().
+//                           ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#padStart().
+      lolo.toRadixString(16).padStart(8, "0")
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+//         ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toRadixString().
+//                           ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#padStart().
+    }.join("")
+//    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#join().
+  
+    /// Bitwise AND of this integer and [n].
+    function and(other: UInt128): UInt128 = UInt128(
+//           ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#and().
+//           documentation
+//           > Bitwise AND of this integer and `n`.
+//               ^^^^^ definition local other_54
+//                      ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#
+//                                ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#
+//                                          ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+      self.hihi.and(other.hihi),
+//    ^^^^ reference local self_44
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                  ^^^^^ reference local other_54
+//                        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+      self.hilo.and(other.hilo),
+//    ^^^^ reference local self_44
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                  ^^^^^ reference local other_54
+//                        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+      self.lohi.and(other.lohi),
+//    ^^^^ reference local self_44
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                  ^^^^^ reference local other_54
+//                        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+      self.lolo.and(other.lolo)
+//    ^^^^ reference local self_44
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+//              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                  ^^^^^ reference local other_54
+//                        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+    )
+  
+    /// Bitwise OR of this integer and [n].
+    function or(other: UInt128): UInt128 = UInt128(
+//           ^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#or().
+//           documentation
+//           > Bitwise OR of this integer and `n`.
+//              ^^^^^ definition local other_62
+//                     ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#
+//                               ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#
+//                                         ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+      self.hihi.or(other.hihi),
+//    ^^^^ reference local self_44
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//              ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//                 ^^^^^ reference local other_62
+//                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+      self.hilo.or(other.hilo),
+//    ^^^^ reference local self_44
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//              ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//                 ^^^^^ reference local other_62
+//                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+      self.lohi.or(other.lohi),
+//    ^^^^ reference local self_44
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//              ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//                 ^^^^^ reference local other_62
+//                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+      self.lolo.or(other.lolo)
+//    ^^^^ reference local self_44
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+//              ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//                 ^^^^^ reference local other_62
+//                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+    )
+  
+    /// Returns true if this integer is less than or equal to [other].
+    function le(other: UInt128): Boolean = self.words == other.words || self.lt(other)
+//           ^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#le().
+//           documentation
+//           > Returns true if this integer is less than or equal to [`other`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/u128.pkl#L70,C15).
+//              ^^^^^ definition local other_70
+//                     ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#
+//                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                                         ^^^^ reference local self_44
+//                                              ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#words.
+//                                                       ^^^^^ reference local other_70
+//                                                             ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#words.
+//                                                                      ^^^^ reference local self_44
+//                                                                           ^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lt().
+//                                                                              ^^^^^ reference local other_70
+  
+    /// Returns true if this integer is strictly less than [other].
+    function lt(other: UInt128): Boolean =
+//           ^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lt().
+//           documentation
+//           > Returns true if this integer is strictly less than [`other`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/u128.pkl#L73,C15).
+//              ^^^^^ definition local other_73
+//                     ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#
+//                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+      self.hihi < other.hihi || self.hihi == other.hihi && (
+//    ^^^^ reference local self_44
+//         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                ^^^^^ reference local other_73
+//                      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                              ^^^^ reference local self_44
+//                                   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                                           ^^^^^ reference local other_73
+//                                                 ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+          self.hilo < other.hilo || self.hilo == other.hilo && (
+//        ^^^^ reference local self_44
+//             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                    ^^^^^ reference local other_73
+//                          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                  ^^^^ reference local self_44
+//                                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                               ^^^^^ reference local other_73
+//                                                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+              self.lohi < other.lohi || self.lohi == other.lohi && (
+//            ^^^^ reference local self_44
+//                 ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//                        ^^^^^ reference local other_73
+//                              ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//                                      ^^^^ reference local self_44
+//                                           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//                                                   ^^^^^ reference local other_73
+//                                                         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+                  self.lolo < other.lolo
+//                ^^^^ reference local self_44
+//                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+//                            ^^^^^ reference local other_73
+//                                  ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+                  )))
+  
+    /// Shifts this integer left by [n] bits.
+    function shl(n: UInt): UInt128 =
+//           ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#shl().
+//           documentation
+//           > Shifts this integer left by [`n`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/u128.pkl#L81,C16) bits.
+//               ^ definition local n_81
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+//                         ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#
+      if (n == 0) self
+//        ^ reference local n_81
+//                ^^^^ reference local self_44
+      else if (n > 32) self.shl(32).shl(n - 32) // just recurse, 5head!
+//             ^ reference local n_81
+//                     ^^^^ reference local self_44
+//                          ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#shl().
+//                                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#shl().
+//                                      ^ reference local n_81
+      // not only is this n == 32 case more efficient, but it protects us from the fact that Pkl has no UInt64 type
+      // we would be in for a bad time if we shifted a [math.maxUInt32] left 32 bits into the sign bit of [Int]
+      else if (n == 32) UInt128(self.hilo, self.lohi, self.lolo, 0)
+//             ^ reference local n_81
+//                      ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                              ^^^^ reference local self_44
+//                                   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                         ^^^^ reference local self_44
+//                                              ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//                                                    ^^^^ reference local self_44
+//                                                         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+      else UInt128(
+//         ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+          self.hihi.shl(n).and(math.maxUInt32).or(self.hilo.ushr(32 - n)),
+//        ^^^^ reference local self_44
+//             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shl().
+//                      ^ reference local n_81
+//                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                             ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                  ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                             ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//                                                ^^^^ reference local self_44
+//                                                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#ushr().
+//                                                                    ^ reference local n_81
+          self.hilo.shl(n).and(math.maxUInt32).or(self.lohi.ushr(32 - n)),
+//        ^^^^ reference local self_44
+//             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shl().
+//                      ^ reference local n_81
+//                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                             ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                  ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                             ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//                                                ^^^^ reference local self_44
+//                                                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//                                                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#ushr().
+//                                                                    ^ reference local n_81
+          self.lohi.shl(n).and(math.maxUInt32).or(self.lolo.ushr(32 - n)),
+//        ^^^^ reference local self_44
+//             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shl().
+//                      ^ reference local n_81
+//                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                             ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                  ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                             ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//                                                ^^^^ reference local self_44
+//                                                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+//                                                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#ushr().
+//                                                                    ^ reference local n_81
+          self.lolo.shl(n).and(math.maxUInt32)
+//        ^^^^ reference local self_44
+//             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+//                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shl().
+//                      ^ reference local n_81
+//                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                             ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                  ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+        )
+  
+    /// Return the sum of this integer and [other].
+    function add(other: UInt128): UInt128 = new {
+//           ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#add().
+//           documentation
+//           > Return the sum of this integer and [`other`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/u128.pkl#L95,C16).
+//               ^^^^^ definition local other_95
+//                      ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#
+//                                ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#
+      local complement = math.maxUInt32 - other.lolo
+//          ^^^^^^^^^^ definition local complement_96
+//                       ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                            ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                        ^^^^^ reference local other_95
+//                                              ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+      local loloOverflows = self.lolo > complement
+//          ^^^^^^^^^^^^^ definition local loloOverflows_97
+//                          ^^^^ reference local self_44
+//                               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+//                                      ^^^^^^^^^^ reference local complement_96
+      local lolo =
+//          ^^^^ definition local lolo_98
+        if (loloOverflows) self.lolo - math.maxUInt32 + other.lolo - 1
+//          ^^^^^^^^^^^^^ reference local loloOverflows_97
+//                         ^^^^ reference local self_44
+//                              ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+//                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                          ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                                      ^^^^^ reference local other_95
+//                                                            ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+        else self.lolo + other.lolo
+//           ^^^^ reference local self_44
+//                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+//                       ^^^^^ reference local other_95
+//                             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+  
+      local lohiComplement = math.maxUInt32 - other.lohi
+//          ^^^^^^^^^^^^^^ definition local lohiComplement_102
+//                           ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                            ^^^^^ reference local other_95
+//                                                  ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+      local lohiCarry = if (loloOverflows) 1 else 0
+//          ^^^^^^^^^ definition local lohiCarry_103
+//                          ^^^^^^^^^^^^^ reference local loloOverflows_97
+      local lohiOverflows = (self.lohi + lohiCarry) > lohiComplement
+//          ^^^^^^^^^^^^^ definition local lohiOverflows_104
+//                           ^^^^ reference local self_44
+//                                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//                                       ^^^^^^^^^ reference local lohiCarry_103
+//                                                    ^^^^^^^^^^^^^^ reference local lohiComplement_102
+      local lohi =
+//          ^^^^ definition local lohi_105
+        if (lohiOverflows) self.lohi - math.maxUInt32 + other.lohi - 1 + lohiCarry
+//          ^^^^^^^^^^^^^ reference local lohiOverflows_104
+//                         ^^^^ reference local self_44
+//                              ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                          ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                                      ^^^^^ reference local other_95
+//                                                            ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//                                                                       ^^^^^^^^^ reference local lohiCarry_103
+        else self.lohi + other.lohi + lohiCarry
+//           ^^^^ reference local self_44
+//                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//                       ^^^^^ reference local other_95
+//                             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//                                    ^^^^^^^^^ reference local lohiCarry_103
+  
+      local hiloComplement = math.maxUInt32 - other.hilo
+//          ^^^^^^^^^^^^^^ definition local hiloComplement_109
+//                           ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                            ^^^^^ reference local other_95
+//                                                  ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+      local hiloCarry = if (lohiOverflows) 1 else 0
+//          ^^^^^^^^^ definition local hiloCarry_110
+//                          ^^^^^^^^^^^^^ reference local lohiOverflows_104
+      local hiloOverflows = (self.hilo + hiloCarry) > hiloComplement
+//          ^^^^^^^^^^^^^ definition local hiloOverflows_111
+//                           ^^^^ reference local self_44
+//                                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                       ^^^^^^^^^ reference local hiloCarry_110
+//                                                    ^^^^^^^^^^^^^^ reference local hiloComplement_109
+      local hilo =
+//          ^^^^ definition local hilo_112
+        if (hiloOverflows) self.hilo - math.maxUInt32 + other.hilo - 1 + hiloCarry
+//          ^^^^^^^^^^^^^ reference local hiloOverflows_111
+//                         ^^^^ reference local self_44
+//                              ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                          ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                                      ^^^^^ reference local other_95
+//                                                            ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                                                       ^^^^^^^^^ reference local hiloCarry_110
+        else self.hilo + other.hilo + hiloCarry
+//           ^^^^ reference local self_44
+//                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                       ^^^^^ reference local other_95
+//                             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                    ^^^^^^^^^ reference local hiloCarry_110
+  
+      local hihiCarry = if (hiloOverflows) 1 else 0
+//          ^^^^^^^^^ definition local hihiCarry_116
+//                          ^^^^^^^^^^^^^ reference local hiloOverflows_111
+      local hihi = (self.hihi + other.hihi + hihiCarry).and(math.maxUInt32)
+//          ^^^^ definition local hihi_117
+//                  ^^^^ reference local self_44
+//                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                              ^^^^^ reference local other_95
+//                                    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                                           ^^^^^^^^^ reference local hihiCarry_116
+//                                                          ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+      words = List(lolo, lohi, hilo, hihi)
+//    ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#words.
+//            ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                 ^^^^ reference local lolo_98
+//                       ^^^^ reference local lohi_105
+//                             ^^^^ reference local hilo_112
+//                                   ^^^^ reference local hihi_117
+    }
+  
+    /// Generate a sequence of [UInt128] between this integer and [other], inclusive.
+    /// Behaves like [IntSeq].
+    function seq(other: UInt128): Listing<UInt128> =
+//           ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#seq().
+//           documentation
+//           > Generate a sequence of [`UInt128`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/u128.pkl#L37,C7) between this integer and [`other`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.net/u128.pkl#L123,C16), inclusive.
+//           > Behaves like [`IntSeq`](pkl-lsp://stdlib/base.pkl#L2792,C16).
+//               ^^^^^ definition local other_123
+//                      ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#
+//                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                        ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#
+      if (self.hihi == other.hihi)
+//        ^^^^ reference local self_44
+//             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                     ^^^^^ reference local other_123
+//                           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+        if (self.hilo == other.hilo)
+//          ^^^^ reference local self_44
+//               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                       ^^^^^ reference local other_123
+//                             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+          if (self.lohi == other.lohi) new {
+//            ^^^^ reference local self_44
+//                 ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//                         ^^^^^ reference local other_123
+//                               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+            for (ll in IntSeq(self.lolo, other.lolo)) { UInt128(self.hihi, self.hilo, self.lohi, ll) }
+//               ^^ definition local ll_127
+//                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/IntSeq().
+//                            ^^^^ reference local self_44
+//                                 ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+//                                       ^^^^^ reference local other_123
+//                                             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+//                                                      ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                                                              ^^^^ reference local self_44
+//                                                                   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                                                                         ^^^^ reference local self_44
+//                                                                              ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                                                                    ^^^^ reference local self_44
+//                                                                                         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//                                                                                               ^^ reference local ll_127
+          }
+          else new {
+            ...UInt128(self.hihi, self.hilo, self.lohi, self.lolo).seq(UInt128(self.hihi, self.hilo, self.lohi, math.maxUInt32))
+//             ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                     ^^^^ reference local self_44
+//                          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                                ^^^^ reference local self_44
+//                                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                           ^^^^ reference local self_44
+//                                                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//                                                      ^^^^ reference local self_44
+//                                                           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+//                                                                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#seq().
+//                                                                     ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                                                                             ^^^^ reference local self_44
+//                                                                                  ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                                                                                        ^^^^ reference local self_44
+//                                                                                             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                                                                                   ^^^^ reference local self_44
+//                                                                                                        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//                                                                                                              ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                                                                                   ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+            for (lh in IntSeq(self.lohi, other.lohi)) {
+//               ^^ definition local lh_131
+//                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/IntSeq().
+//                            ^^^^ reference local self_44
+//                                 ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//                                       ^^^^^ reference local other_123
+//                                             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+              ...UInt128(self.hihi, self.hilo, lh, 0).seq(UInt128(self.hihi, self.hilo, lh, math.maxUInt32))
+//               ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                       ^^^^ reference local self_44
+//                            ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                                  ^^^^ reference local self_44
+//                                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                             ^^ reference local lh_131
+//                                                    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#seq().
+//                                                        ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                                                                ^^^^ reference local self_44
+//                                                                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                                                                           ^^^^ reference local self_44
+//                                                                                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                                                                      ^^ reference local lh_131
+//                                                                                          ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                                                               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+            }
+            ...UInt128(other.hihi, other.hilo, other.lohi, 0).seq(UInt128(other.hihi, other.hilo, other.lohi, other.lolo))
+//             ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                     ^^^^^ reference local other_123
+//                           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                                 ^^^^^ reference local other_123
+//                                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                             ^^^^^ reference local other_123
+//                                                   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//                                                            ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#seq().
+//                                                                ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                                                                        ^^^^^ reference local other_123
+//                                                                              ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                                                                                    ^^^^^ reference local other_123
+//                                                                                          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                                                                                ^^^^^ reference local other_123
+//                                                                                                      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//                                                                                                            ^^^^^ reference local other_123
+//                                                                                                                  ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+          }
+        else new {
+          ...UInt128(self.hihi, self.hilo, self.lohi, self.lolo).seq(UInt128(self.hihi, self.hilo, math.maxUInt32, math.maxUInt32))
+//           ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                   ^^^^ reference local self_44
+//                        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                              ^^^^ reference local self_44
+//                                   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                         ^^^^ reference local self_44
+//                                              ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//                                                    ^^^^ reference local self_44
+//                                                         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+//                                                               ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#seq().
+//                                                                   ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                                                                           ^^^^ reference local self_44
+//                                                                                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                                                                                      ^^^^ reference local self_44
+//                                                                                           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                                                                                 ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                                                                      ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                                                                                                 ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                                                                                      ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+          for (hl in IntSeq(self.hilo, other.hilo)) {
+//             ^^ definition local hl_138
+//                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/IntSeq().
+//                          ^^^^ reference local self_44
+//                               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                     ^^^^^ reference local other_123
+//                                           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+            ...UInt128(self.hihi, hl, 0, 0).seq(UInt128(self.hihi, hl, math.maxUInt32, math.maxUInt32))
+//             ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                     ^^^^ reference local self_44
+//                          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                                ^^ reference local hl_138
+//                                          ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#seq().
+//                                              ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                                                      ^^^^ reference local self_44
+//                                                           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                                                                 ^^ reference local hl_138
+//                                                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                                          ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                                                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                                                          ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+          }
+          ...UInt128(other.hihi, other.hilo, 0, 0).seq(UInt128(other.hihi, other.hilo, other.lohi, other.lolo))
+//           ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                   ^^^^^ reference local other_123
+//                         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                               ^^^^^ reference local other_123
+//                                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#seq().
+//                                                     ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                                                             ^^^^^ reference local other_123
+//                                                                   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                                                                         ^^^^^ reference local other_123
+//                                                                               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                                                                     ^^^^^ reference local other_123
+//                                                                                           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//                                                                                                 ^^^^^ reference local other_123
+//                                                                                                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+        }
+      else new {
+        ...UInt128(self.hihi, self.hilo, self.lohi, self.lolo).seq(UInt128(self.hihi, math.maxUInt32, math.maxUInt32, math.maxUInt32))
+//         ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                 ^^^^ reference local self_44
+//                      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                            ^^^^ reference local self_44
+//                                 ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                       ^^^^ reference local self_44
+//                                            ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//                                                  ^^^^ reference local self_44
+//                                                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+//                                                             ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#seq().
+//                                                                 ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                                                                         ^^^^ reference local self_44
+//                                                                              ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                                                                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                                                         ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                                                                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                                                                         ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                                                                                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                                                                                         ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+        for (hh in IntSeq(self.hilo, other.hilo)) {
+//           ^^ definition local hh_145
+//                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/IntSeq().
+//                        ^^^^ reference local self_44
+//                             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                   ^^^^^ reference local other_123
+//                                         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+          ...UInt128(hh, 0, 0, 0).seq(UInt128(hh, math.maxUInt32, math.maxUInt32, math.maxUInt32))
+//           ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                   ^^ reference local hh_145
+//                                ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#seq().
+//                                    ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                                            ^^ reference local hh_145
+//                                                ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                     ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                                                ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                                     ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+//                                                                                ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                                                     ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+        }
+        ...UInt128(other.hihi, 0, 0, 0).seq(UInt128(other.hihi, other.hilo, other.lohi, other.lolo))
+//         ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                 ^^^^^ reference local other_123
+//                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                                      ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#seq().
+//                                          ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128().
+//                                                  ^^^^^ reference local other_123
+//                                                        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hihi.
+//                                                              ^^^^^ reference local other_123
+//                                                                    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#hilo.
+//                                                                          ^^^^^ reference local other_123
+//                                                                                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lohi.
+//                                                                                      ^^^^^ reference local other_123
+//                                                                                            ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.net 1.2.1 `u128.pkl`/UInt128#lolo.
+      }
+  }
+  

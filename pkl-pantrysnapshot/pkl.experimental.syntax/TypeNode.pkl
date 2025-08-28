@@ -1,0 +1,249 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  abstract module pkl.experimental.syntax.TypeNode
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/
+  
+  extends "Node.pkl"
+  
+  import "QualifiedIdentifierNode.pkl"
+  import "ExpressionNode.pkl"
+  import "TypeNode.pkl"
+  import "Node.pkl"
+  
+  class NullableTypeNode extends TypeNode {
+//      ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/NullableTypeNode#
+//                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/
+    typeNode: TypeNode
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/NullableTypeNode#typeNode.
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/
+    function render(currentIndent: String) =
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/NullableTypeNode#render().
+//                  ^^^^^^^^^^^^^ definition local currentIndent_27
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      let (underlyingRendered = if (typeNode is UnionTypeNode) parenthesize(typeNode.render(currentIndent)) else typeNode.render(currentIndent))
+//         ^^^^^^^^^^^^^^^^^^ definition local underlyingRendered_28
+//                                  ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/NullableTypeNode#typeNode.
+//                                              ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/UnionTypeNode#
+//                                                             ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/parenthesize().
+//                                                                          ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/NullableTypeNode#typeNode.
+//                                                                                   ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/UnionTypeNode#render().
+//                                                                                          ^^^^^^^^^^^^^ reference local currentIndent_27
+//                                                                                                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/NullableTypeNode#typeNode.
+//                                                                                                                        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                                                                                                                               ^^^^^^^^^^^^^ reference local currentIndent_27
+        underlyingRendered + "?"
+//      ^^^^^^^^^^^^^^^^^^ reference local underlyingRendered_28
+  }
+  
+  class BuiltInTypeNode extends TypeNode {
+//      ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/BuiltInTypeNode#
+//                              ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/
+    type: "unknown"|"nothing"|"module"
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/BuiltInTypeNode#type.
+    function render(_) = type
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/BuiltInTypeNode#render().
+//                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/BuiltInTypeNode#type.
+  }
+  
+  class StringLiteralTypeNode extends TypeNode {
+//      ^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/StringLiteralTypeNode#
+//                                    ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/
+    value: String
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/StringLiteralTypeNode#value.
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    function render(_) = pcfRenderer.renderValue(value)
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/StringLiteralTypeNode#render().
+//                       ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/pcfRenderer.
+//                                   ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ValueRenderer#renderValue().
+//                                               ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/StringLiteralTypeNode#value.
+  }
+  
+  class DeclaredTypeNode extends TypeNode {
+//      ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/DeclaredTypeNode#
+//                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/
+    name: QualifiedIdentifierNode
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/DeclaredTypeNode#name.
+//        ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `QualifiedIdentifierNode.pkl`/
+  
+    typeArguments: Listing<TypeNode>
+//  ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/DeclaredTypeNode#typeArguments.
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                         ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/
+  
+    local function renderTypeArguments(currentIndent: String) =
+//                 ^^^^^^^^^^^^^^^^^^^ definition local renderTypeArguments_48
+//                                     ^^^^^^^^^^^^^ definition local currentIndent_48
+//                                                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      if (typeArguments.isEmpty) ""
+//        ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/DeclaredTypeNode#typeArguments.
+//                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#isEmpty.
+      else "<" + typeArguments.toList().map((t) -> t.render(currentIndent)).join(", ") + ">"
+//               ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/DeclaredTypeNode#typeArguments.
+//                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+//                                      ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                                           ^ definition local t_50
+//                                                 ^ reference local t_50
+//                                                   ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                                                          ^^^^^^^^^^^^^ reference local currentIndent_48
+//                                                                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  
+    function render(currentIndent: String) = name.render(currentIndent) + renderTypeArguments(currentIndent)
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/DeclaredTypeNode#render().
+//                  ^^^^^^^^^^^^^ definition local currentIndent_52
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/DeclaredTypeNode#name.
+//                                                ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `QualifiedIdentifierNode.pkl`/render().
+//                                                       ^^^^^^^^^^^^^ reference local currentIndent_52
+//                                                                        ^^^^^^^^^^^^^^^^^^^ reference local renderTypeArguments_48
+//                                                                                            ^^^^^^^^^^^^^ reference local currentIndent_52
+  }
+  
+  class ConstrainedTypeNode extends TypeNode {
+//      ^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/ConstrainedTypeNode#
+//                                  ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/
+    /// The underlying type
+    typeNode: TypeNode
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/ConstrainedTypeNode#typeNode.
+//  documentation
+//  > The underlying type
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/
+  
+    constraints: Listing<ExpressionNode>
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/ConstrainedTypeNode#constraints.
+//               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                       ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+  
+    local function renderConstraints(currentIndent: String) =
+//                 ^^^^^^^^^^^^^^^^^ definition local renderConstraints_61
+//                                   ^^^^^^^^^^^^^ definition local currentIndent_61
+//                                                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      "(" + constraints.toList().map((c) -> c.render(currentIndent)).join(", ") + ")"
+//          ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/ConstrainedTypeNode#constraints.
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+//                               ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                                    ^ definition local c_62
+//                                          ^ reference local c_62
+//                                            ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                                                   ^^^^^^^^^^^^^ reference local currentIndent_61
+//                                                                   ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  
+    function render(currentIndent: String) =
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/ConstrainedTypeNode#render().
+//                  ^^^^^^^^^^^^^ definition local currentIndent_64
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      let (renderedUnderlyingType = if (typeNode is UnionTypeNode) parenthesize(typeNode.render(currentIndent)) else typeNode.render(currentIndent))
+//         ^^^^^^^^^^^^^^^^^^^^^^ definition local renderedUnderlyingType_65
+//                                      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/ConstrainedTypeNode#typeNode.
+//                                                  ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/UnionTypeNode#
+//                                                                 ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/parenthesize().
+//                                                                              ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/ConstrainedTypeNode#typeNode.
+//                                                                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/UnionTypeNode#render().
+//                                                                                              ^^^^^^^^^^^^^ reference local currentIndent_64
+//                                                                                                                   ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/ConstrainedTypeNode#typeNode.
+//                                                                                                                            ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                                                                                                                                   ^^^^^^^^^^^^^ reference local currentIndent_64
+        renderedUnderlyingType + renderConstraints(currentIndent)
+//      ^^^^^^^^^^^^^^^^^^^^^^ reference local renderedUnderlyingType_65
+//                               ^^^^^^^^^^^^^^^^^ reference local renderConstraints_61
+//                                                 ^^^^^^^^^^^^^ reference local currentIndent_64
+  }
+  
+  class UnionDefaultType extends Node {
+//      ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/UnionDefaultType#
+//                               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/
+    typeNode: TypeNode
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/UnionDefaultType#typeNode.
+//            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/
+  
+    function render(currentIndent: String) = "*\(typeNode.render(currentIndent))"
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/UnionDefaultType#render().
+//                  ^^^^^^^^^^^^^ definition local currentIndent_72
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/UnionDefaultType#typeNode.
+//                                                        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                                                               ^^^^^^^^^^^^^ reference local currentIndent_72
+  }
+  
+  class UnionTypeNode extends TypeNode {
+//      ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/UnionTypeNode#
+//                            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/
+    members: Listing<TypeNode|UnionDefaultType>(atMostOneUnionDefaultType)
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/UnionTypeNode#members.
+//           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                   ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/
+//                            ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/UnionDefaultType#
+//                                              ^^^^^^^^^^^^^^^^^^^^^^^^^ reference local atMostOneUnionDefaultType_78
+  
+    const local atMostOneUnionDefaultType = (members: Listing<TypeNode|UnionDefaultType>) ->
+//              ^^^^^^^^^^^^^^^^^^^^^^^^^ definition local atMostOneUnionDefaultType_78
+//                                           ^^^^^^^ definition local members_78
+//                                                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                                            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/
+//                                                                     ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/UnionDefaultType#
+        members.fold(0, (acc, member) -> acc + if (member is UnionDefaultType) 1 else 0) <= 1
+//      ^^^^^^^ reference local members_78
+//              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#fold().
+//                       ^^^ definition local acc_79
+//                            ^^^^^^ definition local member_79
+//                                       ^^^ reference local acc_79
+//                                                 ^^^^^^ reference local member_79
+//                                                           ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/UnionDefaultType#
+  
+    function render(currentIndent: String) =
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/UnionTypeNode#render().
+//                  ^^^^^^^^^^^^^ definition local currentIndent_81
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      let (childrenRendered = members.toList().map((t) -> t.render(currentIndent)))
+//         ^^^^^^^^^^^^^^^^ definition local childrenRendered_82
+//                            ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/UnionTypeNode#members.
+//                                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+//                                             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                                                  ^ definition local t_82
+//                                                        ^ reference local t_82
+//                                                          ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                                                                 ^^^^^^^^^^^^^ reference local currentIndent_81
+        // Multiline if length exceeds `maxColumnWidth` chars.
+        // If multiline, indent one level deeper.
+        if (childrenRendered.fold(0, (acc, elem) -> acc + elem.length) > maxColumnWidth)
+//          ^^^^^^^^^^^^^^^^ reference local childrenRendered_82
+//                           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#fold().
+//                                    ^^^ definition local acc_85
+//                                         ^^^^ definition local elem_85
+//                                                  ^^^ reference local acc_85
+//                                                        ^^^^ reference local elem_85
+//                                                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+//                                                                       ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/maxColumnWidth.
+          "\n\(currentIndent + indent)" + childrenRendered.join("\n\(currentIndent + indent)|")
+//             ^^^^^^^^^^^^^ reference local currentIndent_81
+//                             ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/indent.
+//                                        ^^^^^^^^^^^^^^^^ reference local childrenRendered_82
+//                                                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+//                                                                   ^^^^^^^^^^^^^ reference local currentIndent_81
+//                                                                                   ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/indent.
+        else
+          childrenRendered.join("|")
+//        ^^^^^^^^^^^^^^^^ reference local childrenRendered_82
+//                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  }
+  
+  // TODO fill me in
+  class FunctionTypeNode extends TypeNode {
+//      ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/FunctionTypeNode#
+//                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/
+  
+  }
+  

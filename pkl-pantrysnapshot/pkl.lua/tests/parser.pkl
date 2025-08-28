@@ -1,0 +1,894 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module pkl.lua.tests.parser
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/
+  
+  amends "pkl:test"
+  
+  import "../lua.pkl"
+  import "pkl:math"
+  
+  local parser: lua.Parser = new {}
+//      ^^^^^^ definition local parser_23
+//                  ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#
+  
+  local function parseValue(s: String): lua.Value =
+//               ^^^^^^^^^^ definition local parseValue_25
+//                          ^ definition local s_25
+//                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                          ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Value#
+    let (map = (parser) { useDynamic = false }.parse("value=\(s)"))
+//       ^^^ definition local map_26
+//              ^^^^^^ reference local parser_23
+//                        ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/useDynamic.
+//                                             ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+//                                                            ^ reference local s_25
+      if (map.length == 1) map["value"]
+//        ^^^ reference local map_26
+//                         ^^^ reference local map_26
+      else throw("source parsed as more than one value: \(s)")
+//                                                        ^ reference local s_25
+  
+  local function parseDynamic(s: String): lua.Value =
+//               ^^^^^^^^^^^^ definition local parseDynamic_30
+//                            ^ definition local s_30
+//                               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                            ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Value#
+    let (map = parser.parse("value=\(s)").toMap())
+//       ^^^ definition local map_31
+//             ^^^^^^ reference local parser_23
+//                    ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+//                                   ^ reference local s_30
+      if (map.length == 1) map["value"]
+//        ^^^ reference local map_31
+//                         ^^^ reference local map_31
+      else throw("source parsed as more than one value: \(s)")
+//                                                        ^ reference local s_30
+  
+  facts {
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/facts.
+    ["hex floats"] {
+      // with the way we parse hex floats, check for precision issues
+      parseValue("0xaBcD") is Int(this == 0xabcd)
+//    ^^^^^^^^^^ reference local parseValue_25
+//                            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+      parseValue("0X80.0") is Float(this == 0x80)
+//    ^^^^^^^^^^ reference local parseValue_25
+//                            ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Float#
+      parseValue("0x80.8") is Float(this == 128.5)
+//    ^^^^^^^^^^ reference local parseValue_25
+//                            ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Float#
+      parseValue("0x7f.f0") is Float(this == 127.9375)
+//    ^^^^^^^^^^ reference local parseValue_25
+//                             ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Float#
+      parseValue("0x7f.84") is Float(this == 127.515625)
+//    ^^^^^^^^^^ reference local parseValue_25
+//                             ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Float#
+      parseValue("0x7f.abc") is Float(this == 127.6708984375)
+//    ^^^^^^^^^^ reference local parseValue_25
+//                              ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Float#
+      parseValue("-0x7f.abc") is Float(this == -127.6708984375)
+//    ^^^^^^^^^^ reference local parseValue_25
+//                               ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Float#
+      parseValue("0x1p1") is Float(this == 2.0)
+//    ^^^^^^^^^^ reference local parseValue_25
+//                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Float#
+      parseValue("0x1p+1") is Float(this == 2.0)
+//    ^^^^^^^^^^ reference local parseValue_25
+//                            ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Float#
+      parseValue("0x1p2") is Float(this == 4.0)
+//    ^^^^^^^^^^ reference local parseValue_25
+//                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Float#
+      parseValue("0x1p-1") is Float(this == 0.5)
+//    ^^^^^^^^^^ reference local parseValue_25
+//                            ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Float#
+      parseValue("0x80.8p1") is Float(this == 257.0)
+//    ^^^^^^^^^^ reference local parseValue_25
+//                              ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Float#
+      parseValue("0x7fffffffffffffff") is Int(this == math.maxInt)
+//    ^^^^^^^^^^ reference local parseValue_25
+//                                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxInt.
+      parseValue("-0x8000000000000000") is Int(this == math.minInt)
+//    ^^^^^^^^^^ reference local parseValue_25
+//                                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/minInt.
+      parseValue("0x1.fffffffffffffp+1023") is Float(this == math.maxFiniteFloat)
+//    ^^^^^^^^^^ reference local parseValue_25
+//                                             ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Float#
+//                                                           ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                                ^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxFiniteFloat.
+      parseValue("-0x1.fffffffffffffp+1023") is Float(this == math.minFiniteFloat)
+//    ^^^^^^^^^^ reference local parseValue_25
+//                                              ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Float#
+//                                                            ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                                                 ^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/minFiniteFloat.
+    }
+    ["negative numbers"] {
+      // negative numbers are a unary negation on a positive number
+      parseValue("-1") == -1
+//    ^^^^^^^^^^ reference local parseValue_25
+      // we support double-negation because the alternative is giving the user an error like
+      //   error: expected number, found token '-'
+      // and that's just confusing.
+      parseValue("- -1") == 1
+//    ^^^^^^^^^^ reference local parseValue_25
+      parseValue("- - - 1") == -1
+//    ^^^^^^^^^^ reference local parseValue_25
+      parseValue("-\n1") == -1
+//    ^^^^^^^^^^ reference local parseValue_25
+      parseValue("\(math.maxUInt)") == math.maxUInt
+//    ^^^^^^^^^^ reference local parseValue_25
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt.
+//                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt.
+      parseValue("\(math.maxInt)") == math.maxInt
+//    ^^^^^^^^^^ reference local parseValue_25
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxInt.
+//                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxInt.
+      parseValue("\(math.minInt)") == math.minInt
+//    ^^^^^^^^^^ reference local parseValue_25
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/minInt.
+//                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/minInt.
+      parseValue("-0.1") == -0.1
+//    ^^^^^^^^^^ reference local parseValue_25
+      parseValue("-0xABC") == -0xABC
+//    ^^^^^^^^^^ reference local parseValue_25
+      parseValue("-2e1") == -2e1
+//    ^^^^^^^^^^ reference local parseValue_25
+    }
+    ["tables with useDynamic=true"] {
+      // note: new Dynamic { 1; 2 } == new Dynamic { [0] = 1; [1] = 2 }, so we have to take care with comparisons
+      parseDynamic("{}") == new Dynamic {}
+//    ^^^^^^^^^^^^ reference local parseDynamic_30
+//                              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+      parseDynamic("{1,2}") is Dynamic(this.toList() == List(1,2) && this.toMap().isEmpty)
+//    ^^^^^^^^^^^^ reference local parseDynamic_30
+//                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toList().
+//                                                      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                                                        ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toMap().
+//                                                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#isEmpty.
+      parseDynamic("{a=1;b=2}") == new Dynamic { a = 1; b = 2 }
+//    ^^^^^^^^^^^^ reference local parseDynamic_30
+//                                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                               ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/a.
+//                                                      ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/b.
+      parseDynamic(#"{["a"]=1;["b"]=2}"#) == new Dynamic { a = 1; b = 2 }
+//    ^^^^^^^^^^^^ reference local parseDynamic_30
+//                                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                         ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/a.
+//                                                                ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/b.
+      parseDynamic("{[1]=1;[2]=2}") is Dynamic(this.toList() == List(1,2) && this.toMap().isEmpty)
+//    ^^^^^^^^^^^^ reference local parseDynamic_30
+//                                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toList().
+//                                                              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                                                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toMap().
+//                                                                                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#isEmpty.
+      parseDynamic("{[2]=2;[1]=1}") is Dynamic(this.toList() == List(1) && this.toMap() == Map(2,2))
+//    ^^^^^^^^^^^^ reference local parseDynamic_30
+//                                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toList().
+//                                                              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                                                              ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toMap().
+//                                                                                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+      parseDynamic("{[0]=1;[2]=2}") is Dynamic(this.toList().isEmpty && this.toMap() == Map(0,1,2,2))
+//    ^^^^^^^^^^^^ reference local parseDynamic_30
+//                                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toList().
+//                                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#isEmpty.
+//                                                                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toMap().
+//                                                                                      ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+      parseDynamic("{[{}]=1}") == new Dynamic { [new Dynamic {}] = 1 }
+//    ^^^^^^^^^^^^ reference local parseDynamic_30
+//                                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+      parseDynamic("{[{1,2}]=1}") == new Dynamic { [new Dynamic { 1; 2 }] = 1 }
+//    ^^^^^^^^^^^^ reference local parseDynamic_30
+//                                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+      parseDynamic("{[{a=1}]=1}") == new Dynamic { [new Dynamic { a = 1 }] = 1 }
+//    ^^^^^^^^^^^^ reference local parseDynamic_30
+//                                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/a.
+    }
+    ["tables with useDynamic=false"] {
+      parseValue("{}") == new Listing {}
+//    ^^^^^^^^^^ reference local parseValue_25
+//                            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+      parseValue("{1,2}") == new Listing { 1; 2 }
+//    ^^^^^^^^^^ reference local parseValue_25
+//                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+      parseValue("{a=1;b=2}") == new Mapping { ["a"] = 1; ["b"] = 2 }
+//    ^^^^^^^^^^ reference local parseValue_25
+//                                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+      parseValue(#"{["a"]=1;["b"]=2}"#) == new Mapping { ["a"] = 1; ["b"] = 2 }
+//    ^^^^^^^^^^ reference local parseValue_25
+//                                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+      parseValue("{[1]=1;[2]=2}") == new Listing { 1; 2 }
+//    ^^^^^^^^^^ reference local parseValue_25
+//                                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+      module.catch(() -> parseValue("{[2]=2;[1]=1}")).startsWith("Table has both list elements and map entries")
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                       ^^^^^^^^^^ reference local parseValue_25
+//                                                    ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#startsWith().
+      parseValue("{[2]=1;[3]=2}") == new Mapping { [2] = 1; [3] = 2 }
+//    ^^^^^^^^^^ reference local parseValue_25
+//                                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+      parseValue("{[0]=1;[2]=2}") == new Mapping { [0] = 1; [2] = 2 }
+//    ^^^^^^^^^^ reference local parseValue_25
+//                                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+      parseValue("{[{}]=1}") == new Mapping { [new Listing {}] = 1 }
+//    ^^^^^^^^^^ reference local parseValue_25
+//                                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+      parseValue("{[{1,2}]=1}") == new Mapping { [new Listing { 1; 2 }] = 1 }
+//    ^^^^^^^^^^ reference local parseValue_25
+//                                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+      parseValue("{[{a=1}]=1}") == new Mapping { [new Mapping { ["a"] = 1 }] = 1 }
+//    ^^^^^^^^^^ reference local parseValue_25
+//                                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+    }
+    ["_ENV[key] with useDynamic=true"] {
+      // note: new Dynamic { 1; 2 } == new Dynamic { [0] = 1; [1] = 2 }, so we have to take care with comparisons
+      parser.parse("_ENV[true]=1") == new Dynamic { [true] = 1 }
+//    ^^^^^^ reference local parser_23
+//           ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+//                                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+      parser.parse(#"_ENV["foo"]=1"#) == new Dynamic { foo = 1 }
+//    ^^^^^^ reference local parser_23
+//           ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+//                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                     ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/foo.
+      parser.parse("_ENV[1]=2") is Dynamic(this.toList() == List(2) && this.toMap().isEmpty)
+//    ^^^^^^ reference local parser_23
+//           ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+//                                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toList().
+//                                                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                                                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toMap().
+//                                                                                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#isEmpty.
+      parser.parse("_ENV[0]=2") is Dynamic(this.toList().isEmpty && this.toMap() == Map(0, 2))
+//    ^^^^^^ reference local parser_23
+//           ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+//                                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toList().
+//                                                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#isEmpty.
+//                                                                       ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toMap().
+//                                                                                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+      parser.parse("_ENV[-1]=2") is Dynamic(this.toList().isEmpty && this.toMap() == Map(-1, 2))
+//    ^^^^^^ reference local parser_23
+//           ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+//                                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toList().
+//                                                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#isEmpty.
+//                                                                        ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toMap().
+//                                                                                   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+      parser.parse("_ENV[2]=2;_ENV[1]=1") is Dynamic(this.toList() == List(1) && this.toMap() == Map(2,2))
+//    ^^^^^^ reference local parser_23
+//           ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+//                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toList().
+//                                                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                                                                    ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toMap().
+//                                                                                               ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+      parser.parse("_ENV[{a=1}]=2") == new Dynamic { [new Dynamic { a = 1 }] = 2 }
+//    ^^^^^^ reference local parser_23
+//           ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+//                                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                  ^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/a.
+    }
+    ["_ENV[key] with useDynamic=false"] {
+      local mapParser = (parser) { useDynamic = false }
+//          ^^^^^^^^^ definition local mapParser_108
+//                       ^^^^^^ reference local parser_23
+//                                 ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/useDynamic.
+      mapParser.parse("_ENV[true]=1") == new Mapping { [true] = 1 }
+//    ^^^^^^^^^ reference local mapParser_108
+//              ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+//                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+      mapParser.parse(#"_ENV["foo"]=1"#) == new Mapping { ["foo"] = 1 }
+//    ^^^^^^^^^ reference local mapParser_108
+//              ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+//                                              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+      mapParser.parse("_ENV[1]=2") == new Mapping { [1] = 2 }
+//    ^^^^^^^^^ reference local mapParser_108
+//              ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+//                                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+      mapParser.parse("_ENV[0]=2") == new Mapping { [0] = 2 }
+//    ^^^^^^^^^ reference local mapParser_108
+//              ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+//                                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+      mapParser.parse("_ENV[-1]=2") == new Mapping { [-1] = 2 }
+//    ^^^^^^^^^ reference local mapParser_108
+//              ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+//                                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+      mapParser.parse("_ENV[2]=2;_ENV[1]=1") == new Mapping { [2] = 2; [1] = 1 }
+//    ^^^^^^^^^ reference local mapParser_108
+//              ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+//                                                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+      mapParser.parse("_ENV[{a=1}]=2") == new Mapping { [new Mapping { ["a"] = 1 }] = 2 }
+//    ^^^^^^^^^ reference local mapParser_108
+//              ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+//                                            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+    }
+    ["errors"] {
+      // these are facts instead of examples so we can preserve formatting in the error strings, since module.catch
+      // replaces newlines with spaces.
+      module.catch(() -> parser.parse("foo=")) == """
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                       ^^^^^^ reference local parser_23
+//                              ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+        Expected value or {, found EOF
+  
+        1 | foo=
+          |     ^
+        at <input>:1:5
+        """.replaceAll("\n", " ")
+//          ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+      module.catch(() -> parser.parse("foo=3\nbar=")) == """
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                       ^^^^^^ reference local parser_23
+//                              ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+        Expected value or {, found EOF
+  
+        2 | bar=
+          |     ^
+        at <input>:2:5
+        """.replaceAll("\n", " ")
+//          ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+      module.catch(() -> parser.parse(new Resource { text = "foo=1.2.3"; uri = "uri:path/to/input.lua" })) == """
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                       ^^^^^^ reference local parser_23
+//                              ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+//                                        ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Resource#
+//                                                   ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/text.
+//                                                                       ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/uri.
+        Invalid numeric literal: 1.2.3
+  
+        1 | foo=1.2.3
+          |     ^^^^^
+        at uri:path/to/input.lua:1:5
+        """.replaceAll("\n", " ")
+//          ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+      module.catch(() -> (parser) { useDynamic = false }.parse("foo={1, [true]=2}")) == """
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                        ^^^^^^ reference local parser_23
+//                                  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/useDynamic.
+//                                                       ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+        Table has both list elements and map entries
+  
+        1 | foo={1, [true]=2}
+          |      ^ first list entry
+          |          ^^^^ first map entry
+        at <input>:1:6
+        """.replaceAll("\n", " ")
+//          ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+      module.catch(() -> (parser) { useDynamic = false }.parse("foo={[true]=1, 2}")) == """
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                        ^^^^^^ reference local parser_23
+//                                  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/useDynamic.
+//                                                       ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+        Table has both list elements and map entries
+  
+        1 | foo={[true]=1, 2}
+          |       ^^^^ first map entry
+          |                ^ first list entry
+        at <input>:1:7
+        """.replaceAll("\n", " ")
+//          ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+      module.catch(() -> (parser) { useDynamic = false }.parse("foo={\n  [true]=1;\n  2\n}")) == """
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                        ^^^^^^ reference local parser_23
+//                                  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/useDynamic.
+//                                                       ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+        Table has both list elements and map entries
+  
+        2 |   [true]=1;
+          |    ^^^^ first map entry
+        3 |   2
+          |   ^ first list entry
+        at <input>:2:4
+        """.replaceAll("\n", " ")
+//          ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+      module.catch(() -> (parser) { useDynamic = false }.parse("foo={\n  1;\n  [true]=2\n}")) == """
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                        ^^^^^^ reference local parser_23
+//                                  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/useDynamic.
+//                                                       ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+        Table has both list elements and map entries
+  
+        2 |   1;
+          |   ^ first list entry
+        3 |   [true]=2
+          |    ^^^^ first map entry
+        at <input>:2:3
+        """.replaceAll("\n", " ")
+//          ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+      module.catch(() -> parser.parse("[1]=1")) == """
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                       ^^^^^^ reference local parser_23
+//                              ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+        Expected identifier or ;, found token `[`
+  
+        1 | [1]=1
+          | ^
+        at <input>:1:1
+        """.replaceAll("\n", " ")
+//          ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+      module.catch(() -> parser.parse("_ENV=1")) == """
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                       ^^^^^^ reference local parser_23
+//                              ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+        _ENV cannot be assigned to directly
+  
+        1 | _ENV=1
+          |     ^
+        at <input>:1:5
+        """.replaceAll("\n", " ")
+//          ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+    }
+  }
+  
+  examples {
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/examples.
+    ["empty"] {
+      parser.parse("")
+//    ^^^^^^ reference local parser_23
+//           ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+    }
+    ["null"] {
+      parser.parse("foo=nil")
+//    ^^^^^^ reference local parser_23
+//           ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+    }
+    ["boolean"] {
+      parser.parse("foo=true\nbar=false")
+//    ^^^^^^ reference local parser_23
+//           ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+    }
+    ["number"] {
+      parser.parse("""
+//    ^^^^^^ reference local parser_23
+//           ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+        zero=0
+        one=1
+        negative=-1
+        maxInt32=2147483647
+        minInt32=-2147483648
+        zerof=0.0
+        float=5.32
+        negfloat=-10.26
+        hex=0xaBcD
+        hexf=0X80.0
+        hexf2=0x80.8 -- 128.5
+        hexf3=0x7f.f0 -- 127.9375
+        hexf4=0x7f.84 -- 127.515625
+        hexf5=0x7f.abc -- 127.6708984375
+        hexp=0x1p1 -- 2.0
+        hexp=0x1p+1 -- 2.0
+        hexp2=0x1p2 -- 4.0
+        hexp3=0x1p-1 -- 0.5
+        hexp4=0x80.8p1 -- 257.0
+        """)
+    }
+    ["string"] {
+      parser.parse(#"""
+//    ^^^^^^ reference local parser_23
+//           ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+        s="hello world"
+        single = 'one\'two'
+        -- line comment
+        double = "one\"two"
+        --[[
+          long comment
+        ]]
+        escapes = "\a\b\f\n\r\t\v"
+        hex = --[=[ comment]] ]=] "\x00\x3a\x3A\x7f"
+        dec = "\0\58\058\0580\127"
+        u = "\u{0}\u{300a}\u{300B}\u{10FFFF}"
+        newline = "foo\
+          bar"
+        z = "foo\z
+          bar"
+        long=[[foo]]
+        long2=[[
+        foo]]
+        long3=[[
+          foo]]
+        long4=[=[]]]=]
+        long5=[===[]==]]====]]===]
+        """#)
+    }
+    ["class converters"] {
+      (parser) { converters { [Int] = (it) -> it + 1 } }.parse("foo=1;bar=2;baz=1.0")
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                                     ^^ definition local it_252
+//                                            ^^ reference local it_252
+//                                                       ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      (parser) { converters { [Int] = (it) -> it + 1 } }.parse("foo={1, 2}")
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                                     ^^ definition local it_253
+//                                            ^^ reference local it_253
+//                                                       ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      (parser) { converters { [Int] = (it) -> it + 1 } }.parse("foo={[1]=1;[2]=2}")
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                                     ^^ definition local it_254
+//                                            ^^ reference local it_254
+//                                                       ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      (parser) { converters { [Int] = (it) -> it + 1 } }.parse("foo={[2]=2;[3]=3}") // not listing elements!
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                                     ^^ definition local it_255
+//                                            ^^ reference local it_255
+//                                                       ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      (parser) { converters { [Int] = (it) -> it + 1 } }.parse("_ENV[1]=1;_ENV[2]=2")
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                                     ^^ definition local it_256
+//                                            ^^ reference local it_256
+//                                                       ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      (parser) { converters { [Int] = (it) -> it + 1 } }.parse("_ENV[2]=2;_ENV[3]=3") // not listing elements!
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                                     ^^ definition local it_257
+//                                            ^^ reference local it_257
+//                                                       ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      (parser) { converters { [String] = (it) -> "\(it)!" } }.parse(#"foo="bar""#)
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                        ^^ definition local it_258
+//                                                  ^^ reference local it_258
+//                                                            ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      (parser) { converters { [String] = (it) -> "\(it)!" } }.parse(#"_ENV["foo"]="bar""#)
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                        ^^ definition local it_259
+//                                                  ^^ reference local it_259
+//                                                            ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      fixupTableKeys((parser) { converters { [String] = (it) -> "\(it)!" } }.parse(#"table={["foo"]="bar"}"#))
+//    ^^^^^^^^^^^^^^ reference local fixupTableKeys_307
+//                    ^^^^^^ reference local parser_23
+//                              ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                       ^^ definition local it_260
+//                                                                 ^^ reference local it_260
+//                                                                           ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      fixupTableKeys((parser) { converters { [Int] = (it) -> it + 1 } }.parse("_ENV[{a=1}]=true"))
+//    ^^^^^^^^^^^^^^ reference local fixupTableKeys_307
+//                    ^^^^^^ reference local parser_23
+//                              ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                                            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                                                    ^^ definition local it_261
+//                                                           ^^ reference local it_261
+//                                                                      ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      (parser) { converters { [Dynamic] = (it) -> (it) { done = true } } }.parse("foo=1")
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                         ^^ definition local it_262
+//                                                 ^^ reference local it_262
+//                                                       ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/done.
+//                                                                         ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+    }
+    ["path converters"] {
+      (parser) { converters { ["^"] = (it) -> (it) { done = true } } }.parse("foo=1")
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                                     ^^ definition local it_265
+//                                             ^^ reference local it_265
+//                                                   ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/done.
+//                                                                     ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      (parser) { converters { [""] = (it) -> (it) { done = true } } }.parse("foo=1")
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                                    ^^ definition local it_266
+//                                            ^^ reference local it_266
+//                                                  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/done.
+//                                                                    ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      (parser) { converters { ["foo"] = (it) -> it + 1 } }.parse("foo=1")
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                                       ^^ definition local it_267
+//                                              ^^ reference local it_267
+//                                                         ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      (parser) { converters { ["^foo"] = (it) -> it + 1 } }.parse("foo=1")
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                                        ^^ definition local it_268
+//                                               ^^ reference local it_268
+//                                                          ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      (parser) { converters { ["a.foo"] = (it) -> it + 1 } }.parse("foo=1")
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                                         ^^ definition local it_269
+//                                                ^^ reference local it_269
+//                                                           ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      (parser) { converters { ["foo.a"] = (it) -> it + 1 } }.parse("foo={a=1;b=2}")
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                                         ^^ definition local it_270
+//                                                ^^ reference local it_270
+//                                                           ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      (parser) { converters { ["^a"] = (it) -> it + 1 } }.parse("a=1;foo={a=1}")
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                                      ^^ definition local it_271
+//                                             ^^ reference local it_271
+//                                                        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      (parser) { converters { ["*"] = (it) -> it + 1 } }.parse("a=1;_ENV[true]=1")
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                                     ^^ definition local it_272
+//                                            ^^ reference local it_272
+//                                                       ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      (parser) { converters { ["[*]"] = (it) -> it + 1 } }.parse(#"a=1;_ENV["b"]=1;_ENV[true]=1"#)
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                                       ^^ definition local it_273
+//                                              ^^ reference local it_273
+//                                                         ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      (parser) { useDynamic = false; converters { ["[*]"] = (it) -> it + 1 } }.parse(#"foo={a=1;["b"]=1;[true]=1}"#)
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/useDynamic.
+//                                   ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                                                           ^^ definition local it_274
+//                                                                  ^^ reference local it_274
+//                                                                             ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+    }
+    ["path converters apply after converting keys"] {
+      // first validate that paths "x[42]" and "x.42" won't match an integral key
+      (parser) { converters { ["x[42]"] = (it) -> "matched: \(it)"; ["x.42"] = (it) -> "matched: \(it)" } }.parse("x={[42]=true}")
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                                         ^^ definition local it_278
+//                                                            ^^ reference local it_278
+//                                                                              ^^ definition local it_278
+//                                                                                                 ^^ reference local it_278
+//                                                                                                          ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      // and validate that the path "x.42" will match a string key
+      (parser) { converters { ["x.42"] = (it) -> "matched: \(it)" } }.parse(#"x={["42"]=true}"#)
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                                        ^^ definition local it_280
+//                                                           ^^ reference local it_280
+//                                                                    ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      // now if we convert the integral key to a string, it should match "x.42"
+      (parser) { converters { [Int] = (it) -> it.toString(); ["x.42"] = (it) -> "matched: \(it)" } }.parse("x={[42]=true}")
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                                     ^^ definition local it_282
+//                                            ^^ reference local it_282
+//                                                                       ^^ definition local it_282
+//                                                                                          ^^ reference local it_282
+//                                                                                                   ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+    }
+    ["path converters in tables as table keys"] {
+      fixupTableKeys((parser) { converters { ["^"] = (it) -> (it) { done = true } } }.parse("_ENV[{a=1}]=1")) // ^ doesn't match the key table
+//    ^^^^^^^^^^^^^^ reference local fixupTableKeys_307
+//                    ^^^^^^ reference local parser_23
+//                              ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                                                    ^^ definition local it_285
+//                                                            ^^ reference local it_285
+//                                                                  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/done.
+//                                                                                    ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      fixupTableKeys((parser) { converters { ["a"] = (it) -> it + 1 } }.parse("_ENV[{a=1;b=1}]=1;a=1"))
+//    ^^^^^^^^^^^^^^ reference local fixupTableKeys_307
+//                    ^^^^^^ reference local parser_23
+//                              ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                                                    ^^ definition local it_286
+//                                                           ^^ reference local it_286
+//                                                                      ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      fixupTableKeys((parser) { converters { ["^a"] = (it) -> it + 1 } }.parse("_ENV[{a=1;b=1}]=1;a=1")) // ^ doesn't match the key table
+//    ^^^^^^^^^^^^^^ reference local fixupTableKeys_307
+//                    ^^^^^^ reference local parser_23
+//                              ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                                                     ^^ definition local it_287
+//                                                            ^^ reference local it_287
+//                                                                       ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      fixupTableKeys((parser) { converters { ["a.b"] = (it) -> it + 1 } }.parse("foo={[{a={b=1};b=1}]=1}"))
+//    ^^^^^^^^^^^^^^ reference local fixupTableKeys_307
+//                    ^^^^^^ reference local parser_23
+//                              ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                                                      ^^ definition local it_288
+//                                                             ^^ reference local it_288
+//                                                                        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+    }
+    ["converters can return non-Lua types"] {
+      (parser) { converters { ["^"] = (it) -> Pair("foo", it.foo) } }.parse("foo=1")
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                                     ^^ definition local it_291
+//                                            ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+//                                                        ^^ reference local it_291
+//                                                                    ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      (parser) { converters { [Int] = (it) -> Pair("int", it) } }.parse("foo=1")
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                                     ^^ definition local it_292
+//                                            ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+//                                                        ^^ reference local it_292
+//                                                                ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      (parser) { converters { [Int] = (it) -> Pair("int", it) } }.parse("_ENV[5]=true")
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                                     ^^ definition local it_293
+//                                            ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+//                                                        ^^ reference local it_293
+//                                                                ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      (parser) { converters { [Int] = (it) -> Pair("int", it) } }.parse("foo={[5]=true}")
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                                     ^^ definition local it_294
+//                                            ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+//                                                        ^^ reference local it_294
+//                                                                ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      (parser) { converters { [Int] = (it) -> Pair("int", it) }; useDynamic = false }.parse("_ENV[5]=true")
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                                     ^^ definition local it_295
+//                                            ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+//                                                        ^^ reference local it_295
+//                                                               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/useDynamic.
+//                                                                                    ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      (parser) { converters { [Int] = (it) -> Pair("int", it) }; useDynamic = false }.parse("foo={[5]=true}")
+//     ^^^^^^ reference local parser_23
+//               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/converters.
+//                             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                                     ^^ definition local it_296
+//                                            ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+//                                                        ^^ reference local it_296
+//                                                               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/useDynamic.
+//                                                                                    ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+    }
+    ["fixtures"] {
+      fixupTableKeys(parser.parse(read("fixtures/sample.lua")))
+//    ^^^^^^^^^^^^^^ reference local fixupTableKeys_307
+//                   ^^^^^^ reference local parser_23
+//                          ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+      parser.parse(read("fixtures/comment.lua"))
+//    ^^^^^^ reference local parser_23
+//           ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `lua.pkl`/Parser#parse().
+    }
+  }
+  
+  // When rendering parser.pkl-actual.pcf, any table keys that are objects just render as `new { … }`, and this produces
+  // an error "Cannot tell which parent to amend". This function replaces any such keys with a rendered string. This does
+  // mean that parser.pkl-expected.pcf needs to use rendered strings here instead.
+  local function fixupTableKeys(value: Dynamic|Mapping|Listing): Dynamic|Mapping|Listing =
+//               ^^^^^^^^^^^^^^ definition local fixupTableKeys_307
+//                              ^^^^^ definition local value_307
+//                                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+    if (value is Listing)
+//      ^^^^^ reference local value_307
+//               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+      value.toList().map((v) ->
+//    ^^^^^ reference local value_307
+//          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+//                   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                        ^ definition local v_309
+        if (v is Dynamic|Mapping|Listing) fixupTableKeys(v)
+//          ^ reference local v_309
+//               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                        ^^^^^^^^^^^^^^ reference local fixupTableKeys_307
+//                                                       ^ reference local v_309
+        else v
+//           ^ reference local v_309
+      ).toListing()
+//      ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#toListing().
+    else
+      let (mapf = (k, v) -> Pair(
+//         ^^^^ definition local mapf_314
+//                 ^ definition local k_314
+//                    ^ definition local v_314
+//                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+        if (k is Object) "new \(k.getClass().simpleName) \(new PcfRenderer { indent = "" }.renderValue(k).replaceAll("\n", " "))" else k,
+//          ^ reference local k_314
+//               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Object#
+//                              ^ reference local k_314
+//                                ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                                           ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#simpleName.
+//                                                             ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/PcfRenderer#
+//                                                                           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.lua 1.1.1 `tests/parser.pkl`/indent.
+//                                                                                         ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/PcfRenderer#renderValue().
+//                                                                                                     ^ reference local k_314
+//                                                                                                        ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+//                                                                                                                                     ^ reference local k_314
+        if (v is Dynamic|Mapping|Listing) fixupTableKeys(v) else v
+//          ^ reference local v_314
+//               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                        ^^^^^^^^^^^^^^ reference local fixupTableKeys_307
+//                                                       ^ reference local v_314
+//                                                               ^ reference local v_314
+      ))
+      let (valueMap = value.toMap())
+//         ^^^^^^^^ definition local valueMap_318
+//                    ^^^^^ reference local value_307
+//                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+      if (value is Dynamic)
+//        ^^^^^ reference local value_307
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+        let (map1 = valueMap.filter((k,_) -> !(k is Object)).map(mapf))
+//           ^^^^ definition local map1_320
+//                  ^^^^^^^^ reference local valueMap_318
+//                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#filter().
+//                                   ^ definition local k_320
+//                                             ^ reference local k_320
+//                                                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Object#
+//                                                           ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#map().
+//                                                               ^^^^ reference local mapf_314
+        let (map2 = valueMap.filter((k,_) -> k is Object).map(mapf))
+//           ^^^^ definition local map2_321
+//                  ^^^^^^^^ reference local valueMap_318
+//                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#filter().
+//                                   ^ definition local k_321
+//                                           ^ reference local k_321
+//                                                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Object#
+//                                                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#map().
+//                                                            ^^^^ reference local mapf_314
+          (map1.toDynamic()) {
+//         ^^^^ reference local map1_320
+//              ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#toDynamic().
+            ...map2
+//             ^^^^ reference local map2_321
+            ...value.toList()
+//             ^^^^^ reference local value_307
+//                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toList().
+          }
+      else valueMap.map(mapf).toMapping()
+//         ^^^^^^^^ reference local valueMap_318
+//                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#map().
+//                      ^^^^ reference local mapf_314
+//                            ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#toMapping().
+  

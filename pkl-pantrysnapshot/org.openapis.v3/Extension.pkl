@@ -1,0 +1,65 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// The Extension object represents the possibility of adding additional data
+  /// to extend the specification at certain points.
+  ///
+  /// <https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#specification-extensions>
+  module org.openapis.v3.Extension
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Extension.pkl`/
+  
+  import "Info.pkl"
+  import "SecurityScheme.pkl"
+  import "Schema.pkl"
+  
+  /// A string representing the key of an extension.
+  typealias Key = String(startsWith("x-"), length > 2)
+//          ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Extension.pkl`/Key#
+//          documentation
+//          > A string representing the key of an extension.
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                       ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#startsWith().
+//                                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+  
+  hidden converters: Mapping<Class|String, (unknown) -> Any> = new {
+//       ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Extension.pkl`/converters.
+//                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                      ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+    local extractExtensions = (it: Module) -> it.toMap() + (it.getProperty("extensions") ?? Map()).toMap()
+//        ^^^^^^^^^^^^^^^^^ definition local extractExtensions_30
+//                             ^^ definition local it_30
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#
+//                                            ^^ reference local it_30
+//                                               ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#toMap().
+//                                                          ^^ reference local it_30
+//                                                             ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#getProperty().
+//                                                                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                                                 ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#toMap().
+    [Schema.getClass()] = extractExtensions
+//   ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/
+//          ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                        ^^^^^^^^^^^^^^^^^ reference local extractExtensions_30
+    [SecurityScheme.getClass()] = extractExtensions
+//   ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `SecurityScheme.pkl`/
+//                  ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                                ^^^^^^^^^^^^^^^^^ reference local extractExtensions_30
+    [Info.getClass()] = extractExtensions
+//   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Info.pkl`/
+//        ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                      ^^^^^^^^^^^^^^^^^ reference local extractExtensions_30
+  }
+  

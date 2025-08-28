@@ -1,0 +1,538 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module org.json_schema.contrib.tests.TypesGenerator
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/
+  
+  amends "pkl:test"
+  
+  import "@jsonschema/JsonSchema.pkl"
+  import "../internal/TypesGenerator.pkl"
+  import "../internal/Type.pkl"
+  
+  examples {
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/examples.
+    ["numbers"] {
+      local numberSchema: JsonSchema = new { type = "number" }
+//          ^^^^^^^^^^^^ definition local numberSchema_26
+//                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                           ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/type.
+      TypesGenerator.generateTypeNode(numberSchema, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                    ^^^^^^^^^^^^ reference local numberSchema_26
+//                                                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                         ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode((numberSchema) { minimum = 5; maximum = 10 }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                     ^^^^^^^^^^^^ reference local numberSchema_26
+//                                                     ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/minimum.
+//                                                                  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/maximum.
+//                                                                                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                                         ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode((numberSchema) { maximum = 5 }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                     ^^^^^^^^^^^^ reference local numberSchema_26
+//                                                     ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/maximum.
+//                                                                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                           ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode((numberSchema) { exclusiveMinimum = 5 }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                     ^^^^^^^^^^^^ reference local numberSchema_26
+//                                                     ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/exclusiveMinimum.
+//                                                                             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                                    ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode((numberSchema) { exclusiveMaximum = 5 }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                     ^^^^^^^^^^^^ reference local numberSchema_26
+//                                                     ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/exclusiveMaximum.
+//                                                                             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                                    ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode((numberSchema) { multipleOf = 5 }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                     ^^^^^^^^^^^^ reference local numberSchema_26
+//                                                     ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/multipleOf.
+//                                                                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode((numberSchema) { minimum = 0 }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                     ^^^^^^^^^^^^ reference local numberSchema_26
+//                                                     ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/minimum.
+//                                                                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                           ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode((numberSchema) { exclusiveMinimum = -1 }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                     ^^^^^^^^^^^^ reference local numberSchema_26
+//                                                     ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/exclusiveMinimum.
+//                                                                              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                                     ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode((numberSchema) { multipleOf = 1 }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                     ^^^^^^^^^^^^ reference local numberSchema_26
+//                                                     ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/multipleOf.
+//                                                                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode((numberSchema) { minimum = 0; maximum = 255; multipleOf = 1 }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                     ^^^^^^^^^^^^ reference local numberSchema_26
+//                                                     ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/minimum.
+//                                                                  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/maximum.
+//                                                                                 ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/multipleOf.
+//                                                                                                   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                                                          ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+    }
+    ["number literals"] {
+      TypesGenerator.generateTypeNode(new JsonSchema { `const` = 5 }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                     ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/const.
+//                                                                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                           ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode(new JsonSchema { enum = new Listing { 5; 6; 7 } }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                     ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/enum.
+//                                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                                                                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                                              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+    }
+    ["strings"] {
+      local stringSchema: JsonSchema = new {
+//          ^^^^^^^^^^^^ definition local stringSchema_43
+//                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        type = "string"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/type.
+      }
+      TypesGenerator.generateTypeNode(stringSchema, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                    ^^^^^^^^^^^^ reference local stringSchema_43
+//                                                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                         ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode((stringSchema) { minLength = 1 }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                     ^^^^^^^^^^^^ reference local stringSchema_43
+//                                                     ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/minLength.
+//                                                                      ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                             ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode((stringSchema) { minLength = 5 }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                     ^^^^^^^^^^^^ reference local stringSchema_43
+//                                                     ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/minLength.
+//                                                                      ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                             ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode((stringSchema) { maxLength = 10 }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                     ^^^^^^^^^^^^ reference local stringSchema_43
+//                                                     ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/maxLength.
+//                                                                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode((stringSchema) { minLength = 5; maxLength = 10 }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                     ^^^^^^^^^^^^ reference local stringSchema_43
+//                                                     ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/minLength.
+//                                                                    ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/maxLength.
+//                                                                                      ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                                             ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode((stringSchema) { pattern = "[a-z]" }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                     ^^^^^^^^^^^^ reference local stringSchema_43
+//                                                     ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/pattern.
+//                                                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                                 ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode((stringSchema) { format = "uri" }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                     ^^^^^^^^^^^^ reference local stringSchema_43
+//                                                     ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/format.
+//                                                                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode((stringSchema) { format = "regex" }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                     ^^^^^^^^^^^^ reference local stringSchema_43
+//                                                     ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/format.
+//                                                                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                                ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+    }
+    ["string literals"] {
+      TypesGenerator.generateTypeNode(new JsonSchema { type = "string"; `const` = "Hello" }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                     ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/type.
+//                                                                      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/const.
+//                                                                                           ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                                                  ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode(new JsonSchema { `const` = "Hello" }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                     ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/const.
+//                                                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                                 ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode(new JsonSchema { enum = new Listing { "Bart"; "Lisa" } }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                     ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/enum.
+//                                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                                                                              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                                                     ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+    }
+    ["booleans"] {
+      TypesGenerator.generateTypeNode(new JsonSchema { type = "boolean" }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                     ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/type.
+//                                                                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                                ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+    }
+    ["boolean literals"] {
+      TypesGenerator.generateTypeNode(new JsonSchema { `const` = true }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                     ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/const.
+//                                                                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode(new JsonSchema { `const` = false }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                     ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/const.
+//                                                                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                               ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode(new JsonSchema { enum = new Listing { false } }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                     ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/enum.
+//                                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                                                                     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                                            ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode(new JsonSchema { enum = new Listing { true; false } }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                     ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/enum.
+//                                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                                                                           ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                                                  ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+    }
+    ["arrays"] {
+      local arraySchema: JsonSchema = new {
+//          ^^^^^^^^^^^ definition local arraySchema_70
+//                       ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        type = "array"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/type.
+      }
+      TypesGenerator.generateTypeNode((arraySchema) { minLength = 5 }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                     ^^^^^^^^^^^ reference local arraySchema_70
+//                                                    ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/minLength.
+//                                                                     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                            ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode((arraySchema) { maxLength = 10 }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                     ^^^^^^^^^^^ reference local arraySchema_70
+//                                                    ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/maxLength.
+//                                                                      ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                             ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode((arraySchema) { minLength = 5; maxLength = 10 }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                     ^^^^^^^^^^^ reference local arraySchema_70
+//                                                    ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/minLength.
+//                                                                   ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/maxLength.
+//                                                                                     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                                            ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode((arraySchema) { uniqueItems = true }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                     ^^^^^^^^^^^ reference local arraySchema_70
+//                                                    ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/uniqueItems.
+//                                                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                                 ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode((arraySchema) {
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                     ^^^^^^^^^^^ reference local arraySchema_70
+        items {
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/items.
+          type = "string"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/type.
+        }
+      }, Map()).render("")
+//       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode((arraySchema) {
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                     ^^^^^^^^^^^ reference local arraySchema_70
+        items {
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/items.
+          type = "string"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/type.
+          minLength = 1
+//        ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/minLength.
+        }
+      }, Map()).render("")
+//       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+    }
+    ["mappings"] {
+      TypesGenerator.generateTypeNode(new JsonSchema {
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        type = "object"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/type.
+        additionalProperties {
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/additionalProperties.
+          type = "string"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/type.
+        }
+      }, Map()).render("")
+//       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode(new JsonSchema {
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        type = "object"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/type.
+        patternProperties {
+//      ^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/patternProperties.
+          ["[a-z]"] {
+            type = "number"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/type.
+          }
+        }
+      }, Map()).render("")
+//       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+    }
+    ["nullables"] {
+      TypesGenerator.generateTypeNode(new JsonSchema {
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        type = new Listing { "string"; "null" }
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/type.
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+        minLength = 10
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/minLength.
+      }, Map()).render("")
+//       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode(new JsonSchema {
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        type = new Listing { "string"; "number"; "null" }
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/type.
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+        minLength = 10
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/minLength.
+        minimum = 10
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/minimum.
+      }, Map()).render("")
+//       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+    }
+    ["unions"] {
+      TypesGenerator.generateTypeNode(new JsonSchema {
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        oneOf {
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/oneOf.
+          new JsonSchema {
+//            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+            type = "string"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/type.
+            minLength = 5
+//          ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/minLength.
+          }
+          new JsonSchema {
+//            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+            type = "number"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/type.
+            multipleOf = 10
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/multipleOf.
+          }
+        }
+      }, Map()).render("")
+//       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode(new JsonSchema {
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        type = new Listing { "string"; "number" }
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/type.
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+        minLength = 5
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/minLength.
+        multipleOf = 10
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/multipleOf.
+      }, Map()).render("")
+//       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+    }
+    ["not"] {
+      TypesGenerator.generateTypeNode(new JsonSchema {
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        type = "string"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/type.
+        not {
+//      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/not.
+          `const` = "foo"
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/const.
+        }
+      }, Map()).render("")
+//       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode(new JsonSchema {
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        type = "string"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/type.
+        not {
+//      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/not.
+          minLength = 5
+//        ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/minLength.
+          maxLength = 10
+//        ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/maxLength.
+        }
+      }, Map()).render("")
+//       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+    }
+    ["allOf"] {
+      TypesGenerator.generateTypeNode(new JsonSchema {
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        type = "string"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/type.
+        allOf {
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/allOf.
+          new JsonSchema {
+//            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+            minLength = 5
+//          ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/minLength.
+          }
+          new JsonSchema {
+//            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+            maxLength = 10
+//          ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/maxLength.
+          }
+        }
+      }, Map()).render("")
+//       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+    }
+    ["types from $ref"] {
+      local schema: JsonSchema = new {
+//          ^^^^^^ definition local schema_164
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        local self = this
+//            ^^^^ definition local self_165
+        $$baseSchema = this
+//      ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/$$baseSchema.
+        properties {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/properties.
+          ["bar"] {
+            $ref = "#/definitions/foo"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/$ref.
+            $$baseSchema = self
+//          ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/$$baseSchema.
+//                         ^^^^ reference local self_165
+          }
+        }
+        definitions {
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/definitions.
+          ["foo"] {
+            minLength = 5
+//          ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/minLength.
+          }
+        }
+      }
+      // $ref's get resolved from the root schema. For this test, a root schema gets set up and the child property
+      // "properties.bar" has its type generated.
+      new TypesGenerator { enclosingModuleName = "TheFoo" }
+//        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                         ^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/enclosingModuleName.
+        .generateTypeNode(schema.properties!!["bar"], Map(schema.definitions!!["foo"] as JsonSchema, new Type { name = "Foo"; moduleName = "TheFoo" }))
+//       ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                        ^^^^^^ reference local schema_164
+//                               ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/properties.
+//                                                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                        ^^^^^^ reference local schema_164
+//                                                               ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/definitions.
+//                                                                                       ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                                                                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/
+//                                                                                                              ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/name.
+//                                                                                                                            ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/moduleName.
+        .render("")
+//       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode(new JsonSchema { $ref = "#/not/resolveable"; $$baseSchema = schema }, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                     ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/$ref.
+//                                                                                 ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/TypesGenerator.pkl`/$$baseSchema.
+//                                                                                                ^^^^^^ reference local schema_164
+//                                                                                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                                                                 ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+    }
+    ["boolean schemas"] {
+      TypesGenerator.generateTypeNode(true, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                 ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+      TypesGenerator.generateTypeNode(false, Map()).render("")
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                           ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                  ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+    }
+  }
+  

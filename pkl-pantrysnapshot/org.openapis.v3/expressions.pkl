@@ -1,0 +1,169 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module org.openapis.v3.expressions
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `expressions.pkl`/
+  
+  import "expressions.pkl"
+  
+  /// A string representing an OpenAPI [Runtime Expression](https://spec.openapis.org/oas/v3.0.3#runtime-expressions).
+  typealias Expression =
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `expressions.pkl`/Expression#
+//          documentation
+//          > A string representing an OpenAPI [Runtime Expression](https://spec.openapis.org/oas/v3.0.3#runtime-expressions).
+    "$url"
+    |"$method"
+    |"$statusCode"
+    |HeaderReferenceExpression
+//   ^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `expressions.pkl`/HeaderReferenceExpression#
+    |QueryOrPathReferenceExpression
+//   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `expressions.pkl`/QueryOrPathReferenceExpression#
+    |BodyReferenceExpression
+//   ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `expressions.pkl`/BodyReferenceExpression#
+  
+  /// A string representing a reference to a header of a request or response.
+  typealias HeaderReferenceExpression =
+//          ^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `expressions.pkl`/HeaderReferenceExpression#
+//          documentation
+//          > A string representing a reference to a header of a request or response.
+    String(matches(Regex(#"\$(?:request|response)\.header\.[0-9A-z!#$%&'+\-.^_`|~]+"#)))
+//  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#matches().
+//                 ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+  
+  /// A string representing a reference to a query param, or a path segment.
+  typealias QueryOrPathReferenceExpression =
+//          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `expressions.pkl`/QueryOrPathReferenceExpression#
+//          documentation
+//          > A string representing a reference to a query param, or a path segment.
+    String(expressions.isQueryOrPathReference)
+//  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `expressions.pkl`/
+//                     ^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `expressions.pkl`/isQueryOrPathReference.
+  
+  hidden isQueryOrPathReference = (it) ->
+//       ^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `expressions.pkl`/isQueryOrPathReference.
+//                                 ^^ definition local it_37
+    let (suffix = it.replaceFirst(Regex(#"\$(?:request|response)\.(?:query|path)\."#), ""))
+//       ^^^^^^ definition local suffix_38
+//                ^^ reference local it_37
+//                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+      if (suffix == it) false
+//        ^^^^^^ reference local suffix_38
+//                  ^^ reference local it_37
+      else expressions.isJsonName(it)
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `expressions.pkl`/
+//                     ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `expressions.pkl`/isJsonName().
+//                                ^^ reference local it_37
+  
+  /// A string representing a reference to a segment in the body of a request or response.
+  typealias BodyReferenceExpression =
+//          ^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `expressions.pkl`/BodyReferenceExpression#
+//          documentation
+//          > A string representing a reference to a segment in the body of a request or response.
+    "$request.body"
+    |"$response.body"
+    |String(expressions.isBodyReference)
+//   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//          ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `expressions.pkl`/
+//                      ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `expressions.pkl`/isBodyReference.
+  
+  /// Tells if this string is `body-reference` of a Runtime Expression.
+  ///
+  /// <https://spec.openapis.org/oas/v3.0.3#runtime-expressions>
+  hidden isBodyReference = (it: String) ->
+//       ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `expressions.pkl`/isBodyReference.
+//       documentation
+//       > Tells if this string is `body-reference` of a Runtime Expression.
+//       > 
+//       > <https://spec.openapis.org/oas/v3.0.3#runtime-expressions>
+//                          ^^ definition local it_51
+//                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    let (suffix = it.replaceFirst(Regex(#"\$(?:request|response)\.body#"#), ""))
+//       ^^^^^^ definition local suffix_52
+//                ^^ reference local it_51
+//                   ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceFirst().
+//                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+      if (suffix == it) false
+//        ^^^^^^ reference local suffix_52
+//                  ^^ reference local it_51
+      else expressions.isJsonPointer(suffix)
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `expressions.pkl`/
+//                     ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `expressions.pkl`/isJsonPointer().
+//                                   ^^^^^^ reference local suffix_52
+  
+  // json-pointer = *( "/" reference-token )
+  function isJsonPointer(it: String) =
+//         ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `expressions.pkl`/isJsonPointer().
+//                       ^^ definition local it_57
+//                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    it.startsWith("/")
+//  ^^ reference local it_57
+//     ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#startsWith().
+    && !it.endsWith("/")
+//      ^^ reference local it_57
+//         ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#endsWith().
+    && it.split("/").every(isReferenceToken)
+//     ^^ reference local it_57
+//        ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+//                   ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#every().
+//                         ^^^^^^^^^^^^^^^^ reference local isReferenceToken_62
+  
+  /// Tells if the input string is a `reference-token` in a Runtime Expression.
+  ///
+  /// <https://spec.openapis.org/oas/v3.0.3#runtime-expressions>
+  local isReferenceToken = (it) ->
+//      ^^^^^^^^^^^^^^^^ definition local isReferenceToken_62
+//      documentation
+//      > Tells if the input string is a `reference-token` in a Runtime Expression.
+//      > 
+//      > <https://spec.openapis.org/oas/v3.0.3#runtime-expressions>
+//                          ^^ definition local it_65
+    // language=regexp
+    it.matches(Regex(#"""
+//  ^^ reference local it_65
+//             ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+      (?x) # extended mode
+      (?:
+        ~0
+        |~1
+        |[\x00-\x2E]
+        |[\x30-\x7D]
+        |[\x7f-\x{10ffff}]
+      )*
+      """#))
+  
+  /// Tells if the input string is valid JSON name.
+  ///
+  /// JSON string spec: <https://datatracker.ietf.org/doc/html/rfc7159#section-7>
+  function isJsonName(it) =
+//         ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `expressions.pkl`/isJsonName().
+//         documentation
+//         > Tells if the input string is valid JSON name.
+//         > 
+//         > JSON string spec: <https://datatracker.ietf.org/doc/html/rfc7159#section-7>
+//                    ^^ definition local it_81
+    // language=regexp
+    it.matches(Regex(#"""
+//  ^^ reference local it_81
+//             ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+      (?x) # extended mode
+      (?:
+        [\x20-\x21\x23-\x5B\x5D-\x{10ffff}]      # unescaped char (%x20-21 / %x23-5B / %x5D-10FFFF)
+        |\\["\\/bfnrt]                           # escaped char (e.g. `\n`)
+        |\\u[0-9a-f]{4}                          # code point literal
+      )*
+      """#))
+  

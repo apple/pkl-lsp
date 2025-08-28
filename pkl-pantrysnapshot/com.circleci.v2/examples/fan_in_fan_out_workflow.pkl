@@ -1,0 +1,294 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// Adapdation of <https://circleci.com/docs/sample-config/#sample-configuration-with-fan-infan-out-workflow>
+  ///
+  ///
+  /// This example uses [OrbStep] for ad-hoc usage of orbs.
+  /// Alternatively, orb steps can be defined as their own classes that extend [AbstractStep].
+  /// For an example of that, see file `typed_orb_steps.pkl`.
+  module com.circleci.v2.examples.fan_in_fan_out_workflow
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/
+  
+  amends "../Config.pkl"
+  
+  orbs {
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/orbs.
+    ["docker"] = "circleci/docker@1.0.1"
+  }
+  
+  jobs {
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/jobs.
+    ["prepare-dependencies"] {
+      docker {
+//    ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/docker.
+        new { image = "node:current-alpine" }
+//            ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/image.
+      }
+      steps {
+//    ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/steps.
+        "checkout"
+        new RunStep {
+//          ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RunStep#
+          name = "Compute version number"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/name.
+          command = #"echo "0.0.${CIRCLE_BUILD_NUM}-${CIRCLE_SHA1:0:7}" | tee version.txt"#
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/command.
+        }
+        new RestoreCacheStep {
+//          ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RestoreCacheStep#
+          keys {
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/keys.
+            #"yarn-deps-{{ checksum "yarn.lock" }}"#
+            "yarn-deps"
+          }
+        }
+        new RunStep {
+//          ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RunStep#
+          name = "yarn install"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/name.
+          command = "yarn install"
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/command.
+        }
+        new SaveCacheStep {
+//          ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/SaveCacheStep#
+          paths {
+//        ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/paths.
+            "node_modules"
+          }
+          key = #"yarn-deps-{{ checksum "yarn.lock" }}-{{ epoch }}"#
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/key.
+        }
+        new StoreArtifacts {
+//          ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/StoreArtifacts#
+          path = "yarn.lock"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/path.
+        }
+        new PersistToWorkspaceStep {
+//          ^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PersistToWorkspaceStep#
+          root = "."
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/root.
+          paths { "." }
+//        ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/paths.
+        }
+      }
+    }
+    ["build-production"] {
+      docker {
+//    ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/docker.
+        new { image = "node:current-alpine" }
+//            ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/image.
+      }
+      steps {
+//    ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/steps.
+        new AttachWorkspaceStep { at = "." }
+//          ^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/AttachWorkspaceStep#
+//                                ^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/at.
+        new RunStep {
+//          ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RunStep#
+          name = "Production build"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/name.
+          command = """
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/command.
+            export __BUILD_VERSION="$(cat version.txt)"
+            yarn build
+            """
+        }
+        new StoreArtifacts { path = "dist/server.js" }
+//          ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/StoreArtifacts#
+//                           ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/path.
+        new PersistToWorkspaceStep {
+//          ^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/PersistToWorkspaceStep#
+          root = "."
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/root.
+          paths { "." }
+//        ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/paths.
+        }
+      }
+    }
+    ["build-docker-image"] {
+      machine {
+//    ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/machine.
+        image = "ubuntu-2004:current"
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/image.
+      }
+      steps {
+//    ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/steps.
+        new AttachWorkspaceStep { at = "." }
+//          ^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/AttachWorkspaceStep#
+//                                ^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/at.
+        new RunStep {
+//          ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RunStep#
+          name = "Setup __BUILD_VERSION envvar"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/name.
+          command = """
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/command.
+            echo 'export __BUILD_VERSION="$(cat version.txt)"' >> "$BASH_ENV"
+            """
+        }
+        (module.OrbStep("docker/check")) {
+//              ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/OrbStep().
+          registry = "$DOCKER_REGISTRY"
+//        ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/registry.
+        }
+        (module.OrbStep("docker/build")) {
+//              ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/OrbStep().
+          image = "$DOCKER_IMAGE_NAME"
+//        ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/image.
+          tag = "$__BUILD_VERSION"
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/tag.
+          registry = "$DOCKER_REGISTRY"
+//        ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/registry.
+        }
+        (module.OrbStep("docker/push")) {
+//              ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/OrbStep().
+          image = "$DOCKER_IMAGE_NAME"
+//        ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/image.
+          tag = "$__BUILD_VERSION"
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/tag.
+          registry = "$DOCKER_REGISTRY"
+//        ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/registry.
+        }
+      }
+    }
+    ["test"] {
+      docker {
+//    ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/docker.
+        new { image = "node:current-alpine" }
+//            ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/image.
+      }
+      parallelism = 2
+//    ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/parallelism.
+      steps {
+//    ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/steps.
+        new AttachWorkspaceStep { at = "." }
+//          ^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/AttachWorkspaceStep#
+//                                ^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/at.
+        new RunStep {
+//          ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RunStep#
+          name = "Run tests"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/name.
+          command = #"""
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/command.
+            circleci tests glob '**/*.test.ts' | circleci tests split --split-by timings | xargs yarn test:ci
+            """#
+        }
+        new StoreArtifacts { path = "test-results" }
+//          ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/StoreArtifacts#
+//                           ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/path.
+        new StoreTestResults { path = "test-results" }
+//          ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/StoreTestResults#
+//                             ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/path.
+      }
+    }
+    ["deploy-docker-image"] {
+      machine {
+//    ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/machine.
+        image = "ubuntu-2004:current"
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/image.
+      }
+      steps {
+//    ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/steps.
+        new AttachWorkspaceStep { at = "." }
+//          ^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/AttachWorkspaceStep#
+//                                ^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/at.
+        new RunStep {
+//          ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RunStep#
+          name = "Setup __BUILD_VERSION envvar"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/name.
+          command = """
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/command.
+            echo 'export __BUILD_VERSION="$(cat version.txt)"' >> "$BASH_ENV"
+            """
+        }
+        (module.OrbStep("docker/check")) {
+//              ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/OrbStep().
+          registry = "$DOCKER_REGISTRY"
+//        ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/registry.
+        }
+        (module.OrbStep("docker/pull")) {
+//              ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/OrbStep().
+          images = "$DOCKER_REGISTRY/$DOCKER_IMAGE_NAME:$__BUILD_VERSION"
+//        ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/images.
+        }
+        new RunStep {
+//          ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RunStep#
+          name = "Tag the image as latest"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/name.
+          command = """
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/command.
+            docker tag $DOCKER_REGISTRY/$DOCKER_IMAGE_NAME:$__BUILD_VERSION $DOCKER_REGISTRY/$DOCKER_IMAGE_NAME:latest
+            """
+        }
+        (module.OrbStep("docker/push")) {
+//              ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/OrbStep().
+          image = "$DOCKER_IMAGE_NAME"
+//        ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/image.
+          tag = "latest"
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/tag.
+          registry = "$DOCKER_REGISTRY"
+//        ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/registry.
+        }
+      }
+    }
+  }
+  
+  workflows {
+//^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/workflows.
+    ["build-test-deploy"] {
+      jobs {
+//    ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/jobs.
+        "prepare-dependencies"
+        new {
+          ["build-production"] {
+            requires {
+//          ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/requires.
+              "prepare-dependencies"
+            }
+          }
+        }
+        new {
+          ["build-docker-image"] {
+            context = "docker-hub"
+//          ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/context.
+            requires {
+//          ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/requires.
+              "build-production"
+            }
+          }
+        }
+        new {
+          ["test"] {
+            requires {
+//          ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/requires.
+              "prepare-dependencies"
+            }
+          }
+        }
+        new {
+          ["deploy-docker-image"] {
+            context = "docker-hub"
+//          ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/context.
+            requires {
+//          ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/fan_in_fan_out_workflow.pkl`/requires.
+              "build-docker-image"
+              "test"
+            }
+          }
+        }
+      }
+    }
+  }
+  

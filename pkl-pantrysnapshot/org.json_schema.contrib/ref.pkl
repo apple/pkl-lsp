@@ -1,0 +1,333 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// Tools to resolve JSON Schema references
+  @Unlisted
+// ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Unlisted#
+  module org.json_schema.contrib.ref
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `ref.pkl`/
+  
+  import "@jsonschema/JsonSchema.pkl"
+  import "@jsonschema/Parser.pkl"
+  import "internal/utils.pkl"
+  import "@uri/URI.pkl"
+  
+  /// Parse a json pointer into its constitutents.
+  local function parseJsonPointer(ref: String): List<String|Int> =
+//               ^^^^^^^^^^^^^^^^ definition local parseJsonPointer_25
+//               documentation
+//               > Parse a json pointer into its constitutents.
+//                                ^^^ definition local ref_26
+//                                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+    ref
+//  ^^^ reference local ref_26
+      .split("/")
+//     ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+      .map((str) -> str
+//     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//          ^^^ definition local str_29
+//                  ^^^ reference local str_29
+        .replaceAll("~0", "~")
+//       ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+        .replaceAll("~1", "/"))
+//       ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+      .map((it) -> URI.percentDecode(it))
+//     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//          ^^ definition local it_32
+//                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                     ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/percentDecode().
+//                                   ^^ reference local it_32
+      .map((str) -> str.toIntOrNull() ?? str)
+//     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//          ^^^ definition local str_33
+//                  ^^^ reference local str_33
+//                      ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toIntOrNull().
+//                                       ^^^ reference local str_33
+  
+  local function resolveRefImpl(cursor: Any, parts: List<String|Int>, fullRef: URI): JsonSchema.Schema? =
+//               ^^^^^^^^^^^^^^ definition local resolveRefImpl_35
+//                              ^^^^^^ definition local cursor_35
+//                                      ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                           ^^^^^ definition local parts_35
+//                                                  ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                                                                    ^^^^^^^ definition local fullRef_35
+//                                                                             ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                                                                                              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+    if (cursor == null)
+//      ^^^^^^ reference local cursor_35
+      let (_ = trace("WARN: failed to resolve $ref \(fullRef)"))
+//                                                   ^^^^^^^ reference local fullRef_35
+        null
+    else if (parts.isEmpty)
+//           ^^^^^ reference local parts_35
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#isEmpty.
+      let (result = cursor as JsonSchema.Schema)
+//         ^^^^^^ definition local result_40
+//                  ^^^^^^ reference local cursor_35
+//                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+        // if the resolved schema is still a reference, resolve it again.
+        if (result is JsonSchema && result.$ref != null)
+//          ^^^^^^ reference local result_40
+//                    ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                  ^^^^^^ reference local result_40
+//                                         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/$ref.
+          resolveRef(fullRef.basePath, result)
+//        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `ref.pkl`/resolveRef().
+//                   ^^^^^^^ reference local fullRef_35
+//                           ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/basePath.
+//                                     ^^^^^^ reference local result_40
+        else
+          result
+//        ^^^^^^ reference local result_40
+    else
+      let (head = parts.first)
+//         ^^^^ definition local head_47
+//                ^^^^^ reference local parts_35
+//                      ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#first.
+        if (head is Int)
+//          ^^^^ reference local head_47
+//                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+          if (cursor is Listing)
+//            ^^^^^^ reference local cursor_35
+//                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+            resolveRefImpl(cursor[head], parts.drop(1), fullRef.basePath)
+//          ^^^^^^^^^^^^^^ reference local resolveRefImpl_35
+//                         ^^^^^^ reference local cursor_35
+//                                ^^^^ reference local head_47
+//                                       ^^^^^ reference local parts_35
+//                                             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#drop().
+//                                                      ^^^^^^^ reference local fullRef_35
+//                                                              ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/basePath.
+          else
+            let (_ = trace("WARN: failed to read path `\(head)` from schema because it is not an array. Full ref: `\(fullRef)`"))
+//                                                       ^^^^ reference local head_47
+//                                                                                                                   ^^^^^^^ reference local fullRef_35
+              null
+        else if (cursor is JsonSchema)
+//               ^^^^^^ reference local cursor_35
+//                         ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+          if (cursor.hasProperty(head))
+//            ^^^^^^ reference local cursor_35
+//                   ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#hasProperty().
+//                               ^^^^ reference local head_47
+            let (nextCursor = cursor.getPropertyOrNull(head)
+//               ^^^^^^^^^^ definition local nextCursor_56
+//                            ^^^^^^ reference local cursor_35
+//                                   ^^^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#getPropertyOrNull().
+//                                                     ^^^^ reference local head_47
+              ?? let (inline = cursor._inline_) if (inline != null) inline[head] else null)
+//                    ^^^^^^ definition local inline_57
+//                             ^^^^^^ reference local cursor_35
+//                                    ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/_inline_.
+//                                                  ^^^^^^ reference local inline_57
+//                                                                  ^^^^^^ reference local inline_57
+//                                                                         ^^^^ reference local head_47
+              resolveRefImpl(nextCursor, parts.drop(1), fullRef)
+//            ^^^^^^^^^^^^^^ reference local resolveRefImpl_35
+//                           ^^^^^^^^^^ reference local nextCursor_56
+//                                       ^^^^^ reference local parts_35
+//                                             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#drop().
+//                                                      ^^^^^^^ reference local fullRef_35
+          else
+            let (inline = cursor._inline_ ?? new Mapping {})
+//               ^^^^^^ definition local inline_60
+//                        ^^^^^^ reference local cursor_35
+//                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/_inline_.
+//                                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+              resolveRefImpl(inline.getOrNull(head), parts.drop(1), fullRef)
+//            ^^^^^^^^^^^^^^ reference local resolveRefImpl_35
+//                           ^^^^^^ reference local inline_60
+//                                  ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+//                                            ^^^^ reference local head_47
+//                                                   ^^^^^ reference local parts_35
+//                                                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#drop().
+//                                                                  ^^^^^^^ reference local fullRef_35
+        else if (cursor is Typed|Dynamic)
+//               ^^^^^^ reference local cursor_35
+//                         ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#
+//                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+          resolveRefImpl(cursor.getPropertyOrNull(head), parts.drop(1), fullRef)
+//        ^^^^^^^^^^^^^^ reference local resolveRefImpl_35
+//                       ^^^^^^ reference local cursor_35
+//                              ^^^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#getPropertyOrNull().
+//                                                ^^^^ reference local head_47
+//                                                       ^^^^^ reference local parts_35
+//                                                             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#drop().
+//                                                                      ^^^^^^^ reference local fullRef_35
+        else if (cursor is Mapping)
+//               ^^^^^^ reference local cursor_35
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+          resolveRefImpl(cursor[head], parts.drop(1), fullRef)
+//        ^^^^^^^^^^^^^^ reference local resolveRefImpl_35
+//                       ^^^^^^ reference local cursor_35
+//                              ^^^^ reference local head_47
+//                                     ^^^^^ reference local parts_35
+//                                           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#drop().
+//                                                    ^^^^^^^ reference local fullRef_35
+        else
+          let (_ = trace("WARN: unable to find path \(head) in $ref \(fullRef). Tried to look in \(cursor)"))
+//                                                    ^^^^ reference local head_47
+//                                                                    ^^^^^^^ reference local fullRef_35
+//                                                                                                 ^^^^^^ reference local cursor_35
+            null
+  
+  local function isSameDocument(origin: URI, ref: URI) =
+//               ^^^^^^^^^^^^^^ definition local isSameDocument_70
+//                              ^^^^^^ definition local origin_70
+//                                      ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                                           ^^^ definition local ref_70
+//                                                ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+    let (resolvedUri = origin.resolveUri(ref))
+//       ^^^^^^^^^^^ definition local resolvedUri_71
+//                     ^^^^^^ reference local origin_70
+//                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/resolveUri().
+//                                       ^^^ reference local ref_70
+      origin.scheme == resolvedUri.scheme
+//    ^^^^^^ reference local origin_70
+//           ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/scheme.
+//                     ^^^^^^^^^^^ reference local resolvedUri_71
+//                                 ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/scheme.
+      && origin.authority() == resolvedUri.authority()
+//       ^^^^^^ reference local origin_70
+//              ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/authority().
+//                             ^^^^^^^^^^^ reference local resolvedUri_71
+//                                         ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/authority().
+      && origin.path == resolvedUri.path
+//       ^^^^^^ reference local origin_70
+//              ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/path.
+//                      ^^^^^^^^^^^ reference local resolvedUri_71
+//                                  ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/path.
+  
+  /// Resolve a [schema] which contains a [JsonSchema.`$ref`] against the [rootSchema].
+  ///
+  /// [rootSchema] must be the root schema, and not a subschema.
+  /// [schema] must contain a `$ref`.
+  /// This is as forgiving as possible; if any of the parts fail, it simply returns null.
+  ///
+  /// The returned schema merges the resolved schema into [schema].
+  function resolveRef(baseUri: URI, schema: JsonSchema): JsonSchema.Schema? =
+//         ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `ref.pkl`/resolveRef().
+//         documentation
+//         > Resolve a [`schema`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.json_schema.contrib/ref.pkl#L83,C35) which contains a `JsonSchema.`$ref`` against the `rootSchema`.
+//         > 
+//         > `rootSchema` must be the root schema, and not a subschema.
+//         > [`schema`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.json_schema.contrib/ref.pkl#L83,C35) must contain a `$ref`.
+//         > This is as forgiving as possible; if any of the parts fail, it simply returns null.
+//         > 
+//         > The returned schema merges the resolved schema into [`schema`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.json_schema.contrib/ref.pkl#L83,C35).
+//                    ^^^^^^^ definition local baseUri_83
+//                             ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                                  ^^^^^^ definition local schema_83
+//                                          ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                                  ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+    let (ref = schema.$$refUri!!)
+//       ^^^ definition local ref_84
+//             ^^^^^^ reference local schema_83
+//                    ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/$$refUri.
+    let (parts = parseJsonPointer(ref.fragment ?? ""))
+//       ^^^^^ definition local parts_85
+//               ^^^^^^^^^^^^^^^^ reference local parseJsonPointer_25
+//                                ^^^ reference local ref_84
+//                                    ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/fragment.
+      if (isSameDocument(baseUri, ref))
+//        ^^^^^^^^^^^^^^ reference local isSameDocument_70
+//                       ^^^^^^^ reference local baseUri_83
+//                                ^^^ reference local ref_84
+        resolveRefImpl(schema.$$baseSchema, parts.drop(1), ref)
+//      ^^^^^^^^^^^^^^ reference local resolveRefImpl_35
+//                     ^^^^^^ reference local schema_83
+//                            ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/$$baseSchema.
+//                                          ^^^^^ reference local parts_85
+//                                                ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#drop().
+//                                                         ^^^ reference local ref_84
+          .ifNonNull((it) ->
+//         ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#ifNonNull().
+//                    ^^ definition local it_88
+            (utils.mergeSchemas(
+//           ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/
+//                 ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/mergeSchemas().
+              (schema) { $ref = null },
+//             ^^^^^^ reference local schema_83
+//                       ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `ref.pkl`/$ref.
+              List(it as JsonSchema.Schema)
+//            ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                 ^^ reference local it_88
+//                                  ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+            )) {
+              // store the original content of the referent for subsequent typeNames lookup in generateTypeNode
+              _inline_ { ["__ref_orig__"] = it }
+//            ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `ref.pkl`/_inline_.
+//                                          ^^ reference local it_88
+            }
+          )
+      // Otherwise, we need to figure out the correct relative path.
+      // This is done by resolving [ref] against the base URI.
+      // If the resolved URI is a different document, it is read and parsed first.
+      else
+        let (resolvedUri = baseUri.resolveUri(ref))
+//           ^^^^^^^^^^^ definition local resolvedUri_101
+//                         ^^^^^^^ reference local baseUri_83
+//                                 ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/resolveUri().
+//                                            ^^^ reference local ref_84
+        let (jsonSchemaBlob = read?(resolvedUri.basePath.toString()))
+//           ^^^^^^^^^^^^^^ definition local jsonSchemaBlob_102
+//                                  ^^^^^^^^^^^ reference local resolvedUri_101
+//                                              ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/basePath.
+//                                                       ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/toString().
+          if (jsonSchemaBlob == null)
+//            ^^^^^^^^^^^^^^ reference local jsonSchemaBlob_102
+            let (_ = trace("WARN: Failed to read external URI \(resolvedUri)"))
+//                                                              ^^^^^^^^^^^ reference local resolvedUri_101
+              null
+          else
+            let (parsedJsonSchema = (Parser.parse(jsonSchemaBlob)) {
+//               ^^^^^^^^^^^^^^^^ definition local parsedJsonSchema_107
+//                                   ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/
+//                                          ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/parse().
+//                                                ^^^^^^^^^^^^^^ reference local jsonSchemaBlob_102
+              $$baseSchema = this
+//            ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `ref.pkl`/$$baseSchema.
+            })
+              resolveRefImpl(parsedJsonSchema, parts.drop(1), ref)
+//            ^^^^^^^^^^^^^^ reference local resolveRefImpl_35
+//                           ^^^^^^^^^^^^^^^^ reference local parsedJsonSchema_107
+//                                             ^^^^^ reference local parts_85
+//                                                   ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#drop().
+//                                                            ^^^ reference local ref_84
+                .ifNonNull((it) ->
+//               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#ifNonNull().
+//                          ^^ definition local it_111
+                  (utils.mergeSchemas(
+//                 ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/
+//                       ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/mergeSchemas().
+                    (schema) { $ref = null },
+//                   ^^^^^^ reference local schema_83
+//                             ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `ref.pkl`/$ref.
+                    List(it as JsonSchema.Schema)
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                       ^^ reference local it_111
+//                                        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+                  )) {
+                    // store the original content of the referent for subsequent typeNames lookup in generateTypeNode
+                    _inline_ { ["__ref_orig__"] = it }
+//                  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `ref.pkl`/_inline_.
+//                                                ^^ reference local it_111
+                  }
+                )

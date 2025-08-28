@@ -1,0 +1,231 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// Describes a single API operation on a path.
+  module org.openapis.v3.Operation
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Operation.pkl`/
+  
+  import "expressions.pkl"
+  import "ExternalDocs.pkl"
+  import "Parameter.pkl"
+  import "Reference.pkl"
+  import "RequestBody.pkl"
+  import "Response.pkl"
+  import "Security.pkl"
+  import "Server.pkl"
+  import "PathItem.pkl"
+  import "HTTPResponse.pkl"
+  
+  /// A list of tags for API documentation control.
+  ///
+  /// Tags can be used for logical grouping of operations by resources or any other qualifier.
+  tags: Listing<String>(isDistinct)?
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Operation.pkl`/tags.
+//documentation
+//> A list of tags for API documentation control.
+//> 
+//> Tags can be used for logical grouping of operations by resources or any other qualifier.
+//      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                      ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#isDistinct.
+  
+  /// A short summary of what the operation does.
+  summary: String?
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Operation.pkl`/summary.
+//documentation
+//> A short summary of what the operation does.
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// A verbose explanation of the operation behavior. CommonMark syntax MAY be used for rich text representation.
+  @SourceCode { language = "Markdown" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/SourceCode#
+//              ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Operation.pkl`/language.
+  description: String?
+//^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Operation.pkl`/description.
+//documentation
+//> A verbose explanation of the operation behavior. CommonMark syntax MAY be used for rich text representation.
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// Additional external documentation for this operation.
+  externalDocs: ExternalDocs?
+//^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Operation.pkl`/externalDocs.
+//documentation
+//> Additional external documentation for this operation.
+//              ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `ExternalDocs.pkl`/
+  
+  /// Unique string used to identify the operation.
+  ///
+  /// The id MUST be unique among all operations described in the API. The operationId value is case-sensitive. Tools
+  /// and libraries MAY use the operationId to uniquely identify an operation, therefore, it is RECOMMENDED to follow
+  /// common programming naming conventions.
+  operationId: String?
+//^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Operation.pkl`/operationId.
+//documentation
+//> Unique string used to identify the operation.
+//> 
+//> The id MUST be unique among all operations described in the API. The operationId value is case-sensitive. Tools
+//> and libraries MAY use the operationId to uniquely identify an operation, therefore, it is RECOMMENDED to follow
+//> common programming naming conventions.
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// A list of parameters that are applicable for this operation.
+  ///
+  /// If a parameter is already defined at the Path Item, the new definition will override it but can never remove it.
+  /// The list MUST NOT include duplicated parameters. A unique parameter is defined by a combination of a name and
+  /// location. The list can use the Reference Object to link to parameters that are defined at the OpenAPI Object's
+  /// components/parameters.
+  parameters: Parameters?
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Operation.pkl`/parameters.
+//documentation
+//> A list of parameters that are applicable for this operation.
+//> 
+//> If a parameter is already defined at the Path Item, the new definition will override it but can never remove it.
+//> The list MUST NOT include duplicated parameters. A unique parameter is defined by a combination of a name and
+//> location. The list can use the Reference Object to link to parameters that are defined at the OpenAPI Object's
+//> components/parameters.
+//            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Operation.pkl`/Parameters#
+  
+  // follow the uniqueness standard for parameters set forth by the spec
+  typealias Parameters = Listing<*Parameter|Reference>(
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Operation.pkl`/Parameters#
+//                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Parameter.pkl`/
+//                                          ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Reference.pkl`/
+    isDistinctBy((it) -> if (it is Parameter) "\(it.name)\(it.`in`)" else it.`$ref`))
+//  ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#isDistinctBy().
+//                ^^ definition local it_62
+//                           ^^ reference local it_62
+//                                 ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Parameter.pkl`/
+//                                               ^^ reference local it_62
+//                                                  ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Parameter.pkl`/name.
+//                                                         ^^ reference local it_62
+//                                                            ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Parameter.pkl`/in.
+//                                                                        ^^ reference local it_62
+//                                                                           ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Reference.pkl`/$ref.
+  
+  /// The request body applicable for this operation.
+  ///
+  /// The requestBody is only supported in HTTP methods where the HTTP 1.1 specification RFC7231 has explicitly defined
+  /// semantics for request bodies. In other cases where the HTTP spec is vague, requestBody SHALL be ignored by
+  /// consumers.
+  requestBody: (*RequestBody|Reference)?
+//^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Operation.pkl`/requestBody.
+//documentation
+//> The request body applicable for this operation.
+//> 
+//> The requestBody is only supported in HTTP methods where the HTTP 1.1 specification RFC7231 has explicitly defined
+//> semantics for request bodies. In other cases where the HTTP spec is vague, requestBody SHALL be ignored by
+//> consumers.
+//               ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `RequestBody.pkl`/
+//                           ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Reference.pkl`/
+  
+  /// The list of possible responses as they are returned from executing this operation.
+  ///
+  /// Any HTTP status code can be used as the property name, but only one property per code, to describe the expected
+  /// response for that HTTP statuscode. You can use const values of [HTTPResponse] for this, eg.
+  ///
+  /// ```pkl
+  /// [HTTPResponse.OK] { ... }
+  /// ```
+  ///
+  /// A Reference Object can link to a response that is defined in the OpenAPI
+  /// Object's components/responses section. To define a range of response codes, this field MAY contain the uppercase
+  /// wildcard character X. For example, 2XX represents all response codes between [200-299]. Only the following range
+  /// definitions are allowed: 1XX, 2XX, 3XX, 4XX, and 5XX. If a response is defined using an explicit code, the explicit
+  /// code definition takes precedence over the range definition for that code.
+  responses: Mapping<HTTPResponse.Code|HTTPResponse.CodeWildcard|"default", *Response|Reference>?
+//^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Operation.pkl`/responses.
+//documentation
+//> The list of possible responses as they are returned from executing this operation.
+//> 
+//> Any HTTP status code can be used as the property name, but only one property per code, to describe the expected
+//> response for that HTTP statuscode. You can use const values of [`HTTPResponse`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/HTTPResponse.pkl#L18,C1) for this, eg.
+//> 
+//> ```pkl
+//> [`HTTPResponse.OK`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/HTTPResponse.pkl#L64,C1) { ... }
+//> ```
+//> 
+//> A Reference Object can link to a response that is defined in the OpenAPI
+//> Object's components/responses section. To define a range of response codes, this field MAY contain the uppercase
+//> wildcard character X. For example, 2XX represents all response codes between `200-299`. Only the following range
+//> definitions are allowed: 1XX, 2XX, 3XX, 4XX, and 5XX. If a response is defined using an explicit code, the explicit
+//> code definition takes precedence over the range definition for that code.
+//           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `HTTPResponse.pkl`/Code#
+//                                                  ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `HTTPResponse.pkl`/CodeWildcard#
+//                                                                           ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Response.pkl`/
+//                                                                                    ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Reference.pkl`/
+  
+  /// A map of possible out-of band callbacks related to the parent operation.
+  ///
+  /// The key is a unique identifier for the Callback Object. Each value in the map is a Callback Object that describes a
+  /// request that may be initiated by the API provider and the expected responses.
+  callbacks: Mapping<String, *Mapping<expressions.Expression, PathItem>|Reference>?
+//^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Operation.pkl`/callbacks.
+//documentation
+//> A map of possible out-of band callbacks related to the parent operation.
+//> 
+//> The key is a unique identifier for the Callback Object. Each value in the map is a Callback Object that describes a
+//> request that may be initiated by the API provider and the expected responses.
+//           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `expressions.pkl`/Expression#
+//                                                            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `PathItem.pkl`/
+//                                                                      ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Reference.pkl`/
+  
+  /// Declares this operation to be deprecated.
+  ///
+  /// Consumers SHOULD refrain from usage of the declared operation. Default value is false.
+  deprecated: Boolean?
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Operation.pkl`/deprecated.
+//documentation
+//> Declares this operation to be deprecated.
+//> 
+//> Consumers SHOULD refrain from usage of the declared operation. Default value is false.
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+  /// A declaration of which security mechanisms can be used for this operation.
+  ///
+  /// The list of values includes alternative security requirement objects that can be used. Only one of the security
+  /// requirement objects need to be satisfied to authorize a request. To make security optional, an empty security
+  /// requirement ({}) can be included in the array. This definition overrides any declared top-level security. To
+  /// remove a top-level security declaration, an empty array can be used.
+  security: Listing<Security.Requirement>?
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Operation.pkl`/security.
+//documentation
+//> A declaration of which security mechanisms can be used for this operation.
+//> 
+//> The list of values includes alternative security requirement objects that can be used. Only one of the security
+//> requirement objects need to be satisfied to authorize a request. To make security optional, an empty security
+//> requirement ({}) can be included in the array. This definition overrides any declared top-level security. To
+//> remove a top-level security declaration, an empty array can be used.
+//          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                           ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Security.pkl`/Requirement#
+  
+  /// An alternative server array to service this operation.
+  ///
+  /// If an alternative server object is specified at the Path Item Object or Root level, it will be overridden by this
+  /// value.
+  servers: Listing<Server>?
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Operation.pkl`/servers.
+//documentation
+//> An alternative server array to service this operation.
+//> 
+//> If an alternative server object is specified at the Path Item Object or Root level, it will be overridden by this
+//> value.
+//         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                 ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Server.pkl`/
+  

@@ -1,0 +1,202 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// The `csv` parser creates metrics from a document containing comma separated values.
+  @ModuleInfo { minPklVersion = "0.25.0" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleInfo#
+//              ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/parsers/CsvInputDataFormat.pkl`/minPklVersion.
+  open module com.influxdata.telegraf.plugins.parsers.CsvInputDataFormat
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/parsers/CsvInputDataFormat.pkl`/
+  
+  extends "InputDataFormat.pkl"
+  
+  files: Listing<String>
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/parsers/CsvInputDataFormat.pkl`/files.
+//       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  data_format: "csv"
+//^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/parsers/CsvInputDataFormat.pkl`/data_format.
+  
+  /// Indicates how many rows to treat as a header.
+  ///
+  /// By default, the parser assumes there is no header and will parse the first row as data.
+  /// If set to anything more than 1, column names will be concatenated with the name listed in the next header row.
+  /// If [csv_column_names] is specified, the column names in header will be overridden.
+  csv_header_row_count: Int(isPositive)?
+//^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/parsers/CsvInputDataFormat.pkl`/csv_header_row_count.
+//documentation
+//> Indicates how many rows to treat as a header.
+//> 
+//> By default, the parser assumes there is no header and will parse the first row as data.
+//> If set to anything more than 1, column names will be concatenated with the name listed in the next header row.
+//> If [`csv_column_names`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/com.influxdata.telegraf/plugins/parsers/CsvInputDataFormat.pkl#L38,C1) is specified, the column names in header will be overridden.
+//                      ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                          ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#isPositive.
+  
+  /// For assigning custom names to columns.
+  ///
+  /// If this is specified, all columns should have a name.
+  /// Unnamed columns will be ignored by the parser.
+  /// If [csv_header_row_count] is set to 0, this config must be used.
+  csv_column_names: Listing<String>?
+//^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/parsers/CsvInputDataFormat.pkl`/csv_column_names.
+//documentation
+//> For assigning custom names to columns.
+//> 
+//> If this is specified, all columns should have a name.
+//> Unnamed columns will be ignored by the parser.
+//> If [`csv_header_row_count`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/com.influxdata.telegraf/plugins/parsers/CsvInputDataFormat.pkl#L31,C1) is set to 0, this config must be used.
+//                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// For assigning explicit data types to columns.
+  ///
+  /// Specify types in order by column (e.g., `csv_column_types { "string"; "int"; "float" }`).
+  /// If this is not specified, type conversion will be done on the types above.
+  csv_column_types: Listing<"int"|"float"|"bool"|"string">?
+//^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/parsers/CsvInputDataFormat.pkl`/csv_column_types.
+//documentation
+//> For assigning explicit data types to columns.
+//> 
+//> Specify types in order by column (e.g., `csv_column_types { "string"; "int"; "float" }`).
+//> If this is not specified, type conversion will be done on the types above.
+//                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+  
+  /// Indicates the number of rows to skip before looking for header information.
+  csv_skip_rows: Int(isPositive)?
+//^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/parsers/CsvInputDataFormat.pkl`/csv_skip_rows.
+//documentation
+//> Indicates the number of rows to skip before looking for header information.
+//               ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                   ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#isPositive.
+  
+  /// Indicates the number of columns to skip before looking for data to parse.
+  ///
+  /// These columns will be skipped in the header as well.
+  csv_skip_columns: Int(isPositive)?
+//^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/parsers/CsvInputDataFormat.pkl`/csv_skip_columns.
+//documentation
+//> Indicates the number of columns to skip before looking for data to parse.
+//> 
+//> These columns will be skipped in the header as well.
+//                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                      ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#isPositive.
+  
+  /// The separator between csv fields.
+  ///
+  /// Default: `","`
+  csv_delimiter: String?
+//^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/parsers/CsvInputDataFormat.pkl`/csv_delimiter.
+//documentation
+//> The separator between csv fields.
+//> 
+//> Default: `","`
+//               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// The character reserved for marking a row as a comment row.
+  ///
+  /// Commented rows are skipped and not parsed.
+  csv_comment: String?
+//^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/parsers/CsvInputDataFormat.pkl`/csv_comment.
+//documentation
+//> The character reserved for marking a row as a comment row.
+//> 
+//> Commented rows are skipped and not parsed.
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// If set to true, the parser will remove leading whitespace from fields.
+  ///
+  /// Default: `false`
+  csv_trim_space: Boolean?
+//^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/parsers/CsvInputDataFormat.pkl`/csv_trim_space.
+//documentation
+//> If set to true, the parser will remove leading whitespace from fields.
+//> 
+//> Default: `false`
+//                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+  /// Columns listed here will be added as tags.
+  ///
+  /// Any other columns will be added as fields.
+  csv_tag_columns: Listing<String>?
+//^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/parsers/CsvInputDataFormat.pkl`/csv_tag_columns.
+//documentation
+//> Columns listed here will be added as tags.
+//> 
+//> Any other columns will be added as fields.
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// The column to extract the name of the metric from.
+  ///
+  /// Will not be included as field in metric.
+  csv_measurement_column: String?
+//^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/parsers/CsvInputDataFormat.pkl`/csv_measurement_column.
+//documentation
+//> The column to extract the name of the metric from.
+//> 
+//> Will not be included as field in metric.
+//                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// The column to extract time information for the metric.
+  ///
+  /// [csv_timestamp_format] must be specified if this is used.
+  /// Will not be included as field in metric.
+  csv_timestamp_column: String?
+//^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/parsers/CsvInputDataFormat.pkl`/csv_timestamp_column.
+//documentation
+//> The column to extract time information for the metric.
+//> 
+//> [`csv_timestamp_format`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/com.influxdata.telegraf/plugins/parsers/CsvInputDataFormat.pkl#L88,C1) must be specified if this is used.
+//> Will not be included as field in metric.
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// The format of time data extracted from [csv_timestamp_column].
+  ///
+  /// This must be specified if [csv_timestamp_column] is specified.
+  csv_timestamp_format: String?
+//^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/parsers/CsvInputDataFormat.pkl`/csv_timestamp_format.
+//documentation
+//> The format of time data extracted from [`csv_timestamp_column`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/com.influxdata.telegraf/plugins/parsers/CsvInputDataFormat.pkl#L83,C1).
+//> 
+//> This must be specified if [`csv_timestamp_column`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/com.influxdata.telegraf/plugins/parsers/CsvInputDataFormat.pkl#L83,C1) is specified.
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// The timezone of time data extracted from [csv_timestamp_column]
+  /// in case there is no timezone information.
+  ///
+  /// It follows the IANA Time Zone database.
+  csv_timezone: String?
+//^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/parsers/CsvInputDataFormat.pkl`/csv_timezone.
+//documentation
+//> The timezone of time data extracted from [`csv_timestamp_column`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/com.influxdata.telegraf/plugins/parsers/CsvInputDataFormat.pkl#L83,C1)
+//> in case there is no timezone information.
+//> 
+//> It follows the IANA Time Zone database.
+//              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// Indicates values to skip, such as an empty string value `""`.
+  ///
+  /// The field will be skipped entirely where it matches any values inserted here.
+  csv_skip_values: Listing<String>?
+//^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/parsers/CsvInputDataFormat.pkl`/csv_skip_values.
+//documentation
+//> Indicates values to skip, such as an empty string value `""`.
+//> 
+//> The field will be skipped entirely where it matches any values inserted here.
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  

@@ -1,0 +1,56 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// Node representing a method or function argument declaration.
+  @Unlisted
+// ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Unlisted#
+  module pkl.experimental.syntax.ParameterNode
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ParameterNode.pkl`/
+  
+  extends "Node.pkl"
+  
+  import "TypeAnnotationNode.pkl"
+  import "IdentifierNode.pkl"
+  
+  /// The name of the parameter. May be `_` for an unbound parameter.
+  name: IdentifierNode
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ParameterNode.pkl`/name.
+//documentation
+//> The name of the parameter. May be `_` for an unbound parameter.
+//      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `IdentifierNode.pkl`/
+  
+  /// The type of the parameter.
+  typeAnnotation: TypeAnnotationNode?
+//^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ParameterNode.pkl`/typeAnnotation.
+//documentation
+//> The type of the parameter.
+//                ^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeAnnotationNode.pkl`/
+  
+  function render(currentIndent: String) = List(name.render(currentIndent), typeAnnotation?.render(currentIndent))
+//         ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ParameterNode.pkl`/render().
+//                ^^^^^^^^^^^^^ definition local currentIndent_31
+//                               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                              ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ParameterNode.pkl`/name.
+//                                                   ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `IdentifierNode.pkl`/render().
+//                                                          ^^^^^^^^^^^^^ reference local currentIndent_31
+//                                                                          ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ParameterNode.pkl`/typeAnnotation.
+//                                                                                          ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeAnnotationNode.pkl`/render().
+//                                                                                                 ^^^^^^^^^^^^^ reference local currentIndent_31
+    .filterNonNull()
+//   ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#filterNonNull().
+    .join("")
+//   ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  

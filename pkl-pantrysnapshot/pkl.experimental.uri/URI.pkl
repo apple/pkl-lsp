@@ -1,0 +1,1043 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// A Uniform Resource Identifier as defined by
+  /// [RFC-3986](https://datatracker.ietf.org/doc/html/rfc3986).
+  ///
+  /// [URI]s may be constructed literally, or parsed from a string via [parse].
+  @ModuleInfo { minPklVersion = "0.25.0" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleInfo#
+//              ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/minPklVersion.
+  module pkl.experimental.uri.URI
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+  
+  import "URI.pkl"
+  
+  /// The scheme component.
+  scheme: String?
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/scheme.
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// The user information portion of the authority component.
+  userInfo: String?
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/userInfo.
+//          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// The host portion of the authority component.
+  host: String?
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/host.
+//      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// The port portion of the authority component.
+  port: UInt16?
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/port.
+//      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt16#
+  
+  /// The path component, URI-encoded.
+  ///
+  /// Access the decoded form of the path via [pathSegments].
+  path: UriString = ""
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/path.
+//      ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/UriString#
+  
+  /// The authority component of the URI.
+  function authority(): String? =
+//         ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/authority().
+//         documentation
+//         > The authority component of the URI.
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    if (hasAuthority())
+//      ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/hasAuthority().
+      List(
+//    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+        "//",
+        if (userInfo != null) "\(encode(userInfo))@" else "",
+//          ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/userInfo.
+//                               ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/encode().
+//                                      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/userInfo.
+        encode(host!!),
+//      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/encode().
+//             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/host.
+        if (port != null) ":\(port)" else ""
+//          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/port.
+//                            ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/port.
+      )
+        .join("")
+//       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+    else null
+  
+  /// The URI path split into its segments.
+  ///
+  /// Each segment is decoded.
+  fixed pathSegments: List<String> =
+//      ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/pathSegments.
+//      documentation
+//      > The URI path split into its segments.
+//      > 
+//      > Each segment is decoded.
+//                    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    let (parts = path.split("/").map((it) -> percentDecode(it)))
+//       ^^^^^ definition local parts_58
+//               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/path.
+//                    ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+//                               ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                                    ^^ definition local it_58
+//                                           ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/percentDecode().
+//                                                         ^^ reference local it_58
+      if (hasAbsolutePath) parts.drop(1)
+//        ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/hasAbsolutePath.
+//                         ^^^^^ reference local parts_58
+//                               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#drop().
+      else parts
+//         ^^^^^ reference local parts_58
+  
+  /// The query component, URI-encoded.
+  query: UriString?
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/query.
+//       ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/UriString#
+  
+  /// The fragment component.
+  fragment: String?
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/fragment.
+//          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// The base path portion of this URI.
+  ///
+  /// This equivalent to the current URI without its query and fragment components.
+  hidden basePath: URI = (module) {
+//       ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/basePath.
+//       documentation
+//       > The base path portion of this URI.
+//       > 
+//       > This equivalent to the current URI without its query and fragment components.
+//                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+    query = null
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/query.
+    fragment = null
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/fragment.
+  }
+  
+  /// Tells if this URI is an [absolute URI](https://datatracker.ietf.org/doc/html/rfc3986#section-4.3).
+  hidden isAbsolute: Boolean = scheme != null
+//       ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/isAbsolute.
+//       documentation
+//       > Tells if this URI is an [absolute URI](https://datatracker.ietf.org/doc/html/rfc3986#section-4.3).
+//                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                             ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/scheme.
+  
+  /// Tells if the [path] is absolute.
+  hidden hasAbsolutePath: Boolean = path?.startsWith("/") ?? false
+//       ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/hasAbsolutePath.
+//       documentation
+//       > Tells if the [`path`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.uri/URI.pkl#L40,C1) is absolute.
+//                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                                  ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/path.
+//                                        ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#startsWith().
+  
+  /// Tells if this URI has an [authority](https://datatracker.ietf.org/doc/html/rfc3986#section-3.2).
+  function hasAuthority(): Boolean = (userInfo ?? host ?? port) != null
+//         ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/hasAuthority().
+//         documentation
+//         > Tells if this URI has an [authority](https://datatracker.ietf.org/doc/html/rfc3986#section-3.2).
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                                    ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/userInfo.
+//                                                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/host.
+//                                                        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/port.
+  
+  // <https://www.rfc-editor.org/rfc/rfc3986#section-5.2.4>
+  local function _removeDotSegments(input: List<String>, result: List<String>): List<String> =
+//               ^^^^^^^^^^^^^^^^^^ definition local _removeDotSegments_86
+//                                  ^^^^^ definition local input_86
+//                                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                       ^^^^^^ definition local result_86
+//                                                               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    if (input.isEmpty) result
+//      ^^^^^ reference local input_86
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#isEmpty.
+//                     ^^^^^^ reference local result_86
+    else
+      let (currentSegment = input.first)
+//         ^^^^^^^^^^^^^^ definition local currentSegment_89
+//                          ^^^^^ reference local input_86
+//                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#first.
+        if (currentSegment == ".")
+//          ^^^^^^^^^^^^^^ reference local currentSegment_89
+          _removeDotSegments(input.drop(1), result)
+//        ^^^^^^^^^^^^^^^^^^ reference local _removeDotSegments_86
+//                           ^^^^^ reference local input_86
+//                                 ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#drop().
+//                                          ^^^^^^ reference local result_86
+        else if (currentSegment == "..")
+//               ^^^^^^^^^^^^^^ reference local currentSegment_89
+          _removeDotSegments(input.drop(1), result.dropLast(1))
+//        ^^^^^^^^^^^^^^^^^^ reference local _removeDotSegments_86
+//                           ^^^^^ reference local input_86
+//                                 ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#drop().
+//                                          ^^^^^^ reference local result_86
+//                                                 ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#dropLast().
+        else
+          _removeDotSegments(input.drop(1), result.add(currentSegment))
+//        ^^^^^^^^^^^^^^^^^^ reference local _removeDotSegments_86
+//                           ^^^^^ reference local input_86
+//                                 ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#drop().
+//                                          ^^^^^^ reference local result_86
+//                                                 ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                                                     ^^^^^^^^^^^^^^ reference local currentSegment_89
+  
+  local function removeDotSegments(input: String): String =
+//               ^^^^^^^^^^^^^^^^^ definition local removeDotSegments_97
+//                                 ^^^^^ definition local input_97
+//                                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    _removeDotSegments(input.split("/"), List()).join("/")
+//  ^^^^^^^^^^^^^^^^^^ reference local _removeDotSegments_86
+//                     ^^^^^ reference local input_97
+//                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+//                                       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+    + if (input.endsWith("/")) "/" else ""
+//        ^^^^^ reference local input_97
+//              ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#endsWith().
+  
+  // <https://www.rfc-editor.org/rfc/rfc3986#section-5.2.3>
+  local function mergePaths(base: URI, other: URI): String =
+//               ^^^^^^^^^^ definition local mergePaths_102
+//                          ^^^^ definition local base_102
+//                                ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                                     ^^^^^ definition local other_102
+//                                            ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                                                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    if (other.hasAbsolutePath)
+//      ^^^^^ reference local other_102
+//            ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/hasAbsolutePath.
+      other.path
+//    ^^^^^ reference local other_102
+//          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/path.
+    else if (base.hasAuthority() && base.path == "")
+//           ^^^^ reference local base_102
+//                ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/hasAuthority().
+//                                  ^^^^ reference local base_102
+//                                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/path.
+      "/" + other.path
+//          ^^^^^ reference local other_102
+//                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/path.
+    else
+      let (basePath = if (base.path.contains("/")) base.path.substring(0, base.path.lastIndexOf("/") + 1) else "/")
+//         ^^^^^^^^ definition local basePath_108
+//                        ^^^^ reference local base_102
+//                             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/path.
+//                                  ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#contains().
+//                                                 ^^^^ reference local base_102
+//                                                      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/path.
+//                                                           ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#substring().
+//                                                                        ^^^^ reference local base_102
+//                                                                             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/path.
+//                                                                                  ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#lastIndexOf().
+        removeDotSegments(basePath + other.path)
+//      ^^^^^^^^^^^^^^^^^ reference local removeDotSegments_97
+//                        ^^^^^^^^ reference local basePath_108
+//                                   ^^^^^ reference local other_102
+//                                         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/path.
+  
+  /// Resolves [other] as a URI reference to this URI.
+  ///
+  /// Follows the rules described in
+  /// [RFC-3986 Section 5.2](https://www.rfc-editor.org/rfc/rfc3986#section-5.2).
+  function resolveUri(other: URI): URI =
+//         ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/resolveUri().
+//         documentation
+//         > Resolves [`other`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.uri/URI.pkl#L115,C21) as a URI reference to this URI.
+//         > 
+//         > Follows the rules described in
+//         > [RFC-3986 Section 5.2](https://www.rfc-editor.org/rfc/rfc3986#section-5.2).
+//                    ^^^^^ definition local other_115
+//                           ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+    let (self = this)
+//       ^^^^ definition local self_116
+      new {
+        when (other.scheme != null) {
+//            ^^^^^ reference local other_115
+//                  ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/scheme.
+          scheme = other.scheme
+//        ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/scheme.
+//                 ^^^^^ reference local other_115
+//                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/scheme.
+          userInfo = other.userInfo
+//        ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/userInfo.
+//                   ^^^^^ reference local other_115
+//                         ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/userInfo.
+          host = other.host
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/host.
+//               ^^^^^ reference local other_115
+//                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/host.
+          port = other.port
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/port.
+//               ^^^^^ reference local other_115
+//                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/port.
+          path = other.path
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/path.
+//               ^^^^^ reference local other_115
+//                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/path.
+          query = other.query
+//        ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/query.
+//                ^^^^^ reference local other_115
+//                      ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/query.
+        } else {
+          scheme = self.scheme
+//        ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/scheme.
+//                 ^^^^ reference local self_116
+//                      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/scheme.
+          when (other.hasAuthority()) {
+//              ^^^^^ reference local other_115
+//                    ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/hasAuthority().
+            userInfo = other.userInfo
+//          ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/userInfo.
+//                     ^^^^^ reference local other_115
+//                           ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/userInfo.
+            host = other.host
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/host.
+//                 ^^^^^ reference local other_115
+//                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/host.
+            port = other.port
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/port.
+//                 ^^^^^ reference local other_115
+//                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/port.
+            path = removeDotSegments(other.path)
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/path.
+//                 ^^^^^^^^^^^^^^^^^ reference local removeDotSegments_97
+//                                   ^^^^^ reference local other_115
+//                                         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/path.
+          } else {
+            userInfo = self.userInfo
+//          ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/userInfo.
+//                     ^^^^ reference local self_116
+//                          ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/userInfo.
+            host = self.host
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/host.
+//                 ^^^^ reference local self_116
+//                      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/host.
+            port = self.port
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/port.
+//                 ^^^^ reference local self_116
+//                      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/port.
+            when (other.path == "") {
+//                ^^^^^ reference local other_115
+//                      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/path.
+              path = self.path
+//            ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/path.
+//                   ^^^^ reference local self_116
+//                        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/path.
+              query = other.query ?? self.query
+//            ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/query.
+//                    ^^^^^ reference local other_115
+//                          ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/query.
+//                                   ^^^^ reference local self_116
+//                                        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/query.
+            } else {
+              path = mergePaths(self, other)
+//            ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/path.
+//                   ^^^^^^^^^^ reference local mergePaths_102
+//                              ^^^^ reference local self_116
+//                                    ^^^^^ reference local other_115
+              query = other.query
+//            ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/query.
+//                    ^^^^^ reference local other_115
+//                          ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/query.
+            }
+          }
+        }
+        fragment = other.fragment
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/fragment.
+//                 ^^^^^ reference local other_115
+//                       ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/fragment.
+      }
+  
+  /// Resolves [other] as a URI string to this URI.
+  function resolve(other: String): URI? =
+//         ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/resolve().
+//         documentation
+//         > Resolves [`other`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.uri/URI.pkl#L149,C18) as a URI string to this URI.
+//                 ^^^^^ definition local other_149
+//                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+    let (parsed = parse(other))
+//       ^^^^^^ definition local parsed_150
+//                ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+//                      ^^^^^ reference local other_149
+      if (parsed == null) null
+//        ^^^^^^ reference local parsed_150
+      else resolveUri(parsed)
+//         ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/resolveUri().
+//                    ^^^^^^ reference local parsed_150
+  
+  function toString(): String = new Listing {
+//         ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/toString().
+//                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+    when (scheme != null) { "\(encode(scheme)):" }
+//        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/scheme.
+//                             ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/encode().
+//                                    ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/scheme.
+    when (hasAuthority()) {
+//        ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/hasAuthority().
+      authority()
+//    ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/authority().
+    }
+    path
+//  ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/path.
+    when (query != null) { "?\(query)" }
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/query.
+//                             ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/query.
+    when (fragment != null) { "#\(encode(fragment))" }
+//        ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/fragment.
+//                                ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/encode().
+//                                       ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/fragment.
+  }.join("")
+//  ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#join().
+  
+  /// Tells if [str] is a valid URI string.
+  const local isUriString = (str: String) ->
+//            ^^^^^^^^^^^ definition local isUriString_164
+//            documentation
+//            > Tells if `str` is a valid URI string.
+//                           ^^^ definition local str_165
+//                                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    str
+//  ^^^ reference local str_165
+      .replaceAll(PERCENT_REGEX, "")
+//     ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+//                ^^^^^^^^^^^^^ reference local PERCENT_REGEX_306
+      .codePoints
+//     ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#codePoints.
+      .every((it) -> isUriSafe(it))
+//     ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#every().
+//            ^^ definition local it_169
+//                   ^^^^^^^^^ reference local isUriSafe_175
+//                             ^^ reference local it_169
+  
+  /// A string that has valid URI characters.
+  typealias UriString = String(isUriString)
+//          ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/UriString#
+//          documentation
+//          > A string that has valid URI characters.
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                             ^^^^^^^^^^^ reference local isUriString_164
+  
+  // alphanumeric or !#$&'()*+,-./:;=?@_~
+  const local function isUriSafe(codePoint: Int) =
+//                     ^^^^^^^^^ definition local isUriSafe_175
+//                               ^^^^^^^^^ definition local codePoint_175
+//                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+    isAlphaNumeric(codePoint)
+//  ^^^^^^^^^^^^^^ reference local isAlphaNumeric_260
+//                 ^^^^^^^^^ reference local codePoint_175
+    // !
+    || codePoint == 33
+//     ^^^^^^^^^ reference local codePoint_175
+    // #$
+    || codePoint.isBetween(35, 36)
+//     ^^^^^^^^^ reference local codePoint_175
+//               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#isBetween().
+    // &'()*+,-./
+    || codePoint.isBetween(38, 47)
+//     ^^^^^^^^^ reference local codePoint_175
+//               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#isBetween().
+    // :;
+    || codePoint.isBetween(58, 59)
+//     ^^^^^^^^^ reference local codePoint_175
+//               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#isBetween().
+    // =
+    || codePoint == 61
+//     ^^^^^^^^^ reference local codePoint_175
+    // ?@
+    || codePoint.isBetween(63, 64)
+//     ^^^^^^^^^ reference local codePoint_175
+//               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#isBetween().
+    // _
+    || codePoint == 95
+//     ^^^^^^^^^ reference local codePoint_175
+    // ~
+    || codePoint == 126
+//     ^^^^^^^^^ reference local codePoint_175
+  
+  // alphanumeric or !'()*-._~
+  local function isUriComponentSafe(codePoint: Int) =
+//               ^^^^^^^^^^^^^^^^^^ definition local isUriComponentSafe_195
+//                                  ^^^^^^^^^ definition local codePoint_195
+//                                             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+    isAlphaNumeric(codePoint)
+//  ^^^^^^^^^^^^^^ reference local isAlphaNumeric_260
+//                 ^^^^^^^^^ reference local codePoint_195
+    // !
+    || codePoint == 33
+//     ^^^^^^^^^ reference local codePoint_195
+    // '()*
+    || codePoint.isBetween(39, 42)
+//     ^^^^^^^^^ reference local codePoint_195
+//               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#isBetween().
+    // -.
+    || codePoint.isBetween(45, 46)
+//     ^^^^^^^^^ reference local codePoint_195
+//               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#isBetween().
+    // _
+    || codePoint == 95
+//     ^^^^^^^^^ reference local codePoint_195
+    // ~
+    || codePoint == 126
+//     ^^^^^^^^^ reference local codePoint_195
+  
+  local function getUtf8Bytes(codePoint: Int): List<UInt8> =
+//               ^^^^^^^^^^^^ definition local getUtf8Bytes_208
+//                            ^^^^^^^^^ definition local codePoint_208
+//                                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                                             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                  ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt8#
+    if (codePoint <= 0x7f)
+//      ^^^^^^^^^ reference local codePoint_208
+      List(codePoint)
+//    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//         ^^^^^^^^^ reference local codePoint_208
+    else if (codePoint <= 0x7ff)
+//           ^^^^^^^^^ reference local codePoint_208
+      List(
+//    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+        0xc0.or(codePoint.shr(6)),
+//           ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//              ^^^^^^^^^ reference local codePoint_208
+//                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shr().
+        0x80.or(codePoint.and(0x3f))
+//           ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//              ^^^^^^^^^ reference local codePoint_208
+//                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+      )
+    else if (codePoint <= 0xffff)
+//           ^^^^^^^^^ reference local codePoint_208
+      List(
+//    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+        0xe0.or(codePoint.shr(12)),
+//           ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//              ^^^^^^^^^ reference local codePoint_208
+//                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shr().
+        0x80.or(codePoint.shr(6).and(0x3f)),
+//           ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//              ^^^^^^^^^ reference local codePoint_208
+//                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shr().
+//                               ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+        0x80.or(codePoint.and(0x3f))
+//           ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//              ^^^^^^^^^ reference local codePoint_208
+//                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+      )
+    else
+      List(
+//    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+        0xf0.or(codePoint.shr(18)),
+//           ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//              ^^^^^^^^^ reference local codePoint_208
+//                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shr().
+        0x80.or(codePoint.shr(12).and(0x3f)),
+//           ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//              ^^^^^^^^^ reference local codePoint_208
+//                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shr().
+//                                ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+        0x80.or(codePoint.shr(6).and(0x3f)),
+//           ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//              ^^^^^^^^^ reference local codePoint_208
+//                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shr().
+//                               ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+        0x80.or(codePoint.and(0x3f))
+//           ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//              ^^^^^^^^^ reference local codePoint_208
+//                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+      )
+  
+  /// Encode into percent encoding into utf-8 bytes.
+  ///
+  /// Facts:
+  /// ```
+  /// percentEncode(" ".codePoints.first) == "%20"
+  /// percentEncode("/".codePoints.first) == "%2F"
+  /// ```
+  local function percentEncode(codePoint: Int) =
+//               ^^^^^^^^^^^^^ definition local percentEncode_230
+//               documentation
+//               > Encode into percent encoding into utf-8 bytes.
+//               > 
+//               > Facts:
+//               > ```
+//               > percentEncode(" ".codePoints.first) == "%20"
+//               > percentEncode("/".codePoints.first) == "%2F"
+//               > ```
+//                             ^^^^^^^^^ definition local codePoint_237
+//                                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+    getUtf8Bytes(codePoint)
+//  ^^^^^^^^^^^^ reference local getUtf8Bytes_208
+//               ^^^^^^^^^ reference local codePoint_237
+      .map((it) -> "%" + it.toRadixString(16).toUpperCase().padStart(2, "0"))
+//     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//          ^^ definition local it_239
+//                       ^^ reference local it_239
+//                          ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toRadixString().
+//                                            ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toUpperCase().
+//                                                          ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#padStart().
+      .join("")
+//     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  
+  local hexDigits = "0123456789ABCDEF"
+//      ^^^^^^^^^ definition local hexDigits_242
+  
+  /// Facts:
+  /// ```
+  /// getBytes("%20") == List(32)
+  /// getBytes("%7F") == List(127)
+  /// getBytes("%20%7F") == List(32, 127)
+  /// ```
+  local function getBytes(str: String): List<UInt8> =
+//               ^^^^^^^^ definition local getBytes_244
+//               documentation
+//               > Facts:
+//               > ```
+//               > getBytes("%20") == List(32)
+//               > getBytes("%7F") == List(127)
+//               > getBytes("%20%7F") == List(32, 127)
+//               > ```
+//                        ^^^ definition local str_250
+//                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt8#
+    str
+//  ^^^ reference local str_250
+      .split("%")
+//     ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+      .drop(1)
+//     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#drop().
+      .map((it) ->
+//     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//          ^^ definition local it_254
+      let (msb = hexDigits.indexOf(it[0].toUpperCase()))
+//         ^^^ definition local msb_255
+//               ^^^^^^^^^ reference local hexDigits_242
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#indexOf().
+//                                 ^^ reference local it_254
+//                                       ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toUpperCase().
+        let (lsb = hexDigits.indexOf(it[1].toUpperCase()))
+//           ^^^ definition local lsb_256
+//                 ^^^^^^^^^ reference local hexDigits_242
+//                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#indexOf().
+//                                   ^^ reference local it_254
+//                                         ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toUpperCase().
+          lsb + (msb * 16)
+//        ^^^ reference local lsb_256
+//               ^^^ reference local msb_255
+    )
+  
+  const local function isAlphaNumeric(codePoint: Int) =
+//                     ^^^^^^^^^^^^^^ definition local isAlphaNumeric_260
+//                                    ^^^^^^^^^ definition local codePoint_260
+//                                               ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+    codePoint.isBetween(48, 57)     // 0-9
+//  ^^^^^^^^^ reference local codePoint_260
+//            ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#isBetween().
+    || codePoint.isBetween(65, 90)  // a-z
+//     ^^^^^^^^^ reference local codePoint_260
+//               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#isBetween().
+    || codePoint.isBetween(97, 122) // A-Z
+//     ^^^^^^^^^ reference local codePoint_260
+//               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#isBetween().
+  
+  /// Encodes [str] using percent-encoding bytes to make it safe for the literal use as a URI.
+  ///
+  /// All characters except for alphanumeric chracters, and the chracters `!#$&'()*+,-./:;=?@_~`
+  /// are percent-encoded.
+  ///
+  /// Follows the rules for the `encodeURI` function as described by
+  /// [ECMA-262](https://262.ecma-international.org/5.1/#sec-15.1.3.3).
+  ///
+  /// Facts:
+  /// ```
+  /// encode("https://example.com/some path/") == "https://example.com/some%20path"
+  /// ```
+  ///
+  function encode(str: String): String =
+//         ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/encode().
+//         documentation
+//         > Encodes [`str`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.uri/URI.pkl#L278,C17) using percent-encoding bytes to make it safe for the literal use as a URI.
+//         > 
+//         > All characters except for alphanumeric chracters, and the chracters `!#$&'()*+,-./:;=?@_~`
+//         > are percent-encoded.
+//         > 
+//         > Follows the rules for the `encodeURI` function as described by
+//         > [ECMA-262](https://262.ecma-international.org/5.1/#sec-15.1.3.3).
+//         > 
+//         > Facts:
+//         > ```
+//         > encode("https://example.com/some path/") == "https://example.com/some%20path"
+//         > ```
+//                ^^^ definition local str_278
+//                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    str.codePoints
+//  ^^^ reference local str_278
+//      ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#codePoints.
+      .map((codePoint) ->
+//     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//          ^^^^^^^^^ definition local codePoint_280
+      if (isUriSafe(codePoint)) codePoint.toChar()
+//        ^^^^^^^^^ reference local isUriSafe_175
+//                  ^^^^^^^^^ reference local codePoint_280
+//                              ^^^^^^^^^ reference local codePoint_280
+//                                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toChar().
+      else percentEncode(codePoint)
+//         ^^^^^^^^^^^^^ reference local percentEncode_230
+//                       ^^^^^^^^^ reference local codePoint_280
+    )
+      .join("")
+//     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  
+  /// Encodes [str] using percent-encoding to make it safe to literal use as a URI component.
+  ///
+  /// All characters except for alphanumeric characters, and the characters `-_.!~*'()` are
+  /// percent-encoded.
+  ///
+  /// Follows the rules for the `encodeURIComponent` function as described by
+  /// [ECMA-262](https://262.ecma-international.org/5.1/#sec-15.1.3.4).
+  ///
+  /// Facts:
+  /// ```
+  /// encodeComponent("https://example.com/some path") == "https%3A%2F%2example.com%2Fsome%20path"
+  /// ```
+  function encodeComponent(str: String): String =
+//         ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/encodeComponent().
+//         documentation
+//         > Encodes [`str`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.uri/URI.pkl#L298,C26) using percent-encoding to make it safe to literal use as a URI component.
+//         > 
+//         > All characters except for alphanumeric characters, and the characters `-_.!~*'()` are
+//         > percent-encoded.
+//         > 
+//         > Follows the rules for the `encodeURIComponent` function as described by
+//         > [ECMA-262](https://262.ecma-international.org/5.1/#sec-15.1.3.4).
+//         > 
+//         > Facts:
+//         > ```
+//         > encodeComponent("https://example.com/some path") == "https%3A%2F%2example.com%2Fsome%20path"
+//         > ```
+//                         ^^^ definition local str_298
+//                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    str.codePoints
+//  ^^^ reference local str_298
+//      ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#codePoints.
+      .map((codePoint) ->
+//     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//          ^^^^^^^^^ definition local codePoint_300
+      if (isUriComponentSafe(codePoint)) codePoint.toChar()
+//        ^^^^^^^^^^^^^^^^^^ reference local isUriComponentSafe_195
+//                           ^^^^^^^^^ reference local codePoint_300
+//                                       ^^^^^^^^^ reference local codePoint_300
+//                                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toChar().
+      else percentEncode(codePoint)
+//         ^^^^^^^^^^^^^ reference local percentEncode_230
+//                       ^^^^^^^^^ reference local codePoint_300
+    )
+      .join("")
+//     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  
+  const local PERCENT_REGEX = Regex(#"(?:%[\da-fA-F]{2})+"#)
+//            ^^^^^^^^^^^^^ definition local PERCENT_REGEX_306
+//                            ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+  
+  /// Decodes [str] given a percent-encoded string.
+  function percentDecode(str: String): String =
+//         ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/percentDecode().
+//         documentation
+//         > Decodes [`str`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.uri/URI.pkl#L309,C24) given a percent-encoded string.
+//                       ^^^ definition local str_309
+//                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    str.replaceAllMapped(PERCENT_REGEX, (match) ->
+//  ^^^ reference local str_309
+//      ^^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAllMapped().
+//                       ^^^^^^^^^^^^^ reference local PERCENT_REGEX_306
+//                                       ^^^^^ definition local match_310
+      let (bytes = getBytes(match.value))
+//         ^^^^^ definition local bytes_311
+//                 ^^^^^^^^ reference local getBytes_244
+//                          ^^^^^ reference local match_310
+//                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/RegexMatch#value.
+        doPercentDecode(bytes)
+//      ^^^^^^^^^^^^^^^ reference local doPercentDecode_315
+//                      ^^^^^ reference local bytes_311
+    )
+  
+  local function doPercentDecode(bytes: List<UInt8>): String = _doPercentDecode(bytes, "")
+//               ^^^^^^^^^^^^^^^ definition local doPercentDecode_315
+//                               ^^^^^ definition local bytes_315
+//                                      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt8#
+//                                                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                             ^^^^^^^^^^^^^^^^ reference local _doPercentDecode_317
+//                                                                              ^^^^^ reference local bytes_315
+  
+  local function _doPercentDecode(bytes: List<UInt8>, ret: String) =
+//               ^^^^^^^^^^^^^^^^ definition local _doPercentDecode_317
+//                                ^^^^^ definition local bytes_317
+//                                       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                            ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt8#
+//                                                    ^^^ definition local ret_317
+//                                                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    if (bytes.length == 0) ret
+//      ^^^^^ reference local bytes_317
+//            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#length.
+//                         ^^^ reference local ret_317
+    else if (bytes[0] < 0x80)
+//           ^^^^^ reference local bytes_317
+      _doPercentDecode(bytes.drop(1), ret + bytes[0].toChar())
+//    ^^^^^^^^^^^^^^^^ reference local _doPercentDecode_317
+//                     ^^^^^ reference local bytes_317
+//                           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#drop().
+//                                    ^^^ reference local ret_317
+//                                          ^^^^^ reference local bytes_317
+//                                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toChar().
+    else if (bytes[0] < 0xE0)
+//           ^^^^^ reference local bytes_317
+      let (b0 = bytes[0].and(0x1f).shl(6))
+//         ^^ definition local b0_322
+//              ^^^^^ reference local bytes_317
+//                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                                 ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shl().
+        let (b1 = bytes[1].and(0x3f))
+//           ^^ definition local b1_323
+//                ^^^^^ reference local bytes_317
+//                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+          _doPercentDecode(bytes.drop(2), ret + b0.or(b1).toChar())
+//        ^^^^^^^^^^^^^^^^ reference local _doPercentDecode_317
+//                         ^^^^^ reference local bytes_317
+//                               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#drop().
+//                                        ^^^ reference local ret_317
+//                                              ^^ reference local b0_322
+//                                                 ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//                                                    ^^ reference local b1_323
+//                                                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toChar().
+    else if (bytes[0] < 0xF0)
+//           ^^^^^ reference local bytes_317
+      let (b0 = bytes[0].and(0xf).shl(12))
+//         ^^ definition local b0_326
+//              ^^^^^ reference local bytes_317
+//                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                                ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shl().
+        let (b1 = bytes[1].and(0x3f).shl(6))
+//           ^^ definition local b1_327
+//                ^^^^^ reference local bytes_317
+//                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                                   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shl().
+          let (b2 = bytes[2].and(0x3f))
+//             ^^ definition local b2_328
+//                  ^^^^^ reference local bytes_317
+//                           ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+            _doPercentDecode(bytes.drop(3), ret + b0.or(b1).or(b2).toChar())
+//          ^^^^^^^^^^^^^^^^ reference local _doPercentDecode_317
+//                           ^^^^^ reference local bytes_317
+//                                 ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#drop().
+//                                          ^^^ reference local ret_317
+//                                                ^^ reference local b0_326
+//                                                   ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//                                                      ^^ reference local b1_327
+//                                                          ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//                                                             ^^ reference local b2_328
+//                                                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toChar().
+    else
+      let (b0 = bytes[0].and(0x7).shl(18))
+//         ^^ definition local b0_331
+//              ^^^^^ reference local bytes_317
+//                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                                ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shl().
+        let (b1 = bytes[1].and(0x3f).shl(12))
+//           ^^ definition local b1_332
+//                ^^^^^ reference local bytes_317
+//                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                                   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shl().
+          let (b2 = bytes[2].and(0x3f).shl(6))
+//             ^^ definition local b2_333
+//                  ^^^^^ reference local bytes_317
+//                           ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+//                                     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#shl().
+            let (b3 = bytes[3].and(0x3f))
+//               ^^ definition local b3_334
+//                    ^^^^^ reference local bytes_317
+//                             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#and().
+              _doPercentDecode(bytes.drop(4), ret + b0.or(b1).or(b2).or(b3).toChar())
+//            ^^^^^^^^^^^^^^^^ reference local _doPercentDecode_317
+//                             ^^^^^ reference local bytes_317
+//                                   ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#drop().
+//                                            ^^^ reference local ret_317
+//                                                  ^^ reference local b0_331
+//                                                     ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//                                                        ^^ reference local b1_332
+//                                                            ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//                                                               ^^ reference local b2_333
+//                                                                   ^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#or().
+//                                                                      ^^ reference local b3_334
+//                                                                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toChar().
+  
+  /// Regex to parse URI's.
+  ///
+  /// From <https://www.rfc-editor.org/rfc/rfc3986#appendix-B>.
+  // language=RegExp
+  local URI_REGEX: Regex = Regex(#"""
+//      ^^^^^^^^^ definition local URI_REGEX_337
+//      documentation
+//      > Regex to parse URI's.
+//      > 
+//      > From <https://www.rfc-editor.org/rfc/rfc3986#appendix-B>.
+//                 ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex#
+//                         ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+    ^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?
+    """#)
+  
+  // language=RegExp
+  local AUTHORITY_REGEX: Regex = Regex(#"""
+//      ^^^^^^^^^^^^^^^ definition local AUTHORITY_REGEX_346
+//                       ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex#
+//                               ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+    (?:([^@]+)@)?([^:]*)(?::(\d+))?
+    """#)
+  
+  // noinspection TypeMismatch
+  function parseAuthority(authority: String): Dynamic =
+//         ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parseAuthority().
+//                        ^^^^^^^^^ definition local authority_351
+//                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+    let (matches = AUTHORITY_REGEX.findMatchesIn(authority))
+//       ^^^^^^^ definition local matches_352
+//                 ^^^^^^^^^^^^^^^ reference local AUTHORITY_REGEX_346
+//                                 ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex#findMatchesIn().
+//                                               ^^^^^^^^^ reference local authority_351
+      let (groups = matches[0].groups)
+//         ^^^^^^ definition local groups_353
+//                  ^^^^^^^ reference local matches_352
+//                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/RegexMatch#groups.
+        new {
+          userInfo = groups.getOrNull(1)?.value?.ifNonNull((it) -> percentDecode(it))
+//        ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/userInfo.
+//                   ^^^^^^ reference local groups_353
+//                          ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#getOrNull().
+//                                        ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/RegexMatch#value.
+//                                               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#ifNonNull().
+//                                                          ^^ definition local it_355
+//                                                                 ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/percentDecode().
+//                                                                               ^^ reference local it_355
+          host = groups.getOrNull(2)?.value?.ifNonNull((it) -> percentDecode(it))
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/host.
+//               ^^^^^^ reference local groups_353
+//                      ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#getOrNull().
+//                                    ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/RegexMatch#value.
+//                                           ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#ifNonNull().
+//                                                      ^^ definition local it_356
+//                                                             ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/percentDecode().
+//                                                                           ^^ reference local it_356
+          port = groups.getOrNull(3)?.value?.toInt()
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/port.
+//               ^^^^^^ reference local groups_353
+//                      ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#getOrNull().
+//                                    ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/RegexMatch#value.
+//                                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toInt().
+        }
+  
+  /// Parses the input string as a [URI].
+  ///
+  /// If the input is not valid, returns `null`.
+  function parse(str: String): URI? =
+//         ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parse().
+//         documentation
+//         > Parses the input string as a [`URI`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.uri/URI.pkl#L21,C1).
+//         > 
+//         > If the input is not valid, returns `null`.
+//               ^^^ definition local str_363
+//                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                             ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+    let (matches = URI_REGEX.findMatchesIn(str))
+//       ^^^^^^^ definition local matches_364
+//                 ^^^^^^^^^ reference local URI_REGEX_337
+//                           ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex#findMatchesIn().
+//                                         ^^^ reference local str_363
+      if (matches.isEmpty) null
+//        ^^^^^^^ reference local matches_364
+//                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#isEmpty.
+      else
+        let (groups = matches[0].groups)
+//           ^^^^^^ definition local groups_367
+//                    ^^^^^^^ reference local matches_364
+//                               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/RegexMatch#groups.
+          let (schemePart = groups.getOrNull(2)?.value)
+//             ^^^^^^^^^^ definition local schemePart_368
+//                          ^^^^^^ reference local groups_367
+//                                 ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#getOrNull().
+//                                               ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/RegexMatch#value.
+            let (authorityPart = groups.getOrNull(4)?.value)
+//               ^^^^^^^^^^^^^ definition local authorityPart_369
+//                               ^^^^^^ reference local groups_367
+//                                      ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#getOrNull().
+//                                                    ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/RegexMatch#value.
+              let (pathPart = groups[5].value)
+//                 ^^^^^^^^ definition local pathPart_370
+//                            ^^^^^^ reference local groups_367
+//                                      ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/RegexMatch#value.
+                let (queryPart = groups.getOrNull(7)?.value)
+//                   ^^^^^^^^^ definition local queryPart_371
+//                               ^^^^^^ reference local groups_367
+//                                      ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#getOrNull().
+//                                                    ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/RegexMatch#value.
+                  let (fragmentPart = groups.getOrNull(9)?.value)
+//                     ^^^^^^^^^^^^ definition local fragmentPart_372
+//                                    ^^^^^^ reference local groups_367
+//                                           ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#getOrNull().
+//                                                         ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/RegexMatch#value.
+                    new URI {
+//                      ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+                      when (schemePart != null) {
+//                          ^^^^^^^^^^ reference local schemePart_368
+                        scheme = percentDecode(schemePart)
+//                      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/scheme.
+//                               ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/percentDecode().
+//                                             ^^^^^^^^^^ reference local schemePart_368
+                      }
+                      when (authorityPart != null) {
+//                          ^^^^^^^^^^^^^ reference local authorityPart_369
+                        ...parseAuthority(authorityPart)
+//                         ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/parseAuthority().
+//                                        ^^^^^^^^^^^^^ reference local authorityPart_369
+                      }
+                      path = pathPart
+//                    ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/path.
+//                           ^^^^^^^^ reference local pathPart_370
+                      query = queryPart
+//                    ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/query.
+//                            ^^^^^^^^^ reference local queryPart_371
+                      when (fragmentPart != null) {
+//                          ^^^^^^^^^^^^ reference local fragmentPart_372
+                        fragment = percentDecode(fragmentPart)
+//                      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/fragment.
+//                                 ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/percentDecode().
+//                                               ^^^^^^^^^^^^ reference local fragmentPart_372
+                      }
+                    }
+  

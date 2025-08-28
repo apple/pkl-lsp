@@ -1,0 +1,151 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// This plugin starts a Prometheus Client, it exposes all metrics on /metrics (default) to be polled by a Prometheus server.
+  @ModuleInfo { minPklVersion = "0.25.0" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleInfo#
+//              ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/PrometheusClientOutput.pkl`/minPklVersion.
+  open module com.influxdata.telegraf.plugins.outputs.PrometheusClientOutput
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/PrometheusClientOutput.pkl`/
+  
+  extends "Output.pkl"
+  
+  /// Address to listen on.
+  listen: String?
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/PrometheusClientOutput.pkl`/listen.
+//documentation
+//> Address to listen on.
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// Metric version controls the mapping from Prometheus metrics into Telegraf metrics.
+  ///
+  /// See "Metric Format Configuration" in plugins/inputs/prometheus/README.md for details.
+  /// Defaults to `1`.
+  metric_version: Int(isBetween(1,2))?
+//^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/PrometheusClientOutput.pkl`/metric_version.
+//documentation
+//> Metric version controls the mapping from Prometheus metrics into Telegraf metrics.
+//> 
+//> See "Metric Format Configuration" in plugins/inputs/prometheus/README.md for details.
+//> Defaults to `1`.
+//                ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                    ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#isBetween().
+  
+  /// Username for optional basic authentication.
+  basic_username: String?
+//^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/PrometheusClientOutput.pkl`/basic_username.
+//documentation
+//> Username for optional basic authentication.
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// Password for optional basic authentication.
+  basic_password: String?
+//^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/PrometheusClientOutput.pkl`/basic_password.
+//documentation
+//> Password for optional basic authentication.
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// If set, the IP Ranges which are allowed to access metrics.
+  ///
+  /// Defaults to no restrictions.
+  ip_range: Listing<String>?
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/PrometheusClientOutput.pkl`/ip_range.
+//documentation
+//> If set, the IP Ranges which are allowed to access metrics.
+//> 
+//> Defaults to no restrictions.
+//          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// Path to publish the metrics on.
+  ///
+  /// Defaults to `/metrics`.
+  path: String?
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/PrometheusClientOutput.pkl`/path.
+//documentation
+//> Path to publish the metrics on.
+//> 
+//> Defaults to `/metrics`.
+//      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// Expiration interval for each metric.
+  ///
+  /// Set to `0` for no expiration.
+  /// Defaults to 60 seconds.
+  expiration_interval: Duration?
+//^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/PrometheusClientOutput.pkl`/expiration_interval.
+//documentation
+//> Expiration interval for each metric.
+//> 
+//> Set to `0` for no expiration.
+//> Defaults to 60 seconds.
+//                     ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+  
+  /// Collectors to disable, valid entries are "gocollector" and "process".
+  ///
+  /// Defaults to `gocollector' and `process' being enabled.
+  collectors_exclude: Listing<"gocollector"|"process">(isDistinct)?
+//^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/PrometheusClientOutput.pkl`/collectors_exclude.
+//documentation
+//> Collectors to disable, valid entries are "gocollector" and "process".
+//> 
+//> Defaults to `gocollector' and `process' being enabled.
+//                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                                     ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#isDistinct.
+  
+  /// Send string metrics as Prometheus labels.
+  ///
+  /// Defaults to `true`.
+  string_as_label: Boolean?
+//^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/PrometheusClientOutput.pkl`/string_as_label.
+//documentation
+//> Send string metrics as Prometheus labels.
+//> 
+//> Defaults to `true`.
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+  /// Path to certificate for optional TLS.
+  tls_cert: String?
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/PrometheusClientOutput.pkl`/tls_cert.
+//documentation
+//> Path to certificate for optional TLS.
+//          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// Path to key for optional TLS.
+  tls_key: String?
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/PrometheusClientOutput.pkl`/tls_key.
+//documentation
+//> Path to key for optional TLS.
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// Path to CA Certificate files to enable optional mTLS.
+  tls_allowed_cacerts: Listing<String>?
+//^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/PrometheusClientOutput.pkl`/tls_allowed_cacerts.
+//documentation
+//> Path to CA Certificate files to enable optional mTLS.
+//                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// Export metric collection time.
+  ///
+  /// Defaults to `false`.
+  export_timestamp: Boolean?
+//^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `plugins/outputs/PrometheusClientOutput.pkl`/export_timestamp.
+//documentation
+//> Export metric collection time.
+//> 
+//> Defaults to `false`.
+//                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  

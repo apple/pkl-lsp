@@ -1,0 +1,146 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module org.openapis.v3_0.examples.SampleAPI
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/
+  
+  amends "@openapi/Document.pkl"
+  
+  import "@openapi/Components.pkl"
+  import "@openapi/HTTPResponse.pkl"
+  import "../SchemaGenerator.pkl"
+  
+  // User schema
+  local class User {
+//            ^^^^ definition local User_25
+    firstName: String
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/User#firstName.
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    middleName: String?
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/User#middleName.
+//              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    lastName: String
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/User#lastName.
+//            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  info {
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/info.
+    title = "Sample API"
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/title.
+    description = "Example API to demonstrate the form of an OpenAPI PKL document"
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/description.
+    version = "0.1.0"
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/version.
+  }
+  
+  servers {
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/servers.
+    // staging
+    new {
+      url = "https://staging-api.example.com"
+//    ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/url.
+      description = "Staging server"
+//    ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/description.
+    }
+  
+    // production
+    new {
+      url = "https://api.example.com/{basePath}"
+//    ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/url.
+      description = "Production server"
+//    ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/description.
+      variables {
+//    ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/variables.
+        ["basePath"] {
+          default = "v1"
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/default.
+        }
+      }
+    }
+  }
+  
+  paths {
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/paths.
+    ["/users"] {
+      get {
+//    ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/get.
+        summary = "Returns a list of users"
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/summary.
+        description = """
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/description.
+          This is an endpoint that returns a list of users from the configured storage backend.
+          Blah blah blah.
+          """
+        responses {
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/responses.
+          [HTTPResponse.OK] {
+//         ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `HTTPResponse.pkl`/
+//                      ^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `HTTPResponse.pkl`/OK.
+            description = "A JSON array of usernames"
+//          ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/description.
+            content {
+//          ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/content.
+              ["application/json"] {
+                schema = Components.componentRef("schemas", "UserList")
+//              ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/schema.
+//                       ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Components.pkl`/
+//                                  ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Components.pkl`/componentRef().
+              }
+            }
+          }
+          ["4XX"] {
+            description = "Any client-side error"
+//          ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/description.
+          }
+        }
+      }
+    }
+  }
+  
+  // define components
+  components {
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/components.
+    schemas {
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/schemas.
+      ["User"] = SchemaGenerator.generate(User)
+//               ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/
+//                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/generate().
+//                                        ^^^^ reference local User_25
+      ["UserList"] {
+        type = "array"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/type.
+        items = Components.componentRef("schemas", "User")
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/items.
+//              ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Components.pkl`/
+//                         ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Components.pkl`/componentRef().
+      }
+    }
+    links {
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/links.
+      ["someLink"] {
+        requestBody = "$url#/foo/bar"
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/requestBody.
+      }
+    }
+  }
+  
+  output {
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/output.
+    renderer = new JsonRenderer {}
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SampleAPI.pkl`/renderer.
+//                 ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/JsonRenderer#
+  }
+  

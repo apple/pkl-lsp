@@ -1,0 +1,108 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// This example uses steps from the [circleci/node](https://circleci.com/developer/orbs/orb/circleci/node) orb.
+  ///
+  /// It defins local classes that extend [AbstractStep], so that step definitions are type safe.
+  amends "../Config.pkl"
+  
+  /// Install custom versions of Node.js, and optionally NPM/Yarn, in any
+  /// execution environment (Docker/Linux, macOS, machine) that does not have
+  /// it preinstalled.
+  local class NodeInstall extends AbstractStep {
+//            ^^^^^^^^^^^ definition local NodeInstall_21
+//            documentation
+//            > Install custom versions of Node.js, and optionally NPM/Yarn, in any
+//            > execution environment (Docker/Linux, macOS, machine) that does not have
+//            > it preinstalled.
+//                                ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/AbstractStep#
+    fixed hidden __name__ = "node/install"
+//               ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/typed_orb_steps.pkl`/NodeInstall#__name__.
+  
+    /// Install Yarn?
+    ///
+    /// Default: `false`
+    `install-yarn`: Boolean?
+//  ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/typed_orb_steps.pkl`/NodeInstall#install-yarn.
+//  documentation
+//  > Install Yarn?
+//  > 
+//  > Default: `false`
+//                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+    /// Where should Node.js be installed?
+    ///
+    /// Default: `/usr/local`
+    `node-install-dir`: String?
+//  ^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/typed_orb_steps.pkl`/NodeInstall#node-install-dir.
+//  documentation
+//  > Where should Node.js be installed?
+//  > 
+//  > Default: `/usr/local`
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Specify the full version tag to install.
+    ///
+    /// To install the latest version, set the version to `latest`.
+    /// If unspecified, the version listed in .nvmrc will be installed.
+    /// If no .nvmrc file exists the active LTS version of Node.js will be installed by default.
+    /// For a full list of releases, see the following: <https://nodejs.org/en/download/releases>
+    `node-version`: String?
+//  ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/typed_orb_steps.pkl`/NodeInstall#node-version.
+//  documentation
+//  > Specify the full version tag to install.
+//  > 
+//  > To install the latest version, set the version to `latest`.
+//  > If unspecified, the version listed in .nvmrc will be installed.
+//  > If no .nvmrc file exists the active LTS version of Node.js will be installed by default.
+//  > For a full list of releases, see the following: <https://nodejs.org/en/download/releases>
+//                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Pick a version of Yarn to install.
+    ///
+    /// If no version is specified, the latest stable version will be installed: <https://github.com/yarnpkg/yarn/releases>
+    `yarn-version`: String?
+//  ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/typed_orb_steps.pkl`/NodeInstall#yarn-version.
+//  documentation
+//  > Pick a version of Yarn to install.
+//  > 
+//  > If no version is specified, the latest stable version will be installed: <https://github.com/yarnpkg/yarn/releases>
+//                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  jobs {
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/typed_orb_steps.pkl`/jobs.
+    ["test"] {
+      machine {
+//    ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/typed_orb_steps.pkl`/machine.
+        image = "ubuntu-2004:current"
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/typed_orb_steps.pkl`/image.
+      }
+      steps {
+//    ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/typed_orb_steps.pkl`/steps.
+        "checkout"
+        new NodeInstall { `node-version` = "v20.11.1" }
+//          ^^^^^^^^^^^ reference local NodeInstall_21
+//                        ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/typed_orb_steps.pkl`/node-version.
+        new RunStep { command = "npm install" }
+//          ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RunStep#
+//                    ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/typed_orb_steps.pkl`/command.
+        new RunStep { command = "npm test" }
+//          ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `Config.pkl`/RunStep#
+//                    ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.circleci.v2 1.5.0 `examples/typed_orb_steps.pkl`/command.
+      }
+    }
+  }
+  

@@ -1,0 +1,203 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module org.openapis.v3_0.examples.SwallowSchema
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/
+  
+  import "../SchemaGenerator.pkl"
+  
+  /// A friend of a Swallow.
+  class SwallowFriend {
+//      ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/SwallowFriend#
+//      documentation
+//      > A friend of a Swallow.
+    /// The name of the friend.
+    name: String
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/SwallowFriend#name.
+//  documentation
+//  > The name of the friend.
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Is this friend also a Swallow?
+    isSwallow: Boolean
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/SwallowFriend#isSwallow.
+//  documentation
+//  > Is this friend also a Swallow?
+//             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+    /// Any extra attributes for the friend.
+    tags: Mapping<String, String>
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/SwallowFriend#tags.
+//  documentation
+//  > Any extra attributes for the friend.
+//        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  /// This is a Swallow
+  class Swallow {
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/Swallow#
+//      documentation
+//      > This is a Swallow
+  
+    /// Does this Swallow have a gulp?
+    hasGulp: Boolean
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/Swallow#hasGulp.
+//  documentation
+//  > Does this Swallow have a gulp?
+//           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+    /// One of the variants for this swallow.
+    variants: Listing<"African"|"European">
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/Swallow#variants.
+//  documentation
+//  > One of the variants for this swallow.
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+  
+    /// What is the air speed of this swallow?
+    airSpeed: Number?
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/Swallow#airSpeed.
+//  documentation
+//  > What is the air speed of this swallow?
+//            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+  
+    /// Is this Swallow a Duck?
+    ///
+    /// This is deprecated because no swallows are ever ducks.
+    @Deprecated
+//   ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Deprecated#
+    isDuck: Boolean?
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/Swallow#isDuck.
+//  documentation
+//  > Is this Swallow a Duck?
+//  > 
+//  > This is deprecated because no swallows are ever ducks.
+//          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+    /// How old is this Swallow?
+    age: UInt8
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/Swallow#age.
+//  documentation
+//  > How old is this Swallow?
+//       ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt8#
+  
+    /// What are the nicknames?
+    nicknames: Listing<String>
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/Swallow#nicknames.
+//  documentation
+//  > What are the nicknames?
+//             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Who is the best friend of this Swallow?
+    bestFriend: SwallowFriend
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/Swallow#bestFriend.
+//  documentation
+//  > Who is the best friend of this Swallow?
+//              ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/SwallowFriend#
+  
+    /// Who are the friends of this Swallow?
+    friends: Listing<SwallowFriend>
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/Swallow#friends.
+//  documentation
+//  > Who are the friends of this Swallow?
+//           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                   ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/SwallowFriend#
+  
+    /// Any extra attributes.
+    tags: Mapping<String, String>
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/Swallow#tags.
+//  documentation
+//  > Any extra attributes.
+//        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// The typical size of a flight path of this Swallow.
+    typicalFlightPathSize: DataSize
+//  ^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/Swallow#typicalFlightPathSize.
+//  documentation
+//  > The typical size of a flight path of this Swallow.
+//                         ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/DataSize#
+  
+    /// This is a list. It really should not be used, but sometimes people make mistakes. Regardless,
+    /// it should turn into an array type.
+    list: List<String>
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/Swallow#list.
+//  documentation
+//  > This is a list. It really should not be used, but sometimes people make mistakes. Regardless,
+//  > it should turn into an array type.
+//        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Swoop!
+    ///
+    /// This should not appear in the schema output.
+    swoop: (String) -> String = (input) -> "SWOOP \(input)"
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/Swallow#swoop.
+//  documentation
+//  > Swoop!
+//  > 
+//  > This should not appear in the schema output.
+//          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                               ^^^^^ definition local input_75
+//                                                  ^^^^^ reference local input_75
+  
+    /// Swoopwoop!
+    ///
+    /// This should also not appear in the schema output.
+    function swoopwoop() = "swoopwoop!"
+//           ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/Swallow#swoopwoop().
+//           documentation
+//           > Swoopwoop!
+//           > 
+//           > This should also not appear in the schema output.
+  
+    /// soar!
+    ///
+    /// Don't show me in the schema because I don't show up in any rendered output.
+    hidden soar: Boolean?
+//         ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/Swallow#soar.
+//         documentation
+//         > soar!
+//         > 
+//         > Don't show me in the schema because I don't show up in any rendered output.
+//               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  }
+  
+  local generator = new SchemaGenerator {
+//      ^^^^^^^^^ definition local generator_88
+//                      ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/
+    converters {
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/converters.
+      [DataSize] {
+//     ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/DataSize#
+        type = "string"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/type.
+        description = "A data size description"
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/description.
+      }
+    }
+  }
+  
+  output = generator.generate(Swallow).output
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/output.
+//         ^^^^^^^^^ reference local generator_88
+//                   ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/generate().
+//                            ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `examples/SwallowSchema.pkl`/Swallow#
+//                                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#output.
+  

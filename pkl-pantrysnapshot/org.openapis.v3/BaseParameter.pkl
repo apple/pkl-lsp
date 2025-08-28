@@ -1,0 +1,110 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  abstract module org.openapis.v3.BaseParameter
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `BaseParameter.pkl`/
+  
+  /// A brief description of the parameter.
+  ///
+  /// This could contain examples of use. CommonMark syntax MAY be used for rich text representation.
+  @SourceCode { language = "Markdown" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/SourceCode#
+//              ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `BaseParameter.pkl`/language.
+  description: String?
+//^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `BaseParameter.pkl`/description.
+//documentation
+//> A brief description of the parameter.
+//> 
+//> This could contain examples of use. CommonMark syntax MAY be used for rich text representation.
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// Specifies that a parameter is deprecated and SHOULD be transitioned out of usage.
+  ///
+  /// Default value is false.
+  deprecated: Boolean?
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `BaseParameter.pkl`/deprecated.
+//documentation
+//> Specifies that a parameter is deprecated and SHOULD be transitioned out of usage.
+//> 
+//> Default value is false.
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+  /// Sets the ability to pass empty-valued parameters.
+  ///
+  /// This is valid only for query parameters and allows sending a parameter with an empty value. Default value is
+  /// false. If style is used, and if behavior is n/a (cannot be serialized), the value of allowEmptyValue SHALL be
+  /// ignored. Use of this property is NOT RECOMMENDED, as it is likely to be removed in a later revision.
+  allowEmptyValue: Boolean?
+//^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `BaseParameter.pkl`/allowEmptyValue.
+//documentation
+//> Sets the ability to pass empty-valued parameters.
+//> 
+//> This is valid only for query parameters and allows sending a parameter with an empty value. Default value is
+//> false. If style is used, and if behavior is n/a (cannot be serialized), the value of allowEmptyValue SHALL be
+//> ignored. Use of this property is NOT RECOMMENDED, as it is likely to be removed in a later revision.
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+  /// When this is true, parameter values of type array or object generate separate parameters for each value of the
+  /// array or key-value pair of the map.
+  ///
+  /// For other types of parameters this property has no effect. When style is form, the default value is true. For all
+  /// other styles, the default value is false.
+  explode: Boolean?
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `BaseParameter.pkl`/explode.
+//documentation
+//> When this is true, parameter values of type array or object generate separate parameters for each value of the
+//> array or key-value pair of the map.
+//> 
+//> For other types of parameters this property has no effect. When style is form, the default value is true. For all
+//> other styles, the default value is false.
+//         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+  /// Example of the parameter's potential value. The example SHOULD match the specified schema and encoding properties
+  /// if present.
+  ///
+  /// The example field is  mutually exclusive of the examples field. Furthermore, if referencing a  schema that contains
+  /// an example, the example value SHALL override the  example provided by the schema. To represent examples of media
+  /// types that  cannot naturally be represented in JSON or YAML, a string value can contain the example with escaping
+  /// where necessary.
+  example: Any?(!(this != null && examples != null))
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `BaseParameter.pkl`/example.
+//documentation
+//> Example of the parameter's potential value. The example SHOULD match the specified schema and encoding properties
+//> if present.
+//> 
+//> The example field is  mutually exclusive of the examples field. Furthermore, if referencing a  schema that contains
+//> an example, the example value SHALL override the  example provided by the schema. To represent examples of media
+//> types that  cannot naturally be represented in JSON or YAML, a string value can contain the example with escaping
+//> where necessary.
+//         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `BaseParameter.pkl`/examples.
+  
+  /// Examples of the parameter's potential value.
+  ///
+  /// Each example SHOULD contain a value in the correct format as specified in the parameter encoding. The examples
+  /// field is mutually exclusive of the example field. Furthermore, if referencing a schema that contains an example,
+  /// the examples value SHALL override the example provided by the schema.
+  examples: Mapping<String, Any>?
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `BaseParameter.pkl`/examples.
+//documentation
+//> Examples of the parameter's potential value.
+//> 
+//> Each example SHOULD contain a value in the correct format as specified in the parameter encoding. The examples
+//> field is mutually exclusive of the example field. Furthermore, if referencing a schema that contains an example,
+//> the examples value SHALL override the example provided by the schema.
+//          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+  

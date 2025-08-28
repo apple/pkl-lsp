@@ -1,0 +1,44 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// Allows referencing an external resource for extended documentation.
+  module org.openapis.v3.ExternalDocs
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `ExternalDocs.pkl`/
+  
+  /// A short description of the target documentation.
+  ///
+  /// CommonMark syntax MAY be used for rich text representation.
+  @SourceCode { language = "Markdown" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/SourceCode#
+//              ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `ExternalDocs.pkl`/language.
+  description: String?
+//^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `ExternalDocs.pkl`/description.
+//documentation
+//> A short description of the target documentation.
+//> 
+//> CommonMark syntax MAY be used for rich text representation.
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// The URL for the target documentation.
+  ///
+  /// Value MUST be in the format of a URL.
+  url: Uri?
+//^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `ExternalDocs.pkl`/url.
+//documentation
+//> The URL for the target documentation.
+//> 
+//> Value MUST be in the format of a URL.
+//     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Uri#
+  

@@ -1,0 +1,386 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module icalendar.tests.Recur
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/
+  amends "pkl:test"
+  
+  import "../type/Recur.pkl"
+  import "../type/Date.pkl"
+  import "../type/DateTime.pkl"
+  
+  facts {
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/facts.
+    ["with date"] {
+      new Recur {
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/
+        dtstart = Date.Date("20000101")
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/dtstart.
+//                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Date.pkl`/
+//                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Date.pkl`/Date().
+        freq = "YEARLY"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/freq.
+        interval = 1
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/interval.
+        until = Date.Date("20250101")
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/until.
+//              ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Date.pkl`/
+//                   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Date.pkl`/Date().
+        byday {
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/byday.
+          "MO"
+          new { weeknum = -1; weekday = "FR" }
+//              ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/weeknum.
+//                            ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/weekday.
+        }
+        bymonthday { 15; -15 }
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/bymonthday.
+        byyearday { 100; -100 }
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/byyearday.
+        bymonth { 1; 11 }
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/bymonth.
+        wkst = "MO"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/wkst.
+        bysetpos { -1; 1 }
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/bysetpos.
+      }.toString() == """
+//      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/toString().
+        DTSTART;VALUE=DATE:20000101
+        RRULE:FREQ=YEARLY;INTERVAL=1;UNTIL=20250101;BYDAY=MO,-1FR;BYMONTHDAY=15,-15;BYYEARDAY=100,-100;BYMONTH=1,11;WKST=MO;BYSETPOS=-1,1
+        """
+  
+      // tzid not allowed for dates, only datetimes
+      module.catchOrNull(() -> new Recur {
+//           ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catchOrNull().
+//                                 ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/
+        dtstart = Date.Date("20000101")
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/dtstart.
+//                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Date.pkl`/
+//                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Date.pkl`/Date().
+        tzid = "America/Los_Angeles"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/tzid.
+        freq = "YEARLY"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/freq.
+      }.toString()) != null
+//      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/toString().
+      module.catchOrNull(() -> new Recur {
+//           ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catchOrNull().
+//                                 ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/
+        tzid = "America/Los_Angeles"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/tzid.
+        freq = "YEARLY"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/freq.
+        until = Date.Date("20250101")
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/until.
+//              ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Date.pkl`/
+//                   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Date.pkl`/Date().
+      }.toString()) != null
+//      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/toString().
+  
+      // until type must be date if dtstart is date
+      module.catchOrNull(() -> new Recur {
+//           ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catchOrNull().
+//                                 ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/
+        dtstart = Date.Date("20000101")
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/dtstart.
+//                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Date.pkl`/
+//                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Date.pkl`/Date().
+        freq = "YEARLY"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/freq.
+        until = DateTime.DateTime("20250101T000000")
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/until.
+//              ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/
+//                       ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/DateTime().
+      }.toString()) != null
+//      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/toString().
+  
+      // until and count forbidden together
+      module.catchOrNull(() -> new Recur {
+//           ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catchOrNull().
+//                                 ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/
+        dtstart = Date.Date("20000101")
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/dtstart.
+//                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Date.pkl`/
+//                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Date.pkl`/Date().
+        freq = "YEARLY"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/freq.
+        count = 25
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/count.
+        until = Date.Date("20250101")
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/until.
+//              ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Date.pkl`/
+//                   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Date.pkl`/Date().
+      }.toString()) != null
+//      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/toString().
+  
+      // bysecond cannot be used with date dtstart
+      module.catchOrNull(() -> new Recur {
+//           ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catchOrNull().
+//                                 ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/
+        dtstart = Date.Date("20000101")
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/dtstart.
+//                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Date.pkl`/
+//                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Date.pkl`/Date().
+        freq = "YEARLY"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/freq.
+        bysecond { 0 }
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/bysecond.
+      }.toString()) != null
+//      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/toString().
+  
+      // byminute cannot be used with date dtstart
+      module.catchOrNull(() -> new Recur {
+//           ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catchOrNull().
+//                                 ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/
+        dtstart = Date.Date("20000101")
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/dtstart.
+//                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Date.pkl`/
+//                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Date.pkl`/Date().
+        freq = "YEARLY"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/freq.
+        byminute { 0 }
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/byminute.
+      }.toString()) != null
+//      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/toString().
+  
+      // byhour cannot be used with date dtstart
+      module.catchOrNull(() -> new Recur {
+//           ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catchOrNull().
+//                                 ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/
+        dtstart = Date.Date("20000101")
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/dtstart.
+//                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Date.pkl`/
+//                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Date.pkl`/Date().
+        freq = "YEARLY"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/freq.
+        byhour { 0 }
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/byhour.
+      }.toString()) != null
+//      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/toString().
+  
+      // bysetpos cannot be used without another by* property
+      module.catchOrNull(() -> new Recur {
+//           ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catchOrNull().
+//                                 ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/
+        dtstart = Date.Date("20000101")
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/dtstart.
+//                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Date.pkl`/
+//                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Date.pkl`/Date().
+        freq = "YEARLY"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/freq.
+        bysetpos { 1 }
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/bysetpos.
+      }.toString()) != null
+//      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/toString().
+    }
+  
+    ["with datetime"] {
+      // utc
+      new Recur {
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/
+        dtstart = DateTime.DateTime("20000101T000000Z")
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/dtstart.
+//                ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/
+//                         ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/DateTime().
+        freq = "YEARLY"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/freq.
+        interval = 1
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/interval.
+        until = DateTime.DateTime("20250101T000000Z")
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/until.
+//              ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/
+//                       ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/DateTime().
+        bysecond { 0; 30 }
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/bysecond.
+        byminute { 0; 30 }
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/byminute.
+        byhour { 0; 12 }
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/byhour.
+        byday {
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/byday.
+          "MO"
+          new { weeknum = -1; weekday = "FR" }
+//              ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/weeknum.
+//                            ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/weekday.
+        }
+        bymonthday { 15; -15 }
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/bymonthday.
+        byyearday { 100; -100 }
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/byyearday.
+        bymonth { 1; 11 }
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/bymonth.
+        wkst = "MO"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/wkst.
+        bysetpos { -1; 1 }
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/bysetpos.
+      }.toString() == """
+//      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/toString().
+        DTSTART:20000101T000000Z
+        RRULE:FREQ=YEARLY;INTERVAL=1;UNTIL=20250101T000000Z;BYSECOND=0,30;BYMINUTE=0,30;BYHOUR=0,12;BYDAY=MO,-1FR;BYMONTHDAY=15,-15;BYYEARDAY=100,-100;BYMONTH=1,11;WKST=MO;BYSETPOS=-1,1
+        """
+  
+      // floating
+      new Recur {
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/
+        dtstart = DateTime.DateTime("20000101T000000")
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/dtstart.
+//                ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/
+//                         ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/DateTime().
+        freq = "YEARLY"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/freq.
+        interval = 1
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/interval.
+        until = DateTime.DateTime("20250101T000000")
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/until.
+//              ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/
+//                       ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/DateTime().
+        bysecond { 0; 30 }
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/bysecond.
+        byminute { 0; 30 }
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/byminute.
+        byhour { 0; 12 }
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/byhour.
+        byday {
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/byday.
+          "MO"
+          new { weeknum = -1; weekday = "FR" }
+//              ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/weeknum.
+//                            ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/weekday.
+        }
+        bymonthday { 15; -15 }
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/bymonthday.
+        byyearday { 100; -100 }
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/byyearday.
+        bymonth { 1; 11 }
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/bymonth.
+        wkst = "MO"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/wkst.
+        bysetpos { -1; 1 }
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/bysetpos.
+      }.toString() == """
+//      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/toString().
+        DTSTART:20000101T000000
+        RRULE:FREQ=YEARLY;INTERVAL=1;UNTIL=20250101T000000;BYSECOND=0,30;BYMINUTE=0,30;BYHOUR=0,12;BYDAY=MO,-1FR;BYMONTHDAY=15,-15;BYYEARDAY=100,-100;BYMONTH=1,11;WKST=MO;BYSETPOS=-1,1
+        """
+  
+      // with timezone
+      new Recur {
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/
+        dtstart = DateTime.DateTime("20000101T000000")
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/dtstart.
+//                ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/
+//                         ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/DateTime().
+        tzid = "America/Los_Angeles"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/tzid.
+        freq = "YEARLY"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/freq.
+        interval = 1
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/interval.
+        until = DateTime.DateTime("20250101T000000")
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/until.
+//              ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/
+//                       ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/DateTime().
+        bysecond { 0; 30 }
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/bysecond.
+        byminute { 0; 30 }
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/byminute.
+        byhour { 0; 12 }
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/byhour.
+        byday {
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/byday.
+          "MO"
+          new { weeknum = -1; weekday = "FR" }
+//              ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/weeknum.
+//                            ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/weekday.
+        }
+        bymonthday { 15; -15 }
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/bymonthday.
+        byyearday { 100; -100 }
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/byyearday.
+        bymonth { 1; 11 }
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/bymonth.
+        wkst = "MO"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/wkst.
+        bysetpos { -1; 1 }
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/bysetpos.
+      }.toString() == """
+//      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/toString().
+        DTSTART;TZID=America/Los_Angeles:20000101T000000
+        RRULE:FREQ=YEARLY;INTERVAL=1;UNTIL=20250101T000000;BYSECOND=0,30;BYMINUTE=0,30;BYHOUR=0,12;BYDAY=MO,-1FR;BYMONTHDAY=15,-15;BYYEARDAY=100,-100;BYMONTH=1,11;WKST=MO;BYSETPOS=-1,1
+        """
+  
+      // forbid utc until with non-utc dtstart
+      module.catchOrNull(() -> new Recur {
+//           ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catchOrNull().
+//                                 ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/
+        dtstart = DateTime.DateTime("20000101T000000")
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/dtstart.
+//                ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/
+//                         ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/DateTime().
+        freq = "YEARLY"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/freq.
+        until = DateTime.DateTime("20250101T000000Z")
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/until.
+//              ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/
+//                       ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/DateTime().
+      }.toString()) != null
+//      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/toString().
+      // forbid utc dtstart with non-utc until
+      module.catchOrNull(() -> new Recur {
+//           ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catchOrNull().
+//                                 ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/
+        dtstart = DateTime.DateTime("20000101T000000Z")
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/dtstart.
+//                ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/
+//                         ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/DateTime().
+        freq = "YEARLY"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/freq.
+        until = DateTime.DateTime("20250101T000000")
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/until.
+//              ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/
+//                       ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/DateTime().
+      }.toString()) != null
+//      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/toString().
+      // forbid utc dtstart with tzid
+      module.catchOrNull(() -> new Recur {
+//           ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catchOrNull().
+//                                 ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/
+        dtstart = DateTime.DateTime("20000101T000000Z")
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/dtstart.
+//                ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/
+//                         ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/DateTime().
+        tzid = "America/Los_Angeles"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/tzid.
+        freq = "YEARLY"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/freq.
+      }.toString()) != null
+//      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/toString().
+      // forbid utc until with tzid
+      module.catchOrNull(() -> new Recur {
+//           ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catchOrNull().
+//                                 ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/
+        tzid = "America/Los_Angeles"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/tzid.
+        freq = "YEARLY"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/freq.
+        until = DateTime.DateTime("20250101T000000Z")
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `tests/Recur.pkl`/until.
+//              ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/
+//                       ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/DateTime.pkl`/DateTime().
+      }.toString()) != null
+//      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/icalendar 0.1.1 `type/Recur.pkl`/toString().
+    }
+  }
+  

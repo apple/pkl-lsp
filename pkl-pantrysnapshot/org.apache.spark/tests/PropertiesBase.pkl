@@ -1,0 +1,79 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module org.apache.spark.tests.PropertiesBase
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `tests/PropertiesBase.pkl`/
+  
+  amends "pkl:test"
+  
+  import "../PropertiesBase.pkl"
+  
+  local class SampleSparkProperties extends PropertiesBase {
+//            ^^^^^^^^^^^^^^^^^^^^^ definition local SampleSparkProperties_22
+//                                          ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `PropertiesBase.pkl`/
+    `spark.core.numbers`: Int?
+//  ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `tests/PropertiesBase.pkl`/SampleSparkProperties#`spark.core.numbers`.
+//                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+    `spark.{driver|executor}.something`: Mapping<String, String>?
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `tests/PropertiesBase.pkl`/SampleSparkProperties#`spark.{driver|executor}.something`.
+//                                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    `spark.shards.[0-9].setting.[node].memory`: Mapping<String, Mapping<String, DataSize>>?
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `tests/PropertiesBase.pkl`/SampleSparkProperties#`spark.shards.[0-9].setting.[node].memory`.
+//                                              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                              ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/DataSize#
+    `spark.kubernetes.some.type.of.memory`: DataSize?
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `tests/PropertiesBase.pkl`/SampleSparkProperties#`spark.kubernetes.some.type.of.memory`.
+//                                          ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/DataSize#
+    `spark.some.type.of.duration`: Duration?
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `tests/PropertiesBase.pkl`/SampleSparkProperties#`spark.some.type.of.duration`.
+//                                 ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+  }
+  
+  examples {
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `tests/PropertiesBase.pkl`/examples.
+    ["rendering properties"] {
+      new SampleSparkProperties {
+//        ^^^^^^^^^^^^^^^^^^^^^ reference local SampleSparkProperties_22
+        `spark.{driver|executor}.something` {
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `tests/PropertiesBase.pkl`/`spark.{driver|executor}.something`.
+          ["driver"] = "some driver setting"
+          ["executor"] = "some executor setting"
+        }
+        `spark.core.numbers` = 5
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `tests/PropertiesBase.pkl`/`spark.core.numbers`.
+        `spark.shards.[0-9].setting.[node].memory` {
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `tests/PropertiesBase.pkl`/`spark.shards.[0-9].setting.[node].memory`.
+          ["1"] {
+            ["this-node"] = 5.gib
+//                            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#gib.
+          }
+        }
+        `spark.kubernetes.some.type.of.memory` = 10.gib
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `tests/PropertiesBase.pkl`/`spark.kubernetes.some.type.of.memory`.
+//                                                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#gib.
+        `spark.some.type.of.duration` = 5.min
+//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.apache.spark 1.0.2 `tests/PropertiesBase.pkl`/`spark.some.type.of.duration`.
+//                                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#min.
+      }.output.text
+//      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#output.
+//             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/FileOutput#text.
+    }
+  }
+  

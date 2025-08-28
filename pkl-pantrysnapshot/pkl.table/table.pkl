@@ -1,0 +1,778 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// [TableRenderer] generates pretty tables!
+  @ModuleInfo { minPklVersion = "0.25.0" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleInfo#
+//              ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/minPklVersion.
+  module pkl.table.table
+//^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/
+  
+  import "pkl:math"
+  
+  typealias ColumnKey = String
+//          ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/ColumnKey#
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  typealias ListLike = List|Listing|Dynamic(toMap().isEmpty)
+//          ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/ListLike#
+//                     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#toMap().
+//                                                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#isEmpty.
+  const local listLikeDescription = "`List`s, `Listing`s, or `Dynamic`s with only elements"
+//            ^^^^^^^^^^^^^^^^^^^ definition local listLikeDescription_24
+  
+  typealias HorizontalPosition = "left"|"inner"|"right"
+//          ^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/HorizontalPosition#
+  typealias VerticalPosition = "top"|"inner"|"bottom"
+//          ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/VerticalPosition#
+  typealias Alignment = "left"|"right"
+//          ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Alignment#
+  
+  const function Column(_key: String): Column = new { key = _key }
+//               ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column().
+//                      ^^^^ definition local _key_30
+//                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                     ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#
+//                                                    ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/key.
+//                                                          ^^^^ reference local _key_30
+  class Column {
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#
+    /// The key used to extract property values from rows
+    key: ColumnKey
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#key.
+//  documentation
+//  > The key used to extract property values from rows
+//       ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/ColumnKey#
+  
+    /// The column header title
+    title: String = key
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#title.
+//  documentation
+//  > The column header title
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#key.
+  
+    /// The direction to align and pad column contents within a cell
+    align: Alignment = "left"
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#align.
+//  documentation
+//  > The direction to align and pad column contents within a cell
+//         ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Alignment#
+  }
+  
+  /// Used to provide fully custom content for an entire table row
+  /// One possible usage is to express colspan in HTML tables
+  open class RowDirective {
+//           ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/RowDirective#
+//           documentation
+//           > Used to provide fully custom content for an entire table row
+//           > One possible usage is to express colspan in HTML tables
+    content: String
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/RowDirective#content.
+//           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    function render(style: TableStyle): String = content
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/RowDirective#render().
+//                  ^^^^^ definition local style_47
+//                         ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#
+//                                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                               ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/RowDirective#content.
+  }
+  
+  /// Style options used to draw the table
+  /// Default values produce a table consisting of simple ASCII characters
+  open class TableStyle {
+//           ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#
+//           documentation
+//           > Style options used to draw the table
+//           > Default values produce a table consisting of simple ASCII characters
+    /// Placeholder to use in place of null property values
+    nullPlaceholder: String = "null"
+//  ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#nullPlaceholder.
+//  documentation
+//  > Placeholder to use in place of null property values
+//                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Include a header in the table
+    includeHeader: Boolean = true
+//  ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#includeHeader.
+//  documentation
+//  > Include a header in the table
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+    /// Default character to use for horizontal rules
+    defaultHorizontal: String(!fixedWidth || length == 1) = "-"
+//  ^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#defaultHorizontal.
+//  documentation
+//  > Default character to use for horizontal rules
+//                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                             ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#fixedWidth.
+//                                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+  
+    /// Indicates whether or not the table is expected to produce fixed-width output
+    /// Disabling this enables styles to produce markup languages like HTML
+    fixedWidth = true
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#fixedWidth.
+//  documentation
+//  > Indicates whether or not the table is expected to produce fixed-width output
+//  > Disabling this enables styles to produce markup languages like HTML
+  
+    /// Characters to use for specific horizontal rules
+    horizontals: Mapping<VerticalPosition, String(!fixedWidth || length == 1)?> = new {
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#horizontals.
+//  documentation
+//  > Characters to use for specific horizontal rules
+//               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                       ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/VerticalPosition#
+//                                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                 ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#fixedWidth.
+//                                                               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+      ["top"] = defaultHorizontal
+//              ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#defaultHorizontal.
+      ["inner"] = defaultHorizontal
+//                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#defaultHorizontal.
+      ["bottom"] = defaultHorizontal
+//                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#defaultHorizontal.
+    }
+  
+    /// Default character to use for vertical rules
+    defaultVertical: String(!fixedWidth || length == 1) = "|"
+//  ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#defaultVertical.
+//  documentation
+//  > Default character to use for vertical rules
+//                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                           ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#fixedWidth.
+//                                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+  
+    /// Characters to use for specific horizontal rules
+    verticals: Mapping<HorizontalPosition, String(!fixedWidth || length == 1)?> = new {
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#verticals.
+//  documentation
+//  > Characters to use for specific horizontal rules
+//             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                     ^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/HorizontalPosition#
+//                                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                 ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#fixedWidth.
+//                                                               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+      ["left"] = defaultVertical
+//               ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#defaultVertical.
+      ["inner"] = defaultVertical
+//                ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#defaultVertical.
+      ["right"] = defaultVertical
+//                ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#defaultVertical.
+    }
+  
+    /// Characters to use for specific vertical rules in the header
+    headerVerticals: Mapping<HorizontalPosition, String(!fixedWidth || length == 1)?> = verticals
+//  ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#headerVerticals.
+//  documentation
+//  > Characters to use for specific vertical rules in the header
+//                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                           ^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/HorizontalPosition#
+//                                               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                       ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#fixedWidth.
+//                                                                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+//                                                                                      ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#verticals.
+  
+    /// Default character to use for corners
+    defaultCorner: String(!fixedWidth || length == 1) = "+"
+//  ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#defaultCorner.
+//  documentation
+//  > Default character to use for corners
+//                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                         ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#fixedWidth.
+//                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+  
+    /// Characters to use for specific corners
+    corners: Mapping<HorizontalPosition, Mapping<VerticalPosition, String(!fixedWidth || length == 1)>> = new {
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#corners.
+//  documentation
+//  > Characters to use for specific corners
+//           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                   ^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/HorizontalPosition#
+//                                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                               ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/VerticalPosition#
+//                                                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                         ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#fixedWidth.
+//                                                                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+      ["left"] {
+        ["top"] = defaultCorner
+//                ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#defaultCorner.
+        ["inner"] = defaultCorner
+//                  ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#defaultCorner.
+        ["bottom"] = defaultCorner
+//                   ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#defaultCorner.
+      }
+      ["inner"] {
+        ["top"] = defaultCorner
+//                ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#defaultCorner.
+        ["inner"] = defaultCorner
+//                  ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#defaultCorner.
+        ["bottom"] = defaultCorner
+//                   ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#defaultCorner.
+      }
+      ["right"] {
+        ["top"] = defaultCorner
+//                ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#defaultCorner.
+        ["inner"] = defaultCorner
+//                  ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#defaultCorner.
+        ["bottom"] = defaultCorner
+//                   ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#defaultCorner.
+      }
+    }
+  }
+  
+  /// Style options specific to HTML tables
+  /// Default values produce a table with two-space indentation
+  open class TableStyleHTML extends TableStyle {
+//           ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#
+//           documentation
+//           > Style options specific to HTML tables
+//           > Default values produce a table with two-space indentation
+//                                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#
+    /// Controls which character(s) are used for one indentation level
+    indent: String = "  "
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#indent.
+//  documentation
+//  > Controls which character(s) are used for one indentation level
+//          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Indent controls the baseline indent level applied to every line
+    baseIndent: String = ""
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#baseIndent.
+//  documentation
+//  > Indent controls the baseline indent level applied to every line
+//              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    local _style = this
+//        ^^^^^^ definition local _style_118
+  
+    fixedWidth = false
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#fixedWidth.
+//  documentation
+//  > Indicates whether or not the table is expected to produce fixed-width output
+//  > Disabling this enables styles to produce markup languages like HTML
+    defaultCorner = ""
+//  ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#defaultCorner.
+//  documentation
+//  > Default character to use for corners
+    horizontals {
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#horizontals.
+//  documentation
+//  > Characters to use for specific horizontal rules
+      ["top"] = "\(baseIndent)<table>\n\(baseIndent)\(indent)<\(if (_style.includeHeader) "thead" else "tbody")>"
+//                 ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#baseIndent.
+//                                       ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#baseIndent.
+//                                                    ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#indent.
+//                                                                  ^^^^^^ reference local _style_118
+//                                                                         ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#includeHeader.
+      ["inner"] = "\(baseIndent)\(indent)</thead>\n\(baseIndent)\(indent)<tbody>"
+//                   ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#baseIndent.
+//                                ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#indent.
+//                                                   ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#baseIndent.
+//                                                                ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#indent.
+      ["bottom"] = "\(baseIndent)\(indent)</tbody>\n\(baseIndent)</table>"
+//                    ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#baseIndent.
+//                                 ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#indent.
+//                                                    ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#baseIndent.
+    }
+    verticals {
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#verticals.
+//  documentation
+//  > Characters to use for specific horizontal rules
+      ["left"] = "\(baseIndent)\(indent.repeat(2))<tr>\n\(baseIndent)\(indent.repeat(3))<td>"
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#baseIndent.
+//                               ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#indent.
+//                                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#repeat().
+//                                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#baseIndent.
+//                                                                     ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#indent.
+//                                                                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#repeat().
+      ["inner"] = "</td>\n\(baseIndent)\(indent.repeat(3))<td>"
+//                          ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#baseIndent.
+//                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#indent.
+//                                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#repeat().
+      ["right"] = "</td>\n\(baseIndent)\(indent.repeat(2))</tr>"
+//                          ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#baseIndent.
+//                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#indent.
+//                                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#repeat().
+    }
+    headerVerticals {
+//  ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#headerVerticals.
+//  documentation
+//  > Characters to use for specific vertical rules in the header
+      ["left"] = "\(baseIndent)\(indent.repeat(2))<tr>\n\(baseIndent)\(indent.repeat(3))<th>"
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#baseIndent.
+//                               ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#indent.
+//                                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#repeat().
+//                                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#baseIndent.
+//                                                                     ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#indent.
+//                                                                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#repeat().
+      ["inner"] = "</th>\n\(baseIndent)\(indent.repeat(3))<th>"
+//                          ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#baseIndent.
+//                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#indent.
+//                                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#repeat().
+      ["right"] = "</th>\n\(baseIndent)\(indent.repeat(2))</tr>"
+//                          ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#baseIndent.
+//                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#indent.
+//                                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#repeat().
+    }
+  }
+  
+  local class InterimTable {
+//            ^^^^^^^^^^^^ definition local InterimTable_139
+  
+    style: TableStyle
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#style.
+//         ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#
+    converters: Mapping<Class|String, (unknown) -> Any>
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#converters.
+//              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                      ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                 ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+  
+    columns: Listing<Column>
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#columns.
+//           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                   ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#
+    rows: List
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#rows.
+//        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+  
+    columnWidths: Mapping<ColumnKey, UInt> = new {
+//  ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#columnWidths.
+//                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                        ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/ColumnKey#
+//                                   ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+      for (column in columns) {
+//         ^^^^^^ definition local column_148
+//                   ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#columns.
+        [column.key] = math.max(
+//       ^^^^^^ reference local column_148
+//              ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#key.
+//                     ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                          ^^^ reference pkl . pkl 0.29.0 `pkl.math`/max().
+            column.title.length,
+//          ^^^^^^ reference local column_148
+//                 ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#title.
+//                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+            renderedCells.fold(0, (acc, it) ->
+//          ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#renderedCells.
+//                        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#fold().
+//                                 ^^^ definition local acc_151
+//                                      ^^ definition local it_151
+              math.max(acc, it.getOrNull(column.key)?.length ?? 0)
+//            ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                 ^^^ reference pkl . pkl 0.29.0 `pkl.math`/max().
+//                     ^^^ reference local acc_151
+//                          ^^ reference local it_151
+//                             ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+//                                       ^^^^^^ reference local column_148
+//                                              ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#key.
+//                                                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+            )
+          ) as UInt
+//             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+      }
+    }
+  
+    renderedCells: Listing<*Mapping<ColumnKey, String> | RowDirective> = new {
+//  ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#renderedCells.
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                  ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/ColumnKey#
+//                                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                       ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/RowDirective#
+      for (row in rows) {
+//         ^^^ definition local row_159
+//                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#rows.
+        when (row is RowDirective) {
+//            ^^^ reference local row_159
+//                   ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/RowDirective#
+          row
+//        ^^^ reference local row_159
+        } else {
+          new {
+            for (column in columns) {
+//               ^^^^^^ definition local column_164
+//                         ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#columns.
+              [column.key] = renderCell(column.key, row.getPropertyOrNull(column.key))
+//             ^^^^^^ reference local column_164
+//                    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#key.
+//                           ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#renderCell().
+//                                      ^^^^^^ reference local column_164
+//                                             ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#key.
+//                                                  ^^^ reference local row_159
+//                                                                        ^^^^^^ reference local column_164
+//                                                                               ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#key.
+            }
+          }
+        }
+      }
+    }
+  
+    rendered = new Listing {
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#rendered.
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+        when (style.horizontals["top"] != null) {
+//            ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#style.
+//                  ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#horizontals.
+          renderHorizontalRule("top")
+//        ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#renderHorizontalRule().
+        }
+        when (style.includeHeader) {
+//            ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#style.
+//                  ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#includeHeader.
+          renderRow(columns.toList().toMap((col) -> col.key, (col) -> col.title), true)
+//        ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#renderRow().
+//                  ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#columns.
+//                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+//                                   ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#toMap().
+//                                          ^^^ definition local col_177
+//                                                  ^^^ reference local col_177
+//                                                      ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#key.
+//                                                            ^^^ definition local col_177
+//                                                                    ^^^ reference local col_177
+//                                                                        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#title.
+          when (style.horizontals["inner"] != null) {
+//              ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#style.
+//                    ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#horizontals.
+            renderHorizontalRule("inner")
+//          ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#renderHorizontalRule().
+          }
+        }
+        for (row in renderedCells) {
+//           ^^^ definition local row_182
+//                  ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#renderedCells.
+          when (row is RowDirective) {
+//              ^^^ reference local row_182
+//                     ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/RowDirective#
+            row.render(style)
+//          ^^^ reference local row_182
+//              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/RowDirective#render().
+//                     ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#style.
+          } else {
+            renderRow(row.toMap(), false)
+//          ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#renderRow().
+//                    ^^^ reference local row_182
+//                        ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+          }
+        }
+        when (style.horizontals["bottom"] != null) {
+//            ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#style.
+//                  ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#horizontals.
+          renderHorizontalRule("bottom")
+//        ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#renderHorizontalRule().
+        }
+      }.join("\n") + "\n"
+//      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#join().
+  
+    function renderCell(col: String, value: Any): String =
+//           ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#renderCell().
+//                      ^^^ definition local col_194
+//                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                   ^^^^^ definition local value_194
+//                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      (converters.getOrNull(col)?.apply(value)?.toString()) ??
+//     ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#converters.
+//                ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+//                          ^^^ reference local col_194
+//                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Function1#apply().
+//                                      ^^^^^ reference local value_194
+//                                              ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#toString().
+        (converters.getOrNull(value.getClass())?.apply(value)?.toString()) ??
+//       ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#converters.
+//                  ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+//                            ^^^^^ reference local value_194
+//                                  ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                                               ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Function1#apply().
+//                                                     ^^^^^ reference local value_194
+//                                                             ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#toString().
+          value?.toString() ??
+//        ^^^^^ reference local value_194
+//               ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#toString().
+            style.nullPlaceholder
+//          ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#style.
+//                ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#nullPlaceholder.
+  
+    function renderRow(renderedCells: Map<ColumnKey, String>, inHeader: Boolean) = new Listing {
+//           ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#renderRow().
+//                     ^^^^^^^^^^^^^ definition local renderedCells_200
+//                                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                                        ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/ColumnKey#
+//                                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                            ^^^^^^^^ definition local inHeader_200
+//                                                                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                                                                                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+      local verticals = if (inHeader) style.headerVerticals else style.verticals
+//          ^^^^^^^^^ definition local verticals_201
+//                          ^^^^^^^^ reference local inHeader_200
+//                                    ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#style.
+//                                          ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#headerVerticals.
+//                                                               ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#style.
+//                                                                     ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#verticals.
+      verticals["left"] ?? ""
+//    ^^^^^^^^^ reference local verticals_201
+      for (i, col in columns) {
+//         ^ definition local i_203
+//            ^^^ definition local col_203
+//                   ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#columns.
+        when (style.fixedWidth) {
+//            ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#style.
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#fixedWidth.
+          " "
+          if (col.align == "left")
+//            ^^^ reference local col_203
+//                ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#align.
+            renderedCells[col.key].padEnd(columnWidths[col.key], " ")
+//          ^^^^^^^^^^^^^ reference local renderedCells_200
+//                        ^^^ reference local col_203
+//                            ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#key.
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#padEnd().
+//                                        ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#columnWidths.
+//                                                     ^^^ reference local col_203
+//                                                         ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#key.
+          else if (col.align == "right")
+//                 ^^^ reference local col_203
+//                     ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#align.
+            renderedCells[col.key].padStart(columnWidths[col.key], " ")
+//          ^^^^^^^^^^^^^ reference local renderedCells_200
+//                        ^^^ reference local col_203
+//                            ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#key.
+//                                 ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#padStart().
+//                                          ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#columnWidths.
+//                                                       ^^^ reference local col_203
+//                                                           ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#key.
+          else ""
+          " "
+        } else {
+          renderedCells[col.key]
+//        ^^^^^^^^^^^^^ reference local renderedCells_200
+//                      ^^^ reference local col_203
+//                          ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#key.
+        }
+        verticals[if (i == columns.length - 1) "right" else "inner"] ?? ""
+//      ^^^^^^^^^ reference local verticals_201
+//                    ^ reference local i_203
+//                         ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#columns.
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#length.
+      }
+    }.join("")
+//    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#join().
+  
+    function renderHorizontalRule(verticalPosition: VerticalPosition): String = new Listing {
+//           ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#renderHorizontalRule().
+//                                ^^^^^^^^^^^^^^^^ definition local verticalPosition_219
+//                                                  ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/VerticalPosition#
+//                                                                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+      style.corners["left"][verticalPosition]
+//    ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#style.
+//          ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#corners.
+//                          ^^^^^^^^^^^^^^^^ reference local verticalPosition_219
+      when (style.fixedWidth) {
+//          ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#style.
+//                ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#fixedWidth.
+        for (i, col in columns) {
+//           ^ definition local i_222
+//              ^^^ definition local col_222
+//                     ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#columns.
+          style.horizontals[verticalPosition].repeat(columnWidths[col.key] + 2)
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#style.
+//              ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#horizontals.
+//                          ^^^^^^^^^^^^^^^^ reference local verticalPosition_219
+//                                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#repeat().
+//                                                   ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#columnWidths.
+//                                                                ^^^ reference local col_222
+//                                                                    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#key.
+          style.corners[if (i == columns.length - 1) "right" else "inner"][verticalPosition]
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#style.
+//              ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#corners.
+//                          ^ reference local i_222
+//                               ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#columns.
+//                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#length.
+//                                                                         ^^^^^^^^^^^^^^^^ reference local verticalPosition_219
+        }
+      } else {
+        style.horizontals[verticalPosition]
+//      ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#style.
+//            ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#horizontals.
+//                        ^^^^^^^^^^^^^^^^ reference local verticalPosition_219
+      }
+    }.join("")
+//    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#join().
+  }
+  
+  /// [pkl.ValueRenderer] subclass used to render pretty-printed tables
+  class TableRenderer extends ValueRenderer {
+//      ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableRenderer#
+//      documentation
+//      > `pkl.ValueRenderer` subclass used to render pretty-printed tables
+//                            ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ValueRenderer#
+    /// Style to use for table rendering
+    style: TableStyle
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableRenderer#style.
+//         ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#
+  
+    /// Listing of properties that should be rendered as table columns
+    columns: Listing<Column|String>(!isEmpty || throw("TableRenderer must be configured to render at least one column"))
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableRenderer#columns.
+//           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                   ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#
+//                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#isEmpty.
+  
+    local self = this
+//        ^^^^ definition local self_240
+  
+    /// Renders [value] as a pretty-printed table.
+    function renderDocument(value: Any): String = new InterimTable {
+//           ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableRenderer#renderDocument().
+//           documentation
+//           > Renders [`value`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.table/table.pkl#L243,C27) as a pretty-printed table.
+//                          ^^^^^ definition local value_243
+//                                 ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                    ^^^^^^^^^^^^ reference local InterimTable_139
+      columns {
+//    ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableRenderer#columns.
+        for (col in self.columns) {
+//           ^^^ definition local col_245
+//                  ^^^^ reference local self_240
+//                       ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableRenderer#columns.
+          if (col is Column) col else Column(col)
+//            ^^^ reference local col_245
+//                   ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column#
+//                           ^^^ reference local col_245
+//                                    ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/Column().
+//                                           ^^^ reference local col_245
+        }
+      }
+      rows =
+//    ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableRenderer#rows.
+        if (value is ListLike?) value.toList()
+//          ^^^^^ reference local value_243
+//                   ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/ListLike#
+//                              ^^^^^ reference local value_243
+//                                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toList().
+        else throw("Only \(listLikeDescription) values can be rendered as a table. Instead, found a \(value.getClass()).\n\nValue:\n\(value)")
+//                         ^^^^^^^^^^^^^^^^^^^ reference local listLikeDescription_24
+//                                                                                                    ^^^^^ reference local value_243
+//                                                                                                          ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                                                                                                                                    ^^^^^ reference local value_243
+      style = self.style
+//    ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableRenderer#style.
+//            ^^^^ reference local self_240
+//                 ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableRenderer#style.
+      converters = self.converters
+//    ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableRenderer#converters.
+//                 ^^^^ reference local self_240
+//                      ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ValueRenderer#converters.
+    }.rendered
+//    ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/InterimTable#rendered.
+  
+    /// Unsupported. [renderCell] is used instead as the column name must be known to look up the relevant converter
+    function renderValue(_): String = throw("TableRenderer can only render documents, not values")
+//           ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableRenderer#renderValue().
+//           documentation
+//           > Unsupported. `renderCell` is used instead as the column name must be known to look up the relevant converter
+//                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  /// [TableStyle] using unicode box drawing characters (light variants)
+  const boxDrawingLightStyle: TableStyle = new {
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/boxDrawingLightStyle.
+//      documentation
+//      > [`TableStyle`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.table/table.pkl#L52,C12) using unicode box drawing characters (light variants)
+//                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#
+    defaultHorizontal = "─"
+//  ^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/defaultHorizontal.
+    defaultVertical = "│"
+//  ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/defaultVertical.
+    corners {
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/corners.
+      ["left"] {
+        ["top"] = "┌"
+        ["inner"] = "├"
+        ["bottom"] = "└"
+      }
+      ["inner"] {
+        ["top"] = "┬"
+        ["inner"] = "┼"
+        ["bottom"] = "┴"
+      }
+      ["right"] {
+        ["top"] = "┐"
+        ["inner"] = "┤"
+        ["bottom"] = "┘"
+      }
+    }
+  }
+  
+  /// [TableStyle] using unicode box drawing characters (heavy variants)
+  const boxDrawingHeavyStyle: TableStyle = new {
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/boxDrawingHeavyStyle.
+//      documentation
+//      > [`TableStyle`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.table/table.pkl#L52,C12) using unicode box drawing characters (heavy variants)
+//                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#
+    defaultHorizontal = "━"
+//  ^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/defaultHorizontal.
+    defaultVertical = "┃"
+//  ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/defaultVertical.
+    corners {
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/corners.
+      ["left"] {
+        ["top"] = "┏"
+        ["inner"] = "┣"
+        ["bottom"] = "┗"
+      }
+      ["inner"] {
+        ["top"] = "┳"
+        ["inner"] = "╋"
+        ["bottom"] = "┻"
+      }
+      ["right"] {
+        ["top"] = "┓"
+        ["inner"] = "┫"
+        ["bottom"] = "┛"
+      }
+    }
+  }
+  
+  /// [TableStyle] that renders Markdown-compatible tables
+  const markdownStyle: TableStyle = new {
+//      ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/markdownStyle.
+//      documentation
+//      > [`TableStyle`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.table/table.pkl#L52,C12) that renders Markdown-compatible tables
+//                     ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyle#
+    defaultCorner = "|"
+//  ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/defaultCorner.
+    horizontals {
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/horizontals.
+      ["top"] = null
+      ["bottom"] = null
+    }
+  }
+  
+  /// [TableStyle] that renders HTML tables
+  const htmlStyle: TableStyleHTML = new {}
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/htmlStyle.
+//      documentation
+//      > [`TableStyle`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.table/table.pkl#L52,C12) that renders HTML tables
+//                 ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.table 1.1.0 `table.pkl`/TableStyleHTML#
+  

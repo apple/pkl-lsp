@@ -1,0 +1,871 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// Enables the generation of a [Schema] from a Pkl module, class, or typealias.
+  @ModuleInfo { minPklVersion = "0.25.0" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleInfo#
+//              ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/minPklVersion.
+  module org.openapis.v3.contrib.SchemaGenerator
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/
+  
+  import "pkl:reflect"
+  import "pkl:math"
+  import "@openapi/Schema.pkl"
+  
+  /// Given either a module, class, or typealias, generates the equivalent OpenAPI v3.0 [Schema].
+  ///
+  /// Example:
+  /// ```
+  /// import "package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib@1.0.0#/SchemaGenerator.pkl"
+  ///
+  /// class Person {
+  ///   /// The person's legal name.
+  ///   name: String?
+  /// }
+  ///
+  /// personSchema = SchemaGenerator.generate(Person)
+  /// ```
+  ///
+  /// `personSchema` generates a schema that looks like so:
+  ///
+  /// ```json
+  /// {
+  ///   "type": "object",
+  ///   "title": "Person",
+  ///   "properties": {
+  ///     "name": {
+  ///       "type": "string",
+  ///       "description": "The person's legal name.",
+  ///       "nullable": true
+  ///     }
+  ///   },
+  ///   "additionalProperties": false,
+  ///   "required": []
+  /// }
+  /// ```
+  ///
+  /// Known limitations:
+  ///   * This generator cannot generate schemas that contain recursive descriptors,
+  ///     because a single [Schema] lacks the ability to reuse definitions.
+  ///   * [Type Constraints](https://pkl-lang.org/main/current/language-reference/index.html#type-constraints)
+  ///     do not get encoded into the [Schema]. The only exceptions are well-known type constraints for
+  ///     numbers (for example, [Int8] and [UInt8]).
+  function generate(value: Module|Class|TypeAlias): Schema =
+//         ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/generate().
+//         documentation
+//         > Given either a module, class, or typealias, generates the equivalent OpenAPI v3.0 [`Schema`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L32,C1).
+//         > 
+//         > Example:
+//         > ```
+//         > import "package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib@1.0.0#/SchemaGenerator.pkl"
+//         > 
+//         > class Person {
+//         >   /// The person's legal name.
+//         >   name: String?
+//         > }
+//         > 
+//         > personSchema = SchemaGenerator.generate(Person)
+//         > ```
+//         > 
+//         > `personSchema` generates a schema that looks like so:
+//         > 
+//         > ```json
+//         > {
+//         >   "type": "object",
+//         >   "title": "Person",
+//         >   "properties": {
+//         >     "name": {
+//         >       "type": "string",
+//         >       "description": "The person's legal name.",
+//         >       "nullable": true
+//         >     }
+//         >   },
+//         >   "additionalProperties": false,
+//         >   "required": []
+//         > }
+//         > ```
+//         > 
+//         > Known limitations:
+//         >   * This generator cannot generate schemas that contain recursive descriptors,
+//         >     because a single [`Schema`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L32,C1) lacks the ability to reuse definitions.
+//         >   * [Type Constraints](https://pkl-lang.org/main/current/language-reference/index.html#type-constraints)
+//         >     do not get encoded into the [`Schema`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L32,C1). The only exceptions are well-known type constraints for
+//         >     numbers (for example, [`Int8`](pkl-lsp://stdlib/base.pkl#L941,C11) and [`UInt8`](pkl-lsp://stdlib/base.pkl#L950,C11)).
+//                  ^^^^^ definition local value_62
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#
+//                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                                      ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/TypeAlias#
+//                                                  ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/
+    let (ref = if (value is Module)
+//       ^^^ definition local ref_63
+//                 ^^^^^ reference local value_62
+//                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#
+      reflect.Module(value)
+//    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Module().
+//                   ^^^^^ reference local value_62
+    else if (value is TypeAlias)
+//           ^^^^^ reference local value_62
+//                    ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/TypeAlias#
+      reflect.TypeAlias(value)
+//    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//            ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeAlias().
+//                      ^^^^^ reference local value_62
+    else
+      reflect.Class(value)
+//    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//            ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class().
+//                  ^^^^^ reference local value_62
+    )
+      convertDeclaration(ref, Set())
+//    ^^^^^^^^^^^^^^^^^^ reference local convertDeclaration_93
+//                       ^^^ reference local ref_63
+//                            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set().
+  
+  /// Customize how the generator produces JSON Schema. This is useful if a Pkl type is expected
+  /// to map to a (non-standard) JSON Schema type.
+  ///
+  /// To use converters, a new instance of [SchemaGenerator] must be initialized.
+  ///
+  /// Example:
+  /// ```
+  /// import "package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3@1.0.0#/SchemaGenerator.pkl"
+  ///
+  /// k8sGenerator = new SchemaGenerator {
+  ///   converters {
+  ///     [DataSize] {
+  ///       type = "string"
+  ///       description = "A Kubernetes data size representation. For instance, 5Mi"
+  ///       pattern = "^\d+(?:[EPTGMK]i?)?$"
+  ///     }
+  ///   }
+  /// }
+  /// ```
+  hidden converters: Mapping<Class, Schema>
+//       ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/converters.
+//       documentation
+//       > Customize how the generator produces JSON Schema. This is useful if a Pkl type is expected
+//       > to map to a (non-standard) JSON Schema type.
+//       > 
+//       > To use converters, a new instance of `SchemaGenerator` must be initialized.
+//       > 
+//       > Example:
+//       > ```
+//       > import "package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3@1.0.0#/SchemaGenerator.pkl"
+//       > 
+//       > k8sGenerator = new SchemaGenerator {
+//       >   converters {
+//       >     [`DataSize`](pkl-lsp://stdlib/base.pkl#L1634,C16) {
+//       >       type = "string"
+//       >       description = "A Kubernetes data size representation. For instance, 5Mi"
+//       >       pattern = "^\d+(?:`EPTGMK`i?)?$"
+//       >     }
+//       >   }
+//       > }
+//       > ```
+//                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                                  ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/
+  
+  /// Converts a [reflect.Declaration] into the equivalent [Schema].
+  local function convertDeclaration(declaration: reflect.Declaration, seenClasses: Set<Class>): Schema =
+//               ^^^^^^^^^^^^^^^^^^ definition local convertDeclaration_93
+//               documentation
+//               > Converts a [`reflect.Declaration`](pkl-lsp://stdlib/reflect.pkl#L164,C25) into the equivalent [`Schema`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L32,C1).
+//                                  ^^^^^^^^^^^ definition local declaration_94
+//                                                       ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Declaration#
+//                                                                    ^^^^^^^^^^^ definition local seenClasses_94
+//                                                                                 ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#
+//                                                                                     ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                                                                                              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/
+    if (declaration is reflect.Class)
+//      ^^^^^^^^^^^ reference local declaration_94
+//                             ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#
+      convertType(reflect.DeclaredType(declaration), seenClasses)
+//    ^^^^^^^^^^^ reference local convertType_248
+//                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                        ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType().
+//                                     ^^^^^^^^^^^ reference local declaration_94
+//                                                   ^^^^^^^^^^^ reference local seenClasses_94
+    else if (declaration is reflect.Module)
+//           ^^^^^^^^^^^ reference local declaration_94
+//                                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Module#
+      (convertDeclaration(declaration.moduleClass, seenClasses)) {
+//     ^^^^^^^^^^^^^^^^^^ reference local convertDeclaration_93
+//                        ^^^^^^^^^^^ reference local declaration_94
+//                                    ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Module#moduleClass.
+//                                                 ^^^^^^^^^^^ reference local seenClasses_94
+        // We need to amend title because it would otherwise be `"ModuleClass"`.
+        title = declaration.name
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/title.
+//              ^^^^^^^^^^^ reference local declaration_94
+//                          ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Declaration#name.
+      }
+    else if (declaration is reflect.Property)
+//           ^^^^^^^^^^^ reference local declaration_94
+//                                  ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#
+      convertType(declaration.type, seenClasses) |> addBaseSchema(declaration)
+//    ^^^^^^^^^^^ reference local convertType_248
+//                ^^^^^^^^^^^ reference local declaration_94
+//                            ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#type.
+//                                  ^^^^^^^^^^^ reference local seenClasses_94
+//                                                  ^^^^^^^^^^^^^ reference local addBaseSchema_107
+//                                                                ^^^^^^^^^^^ reference local declaration_94
+    else
+      convertType((declaration as reflect.TypeAlias).referent, seenClasses) |> addBaseSchema(declaration)
+//    ^^^^^^^^^^^ reference local convertType_248
+//                 ^^^^^^^^^^^ reference local declaration_94
+//                                        ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeAlias#
+//                                                   ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeAlias#referent.
+//                                                             ^^^^^^^^^^^ reference local seenClasses_94
+//                                                                             ^^^^^^^^^^^^^ reference local addBaseSchema_107
+//                                                                                           ^^^^^^^^^^^ reference local declaration_94
+  
+  /// Adds common base values to a [Schema].
+  local function addBaseSchema(declaration: reflect.Declaration): Mixin<Schema> = new {
+//               ^^^^^^^^^^^^^ definition local addBaseSchema_107
+//               documentation
+//               > Adds common base values to a [`Schema`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L32,C1).
+//                             ^^^^^^^^^^^ definition local declaration_108
+//                                                  ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Declaration#
+//                                                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mixin#
+//                                                                      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/
+    description = declaration.docComment
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/description.
+//                ^^^^^^^^^^^ reference local declaration_108
+//                            ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Declaration#docComment.
+    // If this is a `Property`, the name is the name of the property, which is not a good
+    // indication of the underlying type. Therefore, we only apply the title when the
+    // declaration is not a property.
+    when (!(declaration is reflect.Property)) {
+//          ^^^^^^^^^^^ reference local declaration_108
+//                                 ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#
+      title = declaration.name
+//    ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/title.
+//            ^^^^^^^^^^^ reference local declaration_108
+//                        ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Declaration#name.
+    }
+    when (!declaration.annotations.filter((a) -> a is Deprecated).isEmpty) {
+//         ^^^^^^^^^^^ reference local declaration_108
+//                     ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Declaration#annotations.
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#filter().
+//                                         ^ definition local a_116
+//                                               ^ reference local a_116
+//                                                    ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Deprecated#
+//                                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#isEmpty.
+      deprecated = true
+//    ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/deprecated.
+    }
+  }
+  
+  local function convertDeclaredType(typ: reflect.DeclaredType, seenClasses: Set<Class>): Schema =
+//               ^^^^^^^^^^^^^^^^^^^ definition local convertDeclaredType_121
+//                                   ^^^ definition local typ_121
+//                                                ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#
+//                                                              ^^^^^^^^^^^ definition local seenClasses_121
+//                                                                           ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#
+//                                                                               ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                                                                                        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/
+    let (reflectee = typ.referent.reflectee)
+//       ^^^^^^^^^ definition local reflectee_122
+//                   ^^^ reference local typ_121
+//                       ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#referent.
+//                                ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeDeclaration#reflectee.
+      if (reflectee == Any || typ == reflect.unknownType)
+//        ^^^^^^^^^ reference local reflectee_122
+//                     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                            ^^^ reference local typ_121
+//                                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                                           ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/unknownType.
+        new {}
+      else if (reflectee == Int)
+//             ^^^^^^^^^ reference local reflectee_122
+//                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+        new {
+          type = "integer"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/type.
+        }
+      else if (reflectee == Int8)
+//             ^^^^^^^^^ reference local reflectee_122
+//                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int8#
+        new {
+          type = "integer"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/type.
+          minimum = math.minInt8
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/minimum.
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/minInt8.
+          maximum = math.maxInt8
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/maximum.
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxInt8.
+        }
+      else if (reflectee == Int16)
+//             ^^^^^^^^^ reference local reflectee_122
+//                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int16#
+        new {
+          type = "integer"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/type.
+          minimum = math.minInt16
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/minimum.
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                       ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/minInt16.
+          maximum = math.maxInt16
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/maximum.
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                       ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxInt16.
+        }
+      else if (reflectee == Int32)
+//             ^^^^^^^^^ reference local reflectee_122
+//                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int32#
+        new {
+          type = "integer"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/type.
+          format = "int32"
+//        ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/format.
+        }
+      else if (reflectee == UInt8)
+//             ^^^^^^^^^ reference local reflectee_122
+//                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt8#
+        new {
+          type = "integer"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/type.
+          minimum = 0
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/minimum.
+          maximum = math.maxUInt8
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/maximum.
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                       ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt8.
+        }
+      else if (reflectee == UInt16)
+//             ^^^^^^^^^ reference local reflectee_122
+//                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt16#
+        new {
+          type = "integer"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/type.
+          minimum = 0
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/minimum.
+          maximum = math.maxUInt16
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/maximum.
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                       ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt16.
+        }
+      else if (reflectee == UInt32)
+//             ^^^^^^^^^ reference local reflectee_122
+//                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt32#
+        new {
+          type = "integer"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/type.
+          minimum = 0
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/minimum.
+          maximum = math.maxUInt32
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/maximum.
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.math`/
+//                       ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.math`/maxUInt32.
+        }
+      else if (reflectee == Float)
+//             ^^^^^^^^^ reference local reflectee_122
+//                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Float#
+        new {
+          type = "number"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/type.
+          format = "float"
+//        ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/format.
+        }
+      else if (reflectee == Dynamic)
+//             ^^^^^^^^^ reference local reflectee_122
+//                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+        new {
+          oneOf {
+//        ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/oneOf.
+            new {
+              type = "array"
+//            ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/type.
+            }
+            new {
+              type = "object"
+//            ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/type.
+            }
+          }
+        }
+      else if (reflectee == Boolean)
+//             ^^^^^^^^^ reference local reflectee_122
+//                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+        new {
+          type = "boolean"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/type.
+        }
+      else if (reflectee == Null)
+//             ^^^^^^^^^ reference local reflectee_122
+//                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Null#
+        new {
+          enum {
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/enum.
+            null
+          }
+        }
+      else if (reflectee == Number)
+//             ^^^^^^^^^ reference local reflectee_122
+//                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+        new {
+          type = "number"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/type.
+        }
+      else if (reflectee == String)
+//             ^^^^^^^^^ reference local reflectee_122
+//                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+        new {
+          type = "string"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/type.
+        }
+      else if (typ == reflect.nothingType)
+//             ^^^ reference local typ_121
+//                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                            ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/nothingType.
+        // This type is `NOT ANY`, ergo, nothing.
+        new {
+          not {}
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/not.
+        }
+      else if (reflectee == Listing || reflectee == List)
+//             ^^^^^^^^^ reference local reflectee_122
+//                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                     ^^^^^^^^^ reference local reflectee_122
+//                                                  ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+        let (elementType = typ.typeArguments[0])
+//           ^^^^^^^^^^^ definition local elementType_204
+//                         ^^^ reference local typ_121
+//                             ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#typeArguments.
+          new {
+            type = "array"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/type.
+            items = convertType(elementType, seenClasses)
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/items.
+//                  ^^^^^^^^^^^ reference local convertType_248
+//                              ^^^^^^^^^^^ reference local elementType_204
+//                                           ^^^^^^^^^^^ reference local seenClasses_121
+          }
+      else if (reflectee == Mapping || reflectee == Map)
+//             ^^^^^^^^^ reference local reflectee_122
+//                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                     ^^^^^^^^^ reference local reflectee_122
+//                                                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+        let (keyType = typ.typeArguments[0])
+//           ^^^^^^^ definition local keyType_210
+//                     ^^^ reference local typ_121
+//                         ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#typeArguments.
+          let (valueType = typ.typeArguments[1])
+//             ^^^^^^^^^ definition local valueType_211
+//                         ^^^ reference local typ_121
+//                             ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#typeArguments.
+            if (keyType != reflect.stringType)
+//              ^^^^^^^ reference local keyType_210
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                                 ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/stringType.
+              throw("Invalid schema: Mappings can only be a string type when converting to JSON schema. Received: \(keyType)")
+//                                                                                                                  ^^^^^^^ reference local keyType_210
+            else
+              new {
+                type = "object"
+//              ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/type.
+                additionalProperties = convertTypeForProperty(valueType, seenClasses)
+//              ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/additionalProperties.
+//                                     ^^^^^^^^^^^^^^^^^^^^^^ reference local convertTypeForProperty_281
+//                                                            ^^^^^^^^^ reference local valueType_211
+//                                                                       ^^^^^^^^^^^ reference local seenClasses_121
+              }
+      else if (reflectee is Class)
+//             ^^^^^^^^^ reference local reflectee_122
+//                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+        if (seenClasses.findOrNull((c) -> c == typ.referent.reflectee) != null)
+//          ^^^^^^^^^^^ reference local seenClasses_121
+//                      ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#findOrNull().
+//                                  ^ definition local c_220
+//                                        ^ reference local c_220
+//                                             ^^^ reference local typ_121
+//                                                 ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#referent.
+//                                                          ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeDeclaration#reflectee.
+          throw("Invalid Schema: Unable to convert a schema that refers to itself. This is because OpenAPI v3.0 does not have a way to provide definitions. Recurring class: \(typ.referent.reflectee)")
+//                                                                                                                                                                             ^^^ reference local typ_121
+//                                                                                                                                                                                 ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#referent.
+//                                                                                                                                                                                          ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeDeclaration#reflectee.
+        else
+          converters.getOrNull(typ.referent.reflectee) ??
+//        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/converters.
+//                   ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+//                             ^^^ reference local typ_121
+//                                 ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#referent.
+//                                          ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeDeclaration#reflectee.
+            let (reflectedClass = reflect.Class(reflectee))
+//               ^^^^^^^^^^^^^^ definition local reflectedClass_224
+//                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                                        ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class().
+//                                              ^^^^^^^^^ reference local reflectee_122
+              let (_properties = getProperties(reflectedClass))
+//                 ^^^^^^^^^^^ definition local _properties_225
+//                               ^^^^^^^^^^^^^ reference local getProperties_308
+//                                             ^^^^^^^^^^^^^^ reference local reflectedClass_224
+                new Schema {
+//                  ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/
+                  type = "object"
+//                ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/type.
+                  properties {
+//                ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/properties.
+                    for (_, property in _properties) {
+//                          ^^^^^^^^ definition local property_229
+//                                      ^^^^^^^^^^^ reference local _properties_225
+                      [property.name] =
+//                     ^^^^^^^^ reference local property_229
+//                              ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Declaration#name.
+                        convertDeclarationForProperty(property, seenClasses.add(reflectee))
+//                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference local convertDeclarationForProperty_285
+//                                                    ^^^^^^^^ reference local property_229
+//                                                              ^^^^^^^^^^^ reference local seenClasses_121
+//                                                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#add().
+//                                                                              ^^^^^^^^^ reference local reflectee_122
+                    }
+                  }
+                  additionalProperties = false
+//                ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/additionalProperties.
+                  when (_properties.any((_, property) -> property.type.nullable != property.type)) {
+//                      ^^^^^^^^^^^ reference local _properties_225
+//                                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#any().
+//                                          ^^^^^^^^ definition local property_235
+//                                                       ^^^^^^^^ reference local property_235
+//                                                                ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#type.
+//                                                                     ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Type#nullable.
+//                                                                                 ^^^^^^^^ reference local property_235
+//                                                                                          ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#type.
+                    required {
+//                  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/required.
+                      for (_, property in _properties) {
+//                            ^^^^^^^^ definition local property_237
+//                                        ^^^^^^^^^^^ reference local _properties_225
+                        when (property.type.nullable != property.type) {
+//                            ^^^^^^^^ reference local property_237
+//                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#type.
+//                                          ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Type#nullable.
+//                                                      ^^^^^^^^ reference local property_237
+//                                                               ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#type.
+                          property.name
+//                        ^^^^^^^^ reference local property_237
+//                                 ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Declaration#name.
+                        }
+                      }
+                    }
+                  }
+                } |> addBaseSchema(reflectedClass)
+//                   ^^^^^^^^^^^^^ reference local addBaseSchema_107
+//                                 ^^^^^^^^^^^^^^ reference local reflectedClass_224
+      else
+        convertDeclaration(reflect.TypeAlias(reflectee), seenClasses)
+//      ^^^^^^^^^^^^^^^^^^ reference local convertDeclaration_93
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                                 ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeAlias().
+//                                           ^^^^^^^^^ reference local reflectee_122
+//                                                       ^^^^^^^^^^^ reference local seenClasses_121
+  
+  /// Given a `reflect.Type`, produce a matching [Schema].
+  local function convertType(typ: reflect.Type, seenClasses: Set<Class>): Schema =
+//               ^^^^^^^^^^^ definition local convertType_248
+//               documentation
+//               > Given a `reflect.Type`, produce a matching [`Schema`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L32,C1).
+//                           ^^^ definition local typ_249
+//                                        ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Type#
+//                                              ^^^^^^^^^^^ definition local seenClasses_249
+//                                                           ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#
+//                                                               ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                                                                        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/
+    if (typ is reflect.NullableType)
+//      ^^^ reference local typ_249
+//                     ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/NullableType#
+      (convertType(typ.member, seenClasses)) {
+//     ^^^^^^^^^^^ reference local convertType_248
+//                 ^^^ reference local typ_249
+//                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/NullableType#member.
+//                             ^^^^^^^^^^^ reference local seenClasses_249
+        nullable = true
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/nullable.
+      }
+    else if (typ is reflect.UnionType && typ.members.every((it) -> it is reflect.StringLiteralType))
+//           ^^^ reference local typ_249
+//                          ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/UnionType#
+//                                       ^^^ reference local typ_249
+//                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/UnionType#members.
+//                                                   ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#every().
+//                                                          ^^ definition local it_254
+//                                                                 ^^ reference local it_254
+//                                                                               ^^^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/StringLiteralType#
+      new {
+        type = "string"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/type.
+        enum {
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/enum.
+          for (member in typ.members) {
+//             ^^^^^^ definition local member_258
+//                       ^^^ reference local typ_249
+//                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/UnionType#members.
+            (member as reflect.StringLiteralType).value
+//           ^^^^^^ reference local member_258
+//                             ^^^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/StringLiteralType#
+//                                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/StringLiteralType#value.
+          }
+        }
+      }
+    else if (typ is reflect.UnionType)
+//           ^^^ reference local typ_249
+//                          ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/UnionType#
+      new {
+        oneOf {
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/oneOf.
+          for (member in typ.members) {
+//             ^^^^^^ definition local member_266
+//                       ^^^ reference local typ_249
+//                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/UnionType#members.
+            convertType(member, seenClasses)
+//          ^^^^^^^^^^^ reference local convertType_248
+//                      ^^^^^^ reference local member_266
+//                              ^^^^^^^^^^^ reference local seenClasses_249
+          }
+        }
+      }
+    else if (typ is reflect.StringLiteralType)
+//           ^^^ reference local typ_249
+//                          ^^^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/StringLiteralType#
+      new {
+        enum {
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3.contrib 1.1.0 `SchemaGenerator.pkl`/enum.
+          typ.value
+//        ^^^ reference local typ_249
+//            ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/StringLiteralType#value.
+        }
+      }
+    else if (typ is reflect.DeclaredType)
+//           ^^^ reference local typ_249
+//                          ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#
+      convertDeclaredType(typ, seenClasses)
+//    ^^^^^^^^^^^^^^^^^^^ reference local convertDeclaredType_121
+//                        ^^^ reference local typ_249
+//                             ^^^^^^^^^^^ reference local seenClasses_249
+    else throw("Unsure how to cast this type: \(typ)")
+//                                              ^^^ reference local typ_249
+  
+  /// Same as [convertType], except casts results to [Schema.PropertySchema]
+  local function convertTypeForProperty(typ: reflect.Type, seenClasses: Set<Class>): Schema.PropertySchema =
+//               ^^^^^^^^^^^^^^^^^^^^^^ definition local convertTypeForProperty_281
+//               documentation
+//               > Same as `convertType`, except casts results to [`Schema.PropertySchema`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L373,C7)
+//                                      ^^^ definition local typ_282
+//                                                   ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Type#
+//                                                         ^^^^^^^^^^^ definition local seenClasses_282
+//                                                                      ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#
+//                                                                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                                                                                          ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/PropertySchema#
+    convertType(typ, seenClasses).toDynamic().toTyped(Schema.PropertySchema)
+//  ^^^^^^^^^^^ reference local convertType_248
+//              ^^^ reference local typ_282
+//                   ^^^^^^^^^^^ reference local seenClasses_282
+//                                ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#toDynamic().
+//                                            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toTyped().
+//                                                    ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/
+//                                                           ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/PropertySchema#
+  
+  /// Same as [convertDeclaration], except casts results to [Schema.PropertySchema].
+  local function convertDeclarationForProperty(declaration: reflect.Declaration, seenClasses: Set<Class>): Schema.PropertySchema =
+//               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition local convertDeclarationForProperty_285
+//               documentation
+//               > Same as `convertDeclaration`, except casts results to [`Schema.PropertySchema`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.openapis.v3/Schema.pkl#L373,C7).
+//                                             ^^^^^^^^^^^ definition local declaration_286
+//                                                                  ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Declaration#
+//                                                                               ^^^^^^^^^^^ definition local seenClasses_286
+//                                                                                            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#
+//                                                                                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                                                                                                                ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/PropertySchema#
+    convertDeclaration(declaration, seenClasses).toDynamic().toTyped(Schema.PropertySchema)
+//  ^^^^^^^^^^^^^^^^^^ reference local convertDeclaration_93
+//                     ^^^^^^^^^^^ reference local declaration_286
+//                                  ^^^^^^^^^^^ reference local seenClasses_286
+//                                               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#toDynamic().
+//                                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toTyped().
+//                                                                   ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/
+//                                                                          ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Schema.pkl`/PropertySchema#
+  
+  local function isSameType(typeA: reflect.Type, typeB: reflect.Type) =
+//               ^^^^^^^^^^ definition local isSameType_289
+//                          ^^^^^ definition local typeA_289
+//                                         ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Type#
+//                                               ^^^^^ definition local typeB_289
+//                                                              ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Type#
+    if (typeA is reflect.DeclaredType && typeB is reflect.DeclaredType)
+//      ^^^^^ reference local typeA_289
+//                       ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#
+//                                       ^^^^^ reference local typeB_289
+//                                                        ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#
+      typeA.referent.reflectee == typeB.referent.reflectee
+//    ^^^^^ reference local typeA_289
+//          ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#referent.
+//                   ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeDeclaration#reflectee.
+//                                ^^^^^ reference local typeB_289
+//                                      ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#referent.
+//                                               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeDeclaration#reflectee.
+    else if (typeA is reflect.NullableType && typeB is reflect.NullableType)
+//           ^^^^^ reference local typeA_289
+//                            ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/NullableType#
+//                                            ^^^^^ reference local typeB_289
+//                                                             ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/NullableType#
+      isSameType(typeA.member, typeB.member)
+//    ^^^^^^^^^^ reference local isSameType_289
+//               ^^^^^ reference local typeA_289
+//                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/NullableType#member.
+//                             ^^^^^ reference local typeB_289
+//                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/NullableType#member.
+    else if (typeA is reflect.NothingType && typeB is reflect.NothingType)
+//           ^^^^^ reference local typeA_289
+//                            ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/NothingType#
+//                                           ^^^^^ reference local typeB_289
+//                                                            ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/NothingType#
+      true
+    else if (typeA is reflect.UnknownType && typeB is reflect.UnknownType)
+//           ^^^^^ reference local typeA_289
+//                            ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/UnknownType#
+//                                           ^^^^^ reference local typeB_289
+//                                                            ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/UnknownType#
+      true
+    else if (typeA is reflect.StringLiteralType && typeB is reflect.StringLiteralType)
+//           ^^^^^ reference local typeA_289
+//                            ^^^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/StringLiteralType#
+//                                                 ^^^^^ reference local typeB_289
+//                                                                  ^^^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/StringLiteralType#
+      typeA.value == typeB.value
+//    ^^^^^ reference local typeA_289
+//          ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/StringLiteralType#value.
+//                   ^^^^^ reference local typeB_289
+//                         ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/StringLiteralType#value.
+    // union types turn into Go's `any`, so we can say that this is always fine.
+    else if (typeA is reflect.UnionType && typeB is reflect.UnionType)
+//           ^^^^^ reference local typeA_289
+//                            ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/UnionType#
+//                                         ^^^^^ reference local typeB_289
+//                                                          ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/UnionType#
+      true
+    // remaining types: `FunctionType`, `TypeParameter`, `ModuleType`.
+    // we can actually check if `ModuleType` refers to the same type by checking if the enclosing declaration is the same,
+    // but we will pretend it is always false for now.
+    else false
+  
+  /// Given a class, return all of its properties, including properties of all inherited classes.
+  ///
+  /// Excludes properties that are functions, and any hidden properties.
+  ///
+  /// **NOTE**: JSON Schema has a way to combine schemas together using `allOf`. At first glance, this might
+  /// seem like a good way to model inheritance; the schema is all of the child properties and the parent
+  /// properties. However, this mechanism breaks if a child class overrides the property of a parent class.
+  /// If an overridden property is mutually exclusive with the parent property, `allOf` would produce an
+  /// invalid JSON schema because it is impossible for any object to match all of the specified constraints.
+  local function getProperties(clazz: reflect.Class): Map<String, reflect.Property> = getAllProperties(clazz)
+//               ^^^^^^^^^^^^^ definition local getProperties_308
+//               documentation
+//               > Given a class, return all of its properties, including properties of all inherited classes.
+//               > 
+//               > Excludes properties that are functions, and any hidden properties.
+//               > 
+//               > **NOTE**: JSON Schema has a way to combine schemas together using `allOf`. At first glance, this might
+//               > seem like a good way to model inheritance; the schema is all of the child properties and the parent
+//               > properties. However, this mechanism breaks if a child class overrides the property of a parent class.
+//               > If an overridden property is mutually exclusive with the parent property, `allOf` would produce an
+//               > invalid JSON schema because it is impossible for any object to match all of the specified constraints.
+//                             ^^^^^ definition local clazz_317
+//                                            ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#
+//                                                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                                                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                        ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#
+//                                                                                    ^^^^^^^^^^^^^^^^ reference local getAllProperties_322
+//                                                                                                     ^^^^^ reference local clazz_317
+    .filter((_, prop) -> !prop.modifiers.contains("hidden"))
+//   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#filter().
+//              ^^^^ definition local prop_318
+//                        ^^^^ reference local prop_318
+//                             ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Declaration#modifiers.
+//                                       ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#contains().
+    .filter((_, prop) -> !(prop.type is reflect.FunctionType))
+//   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#filter().
+//              ^^^^ definition local prop_319
+//                         ^^^^ reference local prop_319
+//                              ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#type.
+//                                              ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/FunctionType#
+  
+  // noinspection TypeMismatch
+  local function getAllProperties(clazz: reflect.Class): Map<String, reflect.Property> =
+//               ^^^^^^^^^^^^^^^^ definition local getAllProperties_322
+//                                ^^^^^ definition local clazz_322
+//                                               ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#
+//                                                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                                                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                           ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#
+    if (clazz.superclass == clazz || clazz.superclass == null)
+//      ^^^^^ reference local clazz_322
+//            ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#superclass.
+//                          ^^^^^ reference local clazz_322
+//                                   ^^^^^ reference local clazz_322
+//                                         ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#superclass.
+      clazz.properties
+//    ^^^^^ reference local clazz_322
+//          ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#properties.
+    else
+      let (superProperties = getAllProperties(clazz.superclass!!))
+//         ^^^^^^^^^^^^^^^ definition local superProperties_326
+//                           ^^^^^^^^^^^^^^^^ reference local getAllProperties_322
+//                                            ^^^^^ reference local clazz_322
+//                                                  ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#superclass.
+        clazz.properties.fold(superProperties, (acc: Map<String, reflect.Property>, key: String, prop: reflect.Property) ->
+//      ^^^^^ reference local clazz_322
+//            ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#properties.
+//                       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#fold().
+//                            ^^^^^^^^^^^^^^^ reference local superProperties_326
+//                                              ^^^ definition local acc_327
+//                                                   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                       ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#
+//                                                                                  ^^^ definition local key_327
+//                                                                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                                               ^^^^ definition local prop_327
+//                                                                                                             ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#
+          // if it's the same type declaration, keep the super property
+          if (acc.containsKey(key) && isSameType(acc[key].type, prop.type)) acc
+//            ^^^ reference local acc_327
+//                ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#containsKey().
+//                            ^^^ reference local key_327
+//                                    ^^^^^^^^^^ reference local isSameType_289
+//                                               ^^^ reference local acc_327
+//                                                   ^^^ reference local key_327
+//                                                        ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#type.
+//                                                              ^^^^ reference local prop_327
+//                                                                   ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#type.
+//                                                                          ^^^ reference local acc_327
+          // if the property's type is unknown, keep the super property.
+          // this might be a property declaration without a new type.
+          // e.g. `class Foo extends Bar { bar = "mybar" }`
+          else if (prop.type is reflect.UnknownType) acc
+//                 ^^^^ reference local prop_327
+//                      ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#type.
+//                                      ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/UnknownType#
+//                                                   ^^^ reference local acc_327
+          else acc.put(key, prop)
+//             ^^^ reference local acc_327
+//                 ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#put().
+//                     ^^^ reference local key_327
+//                          ^^^^ reference local prop_327
+        )
+  

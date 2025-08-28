@@ -1,0 +1,814 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// A renderer for Comma Separated Values (CSV) files, following [RFC 4180](https://www.ietf.org/rfc/rfc4180.txt).
+  ///
+  /// Basic usage:
+  /// ```
+  /// import "package:<package_url>#/csv.pkl"
+  ///
+  /// output {
+  ///   renderer = new csv.Renderer {}
+  /// }
+  /// ```
+  @ModuleInfo { minPklVersion = "0.25.0" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleInfo#
+//              ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/minPklVersion.
+  module pkl.csv.csv
+//^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/
+  
+  import "pkl:reflect"
+  
+  typealias Value = Null|Number|String|Boolean
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Value#
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Null#
+//                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+//                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+  typealias ListLike = List|Listing|Dynamic(toMap().isEmpty)
+//          ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/ListLike#
+//                     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#toMap().
+//                                                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#isEmpty.
+  
+  const local listLikeDescription = "`List`s, `Listing`s, or `Dynamic`s with only elements"
+//            ^^^^^^^^^^^^^^^^^^^ definition local listLikeDescription_35
+  
+  const local function mapOf(thing): Map =
+//                     ^^^^^ definition local mapOf_37
+//                           ^^^^^ definition local thing_37
+//                                   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+    if (thing is Map) thing else thing?.toMap() ?? Map()
+//      ^^^^^ reference local thing_37
+//               ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                    ^^^^^ reference local thing_37
+//                               ^^^^^ reference local thing_37
+//                                                 ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+  
+  /// Renders values as CSV.
+  class Renderer extends ValueRenderer {
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Renderer#
+//      documentation
+//      > Renders values as CSV.
+//                       ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ValueRenderer#
+    /// Value converters to apply before values are rendered.
+    ///
+    /// For further information see [PcfRenderer.converters].
+    converters: Mapping<Class, (unknown) -> Any>
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Renderer#converters.
+//  documentation
+//  > Value converters to apply before values are rendered.
+//  > 
+//  > For further information see [`PcfRenderer.converters`](pkl-lsp://stdlib/base.pkl#L308,C3).
+//              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                      ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+  
+    function renderValue(value: Any) =
+//           ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Renderer#renderValue().
+//           documentation
+//           > Renders [`value`](pkl-lsp://stdlib/base.pkl#L323,C33).
+//                       ^^^^^ definition local value_47
+//                              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+      if (value is Null|Number|String|Boolean)
+//        ^^^^^ reference local value_47
+//                 ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Null#
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+//                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+        new Mapping<Class, String> {
+//          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                  ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+          [Null] = ""
+//         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Null#
+          [String] =
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+            if (value.contains(charactersToWrap))
+//              ^^^^^ reference local value_47
+//                    ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#contains().
+//                             ^^^^^^^^^^^^^^^^ reference local charactersToWrap_111
+              #""\#(value.replaceAll("\"", "\"\""))""#
+//                  ^^^^^ reference local value_47
+//                        ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+            else
+              value as String
+//            ^^^^^ reference local value_47
+//                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+        }.getOrNull(value.getClass()) ?? "\(value)"
+//        ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+//                  ^^^^^ reference local value_47
+//                        ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                                          ^^^^^ reference local value_47
+      else
+        throw("The CSV renderer only supports primitive values in `renderValue`.")
+  
+    function renderDocument(value: Any) =
+//           ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Renderer#renderDocument().
+//           documentation
+//           > Renders [`value`](pkl-lsp://stdlib/base.pkl#L320,C36) as a complete document.
+//           > 
+//           > Some renderers impose restrictions on which types of values can be rendered as document.
+//           > 
+//           > A typical implementation of this method renders a document header/footer
+//           > and otherwise delegates to [`renderValue()`](pkl-lsp://stdlib/base.pkl#L323,C3).
+//                          ^^^^^ definition local value_60
+//                                 ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+      let (table =
+//         ^^^^^ definition local table_61
+        if (value is ListLike?)
+//          ^^^^^ reference local value_60
+//                   ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/ListLike#
+          (value as ListLike? ?? List()).toList()
+//         ^^^^^ reference local value_60
+//                  ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/ListLike#
+//                               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toList().
+        else
+          throw("Only \(listLikeDescription) values can be rendered as CSV. Instead, found a \(value.getClass()).\n\nValue:\n\(value)")
+//                      ^^^^^^^^^^^^^^^^^^^ reference local listLikeDescription_35
+//                                                                                             ^^^^^ reference local value_60
+//                                                                                                   ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                                                                                                                             ^^^^^ reference local value_60
+      )
+        let (violations = table.filter((it) -> !(if (table.firstOrNull is Value) it is Value else it is Typed|Dynamic|Mapping|Map)))
+//           ^^^^^^^^^^ definition local violations_67
+//                        ^^^^^ reference local table_61
+//                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#filter().
+//                                      ^^ definition local it_67
+//                                                   ^^^^^ reference local table_61
+//                                                         ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#firstOrNull.
+//                                                                        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Value#
+//                                                                               ^^ reference local it_67
+//                                                                                     ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Value#
+//                                                                                                ^^ reference local it_67
+//                                                                                                      ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#
+//                                                                                                            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                                                                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                                                                                            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+          let (headerKeys =
+//             ^^^^^^^^^^ definition local headerKeys_68
+            if (unification == "pad")
+//              ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Renderer#unification.
+              table.fold(Set(), (acc: Set<String>, row) -> acc + row.toMap().keys)
+//            ^^^^^ reference local table_61
+//                  ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#fold().
+//                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set().
+//                               ^^^ definition local acc_70
+//                                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#
+//                                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                 ^^^ definition local row_70
+//                                                         ^^^ reference local acc_70
+//                                                               ^^^ reference local row_70
+            else
+              mapOf(table.firstOrNull).keys
+//            ^^^^^ reference local mapOf_37
+//                  ^^^^^ reference local table_61
+//                        ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#firstOrNull.
+//                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#keys.
+          )
+            new Listing<String> {
+//              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+              when (!violations.isEmpty) {
+//                   ^^^^^^^^^^ reference local violations_67
+//                              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#isEmpty.
+                throw("The CSV renderer only supports rows consisting of primitive values, or of type `Typed|Dynamic|Mapping`.\nValue: \(violations.first)")
+//                                                                                                                                       ^^^^^^^^^^ reference local violations_67
+//                                                                                                                                                  ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#first.
+              }
+              when (includeHeader) {
+//                  ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Renderer#includeHeader.
+                headerKeys.map((it) -> renderValue(it)).join(",")
+//              ^^^^^^^^^^ reference local headerKeys_68
+//                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#map().
+//                              ^^ definition local it_79
+//                                     ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Renderer#renderValue().
+//                                                 ^^ reference local it_79
+//                                                      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#join().
+              }
+              for (row in table) {
+//                 ^^^ definition local row_81
+//                        ^^^^^ reference local table_61
+                new Listing<String> {
+//                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+                  when (unification == "error" && mapOf(row).keys != headerKeys) {
+//                      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Renderer#unification.
+//                                                ^^^^^ reference local mapOf_37
+//                                                      ^^^ reference local row_81
+//                                                           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#keys.
+//                                                                   ^^^^^^^^^^ reference local headerKeys_68
+                    throw("Invalid input: CSV can only render rows with all the same properties. Expecting keys: \(headerKeys.join(",")). Received: \(row).")
+//                                                                                                                 ^^^^^^^^^^ reference local headerKeys_68
+//                                                                                                                            ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#join().
+//                                                                                                                                                    ^^^ reference local row_81
+                  }
+                  when (includeHeader) {
+//                      ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Renderer#includeHeader.
+                    for (column in headerKeys) {
+//                       ^^^^^^ definition local column_87
+//                                 ^^^^^^^^^^ reference local headerKeys_68
+                      renderValue(mapOf(row).getOrNull(column))
+//                    ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Renderer#renderValue().
+//                                ^^^^^ reference local mapOf_37
+//                                      ^^^ reference local row_81
+//                                           ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#getOrNull().
+//                                                     ^^^^^^ reference local column_87
+                    }
+                  } else {
+                    for (column in if (row is ListLike) row.toList() else row.toMap().values) {
+//                       ^^^^^^ definition local column_91
+//                                     ^^^ reference local row_81
+//                                            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/ListLike#
+//                                                      ^^^ reference local row_81
+//                                                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toList().
+//                                                                        ^^^ reference local row_81
+                      renderValue(column)
+//                    ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Renderer#renderValue().
+//                                ^^^^^^ reference local column_91
+                    }
+                  }
+                }.join(",")
+//                ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#join().
+              }
+              ""
+            }.join(lineBreak)
+//            ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#join().
+//                 ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Renderer#lineBreak.
+  
+    /// The line break to use.
+    ///
+    /// [RFC 4180](https://www.ietf.org/rfc/rfc4180.txt) states that line breaks are carriage-return-line-feed, but also:
+    /// > As per section 4.1.1. of RFC 2046, this media type uses CRLF to denote line breaks.
+    /// > However, implementors should be aware that some implementations may use other values.
+    ///
+    /// This property can be used to define which encoding to use.
+    ///
+    /// (Default: `"\r\n"`)
+    lineBreak: String = "\r\n"
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Renderer#lineBreak.
+//  documentation
+//  > The line break to use.
+//  > 
+//  > [RFC 4180](https://www.ietf.org/rfc/rfc4180.txt) states that line breaks are carriage-return-line-feed, but also:
+//  > > As per section 4.1.1. of RFC 2046, this media type uses CRLF to denote line breaks.
+//  > > However, implementors should be aware that some implementations may use other values.
+//  > 
+//  > This property can be used to define which encoding to use.
+//  > 
+//  > (Default: `"\r\n"`)
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    local charactersToWrap = Regex("[\",]|\(lineBreak)")
+//        ^^^^^^^^^^^^^^^^ definition local charactersToWrap_111
+//                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+//                                          ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Renderer#lineBreak.
+  
+    /// How to handle polymorphic rows.
+    ///
+    /// When rendering a table of `Listing<Base>`, which includes elements of type `DerivedX` and `DerivedY` (where both
+    /// `extends Base`), how should this table be rendered? There are three options:
+    ///  - `"error"` throws an error when any row has property names that are not in the header.
+    ///  - `"drop"` only renders properties with names in the header and ignores any other properties.
+    ///  - `"pad"` gathers property names from the entire table and inserts (pads) empty values when properties are missing.
+    ///
+    /// (Default: `"error"`)
+    unification: * "error"|"drop"|"pad"
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Renderer#unification.
+//  documentation
+//  > How to handle polymorphic rows.
+//  > 
+//  > When rendering a table of `Listing<Base>`, which includes elements of type `DerivedX` and `DerivedY` (where both
+//  > `extends Base`), how should this table be rendered? There are three options:
+//  >  - `"error"` throws an error when any row has property names that are not in the header.
+//  >  - `"drop"` only renders properties with names in the header and ignores any other properties.
+//  >  - `"pad"` gathers property names from the entire table and inserts (pads) empty values when properties are missing.
+//  > 
+//  > (Default: `"error"`)
+  
+    /// Tells whether to include a (first) line with the names of the columns.
+    includeHeader: Boolean = true
+//  ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Renderer#includeHeader.
+//  documentation
+//  > Tells whether to include a (first) line with the names of the columns.
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  }
+  
+  class Parser {
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#
+    /// The expected type of the rows to parse.
+    rowClass: Class?
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#rowClass.
+//            ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+  
+    /// The [String] to parse.
+    input: String
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#input.
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    /// Tells whether the first row contains names of columns.
+    includeHeader: Boolean = false
+//  ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#includeHeader.
+//  documentation
+//  > Tells whether the first row contains names of columns.
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+    /// The line break to use.
+    ///
+    /// [RFC 4180](https://www.ietf.org/rfc/rfc4180.txt) states that line breaks are carriage-return-line-feed, but also:
+    /// > As per section 4.1.1. of RFC 2046, this media type uses CRLF to denote line breaks.
+    /// > However, implementors should be aware that some implementations may use other values.
+    ///
+    /// This property can be used to define which encoding to use.
+    ///
+    /// (Default: `"\r\n"`)
+    lineBreak: String = "\r\n"
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#lineBreak.
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    converters: Mapping<Class, (String) -> unknown> = new {
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#converters.
+//              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                      ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      [Int] = (it) -> it.toInt()
+//     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//             ^^ definition local it_150
+//                    ^^ reference local it_150
+//                       ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toInt().
+      [Float] = (it) -> it.toFloat()
+//     ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Float#
+//               ^^ definition local it_151
+//                      ^^ reference local it_151
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toFloat().
+      [Number] = (it) -> it.toFloat()
+//     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+//                ^^ definition local it_152
+//                       ^^ reference local it_152
+//                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toFloat().
+      [Boolean] = (it) -> it.toBoolean()
+//     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                 ^^ definition local it_153
+//                        ^^ reference local it_153
+//                           ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toBoolean().
+    }
+  
+    function parse(source: Resource|String): List<Dynamic>(rowClass == null)|List<Typed(getClass() == rowClass)>(rowClass != null) =
+//           ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#parse().
+//                 ^^^^^^ definition local source_156
+//                         ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Resource#
+//                                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                         ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#rowClass.
+//                                                                           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#
+//                                                                                      ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                                                                                                    ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#rowClass.
+//                                                                                                               ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#rowClass.
+      (this) { input = if (source is String) source else source.text }.parsed
+//             ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#input.
+//                         ^^^^^^ reference local source_156
+//                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                           ^^^^^^ reference local source_156
+//                                                       ^^^^^^ reference local source_156
+//                                                              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Resource#text.
+//                                                                     ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#parsed.
+  
+    /// The result of parsing [input] as CSV.
+    ///
+    /// This is a "final" property, because it is derived from the input properties [input], [includeHeader] and [rowClass].
+    parsed: (* List<Dynamic>(rowClass == null)|List<Typed(getClass() == rowClass)>(rowClass != null))(this == _parsed) =
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#parsed.
+//  documentation
+//  > The result of parsing [`input`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.csv/csv.pkl#L133,C3) as CSV.
+//  > 
+//  > This is a "final" property, because it is derived from the input properties [`input`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.csv/csv.pkl#L133,C3), [`includeHeader`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.csv/csv.pkl#L136,C3) and [`rowClass`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.csv/csv.pkl#L130,C3).
+//             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                           ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#rowClass.
+//                                             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                  ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#
+//                                                        ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                                                                      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#rowClass.
+//                                                                                 ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#rowClass.
+//                                                                                                            ^^^^^^^ reference local _parsed_179
+      _parsed
+//    ^^^^^^^ reference local _parsed_179
+  
+    local function convert(type: reflect.Type|Class|TypeAlias): (String) -> unknown =
+//                 ^^^^^^^ definition local convert_165
+//                         ^^^^ definition local type_165
+//                                       ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Type#
+//                                            ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                                                  ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/TypeAlias#
+//                                                               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      new Mapping<Class, ((String) -> unknown)?> {
+//        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+        [reflect.DeclaredType] = convert((type as reflect.DeclaredType).referent.reflectee)
+//       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//               ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#
+//                               ^^^^^^^ reference local convert_165
+//                                        ^^^^ reference local type_165
+//                                                        ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#
+//                                                                      ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#referent.
+//                                                                               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeDeclaration#reflectee.
+        [Class] = converters.getOrNull(type)
+//       ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#converters.
+//                           ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+//                                     ^^^^ reference local type_165
+        [TypeAlias] = convert(reflect.TypeAlias(type as TypeAlias).referent)
+//       ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/TypeAlias#
+//                    ^^^^^^^ reference local convert_165
+//                            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                                    ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeAlias().
+//                                              ^^^^ reference local type_165
+//                                                      ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/TypeAlias#
+//                                                                 ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeAlias#referent.
+        // Support for (type aliases that are) union types is rather ad hoc; pick the first class for which there exists a converter.
+        // TODO: Improve this.
+        [reflect.UnionType] = (type as reflect.UnionType).members.fold(null, (acc, ty) -> acc ?? convert(ty))
+//       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/UnionType#
+//                             ^^^^ reference local type_165
+//                                             ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/UnionType#
+//                                                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/UnionType#members.
+//                                                                ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#fold().
+//                                                                            ^^^ definition local acc_172
+//                                                                                 ^^ definition local ty_172
+//                                                                                        ^^^ reference local acc_172
+//                                                                                               ^^^^^^^ reference local convert_165
+//                                                                                                       ^^ reference local ty_172
+      }.getOrNull(type.getClass()) ?? (it) -> it
+//      ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+//                ^^^^ reference local type_165
+//                     ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                                     ^^ definition local it_173
+//                                            ^^ reference local it_173
+  
+    local function allProps(clazz: reflect.Class): Map<String, reflect.Property> =
+//                 ^^^^^^^^ definition local allProps_175
+//                          ^^^^^ definition local clazz_175
+//                                         ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#
+//                                                 ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                                                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                     ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#
+      (clazz.superclass.ifNonNull((zuper) -> allProps(zuper as reflect.Class)) ?? Map()) +
+//     ^^^^^ reference local clazz_175
+//           ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#superclass.
+//                      ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#ifNonNull().
+//                                 ^^^^^ definition local zuper_176
+//                                           ^^^^^^^^ reference local allProps_175
+//                                                    ^^^^^ reference local zuper_176
+//                                                                     ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#
+//                                                                                ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+        clazz.properties.filter((_, p) -> !p.modifiers.contains("hidden"))
+//      ^^^^^ reference local clazz_175
+//            ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#properties.
+//                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#filter().
+//                                  ^ definition local p_177
+//                                         ^ reference local p_177
+//                                           ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Declaration#modifiers.
+//                                                     ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#contains().
+  
+    local _parsed =
+//        ^^^^^^^ definition local _parsed_179
+      let (self = this)
+//         ^^^^ definition local self_180
+        let (stringyResult = new StringyTableParser {
+//           ^^^^^^^^^^^^^ definition local stringyResult_181
+//                               ^^^^^^^^^^^^^^^^^^ reference local StringyTableParser_205
+          rowClass = self.rowClass
+//        ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#rowClass.
+//                   ^^^^ reference local self_180
+//                        ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#rowClass.
+          input = self.input
+//        ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#input.
+//                ^^^^ reference local self_180
+//                     ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#input.
+          lineBreak = self.lineBreak
+//        ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#lineBreak.
+//                    ^^^^ reference local self_180
+//                         ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#lineBreak.
+        }.parseResult.rows.toList())
+//        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#parseResult.
+//                    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#rows.
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+          let (properties: Map<String, reflect.Property>? = rowClass.ifNonNull((clazz) -> allProps(reflect.Class(clazz as Class))))
+//             ^^^^^^^^^^ definition local properties_186
+//                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                             ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#
+//                                                          ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#rowClass.
+//                                                                   ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#ifNonNull().
+//                                                                              ^^^^^ definition local clazz_186
+//                                                                                        ^^^^^^^^ reference local allProps_175
+//                                                                                                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                                                                                                         ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class().
+//                                                                                                               ^^^^^ reference local clazz_186
+//                                                                                                                        ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+            let (header: List<String>? = (if (includeHeader) stringyResult[0] else properties?.keys)?.toList() as List<String>?)
+//               ^^^^^^ definition local header_187
+//                       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                            ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#includeHeader.
+//                                                           ^^^^^^^^^^^^^ reference local stringyResult_181
+//                                                                                 ^^^^^^^^^^ reference local properties_186
+//                                                                                             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#keys.
+//                                                                                                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#toList().
+//                                                                                                                ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                                                                                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+              if (header == null) stringyResult.map((rawRow) -> rawRow.toDynamic()) else
+//                ^^^^^^ reference local header_187
+//                                ^^^^^^^^^^^^^ reference local stringyResult_181
+//                                              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                                                   ^^^^^^ definition local rawRow_188
+//                                                              ^^^^^^ reference local rawRow_188
+//                                                                     ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#toDynamic().
+                stringyResult.toList().drop(if (includeHeader) 1 else 0).map((rawRow) ->
+//              ^^^^^^^^^^^^^ reference local stringyResult_181
+//                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#toList().
+//                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#drop().
+//                                              ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#includeHeader.
+//                                                                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                                                                            ^^^^^^ definition local rawRow_189
+                  let (row =
+//                     ^^^ definition local row_190
+                    header
+//                  ^^^^^^ reference local header_187
+                      .zip(rawRow.toList())
+//                     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#zip().
+//                         ^^^^^^ reference local rawRow_189
+//                                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#toList().
+                      .toMap((entry) -> entry.first, (entry) -> entry.second)
+//                     ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#toMap().
+//                            ^^^^^ definition local entry_193
+//                                      ^^^^^ reference local entry_193
+//                                            ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#first.
+//                                                    ^^^^^ definition local entry_193
+//                                                              ^^^^^ reference local entry_193
+//                                                                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#second.
+                  )
+                    if (properties == null) row.toDynamic() else
+//                      ^^^^^^^^^^ reference local properties_186
+//                                          ^^^ reference local row_190
+//                                              ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#toDynamic().
+                      let (spuriousKeys = row.keys.filter((key) -> !properties.containsKey(key)))
+//                         ^^^^^^^^^^^^ definition local spuriousKeys_196
+//                                        ^^^ reference local row_190
+//                                            ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#keys.
+//                                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#filter().
+//                                                         ^^^ definition local key_196
+//                                                                  ^^^^^^^^^^ reference local properties_186
+//                                                                             ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#containsKey().
+//                                                                                         ^^^ reference local key_196
+                        let (_ = if (spuriousKeys.isEmpty) "ok" else throw("Unrecognized keys found in row: \(spuriousKeys.join(", "))"))
+//                                   ^^^^^^^^^^^^ reference local spuriousKeys_196
+//                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#isEmpty.
+//                                                                                                            ^^^^^^^^^^^^ reference local spuriousKeys_196
+//                                                                                                                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#join().
+                          properties
+//                        ^^^^^^^^^^ reference local properties_186
+                            .filter((name, _) -> row.containsKey(name))
+//                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#filter().
+//                                   ^^^^ definition local name_199
+//                                               ^^^ reference local row_190
+//                                                   ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#containsKey().
+//                                                               ^^^^ reference local name_199
+                            .mapValues((name, property) -> row[name].ifNonNull((value) -> convert(property.type).apply(value as String)))
+//                           ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#mapValues().
+//                                      ^^^^ definition local name_200
+//                                            ^^^^^^^^ definition local property_200
+//                                                         ^^^ reference local row_190
+//                                                             ^^^^ reference local name_200
+//                                                                   ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#ifNonNull().
+//                                                                              ^^^^^ definition local value_200
+//                                                                                        ^^^^^^^ reference local convert_165
+//                                                                                                ^^^^^^^^ reference local property_200
+//                                                                                                         ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#type.
+//                                                                                                               ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Function1#apply().
+//                                                                                                                     ^^^^^ reference local value_200
+//                                                                                                                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+                            .toTyped(rowClass!!)
+//                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#toTyped().
+//                                   ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/Parser#rowClass.
+                )
+  }
+  
+  local class StringyTableParser {
+//            ^^^^^^^^^^^^^^^^^^ definition local StringyTableParser_205
+    rowClass: Class?
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#rowClass.
+//            ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+    input: String
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#input.
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    position: Int = 0
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#position.
+//            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+    currentRow: Listing
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#currentRow.
+//              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+    rows: Listing<List<String?>>
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#rows.
+//        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    lineBreak: String
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#lineBreak.
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+    local length: Int = input.length - position
+//        ^^^^^^ definition local length_215
+//                ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                      ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#input.
+//                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+//                                     ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#position.
+  
+    parseResult: StringyTableParser = if (length <= 0) this else
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#parseResult.
+//               ^^^^^^^^^^^^^^^^^^ reference local StringyTableParser_205
+//                                        ^^^^^^ reference local length_215
+        let (isEscapedField = input.getOrNull(position) == "\"")
+//           ^^^^^^^^^^^^^^ definition local isEscapedField_218
+//                            ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#input.
+//                                  ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#getOrNull().
+//                                            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#position.
+  
+          let (idxValueStart = if (isEscapedField) position + 1 else position)
+//             ^^^^^^^^^^^^^ definition local idxValueStart_220
+//                                 ^^^^^^^^^^^^^^ reference local isEscapedField_218
+//                                                 ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#position.
+//                                                                   ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#position.
+            let (idxValueEnd =
+//               ^^^^^^^^^^^ definition local idxValueEnd_221
+              List(
+//            ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+                input.length,
+//              ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#input.
+//                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+                if (isEscapedField)
+//                  ^^^^^^^^^^^^^^ reference local isEscapedField_218
+                  findValueEndIndex(idxValueStart)
+//                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#findValueEndIndex().
+//                                  ^^^^^^^^^^^^^ reference local idxValueStart_220
+                else
+                  position + (input.drop(position).indexOfOrNull(Regex(",|\(lineBreak)")) ?? length)
+//                ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#position.
+//                            ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#input.
+//                                  ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#drop().
+//                                       ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#position.
+//                                                 ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#indexOfOrNull().
+//                                                               ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+//                                                                          ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#lineBreak.
+//                                                                                           ^^^^^^ reference local length_215
+              ).min
+//              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#min.
+            )
+              let (idxFieldEnd = idxValueEnd + if (isEscapedField) 1 else 0)
+//                 ^^^^^^^^^^^ definition local idxFieldEnd_230
+//                               ^^^^^^^^^^^ reference local idxValueEnd_221
+//                                                 ^^^^^^^^^^^^^^ reference local isEscapedField_218
+                let (delimiter = input.getOrNull(idxFieldEnd))
+//                   ^^^^^^^^^ definition local delimiter_231
+//                               ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#input.
+//                                     ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#getOrNull().
+//                                               ^^^^^^^^^^^ reference local idxFieldEnd_230
+  
+                  // Ugly corner-case for CSV, if the input ends with a `,`, there is still a `null` value "after" that, but no `,` or lineBreak to signal as much.
+                  let (nullEnd = delimiter == "," && idxFieldEnd == input.length - 1)
+//                     ^^^^^^^ definition local nullEnd_234
+//                               ^^^^^^^^^ reference local delimiter_231
+//                                                   ^^^^^^^^^^^ reference local idxFieldEnd_230
+//                                                                  ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#input.
+//                                                                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+  
+                    let (value = input.substring(idxValueStart, idxValueEnd))
+//                       ^^^^^ definition local value_236
+//                               ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#input.
+//                                     ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#substring().
+//                                               ^^^^^^^^^^^^^ reference local idxValueStart_220
+//                                                              ^^^^^^^^^^^ reference local idxValueEnd_221
+                      let (newRow = (currentRow) {
+//                         ^^^^^^ definition local newRow_237
+//                                   ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#currentRow.
+                        if (value.isEmpty) null else if (isEscapedField) value.replaceAll("\"\"", "\"") else value
+//                          ^^^^^ reference local value_236
+//                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#isEmpty.
+//                                                       ^^^^^^^^^^^^^^ reference local isEscapedField_218
+//                                                                       ^^^^^ reference local value_236
+//                                                                             ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+//                                                                                                           ^^^^^ reference local value_236
+                        when (nullEnd) {
+//                            ^^^^^^^ reference local nullEnd_234
+                          null
+                        }
+                      })
+  
+                        (this) {
+                          position = idxFieldEnd + if (delimiter == ",") 1 else lineBreak.length
+//                        ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#position.
+//                                   ^^^^^^^^^^^ reference local idxFieldEnd_230
+//                                                     ^^^^^^^^^ reference local delimiter_231
+//                                                                              ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#lineBreak.
+//                                                                                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+                          when (delimiter != "," || nullEnd) {
+//                              ^^^^^^^^^ reference local delimiter_231
+//                                                  ^^^^^^^ reference local nullEnd_234
+                            rows {
+//                          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#rows.
+                              newRow.toList()
+//                            ^^^^^^ reference local newRow_237
+//                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+                            }
+                            currentRow = new {}
+//                          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#currentRow.
+                          } else {
+                            currentRow = newRow
+//                          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#currentRow.
+//                                       ^^^^^^ reference local newRow_237
+                          }
+                        }.parseResult
+//                        ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#parseResult.
+  
+    function findValueEndIndex(position: UInt): UInt =
+//           ^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#findValueEndIndex().
+//                             ^^^^^^^^ definition local position_256
+//                                       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+//                                              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/UInt#
+      let (remainingPositions = IntSeq(position, input.length - 1))
+//         ^^^^^^^^^^^^^^^^^^ definition local remainingPositions_257
+//                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/IntSeq().
+//                                     ^^^^^^^^ reference local position_256
+//                                               ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#input.
+//                                                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+        remainingPositions.fold(Pair(position, false), (state, currentPos) ->
+//      ^^^^^^^^^^^^^^^^^^ reference local remainingPositions_257
+//                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/IntSeq#fold().
+//                              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+//                                   ^^^^^^^^ reference local position_256
+//                                                      ^^^^^ definition local state_258
+//                                                             ^^^^^^^^^^ definition local currentPos_258
+          let (searchPos = state.first)
+//             ^^^^^^^^^ definition local searchPos_259
+//                         ^^^^^ reference local state_258
+            let (found = state.second)
+//               ^^^^^ definition local found_260
+//                       ^^^^^ reference local state_258
+              if (found || currentPos < searchPos)
+//                ^^^^^ reference local found_260
+//                         ^^^^^^^^^^ reference local currentPos_258
+//                                      ^^^^^^^^^ reference local searchPos_259
+                state  // Already found or haven't reached search position yet
+//              ^^^^^ reference local state_258
+              else
+                let (characterAtPosition = input.getOrNull(currentPos))
+//                   ^^^^^^^^^^^^^^^^^^^ definition local characterAtPosition_264
+//                                         ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#input.
+//                                               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#getOrNull().
+//                                                         ^^^^^^^^^^ reference local currentPos_258
+                  new Mapping {
+//                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+                    ["\""] =
+                      if (input.getOrNull(currentPos + 1) == "\"")
+//                        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.csv 1.1.0 `csv.pkl`/StringyTableParser#input.
+//                              ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#getOrNull().
+//                                        ^^^^^^^^^^ reference local currentPos_258
+                        Pair(currentPos + 2, false)  // Escaped quote, skip ahead by 2
+//                      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+//                           ^^^^^^^^^^ reference local currentPos_258
+                      else
+                        Pair(currentPos, true)  // Found unescaped quote, this is the end
+//                      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+//                           ^^^^^^^^^^ reference local currentPos_258
+                    [null] = throw("Premature end of quoted field")
+                  }.getOrNull(characterAtPosition) ?? Pair(currentPos + 1, false)  // Continue searching, advance by 1
+//                  ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+//                            ^^^^^^^^^^^^^^^^^^^ reference local characterAtPosition_264
+//                                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+//                                                         ^^^^^^^^^^ reference local currentPos_258
+        ).first
+//        ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#first.
+  }
+  

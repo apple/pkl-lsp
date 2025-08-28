@@ -1,0 +1,37 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// This example shows how to parse a Kubernetes deployment object to get a list of all container images.
+  /// It is the equivalent of the CLI invocation:
+  ///
+  /// ```
+  /// pkl eval yaml.pkl -x 'pipe.spec.template.spec.containers.toList().map((c) -> c.image).join("\n")' < examples/k8s_deployment.yaml
+  /// ```
+  module pkl.pipe.examples.k8s_deployment_images
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `examples/k8s_deployment_images.pkl`/
+  amends "../yaml.pkl"
+  
+  input = read("./k8s_deployment.yaml")
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `examples/k8s_deployment_images.pkl`/input.
+  
+  output {
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `examples/k8s_deployment_images.pkl`/output.
+    text = module.pipe.spec.template.spec.containers.toList().map((c) -> c.image).join("\n")
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `examples/k8s_deployment_images.pkl`/text.
+//                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `yaml.pkl`/pipe.
+//                                                                 ^ definition local c_28
+//                                                                       ^ reference local c_28
+  }
+  

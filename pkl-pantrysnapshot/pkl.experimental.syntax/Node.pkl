@@ -1,0 +1,65 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// An abstraction for a Pkl code snippet.
+  ///
+  /// Nodes are used for building syntax trees, which can be used to render Pkl source code.
+  @ModuleInfo { minPklVersion = "0.25.0" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleInfo#
+//              ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/minPklVersion.
+  @Unlisted
+// ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Unlisted#
+  abstract module pkl.experimental.syntax.Node
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/
+  
+  hidden pcfRenderer: ValueRenderer = new PcfRenderer { useCustomStringDelimiters = true }
+//       ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/pcfRenderer.
+//                    ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ValueRenderer#
+//                                        ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/PcfRenderer#
+//                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/useCustomStringDelimiters.
+  
+  /// The indentation when rendering.
+  hidden indent: String = "  "
+//       ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/indent.
+//       documentation
+//       > The indentation when rendering.
+//               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// The max column width to use when rendering.
+  hidden maxColumnWidth: Int = 100
+//       ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/maxColumnWidth.
+//       documentation
+//       > The max column width to use when rendering.
+//                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+  
+  abstract function render(currentIndent: String): String
+//                  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                         ^^^^^^^^^^^^^ definition local currentIndent_31
+//                                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  function parenthesize(str: String) = "(" + str + ")"
+//         ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/parenthesize().
+//                      ^^^ definition local str_33
+//                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                           ^^^ reference local str_33
+  
+  output {
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/output.
+    text = render("")
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/text.
+//         ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+  }
+  

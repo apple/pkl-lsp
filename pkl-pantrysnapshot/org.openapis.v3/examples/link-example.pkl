@@ -1,0 +1,175 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  amends "../Document.pkl"
+  
+  info {
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/info.
+    title = "Link Example"
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/title.
+    version = "1.0.0"
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/version.
+  }
+  
+  paths {
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/paths.
+    ["/2.0/users/{username}"] {
+      get {
+//    ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/get.
+        operationId = "getUserByName"
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/operationId.
+        parameters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/parameters.
+          new {
+            name = "username"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/name.
+            `in` = "path"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/in.
+            required = true
+//          ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/required.
+            schema {
+//          ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/schema.
+              type = "string"
+//            ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/type.
+            }
+          }
+        }
+        responses {
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/responses.
+          ["200"] {
+            description = "The User"
+//          ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/description.
+            content {
+//          ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/content.
+              ["application/json"] {
+                schema = new Reference {
+//              ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/schema.
+//                           ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Document.pkl`/Reference#
+                  `$ref` = "#/components/schemas/user"
+//                ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/$ref.
+                }
+              }
+            }
+            links {
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/links.
+              ["userRepositories"] = new Reference {
+//                                       ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Document.pkl`/Reference#
+                `$ref` = "#/components/links/UserRepositories"
+//              ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/$ref.
+              }
+            }
+          }
+        }
+      }
+    }
+    ["/2.0/repositories/{username}"] {
+      get {
+//    ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/get.
+        operationId = "getRepositoriesByOwner"
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/operationId.
+        parameters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/parameters.
+          new {
+            name = "username"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/name.
+            `in` = "path"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/in.
+            required = true
+//          ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/required.
+            schema {
+//          ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/schema.
+              type = "string"
+//            ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/type.
+            }
+          }
+        }
+        responses {
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/responses.
+          ["200"] {
+            description = "repositories owned by the supplied user"
+//          ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/description.
+            content {
+//          ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/content.
+              ["application/json"] {
+                schema {
+//              ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/schema.
+                  type = "array"
+//                ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/type.
+                  items = new Reference {
+//                ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/items.
+//                            ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Document.pkl`/Reference#
+                    `$ref` = "#/components/schemas/repository"
+//                  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/$ref.
+                  }
+                }
+              }
+            }
+            links {
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/links.
+              ["userRepository"] = new Reference {
+//                                     ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Document.pkl`/Reference#
+                `$ref` = "#/components/links/UserRepository"
+//              ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/$ref.
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  components {
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/components.
+    links {
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/links.
+      ["UserRepositories"] {
+        operationId = "getRepositoriesByOwner"
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/operationId.
+        parameters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/parameters.
+          ["username"] = "$response.body#/username"
+        }
+      }
+      ["UserRepository"] {
+        operationId = "getRepository"
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/operationId.
+        parameters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/parameters.
+          ["username"] = "$response.body#/username"
+          ["slug"] = "$response.body#/slug"
+        }
+      }
+      ["RepositoryPullRequests"] {
+        operationId = "getPullRequestsByRepository"
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/operationId.
+        parameters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/parameters.
+          ["username"] = "$response.body#/owner/username"
+          ["slug"] = "$response.body#/slug"
+        }
+      }
+      ["PullRequestMerge"] {
+        operationId = "mergePullRequest"
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/operationId.
+        parameters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/link-example.pkl`/parameters.
+          ["username"] = "$response.body#/author/username"
+          ["slug"] = "$response.body#/repository/slug"
+          ["pid"] = "$response.body#/id"
+        }
+      }
+    }
+  }
+  

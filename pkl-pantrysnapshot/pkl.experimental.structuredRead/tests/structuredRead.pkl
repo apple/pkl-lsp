@@ -1,0 +1,397 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module pkl.experimental.structuredRead.tests.structuredRead
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/
+  amends "pkl:test"
+  
+  import "fixtures/TestStructure.pkl"
+  import "../structuredRead.pkl"
+  
+  local extProps = structuredRead.fromExternalProps
+//      ^^^^^^^^ definition local extProps_22
+//                 ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/
+//                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fromExternalProps.
+  local env = structuredRead.fromEnv
+//      ^^^ definition local env_23
+//            ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/
+//                           ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fromEnv.
+  local https = structuredRead.fromHttps
+//      ^^^^^ definition local https_24
+//              ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/
+//                             ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fromHttps.
+  
+  local function testHarness(name: String, value: String) = new Mixin<structuredRead> {
+//               ^^^^^^^^^^^ definition local testHarness_26
+//                           ^^^^ definition local name_26
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                         ^^^^^ definition local value_26
+//                                                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                              ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mixin#
+//                                                                    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/
+    local responses = Map(name, value)
+//        ^^^^^^^^^ definition local responses_27
+//                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                        ^^^^ reference local name_26
+//                              ^^^^^ reference local value_26
+    readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/readFunc.
+//              ^ definition local s_28
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                           ^^^^^^^^^ reference local responses_27
+//                                     ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#getOrNull().
+//                                               ^ reference local s_28
+//                                                 ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceFirst().
+//                                                              ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/inputScheme.
+  }
+  
+  local testValues = new Mapping {
+//      ^^^^^^^^^^ definition local testValues_31
+//                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+      ["test"] = "string"
+      ["other"] = "123123"
+      ["c"] = "afe"
+      ["t.stuff"] = "TRUE"
+      ["t.nested.num"] = "23"
+      ["t.nested.float"] = "23"
+      ["t.nested.string"] = "AFWFAWEf"
+      ["number"] = "234234"
+      ["secondNumber"] = "342.023"
+      ["float"] = "20.0"
+      ["secondFloat"] = "23"
+  }
+  
+  local allNulls = (extProps) {
+//      ^^^^^^^^ definition local allNulls_45
+//                  ^^^^^^^^ reference local extProps_22
+    readFunc = (s) -> null
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/readFunc.
+//              ^ definition local s_46
+  }
+  
+  local topLevelProvided = (extProps) {
+//      ^^^^^^^^^^^^^^^^ definition local topLevelProvided_49
+//                          ^^^^^^^^ reference local extProps_22
+    local responses = new Mapping {
+//        ^^^^^^^^^ definition local responses_50
+//                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+      ["test"] = "string"
+      ["other"] = "12312"
+      ["c"] = "afe"
+    }.toMap()
+//    ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+    readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/readFunc.
+//              ^ definition local s_55
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                           ^^^^^^^^^ reference local responses_50
+//                                     ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#getOrNull().
+//                                               ^ reference local s_55
+//                                                 ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceFirst().
+//                                                              ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/inputScheme.
+  }
+  
+  local incorrectTypes = (extProps) {
+//      ^^^^^^^^^^^^^^ definition local incorrectTypes_58
+//                        ^^^^^^^^ reference local extProps_22
+    local responses = new Mapping {
+//        ^^^^^^^^^ definition local responses_59
+//                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+      ["test"] = "string"
+      ["other"] = "this should be an int"
+      ["c"] = "afe"
+      ["t.stuff"] = "Should be a bool"
+    }.toMap()
+//    ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+    readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/readFunc.
+//              ^ definition local s_65
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                           ^^^^^^^^^ reference local responses_59
+//                                     ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#getOrNull().
+//                                               ^ reference local s_65
+//                                                 ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceFirst().
+//                                                              ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/inputScheme.
+  }
+  
+  local correctInput = (extProps) {
+//      ^^^^^^^^^^^^ definition local correctInput_68
+//                      ^^^^^^^^ reference local extProps_22
+    local responses = testValues.toMap()
+//        ^^^^^^^^^ definition local responses_69
+//                    ^^^^^^^^^^ reference local testValues_31
+//                               ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+    readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/readFunc.
+//              ^ definition local s_70
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                           ^^^^^^^^^ reference local responses_69
+//                                     ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#getOrNull().
+//                                               ^ reference local s_70
+//                                                 ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceFirst().
+//                                                              ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/inputScheme.
+  }
+  
+  local correctEnvVars = (extProps) {
+//      ^^^^^^^^^^^^^^ definition local correctEnvVars_73
+//                        ^^^^^^^^ reference local extProps_22
+    local responses = new Mapping {
+//        ^^^^^^^^^ definition local responses_74
+//                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+      ["test"] = "string"
+      ["other"] = "123123"
+      ["c"] = "afe"
+      ["t_stuff"] = "TRUE"
+      ["t_nested_num"] = "12"
+      ["t_nested_float"] = "23.3"
+      ["t_nested_string"] = "afwf"
+      ["number"] = "234234"
+      ["secondNumber"] = "342.023"
+      ["float"] = "20.0"
+      ["secondFloat"] = "23"
+    }.toMap()
+//    ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+    pathSeparator = "_"
+//  ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/pathSeparator.
+    inputScheme = "env:"
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/inputScheme.
+  
+    readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/readFunc.
+//              ^ definition local s_90
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                           ^^^^^^^^^ reference local responses_74
+//                                     ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#getOrNull().
+//                                               ^ reference local s_90
+//                                                 ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceFirst().
+//                                                              ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/inputScheme.
+  }
+  
+  local incorrectNullableType = (extProps) {
+//      ^^^^^^^^^^^^^^^^^^^^^ definition local incorrectNullableType_93
+//                               ^^^^^^^^ reference local extProps_22
+    local responses = (testValues) {
+//        ^^^^^^^^^ definition local responses_94
+//                     ^^^^^^^^^^ reference local testValues_31
+     ["nullableWithDefault"] = "Should be an int"
+    }
+    readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/readFunc.
+//              ^ definition local s_97
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                           ^^^^^^^^^ reference local responses_94
+//                                     ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+//                                               ^ reference local s_97
+//                                                 ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceFirst().
+//                                                              ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/inputScheme.
+  }
+  
+  local class EnvConfig {
+//            ^^^^^^^^^ definition local EnvConfig_100
+    SHELL: String?
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/EnvConfig#SHELL.
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    USER: String?
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/EnvConfig#USER.
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    PWD: String?
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/EnvConfig#PWD.
+//       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    LANG: String?
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/EnvConfig#LANG.
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  local Http = new Dynamic {
+//      ^^^^ definition local Http_107
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+    `raw.githubusercontent.com/apple/pkl-pantry` {
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/`raw.githubusercontent.com/apple/pkl-pantry`.
+      `8fcea0e535d2eb473545305d8a573144f2b0d33d` {
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/8fcea0e535d2eb473545305d8a573144f2b0d33d.
+        `README.adoc` {}
+//      ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/`README.adoc`.
+        `CONTRIBUTING.adoc` {}
+//      ^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/`CONTRIBUTING.adoc`.
+      }
+    }
+  }
+  
+  examples {
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/examples.
+    ["missing properties"] {
+      module.catch(() -> allNulls.fill(TestStructure))
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                       ^^^^^^^^ reference local allNulls_45
+//                                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fill().
+//                                     ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/fixtures/TestStructure.pkl`/
+    }
+    ["top level provided properties"] {
+      module.catch(() -> topLevelProvided.fill(TestStructure))
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                       ^^^^^^^^^^^^^^^^ reference local topLevelProvided_49
+//                                        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fill().
+//                                             ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/fixtures/TestStructure.pkl`/
+    }
+    ["incorrect types"] {
+      module.catch(() -> incorrectTypes.fill(TestStructure))
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                       ^^^^^^^^^^^^^^ reference local incorrectTypes_58
+//                                      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fill().
+//                                           ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/fixtures/TestStructure.pkl`/
+    }
+    ["incorrect nullable type"] {
+      module.catch(() -> incorrectNullableType.fill(TestStructure))
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                       ^^^^^^^^^^^^^^^^^^^^^ reference local incorrectNullableType_93
+//                                             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fill().
+//                                                  ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/fixtures/TestStructure.pkl`/
+    }
+    ["correct input"] {
+      correctInput.fill(TestStructure)
+//    ^^^^^^^^^^^^ reference local correctInput_68
+//                 ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fill().
+//                      ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/fixtures/TestStructure.pkl`/
+    }
+    ["correct env type input"] {
+      correctEnvVars.fill(TestStructure)
+//    ^^^^^^^^^^^^^^ reference local correctEnvVars_73
+//                   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fill().
+//                        ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/fixtures/TestStructure.pkl`/
+    }
+    ["load from enviroment"] {
+      (env |> testHarness("SHELL", "zsh")).fill(EnvConfig)
+//     ^^^ reference local env_23
+//            ^^^^^^^^^^^ reference local testHarness_26
+//                                         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fill().
+//                                              ^^^^^^^^^ reference local EnvConfig_100
+    }
+    ["load from https"] {
+      https.fill(Http)
+//    ^^^^^ reference local https_24
+//          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fill().
+//               ^^^^ reference local Http_107
+    }
+  }
+  
+  local class NullableTypeWithDefault {
+//            ^^^^^^^^^^^^^^^^^^^^^^^ definition local NullableTypeWithDefault_143
+    TestInput: Boolean? = true
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/NullableTypeWithDefault#TestInput.
+//             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  }
+  
+  local class TypedWithDefaults {
+//            ^^^^^^^^^^^^^^^^^ definition local TypedWithDefaults_147
+    TestInput: Int = 10
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/TypedWithDefaults#TestInput.
+//             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+  }
+  
+  local class TypelessWithDefault {
+//            ^^^^^^^^^^^^^^^^^^^ definition local TypelessWithDefault_151
+    TestInput = 20.0
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/TypelessWithDefault#TestInput.
+  }
+  
+  local class NullValueProperty {
+//            ^^^^^^^^^^^^^^^^^ definition local NullValueProperty_155
+    TestInput = null
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/NullValueProperty#TestInput.
+  }
+  
+  local class DynamicList {
+//            ^^^^^^^^^^^ definition local DynamicList_159
+    TestInput {
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/DynamicList#TestInput.
+      123
+    }
+  }
+  
+  facts {
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/facts.
+    ["incorrect type for nullable with default still results in coerce error"] {
+      module.catch(() -> (extProps |> testHarness("TestInput", "not a bool")).fill(NullableTypeWithDefault)).contains("coerce")
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                        ^^^^^^^^ reference local extProps_22
+//                                    ^^^^^^^^^^^ reference local testHarness_26
+//                                                                            ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fill().
+//                                                                                 ^^^^^^^^^^^^^^^^^^^^^^^ reference local NullableTypeWithDefault_143
+//                                                                                                           ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#contains().
+    }
+    ["incorrect type for typed prop with default still results in coerce error"] {
+      module.catch(() -> (extProps |> testHarness("TestInput", "not an int")).fill(TypedWithDefaults)).contains("coerce")
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                        ^^^^^^^^ reference local extProps_22
+//                                    ^^^^^^^^^^^ reference local testHarness_26
+//                                                                            ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fill().
+//                                                                                 ^^^^^^^^^^^^^^^^^ reference local TypedWithDefaults_147
+//                                                                                                     ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#contains().
+    }
+    ["incorrect type for un-typed prop with default still results in coerce error"] {
+      module.catch(() -> (extProps |> testHarness("TestInput", "not a float")).fill(TypelessWithDefault)).contains("coerce")
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                        ^^^^^^^^ reference local extProps_22
+//                                    ^^^^^^^^^^^ reference local testHarness_26
+//                                                                             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fill().
+//                                                                                  ^^^^^^^^^^^^^^^^^^^ reference local TypelessWithDefault_151
+//                                                                                                        ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#contains().
+    }
+    ["un-typed null property causes failure"] {
+      module.catch(() -> (extProps |> testHarness("TestInput", "9999")).fill(NullValueProperty)).contains("ambiguous type")
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                        ^^^^^^^^ reference local extProps_22
+//                                    ^^^^^^^^^^^ reference local testHarness_26
+//                                                                      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fill().
+//                                                                           ^^^^^^^^^^^^^^^^^ reference local NullValueProperty_155
+//                                                                                               ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#contains().
+    }
+    ["incorrect type in dynamic list type"] {
+      module.catch(() -> (extProps |> testHarness("TestInput.0", "not an int")).fill(DynamicList)).contains("coerce")
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                        ^^^^^^^^ reference local extProps_22
+//                                    ^^^^^^^^^^^ reference local testHarness_26
+//                                                                              ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fill().
+//                                                                                   ^^^^^^^^^^^ reference local DynamicList_159
+//                                                                                                 ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#contains().
+    }
+    ["nullable with default inherits default value"] {
+      ((extProps |> testHarness("", "")).fill(NullableTypeWithDefault) as NullableTypeWithDefault).TestInput == true
+//      ^^^^^^^^ reference local extProps_22
+//                  ^^^^^^^^^^^ reference local testHarness_26
+//                                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fill().
+//                                            ^^^^^^^^^^^^^^^^^^^^^^^ reference local NullableTypeWithDefault_143
+//                                                                        ^^^^^^^^^^^^^^^^^^^^^^^ reference local NullableTypeWithDefault_143
+//                                                                                                 ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/NullableTypeWithDefault#TestInput.
+    }
+    ["typed prop with default inherits default value"] {
+      ((extProps |> testHarness("", "")).fill(TypedWithDefaults) as TypedWithDefaults).TestInput == 10
+//      ^^^^^^^^ reference local extProps_22
+//                  ^^^^^^^^^^^ reference local testHarness_26
+//                                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fill().
+//                                            ^^^^^^^^^^^^^^^^^ reference local TypedWithDefaults_147
+//                                                                  ^^^^^^^^^^^^^^^^^ reference local TypedWithDefaults_147
+//                                                                                     ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/TypedWithDefaults#TestInput.
+    }
+    ["un-typed prop with default still coerces correctly"] {
+      ((extProps |> testHarness("TestInput", "9999")).fill(TypelessWithDefault) as TypelessWithDefault).TestInput == 9999
+//      ^^^^^^^^ reference local extProps_22
+//                  ^^^^^^^^^^^ reference local testHarness_26
+//                                                    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fill().
+//                                                         ^^^^^^^^^^^^^^^^^^^ reference local TypelessWithDefault_151
+//                                                                                 ^^^^^^^^^^^^^^^^^^^ reference local TypelessWithDefault_151
+//                                                                                                      ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/structuredRead.pkl`/TypelessWithDefault#TestInput.
+    }
+  }

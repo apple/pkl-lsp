@@ -1,0 +1,95 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module k8s.contrib.tests.convert
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `tests/convert.pkl`/
+  amends "pkl:test"
+  
+  import "pkl:yaml"
+  import "pkl:reflect"
+  
+  import "../convert.pkl"
+  
+  local absolutePathToPklPantry = reflect.Module(module).uri.replaceFirst("packages/k8s.contrib/tests/convert.pkl", "")
+//      ^^^^^^^^^^^^^^^^^^^^^^^ definition local absolutePathToPklPantry_24
+//                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Module().
+//                                                       ^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Module#uri.
+//                                                           ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceFirst().
+  
+  /// Run conversion, replacing full file import paths with paths stemming from "$pklPantryBaseDir".
+  ///
+  /// Before:
+  ///
+  /// `import "file:///User/me/work/pkl-pantry/packages/k8s/K8sObject.pkl"`
+  ///
+  /// After:
+  ///
+  /// `import "$pklPantryBaseDir/packages/k8s/K8sObject.pkl"`
+  local function doConvert(uri: String) =
+//               ^^^^^^^^^ definition local doConvert_26
+//               documentation
+//               > Run conversion, replacing full file import paths with paths stemming from "$pklPantryBaseDir".
+//               > 
+//               > Before:
+//               > 
+//               > `import "file:///User/me/work/pkl-pantry/packages/k8s/K8sObject.pkl"`
+//               > 
+//               > After:
+//               > 
+//               > `import "$pklPantryBaseDir/packages/k8s/K8sObject.pkl"`
+//                         ^^^ definition local uri_35
+//                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    let (converter = (convert) {
+//       ^^^^^^^^^ definition local converter_36
+//                    ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/
+      resourcesToConvert = new yaml.Parser { useMapping = true }.parseAll(read(uri)).filterNonNull() as List<Mapping>
+//    ^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `tests/convert.pkl`/resourcesToConvert.
+//                                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.yaml`/Parser#
+//                                           ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `tests/convert.pkl`/useMapping.
+//                                                               ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.yaml`/Parser#parseAll().
+//                                                                             ^^^ reference local uri_35
+//                                                                                   ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#filterNonNull().
+//                                                                                                      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                                                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+  
+      customResourceTemplates {
+//    ^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `tests/convert.pkl`/customResourceTemplates.
+        ["Custom"] {
+          ["v1"] = import("./fixtures/CustomType.pkl")
+        }
+      }
+    })
+      converter.output.text.replaceAll(absolutePathToPklPantry, "$pklPantryBaseDir/")
+//    ^^^^^^^^^ reference local converter_36
+//              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#output.
+//                     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/FileOutput#text.
+//                          ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+//                                     ^^^^^^^^^^^^^^^^^^^^^^^ reference local absolutePathToPklPantry_24
+  
+  examples = new {
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `tests/convert.pkl`/examples.
+    for (file, _ in read*("fixtures/*.yml")) {
+//       ^^^^ definition local file_48
+      [file.replaceAll(Regex(".*fixtures/"), "")] {
+//     ^^^^ reference local file_48
+//          ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+//                     ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+        doConvert(file)
+//      ^^^^^^^^^ reference local doConvert_26
+//                ^^^^ reference local file_48
+      }
+    }
+  }

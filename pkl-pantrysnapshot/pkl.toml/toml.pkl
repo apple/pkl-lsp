@@ -1,0 +1,649 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// A renderer for [TOML](https://toml.io) configuration files.
+  ///
+  /// Basic usage:
+  /// ```
+  /// import "package://pkg.pkl-lang.org/pantry/pkl.toml@1.0.0"
+  ///
+  /// output {
+  ///   renderer = new toml.Renderer {}
+  /// }
+  /// ```
+  ///
+  /// To render TOML dates and times, use [Date], [Time], and [DateTime].
+  @ModuleInfo { minPklVersion = "0.25.0" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleInfo#
+//              ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/minPklVersion.
+  module pkl.toml.toml
+//^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/
+  
+  abstract class AbstractDateTime {
+//               ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/AbstractDateTime#
+    value: String
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/AbstractDateTime#value.
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  /// A TOML [Local Date](https://toml.io/en/v1.0.0#local-date) value.
+  class Date extends AbstractDateTime {
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/Date#
+//      documentation
+//      > A TOML [Local Date](https://toml.io/en/v1.0.0#local-date) value.
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/AbstractDateTime#
+    value: String(matches(Regex(#"(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])"#)))
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/Date#value.
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#matches().
+//                        ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+  }
+  
+  /// A TOML [Local Time](https://toml.io/en/v1.0.0#local-time) value.
+  class Time extends AbstractDateTime {
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/Time#
+//      documentation
+//      > A TOML [Local Time](https://toml.io/en/v1.0.0#local-time) value.
+//                   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/AbstractDateTime#
+    value: String(matches(Regex(#"([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\.[0-9]+)?"#)))
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/Time#value.
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#matches().
+//                        ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+  }
+  
+  /// A TOML [Offset Date-Time](https://toml.io/en/v1.0.0#offset-date-time)
+  /// or [Local Date-Time](https://toml.io/en/v1.0.0#local-date-time) value.
+  class DateTime extends AbstractDateTime {
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/DateTime#
+//      documentation
+//      > A TOML [Offset Date-Time](https://toml.io/en/v1.0.0#offset-date-time)
+//      > or [Local Date-Time](https://toml.io/en/v1.0.0#local-date-time) value.
+//                       ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/AbstractDateTime#
+    value: String(matches(Regex(#"(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])[T ]([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):([0-5][0-9]))?"#)))
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/DateTime#value.
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#matches().
+//                        ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+  }
+  
+  /// Renders values as TOML.
+  class Renderer extends ValueRenderer {
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/Renderer#
+//      documentation
+//      > Renders values as TOML.
+//                       ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ValueRenderer#
+    /// Value converters to apply before values are rendered.
+    ///
+    /// For further information see [PcfRenderer.converters].
+    /// For path converters, only "*" is supported.
+    converters: Mapping<Class|String, (unknown) -> Any>
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/Renderer#converters.
+//  documentation
+//  > Value converters to apply before values are rendered.
+//  > 
+//  > For further information see [`PcfRenderer.converters`](pkl-lsp://stdlib/base.pkl#L308,C3).
+//  > For path converters, only "*" is supported.
+//              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                      ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                 ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+  
+    function renderValue(value: Any) =
+//           ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/Renderer#renderValue().
+//           documentation
+//           > Renders [`value`](pkl-lsp://stdlib/base.pkl#L323,C33).
+//                       ^^^^^ definition local value_59
+//                              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+      let (_value = getBasicValue(value, false))
+//         ^^^^^^ definition local _value_60
+//                  ^^^^^^^^^^^^^ reference local getBasicValue_86
+//                                ^^^^^ reference local value_59
+        doRenderValue(_value, List()).trim()
+//      ^^^^^^^^^^^^^ reference local doRenderValue_104
+//                    ^^^^^^ reference local _value_60
+//                            ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#trim().
+  
+    function renderDocument(value: Any) =
+//           ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/Renderer#renderDocument().
+//           documentation
+//           > Renders [`value`](pkl-lsp://stdlib/base.pkl#L320,C36) as a complete document.
+//           > 
+//           > Some renderers impose restrictions on which types of values can be rendered as document.
+//           > 
+//           > A typical implementation of this method renders a document header/footer
+//           > and otherwise delegates to [`renderValue()`](pkl-lsp://stdlib/base.pkl#L323,C3).
+//                          ^^^^^ definition local value_63
+//                                 ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+      if (!isTableLike(value))
+//         ^^^^^^^^^^^ reference local isTableLike_113
+//                     ^^^^^ reference local value_63
+        throw("""
+          Invalid input: TOML can only render object-types at the root level. Received: \(value)
+//                                                                                        ^^^^^ reference local value_63
+          """)
+      else
+        renderValue(value)
+//      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/Renderer#renderValue().
+//                  ^^^^^ reference local value_63
+  
+    local jsonRenderer = new JsonRenderer {}
+//        ^^^^^^^^^^^^ definition local jsonRenderer_71
+//                           ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/JsonRenderer#
+  
+    local function getConvertersForValue(value: Any): List<(Any) -> unknown> = new Listing {
+//                 ^^^^^^^^^^^^^^^^^^^^^ definition local getConvertersForValue_73
+//                                       ^^^^^ definition local value_73
+//                                              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                                                                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+      when (convertersMap.containsKey(value.getClass())) {
+//          ^^^^^^^^^^^^^ reference local convertersMap_132
+//                        ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#containsKey().
+//                                    ^^^^^ reference local value_73
+//                                          ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+        convertersMap[value.getClass()]
+//      ^^^^^^^^^^^^^ reference local convertersMap_132
+//                    ^^^^^ reference local value_73
+//                          ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+      }
+      when (convertersMap.containsKey("*")) {
+//          ^^^^^^^^^^^^^ reference local convertersMap_132
+//                        ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#containsKey().
+        convertersMap["*"]
+//      ^^^^^^^^^^^^^ reference local convertersMap_132
+      }
+    }.toList()
+//    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+  
+    local function applyConverters(value: Any) =
+//                 ^^^^^^^^^^^^^^^ definition local applyConverters_82
+//                                 ^^^^^ definition local value_82
+//                                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+      let (converters = getConvertersForValue(value))
+//         ^^^^^^^^^^ definition local converters_83
+//                      ^^^^^^^^^^^^^^^^^^^^^ reference local getConvertersForValue_73
+//                                            ^^^^^ reference local value_82
+        converters.fold(value, (acc, converter) -> converter.apply(acc))
+//      ^^^^^^^^^^ reference local converters_83
+//                 ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#fold().
+//                      ^^^^^ reference local value_82
+//                              ^^^ definition local acc_84
+//                                   ^^^^^^^^^ definition local converter_84
+//                                                 ^^^^^^^^^ reference local converter_84
+//                                                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Function1#apply().
+//                                                                 ^^^ reference local acc_84
+  
+    /// Traverses the object and casts it down to its basic type: Map, List, or the primitive value. Runs each
+    /// value through the converter if there is a match.
+    /// `skipConversion` is a helper flag to avoid infinite recursion in case the converter returns the same type.
+    local function getBasicValue(value: Any, skipConversion: Boolean) =
+//                 ^^^^^^^^^^^^^ definition local getBasicValue_86
+//                 documentation
+//                 > Traverses the object and casts it down to its basic type: Map, List, or the primitive value. Runs each
+//                 > value through the converter if there is a match.
+//                 > `skipConversion` is a helper flag to avoid infinite recursion in case the converter returns the same type.
+//                               ^^^^^ definition local value_89
+//                                      ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                           ^^^^^^^^^^^^^^ definition local skipConversion_89
+//                                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+      if (!skipConversion && !getConvertersForValue(value).isEmpty)
+//         ^^^^^^^^^^^^^^ reference local skipConversion_89
+//                            ^^^^^^^^^^^^^^^^^^^^^ reference local getConvertersForValue_73
+//                                                  ^^^^^ reference local value_89
+//                                                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#isEmpty.
+        getBasicValue(applyConverters(value), true)
+//      ^^^^^^^^^^^^^ reference local getBasicValue_86
+//                    ^^^^^^^^^^^^^^^ reference local applyConverters_82
+//                                    ^^^^^ reference local value_89
+      // If the value is Dynamic, and we have both elements and properties, it's ambiguous whether we should
+      // render as a table or an array.
+      else if (value is Dynamic && isTableLike(value) && isArrayLike(value))
+//             ^^^^^ reference local value_89
+//                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                 ^^^^^^^^^^^ reference local isTableLike_113
+//                                             ^^^^^ reference local value_89
+//                                                       ^^^^^^^^^^^ reference local isArrayLike_116
+//                                                                   ^^^^^ reference local value_89
+        throw("""
+          Cannot render object with both properties/entries and elements as TOML. Received: \(value)
+//                                                                                            ^^^^^ reference local value_89
+          """)
+      else if (isTableLike(value))
+//             ^^^^^^^^^^^ reference local isTableLike_113
+//                         ^^^^^ reference local value_89
+        getMap(value)
+//      ^^^^^^ reference local getMap_119
+//             ^^^^^ reference local value_89
+          .mapValues((_, elem) -> getBasicValue(elem, false))
+//         ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#mapValues().
+//                       ^^^^ definition local elem_100
+//                                ^^^^^^^^^^^^^ reference local getBasicValue_86
+//                                              ^^^^ reference local elem_100
+      else if (isArrayLike(value)) getList(value).map((elem) -> getBasicValue(elem, false))
+//             ^^^^^^^^^^^ reference local isArrayLike_116
+//                         ^^^^^ reference local value_89
+//                                 ^^^^^^^ reference local getList_122
+//                                         ^^^^^ reference local value_89
+//                                                ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                                                     ^^^^ definition local elem_101
+//                                                              ^^^^^^^^^^^^^ reference local getBasicValue_86
+//                                                                            ^^^^ reference local elem_101
+      else value
+//         ^^^^^ reference local value_89
+  
+    /// Underlying implementation for rendering values as toml
+    local function doRenderValue(value: Any, path: List<String>): String =
+//                 ^^^^^^^^^^^^^ definition local doRenderValue_104
+//                 documentation
+//                 > Underlying implementation for rendering values as toml
+//                               ^^^^^ definition local value_105
+//                                      ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                           ^^^^ definition local path_105
+//                                                 ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      if (isTableArray(value))
+//        ^^^^^^^^^^^^ reference local isTableArray_125
+//                     ^^^^^ reference local value_105
+        renderTableArray(value, path)
+//      ^^^^^^^^^^^^^^^^ reference local renderTableArray_183
+//                       ^^^^^ reference local value_105
+//                              ^^^^ reference local path_105
+      else if (value is Map)
+//             ^^^^^ reference local value_105
+//                      ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+        renderTable(value, path)
+//      ^^^^^^^^^^^ reference local renderTable_193
+//                  ^^^^^ reference local value_105
+//                         ^^^^ reference local path_105
+      else
+        renderInlineValue(value)
+//      ^^^^^^^^^^^^^^^^^ reference local renderInlineValue_134
+//                        ^^^^^ reference local value_105
+  
+    /// Determine whether an object is map-like. We'll consider any Dynamic that doesn't have any elements as map-like.
+    local function isTableLike(obj: Any) = !(obj is AbstractDateTime) && ((obj is Dynamic && obj.toList().isEmpty) || obj is MapLike)
+//                 ^^^^^^^^^^^ definition local isTableLike_113
+//                 documentation
+//                 > Determine whether an object is map-like. We'll consider any Dynamic that doesn't have any elements as map-like.
+//                             ^^^ definition local obj_114
+//                                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                           ^^^ reference local obj_114
+//                                                  ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/AbstractDateTime#
+//                                                                         ^^^ reference local obj_114
+//                                                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                                           ^^^ reference local obj_114
+//                                                                                               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toList().
+//                                                                                                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#isEmpty.
+//                                                                                                                    ^^^ reference local obj_114
+//                                                                                                                           ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/MapLike#
+  
+    /// Determine whether an object is list-like. We'll consider any Dynamic that has elements as list-like.
+    local function isArrayLike(obj: Any) = (obj is Dynamic && !obj.toList().isEmpty) || obj is ListLike
+//                 ^^^^^^^^^^^ definition local isArrayLike_116
+//                 documentation
+//                 > Determine whether an object is list-like. We'll consider any Dynamic that has elements as list-like.
+//                             ^^^ definition local obj_117
+//                                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                          ^^^ reference local obj_117
+//                                                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                             ^^^ reference local obj_117
+//                                                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toList().
+//                                                                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#isEmpty.
+//                                                                                      ^^^ reference local obj_117
+//                                                                                             ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/ListLike#
+  
+    /// Convert an object to its Map representation. Toml doesn't include null so we should filter out null properties.
+    local function getMap(obj: MapLike|Dynamic) = (if (obj is Map) obj else obj.toMap()).filter((_, elem) -> elem != null)
+//                 ^^^^^^ definition local getMap_119
+//                 documentation
+//                 > Convert an object to its Map representation. Toml doesn't include null so we should filter out null properties.
+//                        ^^^ definition local obj_120
+//                             ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/MapLike#
+//                                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                     ^^^ reference local obj_120
+//                                                            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                                                                 ^^^ reference local obj_120
+//                                                                          ^^^ reference local obj_120
+//                                                                              ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toMap().
+//                                                                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#filter().
+//                                                                                                  ^^^^ definition local elem_120
+//                                                                                                           ^^^^ reference local elem_120
+  
+    /// Convert an object to its List representation.
+    local function getList(obj: ListLike|Dynamic) = if (obj is List) obj else obj.toList()
+//                 ^^^^^^^ definition local getList_122
+//                 documentation
+//                 > Convert an object to its List representation.
+//                         ^^^ definition local obj_123
+//                              ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/ListLike#
+//                                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                      ^^^ reference local obj_123
+//                                                             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                                   ^^^ reference local obj_123
+//                                                                            ^^^ reference local obj_123
+//                                                                                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#toList().
+  
+    /// Determine if we should render this value as an array of tables or not.
+    /// A value is an array of tables if all of the inhabitants are table-like.
+    local function isTableArray(value: Any) =
+//                 ^^^^^^^^^^^^ definition local isTableArray_125
+//                 documentation
+//                 > Determine if we should render this value as an array of tables or not.
+//                 > A value is an array of tables if all of the inhabitants are table-like.
+//                              ^^^^^ definition local value_127
+//                                     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+      value is List && value.every((elem) -> elem is Map)
+//    ^^^^^ reference local value_127
+//             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                     ^^^^^ reference local value_127
+//                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#every().
+//                                  ^^^^ definition local elem_128
+//                                           ^^^^ reference local elem_128
+//                                                   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+  
+    local function isTableTypeProp(value: Any) = value is Map || isTableArray(value)
+//                 ^^^^^^^^^^^^^^^ definition local isTableTypeProp_130
+//                                 ^^^^^ definition local value_130
+//                                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                               ^^^^^ reference local value_130
+//                                                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                                                               ^^^^^^^^^^^^ reference local isTableArray_125
+//                                                                            ^^^^^ reference local value_130
+  
+    local convertersMap = converters.toMap()
+//        ^^^^^^^^^^^^^ definition local convertersMap_132
+//                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/Renderer#converters.
+//                                   ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+  
+    /// Render the value as an inline value (e.g. inline array, object, or primitive)
+    local function renderInlineValue(value: Any) =
+//                 ^^^^^^^^^^^^^^^^^ definition local renderInlineValue_134
+//                 documentation
+//                 > Render the value as an inline value (e.g. inline array, object, or primitive)
+//                                   ^^^^^ definition local value_135
+//                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+      if (value is Number && value.isNaN)
+//        ^^^^^ reference local value_135
+//                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+//                           ^^^^^ reference local value_135
+//                                 ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#isNaN.
+        "nan"
+      else if (value == Infinity)
+//             ^^^^^ reference local value_135
+//                      ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Infinity.
+        "inf"
+      else if (value is String)
+//             ^^^^^ reference local value_135
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+        renderString(value)
+//      ^^^^^^^^^^^^ reference local renderString_157
+//                   ^^^^^ reference local value_135
+      else if (value is Number|Boolean)
+//             ^^^^^ reference local value_135
+//                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+//                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+        jsonRenderer.renderValue(value)
+//      ^^^^^^^^^^^^ reference local jsonRenderer_71
+//                   ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/JsonRenderer#renderValue().
+//                               ^^^^^ reference local value_135
+      else if (value is AbstractDateTime)
+//             ^^^^^ reference local value_135
+//                      ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/AbstractDateTime#
+        value.value
+//      ^^^^^ reference local value_135
+//            ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/AbstractDateTime#value.
+      else if (value is Map)
+//             ^^^^^ reference local value_135
+//                      ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+        "{ " + new Listing {
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+            for (k, v in value) {
+//               ^ definition local k_148
+//                  ^ definition local v_148
+//                       ^^^^^ reference local value_135
+              "\(makeSingleKey(k)) = \(renderInlineValue(v))"
+//               ^^^^^^^^^^^^^ reference local makeSingleKey_186
+//                             ^ reference local k_148
+//                                     ^^^^^^^^^^^^^^^^^ reference local renderInlineValue_134
+//                                                       ^ reference local v_148
+            }
+          }.toList().join(", ") + " }"
+//          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+//                   ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+      else if (value is List)
+//             ^^^^^ reference local value_135
+//                      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+        "[ " + value.map((elem) -> renderInlineValue(elem)).join(", ") + " ]"
+//             ^^^^^ reference local value_135
+//                   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                        ^^^^ definition local elem_153
+//                                 ^^^^^^^^^^^^^^^^^ reference local renderInlineValue_134
+//                                                   ^^^^ reference local elem_153
+//                                                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+      else
+        throw("Not sure how to render value: \(value). Try defining a converter for this type.")
+//                                             ^^^^^ reference local value_135
+  
+    /// Render a string making sure multi-line use the """ multi-line syntax for better readability.
+    local function renderString(value: String) =
+//                 ^^^^^^^^^^^^ definition local renderString_157
+//                 documentation
+//                 > Render a string making sure multi-line use the """ multi-line syntax for better readability.
+//                              ^^^^^ definition local value_158
+//                                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      if (value.contains("\n"))
+//        ^^^^^ reference local value_158
+//              ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#contains().
+        ("\"\"\"\n" +
+        value.split("\n")
+//      ^^^^^ reference local value_158
+//            ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+          .map((line) -> jsonRenderer.renderValue(line).drop(1).dropLast(1))
+//         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//              ^^^^ definition local line_162
+//                       ^^^^^^^^^^^^ reference local jsonRenderer_71
+//                                    ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/JsonRenderer#renderValue().
+//                                                ^^^^ reference local line_162
+//                                                      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#drop().
+//                                                              ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#dropLast().
+          .join("\n")
+//         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+        + "\"\"\"")
+      else jsonRenderer.renderValue(value)
+//         ^^^^^^^^^^^^ reference local jsonRenderer_71
+//                      ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/JsonRenderer#renderValue().
+//                                  ^^^^^ reference local value_158
+  
+    local function renderSingleTableArray(map: Map, path: List<String>) =
+//                 ^^^^^^^^^^^^^^^^^^^^^^ definition local renderSingleTableArray_167
+//                                        ^^^ definition local map_167
+//                                             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                                                  ^^^^ definition local path_167
+//                                                        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      let (nativeProps = map.filter((_, value) -> !isTableTypeProp(value)))
+//         ^^^^^^^^^^^ definition local nativeProps_168
+//                       ^^^ reference local map_167
+//                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#filter().
+//                                      ^^^^^ definition local value_168
+//                                                 ^^^^^^^^^^^^^^^ reference local isTableTypeProp_130
+//                                                                 ^^^^^ reference local value_168
+        let (tableProps = map.filter((_, value) -> isTableTypeProp(value)))
+//           ^^^^^^^^^^ definition local tableProps_169
+//                        ^^^ reference local map_167
+//                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#filter().
+//                                       ^^^^^ definition local value_169
+//                                                 ^^^^^^^^^^^^^^^ reference local isTableTypeProp_130
+//                                                                 ^^^^^ reference local value_169
+          new Listing {
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+              """
+  
+              [[\(makeKey(path))]]
+//                ^^^^^^^ reference local makeKey_191
+//                        ^^^^ reference local path_167
+              """
+            for (k, v in nativeProps) {
+//               ^ definition local k_175
+//                  ^ definition local v_175
+//                       ^^^^^^^^^^^ reference local nativeProps_168
+              "\(makeSingleKey(k)) = \(renderInlineValue(v))"
+//               ^^^^^^^^^^^^^ reference local makeSingleKey_186
+//                             ^ reference local k_175
+//                                     ^^^^^^^^^^^^^^^^^ reference local renderInlineValue_134
+//                                                       ^ reference local v_175
+            }
+            for (k, v in tableProps) {
+//               ^ definition local k_178
+//                  ^ definition local v_178
+//                       ^^^^^^^^^^ reference local tableProps_169
+              doRenderValue(v, path.add(k))
+//            ^^^^^^^^^^^^^ reference local doRenderValue_104
+//                          ^ reference local v_178
+//                             ^^^^ reference local path_167
+//                                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                                      ^ reference local k_178
+            }
+          }.toList().join("\n")
+//          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+//                   ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  
+    local function renderTableArray(value: List, path: List<String>) =
+//                 ^^^^^^^^^^^^^^^^ definition local renderTableArray_183
+//                                  ^^^^^ definition local value_183
+//                                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                               ^^^^ definition local path_183
+//                                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      value.map((elem) -> renderSingleTableArray(getMap(elem), path)).join("\n")
+//    ^^^^^ reference local value_183
+//          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//               ^^^^ definition local elem_184
+//                        ^^^^^^^^^^^^^^^^^^^^^^ reference local renderSingleTableArray_167
+//                                               ^^^^^^ reference local getMap_119
+//                                                      ^^^^ reference local elem_184
+//                                                             ^^^^ reference local path_183
+//                                                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  
+    local function makeSingleKey(key: String) = if (key.matches(Regex(#"[A-Za-z0-9_-]+"#)))
+//                 ^^^^^^^^^^^^^ definition local makeSingleKey_186
+//                               ^^^ definition local key_186
+//                                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                  ^^^ reference local key_186
+//                                                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#matches().
+//                                                              ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+      key
+//    ^^^ reference local key_186
+    else
+      jsonRenderer.renderValue(key)
+//    ^^^^^^^^^^^^ reference local jsonRenderer_71
+//                 ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/JsonRenderer#renderValue().
+//                             ^^^ reference local key_186
+  
+    local function makeKey(path: List<String>): String = path.map((k) -> makeSingleKey(k)).join(".")
+//                 ^^^^^^^ definition local makeKey_191
+//                         ^^^^ definition local path_191
+//                               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                       ^^^^ reference local path_191
+//                                                            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                                                                 ^ definition local k_191
+//                                                                       ^^^^^^^^^^^^^ reference local makeSingleKey_186
+//                                                                                     ^ reference local k_191
+//                                                                                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  
+    local function renderTable(m: Map, path: List<String>): String =
+//                 ^^^^^^^^^^^ definition local renderTable_193
+//                             ^ definition local m_193
+//                                ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                                     ^^^^ definition local path_193
+//                                           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      let (nativeProps = m.filter((_, value) -> !isTableTypeProp(value)))
+//         ^^^^^^^^^^^ definition local nativeProps_194
+//                       ^ reference local m_193
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#filter().
+//                                    ^^^^^ definition local value_194
+//                                               ^^^^^^^^^^^^^^^ reference local isTableTypeProp_130
+//                                                               ^^^^^ reference local value_194
+        let (tableProps = m.filter((_, value) -> isTableTypeProp(value)))
+//           ^^^^^^^^^^ definition local tableProps_195
+//                        ^ reference local m_193
+//                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#filter().
+//                                     ^^^^^ definition local value_195
+//                                               ^^^^^^^^^^^^^^^ reference local isTableTypeProp_130
+//                                                               ^^^^^ reference local value_195
+          new Listing {
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+            // Only render the table header if we are in an object's context or empty map context
+            when (!path.isEmpty && (nativeProps.length > 0 || m.length == 0)) {
+//                 ^^^^ reference local path_193
+//                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#isEmpty.
+//                                  ^^^^^^^^^^^ reference local nativeProps_194
+//                                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#length.
+//                                                            ^ reference local m_193
+//                                                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#length.
+                """
+  
+                [\(makeKey(path))]
+//                 ^^^^^^^ reference local makeKey_191
+//                         ^^^^ reference local path_193
+                """
+            }
+            for (k, v in nativeProps) {
+//               ^ definition local k_204
+//                  ^ definition local v_204
+//                       ^^^^^^^^^^^ reference local nativeProps_194
+              "\(makeSingleKey(k)) = \(renderInlineValue(v))"
+//               ^^^^^^^^^^^^^ reference local makeSingleKey_186
+//                             ^ reference local k_204
+//                                     ^^^^^^^^^^^^^^^^^ reference local renderInlineValue_134
+//                                                       ^ reference local v_204
+            }
+            for (k, v in tableProps) {
+//               ^ definition local k_207
+//                  ^ definition local v_207
+//                       ^^^^^^^^^^ reference local tableProps_195
+              doRenderValue(v, path.add(k))
+//            ^^^^^^^^^^^^^ reference local doRenderValue_104
+//                          ^ reference local v_207
+//                             ^^^^ reference local path_193
+//                                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                                      ^ reference local k_207
+            }
+          }
+            .toList()
+//           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+            .join("\n")
+//           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  }
+  
+  local typealias MapLike = Typed|Map|Mapping
+//                ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/MapLike#
+//                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#
+//                                ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+  
+  local typealias ListLike = List|Listing
+//                ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/ListLike#
+//                           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+  

@@ -11,6 +11,8 @@ ktfmt = "0.53"
 lsp4j = "0.23.1"
 nexusPublishPlugin = "2.0.0"
 pkl = "0.29.0"
+protobuf = "4.28.3"
+protobufPlugin = "0.9.4"
 shadowPlugin = "8.1.1"
 spotless = "6.25.0"
 treeSitterRepo = "v0.25.3" # git tag name
@@ -36,6 +38,7 @@ junitEngine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", vers
 kotlinxSerializationJson = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx" }
 lsp4j = { group = "org.eclipse.lsp4j", name = "org.eclipse.lsp4j", version.ref = "lsp4j" }
 pklStdlib = { group = "org.pkl-lang", name = "pkl-stdlib", version.ref = "pkl" }
+protobuf = { group = "com.google.protobuf", name = "protobuf-kotlin", version.ref = "protobuf" }
 
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
@@ -43,3 +46,4 @@ kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", versio
 shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadowPlugin" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 nexusPublish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexusPublishPlugin" }
+protobuf = { id = "com.google.protobuf", version.ref = "protobufPlugin" }

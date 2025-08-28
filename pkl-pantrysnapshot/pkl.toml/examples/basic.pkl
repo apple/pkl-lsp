@@ -1,0 +1,206 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module pkl.toml.examples.basic
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/
+  
+  import "../toml.pkl"
+  
+  title = "TOML Example"
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/title.
+  
+  owner {
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/owner.
+    name = "Tom Preston-Werner"
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/name.
+    organization = "Github"
+//  ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/organization.
+    bio = """
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/bio.
+      GitHub Cofounder & CEO
+      Likes tater tots and beer
+      """
+    dob = new toml.DateTime { value = "1979-05-27T07:32:00Z" }
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/dob.
+//                 ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/DateTime#
+//                            ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/value.
+  }
+  
+  database {
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/database.
+    server = "192.168.1.1"
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/server.
+    ports {
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/ports.
+      8001
+      8001
+      8002
+    }
+    connection_max = 5000
+//  ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/connection_max.
+    enabled = true
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/enabled.
+    datasource_properties = new Mapping<String, String> {
+//  ^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/datasource_properties.
+//                              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      ["driverClassName"] = "com.mysql.jdbc.Driver"
+      ["initialSize"] = "5"
+    }
+    empty_properties = new Mapping<String, String> {}
+//  ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/empty_properties.
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  }
+  
+  optional_config: Mapping<String, String>? = null
+//^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/optional_config.
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  servers {
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/servers.
+    alpha {
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/alpha.
+      ip = "10.0.0.1"
+//    ^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/ip.
+      dc = "eqdc10"
+//    ^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/dc.
+    }
+    beta {
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/beta.
+      ip = "10.0.0.2"
+//    ^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/ip.
+      dc = "eqdc10"
+//    ^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/dc.
+      country = "中国"
+//    ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/country.
+    }
+  }
+  
+  clients {
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/clients.
+    data {
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/data.
+      new {
+        "gamma"
+        "delta"
+      }
+      new {
+        1
+        2
+      }
+    }
+    hosts {
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/hosts.
+      "alpha"
+      "omega"
+    }
+  }
+  
+  
+  products {
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/products.
+    new {
+      name = "Hammer Bro"
+//    ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/name.
+      sku = 738594937
+//    ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/sku.
+    }
+    new {}
+    new {
+      name = "Nail"
+//    ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/name.
+      sku = 284758393
+//    ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/sku.
+      color = "gray"
+//    ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/color.
+      `1-1` = "〇😀"
+//    ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/1-1.
+    }
+  }
+  
+  fruits {
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/fruits.
+    new {
+      name = "apple"
+//    ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/name.
+      physical {
+//    ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/physical.
+        color = "red"
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/color.
+        shape = "round"
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/shape.
+      }
+      varieties {
+//    ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/varieties.
+        new { name = "red delicious" }
+//            ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/name.
+        new { name = "granny smith" }
+//            ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/name.
+      }
+    }
+    new {
+      name = "banana"
+//    ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/name.
+      varieties {
+//    ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/varieties.
+        new { name = "plantain" }
+//            ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/name.
+      }
+    }
+  }
+  
+  contributors {
+//^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/contributors.
+    "Foo Bar <foo@example.com>"
+    new {
+      name = "Baz Qux"
+//    ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/name.
+      email = "bazqux@example.com"
+//    ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/email.
+      url = "https://example.com/bazqux"
+//    ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/url.
+    }
+  }
+  
+  dog {
+//^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/dog.
+    `tater.man` {
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/`tater.man`.
+      type {
+//    ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/type.
+        name = "pug"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/name.
+      }
+      age = NaN
+//    ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/age.
+//          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/NaN.
+      maxAge = Infinity
+//    ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/maxAge.
+//             ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Infinity.
+    }
+  }
+  
+  output {
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/output.
+    renderer = new toml.Renderer {}
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/basic.pkl`/renderer.
+//                      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/Renderer#
+  }
+  

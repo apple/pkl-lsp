@@ -1,0 +1,761 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module org.json_schema.contrib.tests.ModuleGenerator
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/
+  
+  amends "pkl:test"
+  
+  import "@jsonschema/JsonSchema.pkl"
+  import "@jsonschema/Parser.pkl"
+  import "../internal/ModuleGenerator.pkl"
+  
+  examples {
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/examples.
+    ["basic"] {
+      local schema: JsonSchema = new {
+//          ^^^^^^ definition local schema_26
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        type = "object"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+        additionalProperties = false
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+        properties {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+          ["foo"] {
+            type = "string"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+          }
+          ["bar"] {
+            type = "number"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+          }
+        }
+      }
+      new ModuleGenerator {
+//        ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/
+        rootSchema = schema
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/rootSchema.
+//                   ^^^^^^ reference local schema_26
+        moduleName = "com.Example"
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/moduleName.
+      }.moduleNode.render("")
+//      ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleNode.
+//                 ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ModuleNode.pkl`/render().
+    }
+    ["required properties"] {
+      local schema: JsonSchema = new {
+//          ^^^^^^ definition local schema_44
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        type = "object"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+        properties {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+          ["foo"] {
+            type = "string"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+          }
+          ["bar"] {
+            type = "number"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+          }
+        }
+        additionalProperties = false
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+        required {
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/required.
+          "foo"
+          "bar"
+        }
+      }
+      new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
+//        ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/
+//                          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/rootSchema.
+//                                       ^^^^^^ reference local schema_44
+//                                               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/moduleName.
+//                                                                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleNode.
+//                                                                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ModuleNode.pkl`/render().
+    }
+    ["deprecated properties"] {
+      local schema: JsonSchema = new {
+//          ^^^^^^ definition local schema_63
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        type = "object"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+        additionalProperties = false
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+        properties {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+          ["foo"] {
+            type = "string"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+            deprecated = true
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/deprecated.
+          }
+        }
+      }
+      new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
+//        ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/
+//                          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/rootSchema.
+//                                       ^^^^^^ reference local schema_63
+//                                               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/moduleName.
+//                                                                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleNode.
+//                                                                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ModuleNode.pkl`/render().
+    }
+    ["doc comments"] {
+      local schema: JsonSchema = new {
+//          ^^^^^^ definition local schema_76
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        type = "object"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+        title = "FooBar"
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/title.
+        description = "FooBars when foo can bar"
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/description.
+        additionalProperties = false
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+        properties {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+          ["foo"] {
+            title = "The fooiest of foos"
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/title.
+            description = "The name of the foo that is really foo-like"
+//          ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/description.
+            type = "string"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+          }
+        }
+      }
+      new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
+//        ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/
+//                          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/rootSchema.
+//                                       ^^^^^^ reference local schema_76
+//                                               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/moduleName.
+//                                                                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleNode.
+//                                                                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ModuleNode.pkl`/render().
+    }
+    ["classes within properties"] {
+      local schema: JsonSchema = new {
+//          ^^^^^^ definition local schema_92
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        title = "FooBar"
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/title.
+        additionalProperties = false
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+        properties {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+          ["foo"] {
+            properties {
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+              ["bar"] {
+                type = "string"
+//              ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+              }
+            }
+          }
+        }
+      }
+      new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
+//        ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/
+//                          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/rootSchema.
+//                                       ^^^^^^ reference local schema_92
+//                                               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/moduleName.
+//                                                                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleNode.
+//                                                                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ModuleNode.pkl`/render().
+    }
+    ["classes in nested properties"] {
+      local schema: JsonSchema = new {
+//          ^^^^^^ definition local schema_108
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        additionalProperties = false
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+        properties {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+          ["foo"] {
+            additionalProperties = false
+//          ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+            properties {
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+              ["bar"] {
+                additionalProperties = false
+//              ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+                properties {
+//              ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+                  ["baz"] {
+                    type = "string"
+//                  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
+//        ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/
+//                          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/rootSchema.
+//                                       ^^^^^^ reference local schema_108
+//                                               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/moduleName.
+//                                                                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleNode.
+//                                                                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ModuleNode.pkl`/render().
+    }
+    ["classes in nested additionalProperties"] {
+      local schema: JsonSchema = new {
+//          ^^^^^^ definition local schema_129
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        additionalProperties = false
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+        properties {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+          ["foo"] {
+            additionalProperties {
+//          ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+              oneOf {
+//            ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/oneOf.
+                new JsonSchema {
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+                  properties {
+//                ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+                    ["bar"] {
+                      type = "string"
+//                    ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+                    }
+                  }
+                }
+                new JsonSchema {
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+                  properties {
+//                ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+                    ["baz"] {
+                      type = "string"
+//                    ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
+//        ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/
+//                          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/rootSchema.
+//                                       ^^^^^^ reference local schema_129
+//                                               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/moduleName.
+//                                                                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleNode.
+//                                                                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ModuleNode.pkl`/render().
+    }
+    ["classes in nested patternProperties"] {
+      local schema: JsonSchema = new {
+//          ^^^^^^ definition local schema_157
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        additionalProperties = false
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+        properties {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+          ["foo"] {
+            type = "object"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+            patternProperties {
+//          ^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/patternProperties.
+              ["[a-z]+"] {
+                oneOf {
+//              ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/oneOf.
+                  new JsonSchema {
+//                    ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+                    properties {
+//                  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+                      ["bar"] {
+                        type = "string"
+//                      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+                      }
+                    }
+                  }
+                  new JsonSchema {
+//                    ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+                    properties {
+//                  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+                      ["baz"] {
+                        type = "string"
+//                      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
+//        ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/
+//                          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/rootSchema.
+//                                       ^^^^^^ reference local schema_157
+//                                               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/moduleName.
+//                                                                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleNode.
+//                                                                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ModuleNode.pkl`/render().
+    }
+    ["classes in listings"] {
+      local schema: JsonSchema = new {
+//          ^^^^^^ definition local schema_188
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        additionalProperties = false
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+        properties {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+          ["foos"] {
+            type = "array"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+            items {
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/items.
+              properties {
+//            ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+                ["bar"] {
+                  type = "string"
+//                ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+                }
+              }
+            }
+          }
+        }
+      }
+      new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
+//        ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/
+//                          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/rootSchema.
+//                                       ^^^^^^ reference local schema_188
+//                                               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/moduleName.
+//                                                                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleNode.
+//                                                                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ModuleNode.pkl`/render().
+    }
+    ["classes in definitions"] {
+      local schema: JsonSchema = new {
+//          ^^^^^^ definition local schema_206
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        local self = this
+//            ^^^^ definition local self_207
+        additionalProperties = false
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+        properties {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+          ["foo"] {
+            $ref = "#/definitions/foo"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/$ref.
+            $$baseSchema = self
+//          ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/$$baseSchema.
+//                         ^^^^ reference local self_207
+          }
+        }
+        definitions {
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/definitions.
+          ["foo"] {
+            properties {
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+              ["bar"] {
+                type = "string"
+//              ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+              }
+            }
+          }
+        }
+      }
+      new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
+//        ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/
+//                          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/rootSchema.
+//                                       ^^^^^^ reference local schema_206
+//                                               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/moduleName.
+//                                                                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleNode.
+//                                                                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ModuleNode.pkl`/render().
+    }
+    ["classes within definitions properties"] {
+      local schema: JsonSchema = new {
+//          ^^^^^^ definition local schema_228
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        local self = this
+//            ^^^^ definition local self_229
+        additionalProperties = false
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+        properties {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+          ["foo"] {
+            $ref = "#/definitions/foo"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/$ref.
+            $$baseSchema = self
+//          ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/$$baseSchema.
+//                         ^^^^ reference local self_229
+          }
+          ["bar"] {
+            $ref = "#/definitions/bar"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/$ref.
+            $$baseSchema = self
+//          ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/$$baseSchema.
+//                         ^^^^ reference local self_229
+          }
+        }
+        definitions {
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/definitions.
+          ["foo"] {
+            properties {
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+              ["waldo"] {
+                properties {
+//              ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+                  ["qux"] {
+                    type = "string"
+//                  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+                  }
+                }
+              }
+            }
+          }
+          ["bar"] {
+            properties {
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+              ["waldo"] {
+                properties {
+//              ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+                  ["corge"] {
+                    type = "string"
+//                  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
+//        ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/
+//                          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/rootSchema.
+//                                       ^^^^^^ reference local schema_228
+//                                               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/moduleName.
+//                                                                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleNode.
+//                                                                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ModuleNode.pkl`/render().
+    }
+    ["classes from inline positions"] {
+      local schema: JsonSchema = new {
+//          ^^^^^^ definition local schema_269
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        local self = this
+//            ^^^^ definition local self_270
+        additionalProperties = false
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+        properties {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+          ["foo"] {
+            $ref = "#/definitions/foo/myfoo"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/$ref.
+            $$baseSchema = self
+//          ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/$$baseSchema.
+//                         ^^^^ reference local self_270
+          }
+        }
+        definitions {
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/definitions.
+          ["foo"] {
+            _inline_ {
+//          ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/_inline_.
+              ["myfoo"] = new JsonSchema {
+//                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+                title = "The fooiest of foos"
+//              ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/title.
+                properties {
+//              ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+                  ["bar"] {
+                    type = "string"
+//                  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
+//        ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/
+//                          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/rootSchema.
+//                                       ^^^^^^ reference local schema_269
+//                                               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/moduleName.
+//                                                                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleNode.
+//                                                                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ModuleNode.pkl`/render().
+    }
+    ["typealiases in definitions"] {
+      local schema: JsonSchema = new {
+//          ^^^^^^ definition local schema_296
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        local self = this
+//            ^^^^ definition local self_297
+        additionalProperties = false
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+        properties {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+          ["foo"] {
+            $ref = "#/definitions/foo"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/$ref.
+            $$baseSchema = self
+//          ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/$$baseSchema.
+//                         ^^^^ reference local self_297
+          }
+        }
+        definitions {
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/definitions.
+          ["foo"] {
+            type = "string"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+            minLength = 5
+//          ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/minLength.
+          }
+        }
+      }
+      new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
+//        ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/
+//                          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/rootSchema.
+//                                       ^^^^^^ reference local schema_296
+//                                               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/moduleName.
+//                                                                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleNode.
+//                                                                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ModuleNode.pkl`/render().
+    }
+    ["typealiases in $defs"] {
+      local schema: JsonSchema = new {
+//          ^^^^^^ definition local schema_315
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        local self = this
+//            ^^^^ definition local self_316
+        additionalProperties = false
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+        properties {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+          ["foo"] {
+            $ref = "#/$defs/foo"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/$ref.
+            $$baseSchema = self
+//          ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/$$baseSchema.
+//                         ^^^^ reference local self_316
+          }
+        }
+        $defs {
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/$defs.
+          ["foo"] {
+            type = "string"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+            minLength = 5
+//          ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/minLength.
+          }
+        }
+      }
+      new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
+//        ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/
+//                          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/rootSchema.
+//                                       ^^^^^^ reference local schema_315
+//                                               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/moduleName.
+//                                                                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleNode.
+//                                                                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ModuleNode.pkl`/render().
+    }
+    ["typealiases in subschema definitions"] {
+      local schema: JsonSchema = new {
+//          ^^^^^^ definition local schema_334
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        local self = this
+//            ^^^^ definition local self_335
+        additionalProperties = false
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+        properties {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+          ["foo"] {
+            type = "string"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+            properties {
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+              ["bar"] {
+                $ref = "#/properties/foo/definitions/bar"
+//              ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/$ref.
+                $$baseSchema = self
+//              ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/$$baseSchema.
+//                             ^^^^ reference local self_335
+              }
+            }
+            definitions {
+//          ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/definitions.
+              ["bar"] {
+                type = "string"
+//              ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+              }
+            }
+          }
+        }
+      }
+      new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
+//        ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/
+//                          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/rootSchema.
+//                                       ^^^^^^ reference local schema_334
+//                                               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/moduleName.
+//                                                                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleNode.
+//                                                                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ModuleNode.pkl`/render().
+    }
+    ["root schemas that are not objects"] {
+      local schema: JsonSchema = new {
+//          ^^^^^^ definition local schema_357
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        type = "array"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+        additionalProperties = false
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+        items {
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/items.
+          properties {
+//        ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+            ["foo"] {
+              type = "string"
+//            ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+            }
+          }
+        }
+      }
+      new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
+//        ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/
+//                          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/rootSchema.
+//                                       ^^^^^^ reference local schema_357
+//                                               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/moduleName.
+//                                                                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleNode.
+//                                                                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ModuleNode.pkl`/render().
+    }
+    ["allOf"] {
+      local schema = Parser.parse(read("fixtures/test_allOf.json")) as JsonSchema
+//          ^^^^^^ definition local schema_371
+//                   ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/
+//                          ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/parse().
+//                                                                     ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+      new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
+//        ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/
+//                          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/rootSchema.
+//                                       ^^^^^^ reference local schema_371
+//                                               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/moduleName.
+//                                                                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleNode.
+//                                                                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ModuleNode.pkl`/render().
+    }
+    ["conflicts"] {
+      local schema = Parser.parse(read("fixtures/test_conflicts.json")) as JsonSchema
+//          ^^^^^^ definition local schema_375
+//                   ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/
+//                          ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/parse().
+//                                                                         ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+      new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.render("")
+//        ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/
+//                          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/rootSchema.
+//                                       ^^^^^^ reference local schema_375
+//                                               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/moduleName.
+//                                                                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleNode.
+//                                                                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ModuleNode.pkl`/render().
+    }
+    ["name conflicts with built-in class name"] {
+      local schema: JsonSchema = new {
+//          ^^^^^^ definition local schema_379
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        type = "object"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+        additionalProperties = false
+//      ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+        properties {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+          ["int"] {
+            type = "object"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+            properties {
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+              ["res1"] {
+                type = "string"
+//              ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+              }
+            }
+            additionalProperties = false
+//          ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+          }
+          ["boolean"] {
+            type = "object"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+            properties {
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+              ["res2"] {
+                type = "string"
+//              ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+              }
+            }
+            additionalProperties = false
+//          ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+          }
+          ["mapping"] {
+            type = "object"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+            properties {
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+              ["res3"] {
+                type = "string"
+//              ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+              }
+            }
+            additionalProperties = false
+//          ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+          }
+          ["listing"] {
+            type = "object"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+            properties {
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+              ["res4"] {
+                type = "string"
+//              ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+              }
+            }
+            additionalProperties = false
+//          ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+          }
+          ["dynamic"] {
+            type = "object"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+            properties {
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+              ["res5"] {
+                type = "string"
+//              ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+              }
+            }
+            additionalProperties = false
+//          ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+          }
+          ["null"] {
+            type = "object"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+            properties {
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/properties.
+              ["res6"] {
+                type = "string"
+//              ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/type.
+              }
+            }
+            additionalProperties = false
+//          ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/additionalProperties.
+          }
+        }
+      }
+      new ModuleGenerator { rootSchema = schema; moduleName = "com.Example" }.moduleNode.output.text
+//        ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/
+//                          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/rootSchema.
+//                                       ^^^^^^ reference local schema_379
+//                                               ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ModuleGenerator.pkl`/moduleName.
+//                                                                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleNode.
+//                                                                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#output.
+//                                                                                              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/FileOutput#text.
+    }
+  }
+  

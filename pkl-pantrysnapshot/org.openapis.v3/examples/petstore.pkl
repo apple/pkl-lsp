@@ -1,0 +1,289 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// Adaptation of <https://github.com/OAI/OpenAPI-Specification/blob/main/examples/v3.0/petstore.yaml>
+  amends "../Document.pkl"
+  
+  info {
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/info.
+    title = "Swagger Petstore"
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/title.
+    version = "1.0.0"
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/version.
+    license {
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/license.
+      name = "MIT"
+//    ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/name.
+    }
+  }
+  
+  servers {
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/servers.
+    new { url = "http://petstore.swagger.io/v1" }
+//        ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/url.
+  }
+  
+  paths {
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/paths.
+    ["/pets"] {
+      get {
+//    ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/get.
+        summary = "List all pets"
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/summary.
+        operationId = "listPets"
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/operationId.
+        tags { "pets" }
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/tags.
+        parameters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/parameters.
+          new {
+            name = "limit"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/name.
+            `in` = "query"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/in.
+            description = "How many items to return at one time (max 100)"
+//          ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/description.
+            required = false
+//          ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/required.
+            schema {
+//          ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/schema.
+              type = "integer"
+//            ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/type.
+              maximum = 100
+//            ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/maximum.
+              format = "int32"
+//            ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/format.
+            }
+          }
+        }
+        responses {
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/responses.
+          ["200"] {
+            description = "A paged array of pets"
+//          ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/description.
+            headers {
+//          ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/headers.
+              ["x-next"] {
+                description = "A link to the next page of responses"
+//              ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/description.
+                schema {
+//              ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/schema.
+                  type = "string"
+//                ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/type.
+                }
+              }
+            }
+            content {
+//          ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/content.
+              ["application/json"] {
+                schema = new Reference {
+//              ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/schema.
+//                           ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Document.pkl`/Reference#
+                  `$ref` = "#/components/schemas/Pets"
+//                ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/$ref.
+                }
+              }
+            }
+          }
+          default {
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/default.
+            description = "unexpected error"
+//          ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/description.
+            content {
+//          ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/content.
+              ["application/json"] {
+                schema = new Reference {
+//              ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/schema.
+//                           ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Document.pkl`/Reference#
+                  `$ref` = "#/components/schemas/Error"
+//                ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/$ref.
+                }
+              }
+            }
+          }
+        }
+      }
+      post {
+//    ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/post.
+        summary = "Create a pet"
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/summary.
+        operationId = "createPets"
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/operationId.
+        tags { "pets" }
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/tags.
+        requestBody {
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/requestBody.
+          content {
+//        ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/content.
+            ["application/json"] {
+              schema = new Reference {
+//            ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/schema.
+//                         ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Document.pkl`/Reference#
+                `$ref` = "#/components/schemas/Pet"
+//              ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/$ref.
+              }
+            }
+          }
+          required = true
+//        ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/required.
+        }
+        responses {
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/responses.
+          ["201"] {
+            description = "Null resposne"
+//          ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/description.
+          }
+          ["default"] {
+            description = "unexpected error"
+//          ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/description.
+            content {
+//          ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/content.
+              ["application/json"] {
+                schema = new Reference {
+//              ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/schema.
+//                           ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Document.pkl`/Reference#
+                  `$ref` = "#/components/schemas/Error"
+//                ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/$ref.
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    ["/pets/{petId}"] {
+      get {
+//    ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/get.
+        summary = "Info for a specific pet"
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/summary.
+        operationId = "showPetById"
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/operationId.
+        tags { "pets" }
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/tags.
+        parameters {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/parameters.
+          new {
+            name = "petId"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/name.
+            `in` = "path"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/in.
+            required = true
+//          ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/required.
+            description = "The id of the pet to retrieve"
+//          ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/description.
+            schema {
+//          ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/schema.
+              type = "string"
+//            ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/type.
+            }
+          }
+        }
+        responses {
+//      ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/responses.
+          ["200"] {
+            description = "Expected response to a valid request"
+//          ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/description.
+            content {
+//          ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/content.
+              ["application/json"] {
+                schema = new Reference {
+//              ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/schema.
+//                           ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Document.pkl`/Reference#
+                  `$ref` = "#/components/schemas/Pet"
+//                ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/$ref.
+                }
+              }
+            }
+          }
+          ["default"] {
+            description = "unexpected error"
+//          ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/description.
+            content {
+//          ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/content.
+              ["application/json"] {
+                schema = new Reference {
+//              ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/schema.
+//                           ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Document.pkl`/Reference#
+                  `$ref` = "#/components/schemas/Error"
+//                ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/$ref.
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  components {
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/components.
+    schemas {
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/schemas.
+      ["Pet"] {
+        type = "object"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/type.
+        required { "id"; "name" }
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/required.
+        properties {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/properties.
+          ["id"] {
+            type = "integer"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/type.
+            format = "int64"
+//          ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/format.
+          }
+          ["name"] { type = "string" }
+//                   ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/type.
+          ["tag"] { type = "string" }
+//                  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/type.
+        }
+      }
+      ["Pets"] {
+        type = "array"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/type.
+        maxItems = 100
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/maxItems.
+        items = new Reference {
+//      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/items.
+//                  ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Document.pkl`/Reference#
+          `$ref` = "#/components/schemas/Pet"
+//        ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/$ref.
+        }
+      }
+      ["Error"] {
+        type = "object"
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/type.
+        required {
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/required.
+          "code"
+          "message"
+        }
+        properties {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/properties.
+          ["code"] {
+            type = "integer"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/type.
+            format = "int32"
+//          ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/format.
+          }
+          ["message"] {
+            type = "string"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `examples/petstore.pkl`/type.
+          }
+        }
+      }
+    }
+  }
+  

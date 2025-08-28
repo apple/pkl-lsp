@@ -1,0 +1,158 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module k8s.contrib.crd.tests.ModuleGenerator
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `tests/ModuleGenerator.pkl`/
+  
+  amends "pkl:test"
+  
+  import "@k8s/api/core/v1/ResourceRequirements.pkl"
+  import "@k8s/api/core/v1/EnvVar.pkl"
+  import "@k8s/api/networking/v1/NetworkPolicy.pkl"
+  
+  import "../generate.pkl"
+  
+  local generator = (generate) {
+//      ^^^^^^^^^ definition local generator_26
+//                   ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/
+    sourceContents = read("fixtures/crds.yaml")
+//  ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `tests/ModuleGenerator.pkl`/sourceContents.
+    source = "dummy://test_uri"
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `tests/ModuleGenerator.pkl`/source.
+    converters {
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `tests/ModuleGenerator.pkl`/converters.
+      ["restateclusters.restate.dev"] {
+        [List("spec", "compute", "env", "[]")] = EnvVar
+//       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                               ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `api/core/v1/EnvVar.pkl`/
+        [List("spec", "compute", "resources")] = ResourceRequirements
+//       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                               ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `api/core/v1/ResourceRequirements.pkl`/
+        [List("spec", "security", "networkPeers", "ingress", "[]")] = NetworkPolicy.NetworkPolicyPeer
+//       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                                                    ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `api/networking/v1/NetworkPolicy.pkl`/
+//                                                                                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `api/networking/v1/NetworkPolicy.pkl`/NetworkPolicyPeer#
+        [List("spec", "security", "networkPeers", "admin", "[]")] = NetworkPolicy.NetworkPolicyPeer
+//       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                                                  ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `api/networking/v1/NetworkPolicy.pkl`/
+//                                                                                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `api/networking/v1/NetworkPolicy.pkl`/NetworkPolicyPeer#
+        [List("spec", "security", "networkPeers", "metrics", "[]")] = NetworkPolicy.NetworkPolicyPeer
+//       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                                                    ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `api/networking/v1/NetworkPolicy.pkl`/
+//                                                                                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `api/networking/v1/NetworkPolicy.pkl`/NetworkPolicyPeer#
+      }
+    }
+  }
+  
+  local generator2 = (generator) {
+//      ^^^^^^^^^^ definition local generator2_40
+//                    ^^^^^^^^^ reference local generator_26
+    k8sImportPath = "@k8s"
+//  ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `tests/ModuleGenerator.pkl`/k8sImportPath.
+  }
+  
+  local generator3 = (generator) {
+//      ^^^^^^^^^^ definition local generator3_44
+//                    ^^^^^^^^^ reference local generator_26
+    k8sImportPath = "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.1.0"
+//  ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `tests/ModuleGenerator.pkl`/k8sImportPath.
+  }
+  
+  examples {
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `tests/ModuleGenerator.pkl`/examples.
+    for (filename, value in generator.output.files!!) {
+//       ^^^^^^^^ definition local filename_49
+//                 ^^^^^ definition local value_49
+//                          ^^^^^^^^^ reference local generator_26
+//                                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#output.
+//                                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleOutput#files.
+      [filename] {
+//     ^^^^^^^^ reference local filename_49
+        value.text
+//      ^^^^^ reference local value_49
+//            ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/FileOutput#text.
+      }
+    }
+  
+    for (filename, value in generator2.output.files!!) {
+//       ^^^^^^^^ definition local filename_55
+//                 ^^^^^ definition local value_55
+//                          ^^^^^^^^^^ reference local generator2_40
+//                                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#output.
+//                                            ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleOutput#files.
+      ["\(filename) -- dependency notation for k8s"] {
+//        ^^^^^^^^ reference local filename_55
+        value.text
+//      ^^^^^ reference local value_55
+//            ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/FileOutput#text.
+      }
+    }
+  
+    for (filename, value in generator3.output.files!!) {
+//       ^^^^^^^^ definition local filename_61
+//                 ^^^^^ definition local value_61
+//                          ^^^^^^^^^^ reference local generator3_44
+//                                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#output.
+//                                            ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleOutput#files.
+      ["\(filename) -- different version of k8s"] {
+//        ^^^^^^^^ reference local filename_61
+        value.text
+//      ^^^^^ reference local value_61
+//            ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/FileOutput#text.
+      }
+    }
+  
+    ["conflicting schemas"] {
+      for (_, value in (generate) {
+//            ^^^^^ definition local value_68
+//                      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/
+        sourceContents = read("fixtures/crds_conflict.yaml")
+//      ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `tests/ModuleGenerator.pkl`/sourceContents.
+        source = "dummy://test_uri"
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `tests/ModuleGenerator.pkl`/source.
+      }.output.files!!) {
+//      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#output.
+//             ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleOutput#files.
+        value.text
+//      ^^^^^ reference local value_68
+//            ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/FileOutput#text.
+      }
+    }
+  
+    ["apiGroup subdomains"] {
+      for (path, value in (generate) {
+//         ^^^^ definition local path_77
+//               ^^^^^ definition local value_77
+//                         ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `generate.pkl`/
+        sourceContents = read("fixtures/crds_subdomain.yaml")
+//      ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `tests/ModuleGenerator.pkl`/sourceContents.
+        source = "dummy://test_uri"
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `tests/ModuleGenerator.pkl`/source.
+        baseApiGroup = "bar"
+//      ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `tests/ModuleGenerator.pkl`/baseApiGroup.
+      }.output.files!!) {
+//      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#output.
+//             ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleOutput#files.
+        Pair(path, value.value.declaration.moduleHeader.name.parts.toList().map((it) -> it.value).join("."))
+//      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+//           ^^^^ reference local path_77
+//                 ^^^^^ reference local value_77
+//                       ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/FileOutput#value.
+//                                                                               ^^ definition local it_82
+//                                                                                      ^^ reference local it_82
+      }
+    }
+  }
+  

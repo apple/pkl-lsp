@@ -1,0 +1,63 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// An object representing a Server.
+  module org.openapis.v3.Server
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Server.pkl`/
+  
+  import "ServerVariable.pkl"
+  
+  /// A URL to the target host.
+  ///
+  /// This URL supports Server Variables and MAY be relative, to indicate that the host location is relative to the
+  /// location where the OpenAPI document is being served. Variable substitutions will be made when a variable is named
+  /// in {brackets}.
+  url: String
+//^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Server.pkl`/url.
+//documentation
+//> A URL to the target host.
+//> 
+//> This URL supports Server Variables and MAY be relative, to indicate that the host location is relative to the
+//> location where the OpenAPI document is being served. Variable substitutions will be made when a variable is named
+//> in {brackets}.
+//     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// An optional string describing the host designated by the URL.
+  ///
+  /// CommonMark syntax MAY be used for rich text representation.
+  @SourceCode { language = "Markdown" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/SourceCode#
+//              ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Server.pkl`/language.
+  description: String?
+//^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Server.pkl`/description.
+//documentation
+//> An optional string describing the host designated by the URL.
+//> 
+//> CommonMark syntax MAY be used for rich text representation.
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  /// A map between a variable name and its value.
+  ///
+  /// The value is used for substitution in the server's URL template.
+  variables: Mapping<String, ServerVariable>?
+//^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `Server.pkl`/variables.
+//documentation
+//> A map between a variable name and its value.
+//> 
+//> The value is used for substitution in the server's URL template.
+//           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                           ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.openapis.v3 2.2.0 `ServerVariable.pkl`/
+  
