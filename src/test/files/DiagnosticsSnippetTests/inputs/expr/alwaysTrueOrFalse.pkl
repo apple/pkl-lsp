@@ -1,3 +1,17 @@
 foo = 1 is Number
 
 bar = 1 is Boolean
+
+baz: String
+
+bazNullable: String?
+
+obj {
+  when (baz is NonNull) {
+    baz
+  }
+  // no warning
+  when (bazNullable is NonNull) {
+    bazNullable
+  }
+}

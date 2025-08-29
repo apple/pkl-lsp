@@ -6,3 +6,18 @@
        ^^^^^^^^^^^^
 | Warning: Expression is always 'false'
  
+ baz: String
+ 
+ bazNullable: String?
+ 
+ obj {
+   when (baz is NonNull) {
+         ^^^^^^^^^^^^^^
+| Warning: Expression is always 'true'
+     baz
+   }
+   // no warning
+   when (bazNullable is NonNull) {
+     bazNullable
+   }
+ }

@@ -34,10 +34,17 @@ class ExprAnalyzer(project: Project) : Analyzer(project) {
         val exprType = node.expr.computeExprType(base, mapOf(), context)
         val testedType = node.type.toType(base, mapOf(), context)
         if (testedType.hasConstraints) return false
-        if (exprType != Type.Unknown && exprType.isSubtypeOf(testedType, base, context)) {
-          diagnosticsHolder.addWarning(node, ErrorMessages.create("expressionIsAlwaysTrue"))
-        } else if (!testedType.isSubtypeOf(exprType, base, context)) {
-          diagnosticsHolder.addWarning(node, ErrorMessages.create("expressionIsAlwaysFalse"))
+        // can't use subtype relationship to check NonNull
+        if (testedType.isNonNull(base)) {
+          if (!exprType.isNullable(base, context)) {
+            diagnosticsHolder.addWarning(node, ErrorMessages.create("expressionIsAlwaysTrue"))
+          }
+        } else {
+          if (exprType != Type.Unknown && exprType.isSubtypeOf(testedType, base, context)) {
+            diagnosticsHolder.addWarning(node, ErrorMessages.create("expressionIsAlwaysTrue"))
+          } else if (!testedType.isSubtypeOf(exprType, base, context)) {
+            diagnosticsHolder.addWarning(node, ErrorMessages.create("expressionIsAlwaysFalse"))
+          }
         }
       }
       is PklTypeCastExpr -> {

@@ -224,6 +224,8 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
   fun isNullable(base: PklBaseModule, context: PklProject?): Boolean =
     base.nullType.isSubtypeOf(this, base, context)
 
+  fun isNonNull(base: PklBaseModule): Boolean = this is Alias && ctx == base.nonNullType.ctx
+
   fun isAmendable(base: PklBaseModule, context: PklProject?): Boolean =
     amended(base, context) != Nothing
 
