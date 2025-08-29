@@ -36,7 +36,7 @@ class ExprAnalyzer(project: Project) : Analyzer(project) {
         if (testedType.hasConstraints) return false
         // can't use subtype relationship to check NonNull
         if (testedType.isNonNull(base)) {
-          if (!exprType.isNullable(base, context)) {
+          if (!exprType.isNullable(base, context) || exprType.isNonNull(base)) {
             diagnosticsHolder.addWarning(node, ErrorMessages.create("expressionIsAlwaysTrue"))
           }
         } else {

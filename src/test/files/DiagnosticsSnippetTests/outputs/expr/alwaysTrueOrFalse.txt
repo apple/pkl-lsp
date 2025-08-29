@@ -6,18 +6,16 @@
        ^^^^^^^^^^^^
 | Warning: Expression is always 'false'
  
- baz: String
+ baz = "bar" is NonNull
+       ^^^^^^^^^^^^^^^^
+| Warning: Expression is always 'true'
  
  bazNullable: String?
  
- obj {
-   when (baz is NonNull) {
-         ^^^^^^^^^^^^^^
+ checkBaz = bazNullable is NonNull
+ 
+ nonNull: NonNull
+ 
+ checkNonNull = nonNull is NonNull
+                ^^^^^^^^^^^^^^^^^^
 | Warning: Expression is always 'true'
-     baz
-   }
-   // no warning
-   when (bazNullable is NonNull) {
-     bazNullable
-   }
- }

@@ -2,16 +2,12 @@ foo = 1 is Number
 
 bar = 1 is Boolean
 
-baz: String
+baz = "bar" is NonNull
 
 bazNullable: String?
 
-obj {
-  when (baz is NonNull) {
-    baz
-  }
-  // no warning
-  when (bazNullable is NonNull) {
-    bazNullable
-  }
-}
+checkBaz = bazNullable is NonNull
+
+nonNull: NonNull
+
+checkNonNull = nonNull is NonNull
