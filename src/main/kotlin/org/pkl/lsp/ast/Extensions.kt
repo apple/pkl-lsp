@@ -626,3 +626,102 @@ fun Appendable.renderParameterList(
 
 fun <T> List<T>.withReplaced(idx: Int, elem: T): List<T> =
   toMutableList().apply { this[idx] = elem }
+
+fun PklNode.getDocumentationUrl(): String? {
+  val module = if (this is PklModule) this else enclosingModule ?: return null
+  val file = module.containingFile
+
+  val packageDep = file.`package`
+
+  val authorityUrl =
+    when {
+      packageDep == null && file.pklAuthority == Origin.STDLIB.name.lowercase() ->
+        DEFAULT_PKL_AUTHORITY
+      packageDep != null -> packageDep.packageUri.authority
+      else -> return null
+    }
+
+  val packagePath =
+    when {
+      packageDep == null && file.pklAuthority == Origin.STDLIB.name.lowercase() -> {
+        "pkl"
+      }
+      packageDep != null -> {
+        val packageUri = packageDep.packageUri
+        val authority = packageUri.authority
+
+        authority + "/" + packageUri.path.substringBeforeLast('@').removePrefix("/")
+      }
+      else -> {
+        return null
+      }
+    }
+
+  val version =
+    when {
+      packageDep == null -> module.effectivePklVersion.toString()
+      else -> packageDep.packageUri.version.toString()
+    }
+
+  val urlPattern =
+    module.project.clientOptions.packageDocumentationUrls[authorityUrl] ?: return null
+
+  // Extract the relative module path within the package
+  val moduleFileUri = file.uri.toString()
+  val modulePath =
+    when {
+      // Handle jar: URLs from packages
+      moduleFileUri.startsWith("jar:") -> {
+        // Extract the path after the zip file reference
+        val afterJar = moduleFileUri.substringAfter("!/")
+        afterJar.removeSuffix(".pkl")
+      }
+      file.pklAuthority == Origin.STDLIB.name.lowercase() -> {
+        module.moduleName?.removePrefix("pkl.") ?: return null
+      }
+      else -> {
+        // Fallback: use the module name
+        module.moduleName?.removeSuffix(".pkl") ?: return null
+      }
+    }
+
+  val docPath =
+    when {
+      // For modules, use index.html
+      this is PklModule -> "index.html"
+
+      // For class members, use ClassName.html#memberName
+      else -> {
+        val enclosingClass = this.parentOfType<PklClass>()
+        if (enclosingClass != null) {
+          val className = enclosingClass.identifier?.text ?: return null
+          val fragmentId =
+            when (this) {
+              is PklProperty -> name
+              is PklMethod -> methodHeader.identifier?.text?.let { "$it()" }
+              is PklMethodHeader -> identifier?.text?.let { "$it()" }
+              else -> null
+            }
+          if (fragmentId != null) "$className.html#$fragmentId" else "$className.html"
+        } else {
+          // For top-level members, use index.html#memberName
+          val fragmentId =
+            when (this) {
+              is PklProperty -> name
+              is PklMethod -> methodHeader.identifier?.text?.let { "$it()" }
+              is PklMethodHeader -> identifier?.text?.let { "$it()" }
+              is PklClass -> identifier?.text
+              is PklTypeAlias -> identifier?.text
+              else -> null
+            }
+          if (fragmentId != null) "index.html#$fragmentId" else "index.html"
+        }
+      }
+    }
+
+  return urlPattern
+    .replace("{packagePath}", packagePath.removePrefix("/"))
+    .replace("{version}", version)
+    .replace("{modulePath}", modulePath)
+    .replace("{path}", docPath)
+}

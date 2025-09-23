@@ -229,6 +229,34 @@ private fun showDocCommentAndModule(node: PklNode?, text: String, context: PklPr
       appendLine()
       appendLine()
       append("in [${module.moduleName}](${module.getLocationUri(forDocs = true)})")
+
+      val docUrl = node?.getDocumentationUrl()
+      if (docUrl != null) {
+        val domain =
+          try {
+            java.net.URI(docUrl).host
+          } catch (e: Exception) {
+            "documentation"
+          }
+
+        val linkText =
+          when (node) {
+            is PklModule -> module.moduleName
+            is PklProperty -> node.name
+            is PklMethod -> node.methodHeader.identifier?.text?.let { "$it()" } ?: "method"
+            is PklMethodHeader -> node.identifier?.text?.let { "$it()" } ?: "method"
+            is PklClass -> node.identifier?.text ?: "class"
+            is PklTypeAlias -> node.identifier?.text ?: "type"
+            else -> module.moduleName
+          }
+
+        appendLine()
+        appendLine()
+        append("---")
+        appendLine()
+        appendLine()
+        append("[`$linkText` on $domain]($docUrl)")
+      }
     }
   }
 }
