@@ -270,7 +270,7 @@ class HoverTest : LspTestBase() {
     assertThat(hoverText).contains("`String` on pkl-lang.org")
     assertThat(hoverText)
       .contains(
-        "https://pkl-lang.org/package-docs/pkl/${fakeProject.stdlib.version}/base/index.html#String"
+        "https://pkl-lang.org/package-docs/pkl/${fakeProject.stdlib.version}/base/String.html"
       )
   }
 }

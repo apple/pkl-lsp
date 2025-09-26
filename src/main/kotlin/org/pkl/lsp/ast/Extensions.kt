@@ -674,6 +674,11 @@ fun PklNode.getDocumentationUrl(): String? {
       isInStdlib -> {
         module.moduleName?.removePrefix("pkl.") ?: return null
       }
+      moduleFileUri.startsWith("jar:") -> {
+        // Extract the path after the zip file reference
+        val afterJar = moduleFileUri.substringAfter("!/")
+        afterJar.removeSuffix(".pkl")
+      }
       else -> {
         // Fallback: use the module name
         module.moduleName?.removeSuffix(".pkl") ?: return null
