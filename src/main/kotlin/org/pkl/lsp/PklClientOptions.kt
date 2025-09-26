@@ -15,7 +15,7 @@
  */
 package org.pkl.lsp
 
-public const val DEFAULT_PKL_AUTHORITY = "pkg.pkl-lang.org"
+const val DEFAULT_PKL_AUTHORITY = "pkg.pkl-lang.org"
 
 /** Additional options passed by a language client when initializing the LSP. */
 data class PklClientOptions(

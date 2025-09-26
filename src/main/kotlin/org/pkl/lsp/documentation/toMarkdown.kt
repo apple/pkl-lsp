@@ -243,7 +243,6 @@ private fun showDocCommentAndModule(node: PklNode?, text: String, context: PklPr
           when (node) {
             is PklModule -> module.moduleName
             is PklProperty -> node.name
-            is PklMethod -> node.methodHeader.identifier?.text?.let { "$it()" } ?: "method"
             is PklMethodHeader -> node.identifier?.text?.let { "$it()" } ?: "method"
             is PklClass -> node.identifier?.text ?: "class"
             is PklTypeAlias -> node.identifier?.text ?: "type"

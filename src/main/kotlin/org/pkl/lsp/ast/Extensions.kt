@@ -643,7 +643,7 @@ fun PklNode.getDocumentationUrl(): String? {
 
   val packagePath =
     when {
-      packageDep == null && file.pklAuthority == Origin.STDLIB.name.lowercase() -> {
+      isInStdlib -> {
         "pkl"
       }
       packageDep != null -> {
@@ -671,12 +671,7 @@ fun PklNode.getDocumentationUrl(): String? {
   val modulePath =
     when {
       // Handle jar: URLs from packages
-      moduleFileUri.startsWith("jar:") -> {
-        // Extract the path after the zip file reference
-        val afterJar = moduleFileUri.substringAfter("!/")
-        afterJar.removeSuffix(".pkl")
-      }
-      file.pklAuthority == Origin.STDLIB.name.lowercase() -> {
+      isInStdlib -> {
         module.moduleName?.removePrefix("pkl.") ?: return null
       }
       else -> {
@@ -689,6 +684,7 @@ fun PklNode.getDocumentationUrl(): String? {
     when {
       // For modules, use index.html
       this is PklModule -> "index.html"
+      this is PklClass -> "$name.html"
 
       // For class members, use ClassName.html#memberName
       else -> {
@@ -710,7 +706,6 @@ fun PklNode.getDocumentationUrl(): String? {
               is PklProperty -> name
               is PklMethod -> methodHeader.identifier?.text?.let { "$it()" }
               is PklMethodHeader -> identifier?.text?.let { "$it()" }
-              is PklClass -> identifier?.text
               is PklTypeAlias -> identifier?.text
               else -> null
             }
