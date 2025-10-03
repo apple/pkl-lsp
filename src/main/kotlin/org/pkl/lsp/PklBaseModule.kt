@@ -63,6 +63,7 @@ class PklBaseModule(project: Project) : Component(project) {
 
   val anyType: Type.Class = classType("Any")
   val nullType: Type.Class = classType("Null")
+  val nonNullType: Type.Alias = aliasType("NonNull")
   val booleanType: Type.Class = classType("Boolean")
   val numberType: Type.Class = classType("Number")
   val intType: Type.Class = classType("Int")

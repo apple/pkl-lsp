@@ -6,3 +6,16 @@
        ^^^^^^^^^^^^
 | Warning: Expression is always 'false'
  
+ baz = "bar" is NonNull
+       ^^^^^^^^^^^^^^^^
+| Warning: Expression is always 'true'
+ 
+ bazNullable: String?
+ 
+ checkBaz = bazNullable is NonNull
+ 
+ nonNull: NonNull
+ 
+ checkNonNull = nonNull is NonNull
+                ^^^^^^^^^^^^^^^^^^
+| Warning: Expression is always 'true'

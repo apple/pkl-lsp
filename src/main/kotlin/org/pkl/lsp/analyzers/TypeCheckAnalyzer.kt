@@ -67,6 +67,17 @@ class TypeCheckAnalyzer(project: Project) : Analyzer(project) {
   ): Boolean {
 
     return when {
+      memberType is Type.Alias -> {
+        isTypeMatch(
+          exprType,
+          exprValue,
+          memberType.aliasedType(base, context),
+          failedConstraints,
+          base,
+          context,
+        ) && isConstraintMatch(exprValue, memberType, failedConstraints, true)
+      }
+      exprType.isNonNull(base) -> !memberType.isNullable(base, context)
       exprType is Type.Alias -> {
         isTypeMatch(
           exprType.aliasedType(base, context),
@@ -82,16 +93,6 @@ class TypeCheckAnalyzer(project: Project) : Analyzer(project) {
         // To avoid this, constraint check results could be cached while this method runs.
         isTypeMatch(exprType.leftType, exprValue, memberType, failedConstraints, base, context) &&
           isTypeMatch(exprType.rightType, exprValue, memberType, failedConstraints, base, context)
-      }
-      memberType is Type.Alias -> {
-        isTypeMatch(
-          exprType,
-          exprValue,
-          memberType.aliasedType(base, context),
-          failedConstraints,
-          base,
-          context,
-        ) && isConstraintMatch(exprValue, memberType, failedConstraints, true)
       }
       memberType is Type.Union && !memberType.isUnionOfStringLiterals -> {
         (isTypeMatch(exprType, exprValue, memberType.leftType, failedConstraints, base, context) ||
@@ -190,7 +191,7 @@ class TypeCheckAnalyzer(project: Project) : Analyzer(project) {
     constraints: List<Pair<Type, Int>>,
     holder: DiagnosticsHolder,
   ) {
-    var renderedConstraint = buildString {
+    val renderedConstraint = buildString {
       var isFirst = true
       for ((type, index) in constraints) {
         if (isFirst) {
