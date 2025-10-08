@@ -1,0 +1,829 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// Converts a Kubernetes YAML manifest file to Pkl.
+  ///
+  /// Evaluating the generated Pkl file will output (an equivalent of) the original YAML.
+  /// Evaluating multiple generated Pkl files at once will output a single YAML stream.
+  ///
+  /// ## Prerequisites
+  ///
+  /// * The `pkl` command is [installed](https://pkl-lang.org/main/current/pkl-cli/index.html#installation).
+  ///
+  /// ## Usage
+  ///
+  /// To convert _deployment.yml_ to _deployment.pkl_, run:
+  /// ```
+  /// pkl eval -p input=deployment.yml \
+  ///     -o deployment.pkl \
+  ///     package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib@<version>#/convert.pkl
+  /// ```
+  ///
+  /// To validate the generated Pkl file, run `pkl eval deployment.pkl`.
+  ///
+  /// ## Known limitations
+  ///
+  /// * YAML comments are not preserved.
+  /// * YAML aliases are inlined.
+  @ModuleInfo { minPklVersion = "0.25.0" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleInfo#
+//              ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/minPklVersion.
+  open module k8s.contrib.convert
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/
+  
+  import "pkl:reflect"
+  import "pkl:yaml"
+  import "pkl:platform"
+  
+  import "@k8s/K8sObject.pkl"
+  import "@k8s/K8sResource.pkl"
+  import "@k8s/api/core/v1/ResourceRequirements.pkl"
+  import "@k8s/k8sSchema.pkl"
+  import "@uri/URI.pkl"
+  
+  /// The Kubernetes resources to convert.
+  ///
+  /// Each resource is an object of type [Mapping] as produced by [yaml.Parser].
+  ///
+  /// Defaults to the resources contained in the YAML file passed with `-p input=path/to/file.yml`.
+  resourcesToConvert: List<Mapping> =
+//^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/resourcesToConvert.
+//documentation
+//> The Kubernetes resources to convert.
+//> 
+//> Each resource is an object of type [`Mapping`](pkl-lsp://stdlib/base.pkl#L2038,C7) as produced by [`yaml.Parser`](pkl-lsp://stdlib/yaml.pkl#L47,C7).
+//> 
+//> Defaults to the resources contained in the YAML file passed with `-p input=path/to/file.yml`.
+//                    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+    new yaml.Parser { useMapping = true }
+//           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.yaml`/Parser#
+//                    ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/useMapping.
+      .parseAll(read(inputUri))
+//     ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.yaml`/Parser#parseAll().
+//                   ^^^^^^^^ reference local inputUri_103
+      .filterNonNull() as List<Mapping>
+//     ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#filterNonNull().
+//                        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+  
+  /// Converters to be sequentially applied to [resourcesToConvert].
+  ///
+  /// The default [resourceConverters] suffice to convert standard Kubernetes resources.
+  resourceConverters: Mapping<String, (Mapping) -> Any> = new {
+//^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/resourceConverters.
+//documentation
+//> Converters to be sequentially applied to [`resourcesToConvert`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/k8s.contrib/convert.pkl#L58,C1).
+//> 
+//> The default [`resourceConverters`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/k8s.contrib/convert.pkl#L66,C1) suffice to convert standard Kubernetes resources.
+//                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                 ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+    ["convert resource to conform to Pkl template"] = (resource) ->
+//                                                     ^^^^^^^^ definition local resource_67
+        let (template = getResourceTemplate(resource))
+//           ^^^^^^^^ definition local template_68
+//                      ^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/getResourceTemplate().
+//                                          ^^^^^^^^ reference local resource_67
+          let (templateType = reflect.DeclaredType(reflect.Module(template).moduleClass))
+//             ^^^^^^^^^^^^ definition local templateType_69
+//                            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                                    ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType().
+//                                                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                                                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Module().
+//                                                                ^^^^^^^^ reference local template_68
+//                                                                          ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Module#moduleClass.
+            convert(resource, templateType)
+//          ^^^^^^^ reference local convert_152
+//                  ^^^^^^^^ reference local resource_67
+//                            ^^^^^^^^^^^^ reference local templateType_69
+    ["remove kind and apiVersion properties (set by Pkl template)"] = (resource) ->
+//                                                                     ^^^^^^^^ definition local resource_71
+      resource.toMap().remove("apiVersion").remove("kind") |> toDynamic
+//    ^^^^^^^^ reference local resource_71
+//             ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+//                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#remove().
+//                                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#remove().
+//                                                            ^^^^^^^^^ reference local toDynamic_119
+  }
+  
+  /// Resource templates to be used for converting custom resources.
+  ///
+  /// The first [String] key is the resource's `kind`, the second its `apiVersion`.
+  ///
+  /// Example:
+  /// ```
+  /// customResourceTemplates {
+  ///   ["Custom"] {
+  ///      ["v1"] = import("Custom.pkl")
+  ///   }
+  /// }
+  /// ```
+  customResourceTemplates: Mapping<String, Mapping<String, K8sResource>>
+//^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/customResourceTemplates.
+//documentation
+//> Resource templates to be used for converting custom resources.
+//> 
+//> The first [`String`](pkl-lsp://stdlib/base.pkl#L1094,C16) key is the resource's `kind`, the second its `apiVersion`.
+//> 
+//> Example:
+//> ```
+//> customResourceTemplates {
+//>   `"Custom"` {
+//>      `"v1"` = import("Custom.pkl")
+//>   }
+//> }
+//> ```
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.0.1 `K8sResource.pkl`/
+  
+  function getResourceTemplate(resource: Mapping): K8sResource =
+//         ^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/getResourceTemplate().
+//                             ^^^^^^^^ definition local resource_89
+//                                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                 ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.0.1 `K8sResource.pkl`/
+    let (kind = resource["kind"])
+//       ^^^^ definition local kind_90
+//              ^^^^^^^^ reference local resource_89
+      let (apiVersion = resource["apiVersion"])
+//         ^^^^^^^^^^ definition local apiVersion_91
+//                      ^^^^^^^^ reference local resource_89
+        doGetResourceTemplate(kind, apiVersion, k8sSchema.resourceTemplates) ??
+//      ^^^^^^^^^^^^^^^^^^^^^ reference local doGetResourceTemplate_196
+//                            ^^^^ reference local kind_90
+//                                  ^^^^^^^^^^ reference local apiVersion_91
+//                                              ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.0.1 `k8sSchema.pkl`/
+//                                                        ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.0.1 `k8sSchema.pkl`/resourceTemplates.
+          doGetResourceTemplate(kind, apiVersion, customResourceTemplates) ??
+//        ^^^^^^^^^^^^^^^^^^^^^ reference local doGetResourceTemplate_196
+//                              ^^^^ reference local kind_90
+//                                    ^^^^^^^^^^ reference local apiVersion_91
+//                                                ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/customResourceTemplates.
+            throw("Cannot find a template for resource of kind `\(kind)`.")
+//                                                                ^^^^ reference local kind_90
+  
+  function getResourceTemplateUri(resource: Mapping): String =
+//         ^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/getResourceTemplateUri().
+//                                ^^^^^^^^ definition local resource_96
+//                                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    reflect.Module(getResourceTemplate(resource)).uri
+//  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Module().
+//                 ^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/getResourceTemplate().
+//                                     ^^^^^^^^ reference local resource_96
+//                                                ^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Module#uri.
+  
+  // below here is implementation
+  
+  input = read("prop:input")
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/input.
+  
+  local inputUri =
+//      ^^^^^^^^ definition local inputUri_103
+    if (input.startsWith(Regex(#"\w+:"#))) input      // absolute URI
+//      ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/input.
+//                       ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+//                                         ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/input.
+    else if (input.startsWith("/")) "file://\(input)" // absolute file path
+//           ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/input.
+//                                            ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/input.
+    else                                              // relative file path
+      let (pwd = read("env:PWD"))
+//         ^^^ definition local pwd_107
+        let (path =
+//           ^^^^ definition local path_108
+          if (platform.current.operatingSystem.name == "Windows") "/\(pwd)/\(input)".replaceAll("\\", "/")
+//            ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.platform`/
+//                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.platform`/current.
+//                             ^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.platform`/Platform#operatingSystem.
+//                                             ^^^^ reference pkl . pkl 0.29.0 `pkl.platform`/OperatingSystem#name.
+//                                                                    ^^^ reference local pwd_107
+//                                                                           ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/input.
+//                                                                                   ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+          else "\(pwd)/\(input)"
+//                ^^^ reference local pwd_107
+//                       ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/input.
+        )
+          "file://\(URI.encode(path))"
+//                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                      ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/encode().
+//                             ^^^^ reference local path_108
+  
+  function resourceConverterFn(resource) =
+//         ^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/resourceConverterFn().
+//                             ^^^^^^^^ definition local resource_114
+    resourceConverters.fold(resource, (acc, _, f) -> f.apply(acc))
+//  ^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/resourceConverters.
+//                     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#fold().
+//                          ^^^^^^^^ reference local resource_114
+//                                     ^^^ definition local acc_115
+//                                             ^ definition local f_115
+//                                                   ^ reference local f_115
+//                                                     ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Function1#apply().
+//                                                           ^^^ reference local acc_115
+  
+  local typedClass = reflect.Class(Typed)
+//      ^^^^^^^^^^ definition local typedClass_117
+//                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class().
+//                                 ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#
+  
+  /// Preserve entry key `"default"` as property `_____default_____`, because `default` conflicts with
+  /// built-in [Dynamic.default].
+  ///
+  /// We'll turn this back when rendering (see [renderConvertedValue]).
+  local toDynamic: (Mapping|Map) -> Dynamic = (input) ->
+//      ^^^^^^^^^ definition local toDynamic_119
+//      documentation
+//      > Preserve entry key `"default"` as property `_____default_____`, because `default` conflicts with
+//      > built-in [`Dynamic.default`](pkl-lsp://stdlib/base.pkl#L1810,C3).
+//      > 
+//      > We'll turn this back when rendering (see `renderConvertedValue`).
+//                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                             ^^^^^ definition local input_123
+    if (input is Mapping) toDynamic.apply(input.toMap())
+//      ^^^^^ reference local input_123
+//               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                        ^^^^^^^^^ reference local toDynamic_119
+//                                  ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Function1#apply().
+//                                        ^^^^^ reference local input_123
+//                                              ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+    else
+      (input.toDynamic()) {
+//     ^^^^^ reference local input_123
+//           ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#toDynamic().
+        when (input.containsKey("default")) {
+//            ^^^^^ reference local input_123
+//                  ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#containsKey().
+          _____default_____ = input["default"]
+//        ^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/_____default_____.
+//                            ^^^^^ reference local input_123
+        }
+      }
+  
+  /// Best effort conversion for union types.
+  ///
+  /// - If type is not a [Mapping] or [Listing], render as-is.
+  /// - If type includes [Listing] and object is [Listing], render as a [Listing].
+  /// - If type includes a [Mapping], render as a [Mapping].
+  /// - Otherwise, use the first remaining alternative.
+  local function convertUnion(value: Any, type: reflect.UnionType): Any =
+//               ^^^^^^^^^^^^ definition local convertUnion_132
+//               documentation
+//               > Best effort conversion for union types.
+//               > 
+//               > - If type is not a [`Mapping`](pkl-lsp://stdlib/base.pkl#L2038,C7) or [`Listing`](pkl-lsp://stdlib/base.pkl#L1860,C7), render as-is.
+//               > - If type includes [`Listing`](pkl-lsp://stdlib/base.pkl#L1860,C7) and object is [`Listing`](pkl-lsp://stdlib/base.pkl#L1860,C7), render as a [`Listing`](pkl-lsp://stdlib/base.pkl#L1860,C7).
+//               > - If type includes a [`Mapping`](pkl-lsp://stdlib/base.pkl#L2038,C7), render as a [`Mapping`](pkl-lsp://stdlib/base.pkl#L2038,C7).
+//               > - Otherwise, use the first remaining alternative.
+//                            ^^^^^ definition local value_138
+//                                   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                        ^^^^ definition local type_138
+//                                                      ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/UnionType#
+//                                                                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+    if (!(value is Mapping|Listing))
+//        ^^^^^ reference local value_138
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+      value
+//    ^^^^^ reference local value_138
+    else
+      let (listingType = type.members.findOrNull((elem) -> elem is reflect.DeclaredType && elem.referent.reflectee == Listing))
+//         ^^^^^^^^^^^ definition local listingType_142
+//                       ^^^^ reference local type_138
+//                            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/UnionType#members.
+//                                    ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#findOrNull().
+//                                                ^^^^ definition local elem_142
+//                                                         ^^^^ reference local elem_142
+//                                                                         ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#
+//                                                                                         ^^^^ reference local elem_142
+//                                                                                              ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#referent.
+//                                                                                                       ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeDeclaration#reflectee.
+//                                                                                                                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+        let (mappingType = type.members.findOrNull((elem) -> elem is reflect.DeclaredType && elem.referent.reflectee == Mapping))
+//           ^^^^^^^^^^^ definition local mappingType_143
+//                         ^^^^ reference local type_138
+//                              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/UnionType#members.
+//                                      ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#findOrNull().
+//                                                  ^^^^ definition local elem_143
+//                                                           ^^^^ reference local elem_143
+//                                                                           ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#
+//                                                                                           ^^^^ reference local elem_143
+//                                                                                                ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#referent.
+//                                                                                                         ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeDeclaration#reflectee.
+//                                                                                                                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+          if (value is Listing && listingType != null)
+//            ^^^^^ reference local value_138
+//                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                ^^^^^^^^^^^ reference local listingType_142
+            convert(value, listingType)
+//          ^^^^^^^ reference local convert_152
+//                  ^^^^^ reference local value_138
+//                         ^^^^^^^^^^^ reference local listingType_142
+          else if (mappingType != null)
+//                 ^^^^^^^^^^^ reference local mappingType_143
+            convert(value, mappingType)
+//          ^^^^^^^ reference local convert_152
+//                  ^^^^^ reference local value_138
+//                         ^^^^^^^^^^^ reference local mappingType_143
+          else
+            let (otherType = type.members.find((elem) -> elem != listingType && elem != mappingType))
+//               ^^^^^^^^^ definition local otherType_149
+//                           ^^^^ reference local type_138
+//                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/UnionType#members.
+//                                        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#find().
+//                                              ^^^^ definition local elem_149
+//                                                       ^^^^ reference local elem_149
+//                                                               ^^^^^^^^^^^ reference local listingType_142
+//                                                                              ^^^^ reference local elem_149
+//                                                                                      ^^^^^^^^^^^ reference local mappingType_143
+              convert(value, otherType)
+//            ^^^^^^^ reference local convert_152
+//                    ^^^^^ reference local value_138
+//                           ^^^^^^^^^ reference local otherType_149
+  
+  local function convert(value: Any, type: reflect.Type?): Any =
+//               ^^^^^^^ definition local convert_152
+//                       ^^^^^ definition local value_152
+//                              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                   ^^^^ definition local type_152
+//                                                 ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Type#
+//                                                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+    if (type is reflect.NullableType)
+//      ^^^^ reference local type_152
+//                      ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/NullableType#
+      convert(value, type.member)
+//    ^^^^^^^ reference local convert_152
+//            ^^^^^ reference local value_152
+//                   ^^^^ reference local type_152
+//                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/NullableType#member.
+    else if (type is reflect.DeclaredType)
+//           ^^^^ reference local type_152
+//                           ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#
+      let (referent = type.referent)
+//         ^^^^^^^^ definition local referent_156
+//                    ^^^^ reference local type_152
+//                         ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#referent.
+        if (value is Listing && referent.reflectee == Listing)
+//          ^^^^^ reference local value_152
+//                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                              ^^^^^^^^ reference local referent_156
+//                                       ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeDeclaration#reflectee.
+//                                                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+          new Listing {
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+            for (e in value) {
+//               ^ definition local e_159
+//                    ^^^^^ reference local value_152
+              convert(e, type.typeArguments[0])
+//            ^^^^^^^ reference local convert_152
+//                    ^ reference local e_159
+//                       ^^^^ reference local type_152
+//                            ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#typeArguments.
+            }
+          }
+        else if (value is Mapping && referent.reflectee == Mapping)
+//               ^^^^^ reference local value_152
+//                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                   ^^^^^^^^ reference local referent_156
+//                                            ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeDeclaration#reflectee.
+//                                                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+          new Mapping {
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+            for (k, v in value) {
+//               ^ definition local k_165
+//                  ^ definition local v_165
+//                       ^^^^^ reference local value_152
+              [k] = convert(v, type.typeArguments[1])
+//             ^ reference local k_165
+//                  ^^^^^^^ reference local convert_152
+//                          ^ reference local v_165
+//                             ^^^^ reference local type_152
+//                                  ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#typeArguments.
+            }
+          }
+        else if (value is Mapping && referent.reflectee == ResourceRequirements.getClass())
+//               ^^^^^ reference local value_152
+//                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                   ^^^^^^^^ reference local referent_156
+//                                            ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeDeclaration#reflectee.
+//                                                         ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.0.1 `api/core/v1/ResourceRequirements.pkl`/
+//                                                                              ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+          new Dynamic {
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+            when (value.containsKey("requests")) {
+//                ^^^^^ reference local value_152
+//                      ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#containsKey().
+              requests {
+//            ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/requests.
+                for (k, v in value["requests"]) {
+//                   ^ definition local k_173
+//                      ^ definition local v_173
+//                           ^^^^^ reference local value_152
+                  [k] = convertDataSize(v) ?? v
+//                 ^ reference local k_173
+//                      ^^^^^^^^^^^^^^^ reference local convertDataSize_212
+//                                      ^ reference local v_173
+//                                            ^ reference local v_173
+                }
+              }
+            }
+            when (value.containsKey("limits")) {
+//                ^^^^^ reference local value_152
+//                      ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#containsKey().
+              limits {
+//            ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/limits.
+                for (k, v in value["limits"]) {
+//                   ^ definition local k_180
+//                      ^ definition local v_180
+//                           ^^^^^ reference local value_152
+                  [k] = convertDataSize(v) ?? v
+//                 ^ reference local k_180
+//                      ^^^^^^^^^^^^^^^ reference local convertDataSize_212
+//                                      ^ reference local v_180
+//                                            ^ reference local v_180
+                }
+              }
+            }
+          }
+        else if (value is Mapping && referent is reflect.Class && referent.isSubclassOf(typedClass))
+//               ^^^^^ reference local value_152
+//                        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                   ^^^^^^^^ reference local referent_156
+//                                                       ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#
+//                                                                ^^^^^^^^ reference local referent_156
+//                                                                         ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#isSubclassOf().
+//                                                                                      ^^^^^^^^^^ reference local typedClass_117
+          value
+//        ^^^^^ reference local value_152
+            .toMap()
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+            .map((k, v) -> Pair(k, convert(v, referent.properties.getOrNull(k)?.type))) |> toDynamic
+//           ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#map().
+//                ^ definition local k_189
+//                   ^ definition local v_189
+//                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+//                              ^ reference local k_189
+//                                 ^^^^^^^ reference local convert_152
+//                                         ^ reference local v_189
+//                                            ^^^^^^^^ reference local referent_156
+//                                                     ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#properties.
+//                                                                ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#getOrNull().
+//                                                                          ^ reference local k_189
+//                                                                              ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#type.
+//                                                                                         ^^^^^^^^^ reference local toDynamic_119
+        else value
+//           ^^^^^ reference local value_152
+    else if (type is reflect.UnionType)
+//           ^^^^ reference local type_152
+//                           ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/UnionType#
+      convertUnion(value, type)
+//    ^^^^^^^^^^^^ reference local convertUnion_132
+//                 ^^^^^ reference local value_152
+//                        ^^^^ reference local type_152
+    else if (value is Mapping) value |> toDynamic
+//           ^^^^^ reference local value_152
+//                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                             ^^^^^ reference local value_152
+//                                      ^^^^^^^^^ reference local toDynamic_119
+    else value
+//       ^^^^^ reference local value_152
+  
+  local function doGetResourceTemplate(kind: String, apiVersion: String, templatesByKindAndVersion: Mapping): K8sResource? =
+//               ^^^^^^^^^^^^^^^^^^^^^ definition local doGetResourceTemplate_196
+//                                     ^^^^ definition local kind_196
+//                                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                   ^^^^^^^^^^ definition local apiVersion_196
+//                                                               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^ definition local templatesByKindAndVersion_196
+//                                                                                                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                                                                            ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.0.1 `K8sResource.pkl`/
+    let (templatesByVersion: Mapping? = templatesByKindAndVersion.getOrNull(kind))
+//       ^^^^^^^^^^^^^^^^^^ definition local templatesByVersion_197
+//                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                      ^^^^^^^^^^^^^^^^^^^^^^^^^ reference local templatesByKindAndVersion_196
+//                                                                ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+//                                                                          ^^^^ reference local kind_196
+      if (templatesByVersion == null)
+//        ^^^^^^^^^^^^^^^^^^ reference local templatesByVersion_197
+        null
+      else
+        let (template = templatesByVersion.getOrNull(apiVersion))
+//           ^^^^^^^^ definition local template_201
+//                      ^^^^^^^^^^^^^^^^^^ reference local templatesByVersion_197
+//                                         ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#getOrNull().
+//                                                   ^^^^^^^^^^ reference local apiVersion_196
+          if (template != null)
+//            ^^^^^^^^ reference local template_201
+            template as K8sResource
+//          ^^^^^^^^ reference local template_201
+//                      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.0.1 `K8sResource.pkl`/
+          else
+            throw("""
+              Cannot find a pantry template for version `\(apiVersion)` of resource `\(kind)`.
+//                                                         ^^^^^^^^^^ reference local apiVersion_196
+//                                                                                     ^^^^ reference local kind_196
+              Available versions:
+              \(templatesByVersion.keys.join("\n"))
+//              ^^^^^^^^^^^^^^^^^^ reference local templatesByVersion_197
+//                                 ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#keys.
+//                                      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#join().
+              """)
+  
+  // https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-memory
+  local function convertDataSize(input: K8sObject.Quantity): RenderDirective? =
+//               ^^^^^^^^^^^^^^^ definition local convertDataSize_212
+//                               ^^^^^ definition local input_212
+//                                                ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.0.1 `K8sObject.pkl`/Quantity#
+//                                                           ^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/RenderDirective#
+    let (inputString: String = if (input is Int|Float|DataSize) input.toString() else input as String)
+//       ^^^^^^^^^^^ definition local inputString_213
+//                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                 ^^^^^ reference local input_212
+//                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                                              ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Float#
+//                                                    ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/DataSize#
+//                                                              ^^^^^ reference local input_212
+//                                                                    ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#toString().
+//                                                                                    ^^^^^ reference local input_212
+//                                                                                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      let (matches = Regex(#"^(\d+(?:\.\d+)?)(k|Ki|Mi?|Gi?|Ti?|Pi?|Ei?)$"#).findMatchesIn(inputString))
+//         ^^^^^^^ definition local matches_214
+//                   ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex().
+//                                                                          ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Regex#findMatchesIn().
+//                                                                                        ^^^^^^^^^^^ reference local inputString_213
+        if (matches.isEmpty)
+//          ^^^^^^^ reference local matches_214
+//                  ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#isEmpty.
+          null
+        else
+          let (groups = matches[0].groups)
+//             ^^^^^^ definition local groups_218
+//                      ^^^^^^^ reference local matches_214
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/RegexMatch#groups.
+            let (value = groups[1].value)
+//               ^^^^^ definition local value_219
+//                       ^^^^^^ reference local groups_218
+//                                 ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/RegexMatch#value.
+              let (unit = groups[2].value)
+//                 ^^^^ definition local unit_220
+//                        ^^^^^^ reference local groups_218
+//                                  ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/RegexMatch#value.
+                // We don't have exabytes/exbibytes in Pkl, so convert down to peta/pebi
+                let (pklValue = if (unit.startsWith("E")) value.toInt() * 1000 else value)
+//                   ^^^^^^^^ definition local pklValue_222
+//                                  ^^^^ reference local unit_220
+//                                       ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#startsWith().
+//                                                        ^^^^^ reference local value_219
+//                                                              ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toInt().
+//                                                                                  ^^^^^ reference local value_219
+                  let (pklUnit = if (unit.startsWith("E")) unit.replaceFirst("E", "P") else unit)
+//                     ^^^^^^^ definition local pklUnit_223
+//                                   ^^^^ reference local unit_220
+//                                        ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#startsWith().
+//                                                         ^^^^ reference local unit_220
+//                                                              ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceFirst().
+//                                                                                          ^^^^ reference local unit_220
+                    new RenderDirective {
+//                      ^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/RenderDirective#
+                      text = "= \(pklValue).\(pklUnit.toLowerCase())b"
+//                    ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/text.
+//                                ^^^^^^^^ reference local pklValue_222
+//                                            ^^^^^^^ reference local pklUnit_223
+//                                                    ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toLowerCase().
+                    }
+  
+  // Collects all imports,
+  // assigning unique import aliases if multiple versions of the same kind are used.
+  local importsByKindAndVersion: Map<String, Map<String, ImportInfo>> =
+//      ^^^^^^^^^^^^^^^^^^^^^^^ definition local importsByKindAndVersion_230
+//                               ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                           ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                                               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                       ^^^^^^^^^^ reference local ImportInfo_267
+    resourcesToConvert.fold(Map(), (imports, res) ->
+//  ^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/resourcesToConvert.
+//                     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#fold().
+//                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                  ^^^^^^^ definition local imports_231
+//                                           ^^^ definition local res_231
+      let (importsByVersion = imports.getOrNull(res["kind"]))
+//         ^^^^^^^^^^^^^^^^ definition local importsByVersion_232
+//                            ^^^^^^^ reference local imports_231
+//                                              ^^^ reference local res_231
+        if (importsByVersion == null)
+//          ^^^^^^^^^^^^^^^^ reference local importsByVersion_232
+          imports.put(
+//        ^^^^^^^ reference local imports_231
+            res["kind"],
+//          ^^^ reference local res_231
+            Map(
+//          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+              res["apiVersion"],
+//            ^^^ reference local res_231
+              new ImportInfo {
+//                ^^^^^^^^^^ reference local ImportInfo_267
+                resource = res
+//              ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/resource.
+//                         ^^^ reference local res_231
+                name = res["kind"]
+//              ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/name.
+//                     ^^^ reference local res_231
+                uri = getResourceTemplateUri(res)
+//              ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/uri.
+//                    ^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/getResourceTemplateUri().
+//                                           ^^^ reference local res_231
+                isAliased = false
+//              ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/isAliased.
+              }))
+        else if (importsByVersion.containsKey(res["apiVersion"]))
+//               ^^^^^^^^^^^^^^^^ reference local importsByVersion_232
+//                                            ^^^ reference local res_231
+          imports
+//        ^^^^^^^ reference local imports_231
+        else if (importsByVersion.length == 1)
+//               ^^^^^^^^^^^^^^^^ reference local importsByVersion_232
+          let (first = importsByVersion.values.single.resource)
+//             ^^^^^ definition local first_247
+//                     ^^^^^^^^^^^^^^^^ reference local importsByVersion_232
+            imports.put(
+//          ^^^^^^^ reference local imports_231
+              res["kind"],
+//            ^^^ reference local res_231
+              Map(
+//            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+                // for consistency, also used aliased name for first import of this kind
+                first["apiVersion"], createAliasedInfo(first),
+//              ^^^^^ reference local first_247
+//                                   ^^^^^^^^^^^^^^^^^ reference local createAliasedInfo_260
+//                                                     ^^^^^ reference local first_247
+                res["apiVersion"], createAliasedInfo(res)))
+//              ^^^ reference local res_231
+//                                 ^^^^^^^^^^^^^^^^^ reference local createAliasedInfo_260
+//                                                   ^^^ reference local res_231
+        else
+          imports.put(
+//        ^^^^^^^ reference local imports_231
+            res["kind"],
+//          ^^^ reference local res_231
+            importsByVersion
+//          ^^^^^^^^^^^^^^^^ reference local importsByVersion_232
+              .put(res["apiVersion"], createAliasedInfo(res))))
+//                 ^^^ reference local res_231
+//                                    ^^^^^^^^^^^^^^^^^ reference local createAliasedInfo_260
+//                                                      ^^^ reference local res_231
+  
+  local function createAliasedInfo(res: Mapping): ImportInfo = new {
+//               ^^^^^^^^^^^^^^^^^ definition local createAliasedInfo_260
+//                                 ^^^ definition local res_260
+//                                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                ^^^^^^^^^^ reference local ImportInfo_267
+    resource = res
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/resource.
+//             ^^^ reference local res_260
+    name = "\(res["kind"])\(res["apiVersion"].split("/").last.capitalize())"
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/name.
+//            ^^^ reference local res_260
+//                          ^^^ reference local res_260
+    uri = getResourceTemplateUri(res)
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/uri.
+//        ^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/getResourceTemplateUri().
+//                               ^^^ reference local res_260
+    isAliased = true
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/isAliased.
+  }
+  
+  local class ImportInfo {
+//            ^^^^^^^^^^ definition local ImportInfo_267
+    resource: Mapping
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/ImportInfo#resource.
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+    name: String
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/ImportInfo#name.
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    uri: String
+//  ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/ImportInfo#uri.
+//       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    isAliased: Boolean
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/ImportInfo#isAliased.
+//             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  }
+  
+  local function renderConvertedValue(value: Any) =
+//               ^^^^^^^^^^^^^^^^^^^^ definition local renderConvertedValue_274
+//                                    ^^^^^ definition local value_274
+//                                           ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+    new PcfRenderer {}.renderValue(value).replaceAll("_____default_____", "default")
+//      ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/PcfRenderer#
+//                     ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/PcfRenderer#renderValue().
+//                                 ^^^^^ reference local value_274
+//                                        ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+  
+  output {
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/output.
+    local importInfos = importsByKindAndVersion.values
+//        ^^^^^^^^^^^ definition local importInfos_278
+//                      ^^^^^^^^^^^^^^^^^^^^^^^ reference local importsByKindAndVersion_230
+//                                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#values.
+      .flatMap((it) -> it.values)
+//     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#flatMap().
+//              ^^ definition local it_279
+//                     ^^ reference local it_279
+//                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#values.
+      .sortWith((info1, info2) -> info1.uri < info2.uri)
+//     ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#sortWith().
+//               ^^^^^ definition local info1_280
+//                      ^^^^^ definition local info2_280
+//                                ^^^^^ reference local info1_280
+//                                      ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/ImportInfo#uri.
+//                                            ^^^^^ reference local info2_280
+//                                                  ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/ImportInfo#uri.
+    local textBuffer: Listing<String> = new {
+//        ^^^^^^^^^^ definition local textBuffer_281
+//                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      "import \"\(reflect.Module(K8sResource).uri)\"\n"
+//                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Module().
+//                               ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.0.1 `K8sResource.pkl`/
+//                                            ^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Module#uri.
+      for (importInfo in importInfos) {
+//         ^^^^^^^^^^ definition local importInfo_283
+//                       ^^^^^^^^^^^ reference local importInfos_278
+        if (importInfo.isAliased)
+//          ^^^^^^^^^^ reference local importInfo_283
+//                     ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/ImportInfo#isAliased.
+          "import \"\(importInfo.uri)\" as \(importInfo.name)\n"
+//                    ^^^^^^^^^^ reference local importInfo_283
+//                               ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/ImportInfo#uri.
+//                                           ^^^^^^^^^^ reference local importInfo_283
+//                                                      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/ImportInfo#name.
+        else
+          "import \"\(importInfo.uri)\"\n"
+//                    ^^^^^^^^^^ reference local importInfo_283
+//                               ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/ImportInfo#uri.
+      }
+      "\n"
+      "resources: Listing<K8sResource> = new {"
+      for (resource in resourcesToConvert) {
+//         ^^^^^^^^ definition local resource_291
+//                     ^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/resourcesToConvert.
+        "\n"
+        "  new \(importsByKindAndVersion[resource["kind"]][resource["apiVersion"]].name) "
+//               ^^^^^^^^^^^^^^^^^^^^^^^ reference local importsByKindAndVersion_230
+//                                       ^^^^^^^^ reference local resource_291
+//                                                         ^^^^^^^^ reference local resource_291
+//                                                                                 ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/ImportInfo#name.
+        // would be good to be able to set base indent
+        for (lineIdx, line in renderConvertedValue(resourceConverterFn(resource)).split("\n")) {
+//           ^^^^^^^ definition local lineIdx_295
+//                    ^^^^ definition local line_295
+//                            ^^^^^^^^^^^^^^^^^^^^ reference local renderConvertedValue_274
+//                                                 ^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/resourceConverterFn().
+//                                                                     ^^^^^^^^ reference local resource_291
+//                                                                                ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+          when (lineIdx != 0) {
+//              ^^^^^^^ reference local lineIdx_295
+            "  "
+          }
+          line
+//        ^^^^ reference local line_295
+          "\n"
+        }
+      }
+      "}\n\n"
+        """
+        output {
+          value = resources
+          renderer = (K8sResource.output.renderer as YamlRenderer) {
+            isStream = true
+          }
+        }
+        """
+    }
+    text = textBuffer.toList().join("")
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib 1.0.3 `convert.pkl`/text.
+//         ^^^^^^^^^^ reference local textBuffer_281
+//                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+//                             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  }

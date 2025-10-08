@@ -1,0 +1,43 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module com.influxdata.telegraf.tests.Telegraf
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `tests/Telegraf.pkl`/
+  
+  amends "pkl:test"
+  
+  local allExamples = import*("../examples/*.pkl")
+//      ^^^^^^^^^^^ definition local allExamples_20
+  
+  examples {
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `tests/Telegraf.pkl`/examples.
+    for (name in allExamples.keys) {
+//       ^^^^ definition local name_23
+//               ^^^^^^^^^^^ reference local allExamples_20
+//                           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#keys.
+      [name.drop("../examples".length + 1).replaceLast("pkl", "toml")] {
+//     ^^^^ reference local name_23
+//          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#drop().
+//                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+//                                         ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceLast().
+        allExamples[name].output.text
+//      ^^^^^^^^^^^ reference local allExamples_20
+//                  ^^^^ reference local name_23
+//                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#output.
+//                               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/FileOutput#text.
+      }
+    }
+  }
+  

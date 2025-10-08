@@ -1,0 +1,72 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// CLI tool for working with JSON in Pkl, kind of like [jq](https://stedolan.github.io/jq/).
+  ///
+  /// Example usage:
+  ///
+  ///     # Get my IP address
+  ///     curl https://ifconfig.co/json | pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/json.pk -x 'pipe.ip'
+  ///
+  ///     # Get repos and stars for Github org
+  ///     curl https://api.github.com/orgs/apple/repos | pkl eval package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe@<VERSION>#/json.pkl -x 'pipe.toList().map((r) -> "\(r.name): \(r.stargazers_count)").join("\n")'
+  @ModuleInfo { minPklVersion = "0.24.0" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleInfo#
+//              ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `json.pkl`/minPklVersion.
+  module pkl.pipe.json
+//^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `json.pkl`/
+  extends "./text.pkl"
+  
+  import "pkl:json"
+  
+  local parsed = new json.Parser {
+//      ^^^^^^ definition local parsed_31
+//                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.json`/Parser#
+    useMapping = read?("prop:useMapping")?.toBoolean() ?? false
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `json.pkl`/useMapping.
+//                                         ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toBoolean().
+  }.parse(input)
+//  ^^^^^ reference pkl . pkl 0.29.0 `pkl.json`/Parser#parse().
+//        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/input.
+  
+  pipe: (List<json.Value>|json.Value)? = if (parsed is Listing) parsed.toList() else parsed
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `json.pkl`/pipe.
+//       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                 ^^^^^ reference pkl . pkl 0.29.0 `pkl.json`/Value#
+//                             ^^^^^ reference pkl . pkl 0.29.0 `pkl.json`/Value#
+//                                           ^^^^^^ reference local parsed_31
+//                                                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                                              ^^^^^^ reference local parsed_31
+//                                                                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+//                                                                                   ^^^^^^ reference local parsed_31
+  stdin: (List<json.Value>|json.Value)? = pipe
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `json.pkl`/stdin.
+//        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                  ^^^^^ reference pkl . pkl 0.29.0 `pkl.json`/Value#
+//                              ^^^^^ reference pkl . pkl 0.29.0 `pkl.json`/Value#
+//                                        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `json.pkl`/pipe.
+  
+  output {
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `json.pkl`/output.
+    value = pipe
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `json.pkl`/value.
+//          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `json.pkl`/pipe.
+    when (read?("prop:pkl.outputFormat") == null) {
+      renderer = module.jsonRenderer
+//    ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `json.pkl`/renderer.
+//                      ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `text.pkl`/jsonRenderer.
+    }
+  }
+  

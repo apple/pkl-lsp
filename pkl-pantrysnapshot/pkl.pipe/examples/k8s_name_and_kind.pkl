@@ -1,0 +1,41 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// This example shows how to parse a Kubernetes deployment object to get a list of all container images.
+  /// It is the equivalent of the CLI invocation:
+  ///
+  /// ```
+  /// pkl eval yaml.pkl -x 'pipe.map((r) -> "\(r.apiVersion).\(r.kind): \(r.metadata.name)").join("\n")' < examples/service_and_pod.yaml
+  /// ```
+  module pkl.pipe.examples.k8s_name_and_kind
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `examples/k8s_name_and_kind.pkl`/
+  amends "../yaml.pkl"
+  
+  input = read("./k8s_service_and_pod.yaml")
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `examples/k8s_name_and_kind.pkl`/input.
+  
+  output {
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `examples/k8s_name_and_kind.pkl`/output.
+    text = module.pipe.map((r) -> "\(r.apiVersion).\(r.kind): \(r.metadata.name)").join("\n")
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `examples/k8s_name_and_kind.pkl`/text.
+//                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.pipe 1.0.2 `yaml.pkl`/pipe.
+//                     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                          ^ definition local r_28
+//                                   ^ reference local r_28
+//                                                   ^ reference local r_28
+//                                                              ^ reference local r_28
+//                                                                                 ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  }
+  

@@ -1,0 +1,1169 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// Support for generating classes.
+  @ModuleInfo { minPklVersion = "0.25.0" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleInfo#
+//              ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/minPklVersion.
+  @Unlisted
+// ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Unlisted#
+  module k8s.contrib.crd.internal.ModuleGenerator
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/
+  
+  import "pkl:reflect"
+  import "@jsonschema.contrib/internal/Type.pkl"
+  import "@jsonschema.contrib/internal/TypesGenerator.pkl"
+  import "@jsonschema.contrib/internal/utils.pkl"
+  import "@jsonschema.contrib/internal/singularize.pkl"
+  import "@jsonschema/JsonSchema.pkl"
+  import "@jsonschema/Parser.pkl"
+  import "@k8s/apiextensions-apiserver/pkg/apis/apiextensions/v1/CustomResourceDefinition.pkl"
+  import "@k8s/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1/CustomResourceDefinition.pkl" as BetaCRD
+  import "@syntax/ClassNode.pkl"
+  import "@syntax/ClassOrModuleNode.pkl"
+  import "@syntax/DocCommentNode.pkl"
+  import "@syntax/ModuleNode.pkl"
+  import "@syntax/TypeNode.pkl"
+  import "@uri/URI.pkl"
+  
+  local pcfRenderer = new PcfRenderer { useCustomStringDelimiters = true }
+//      ^^^^^^^^^^^ definition local pcfRenderer_37
+//                        ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/PcfRenderer#
+//                                      ^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/useCustomStringDelimiters.
+  local jsonRenderer = new JsonRenderer {}
+//      ^^^^^^^^^^^^ definition local jsonRenderer_38
+//                         ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/JsonRenderer#
+  
+  // noinspection Deprecated
+  typealias CRD = CustomResourceDefinition|BetaCRD
+//          ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/CRD#
+//                ^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1/CustomResourceDefinition.pkl`/
+//                                         ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1beta1/CustomResourceDefinition.pkl`/
+  
+  /// The CRD
+  crd: CRD
+//^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/crd.
+//documentation
+//> The CRD
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/CRD#
+  
+  /// The CRD version to generate
+  version: CustomResourceDefinition.CustomResourceDefinitionVersion|BetaCRD.CustomResourceDefinitionVersion
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/version.
+//documentation
+//> The CRD version to generate
+//                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1/CustomResourceDefinition.pkl`/CustomResourceDefinitionVersion#
+//                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1beta1/CustomResourceDefinition.pkl`/CustomResourceDefinitionVersion#
+  
+  logPaths: Boolean = false
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/logPaths.
+//          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+  
+  k8sImportPath: String
+//^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/k8sImportPath.
+//               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  // noinspection Deprecated
+  local schema: CustomResourceDefinition.CustomResourceValidation|BetaCRD.CustomResourceValidation =
+//      ^^^^^^ definition local schema_54
+//                                       ^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1/CustomResourceDefinition.pkl`/CustomResourceValidation#
+//                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1beta1/CustomResourceDefinition.pkl`/CustomResourceValidation#
+    (if (crd is BetaCRD) version.schema ?? crd.spec.validation else version.schema)!!
+//       ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/crd.
+//              ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1beta1/CustomResourceDefinition.pkl`/
+//                       ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/version.
+//                               ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1beta1/CustomResourceDefinition.pkl`/CustomResourceDefinitionVersion#schema.
+//                                         ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/crd.
+//                                             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1beta1/CustomResourceDefinition.pkl`/spec.
+//                                                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1beta1/CustomResourceDefinition.pkl`/CustomResourceDefinitionSpec#validation.
+//                                                                  ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/version.
+//                                                                          ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1beta1/CustomResourceDefinition.pkl`/CustomResourceDefinitionVersion#schema.
+  
+  /// The Schema
+  rootSchema: JsonSchema(validCRDSchema(this)) = Parser.parse(new JsonRenderer {}.renderDocument(schema.openAPIV3Schema)) as JsonSchema
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/rootSchema.
+//documentation
+//> The Schema
+//            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                       ^^^^^^^^^^^^^^ reference local validCRDSchema_74
+//                                               ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/
+//                                                      ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `Parser.pkl`/parse().
+//                                                                ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/JsonRenderer#
+//                                                                                ^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/JsonRenderer#renderDocument().
+//                                                                                               ^^^^^^ reference local schema_54
+//                                                                                                      ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1beta1/CustomResourceDefinition.pkl`/CustomResourceValidation#openAPIV3Schema.
+//                                                                                                                           ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+  
+  local ignoreProperties = Set("apiVersion", "kind", "metadata")
+//      ^^^^^^^^^^^^^^^^ definition local ignoreProperties_60
+//                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set().
+  local filteredRootSchema = (rootSchema) {
+//      ^^^^^^^^^^^^^^^^^^ definition local filteredRootSchema_61
+//                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/rootSchema.
+    when (rootSchema.properties != null) {
+//        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/rootSchema.
+//                   ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/properties.
+      properties = new {
+//    ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/properties.
+        for (k, v in rootSchema.properties!!) {
+//           ^ definition local k_64
+//              ^ definition local v_64
+//                   ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/rootSchema.
+//                              ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/properties.
+          when (!ignoreProperties.contains(k)) {
+//               ^^^^^^^^^^^^^^^^ reference local ignoreProperties_60
+//                                ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#contains().
+//                                         ^ reference local k_64
+            [k] = v
+//           ^ reference local k_64
+//                ^ reference local v_64
+          }
+        }
+      }
+    }
+  }
+  
+  // https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#validation
+  local function validCRDSchema(schema: (JsonSchema.Schema|Listing<JsonSchema.Schema>)?) =
+//               ^^^^^^^^^^^^^^ definition local validCRDSchema_74
+//                              ^^^^^^ definition local schema_74
+//                                                  ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+//                                                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                                                            ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+    if (schema == null)
+//      ^^^^^^ reference local schema_74
+      true
+    else if (schema is JsonSchema)
+//           ^^^^^^ reference local schema_74
+//                     ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+      validCRDJsonSchema(schema)
+//    ^^^^^^^^^^^^^^^^^^ reference local validCRDJsonSchema_84
+//                       ^^^^^^ reference local schema_74
+    else if (schema is Listing<JsonSchema.Schema>)
+//           ^^^^^^ reference local schema_74
+//                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+      schema.toList().every((s) -> validCRDSchema(s))
+//    ^^^^^^ reference local schema_74
+//           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+//                    ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#every().
+//                           ^ definition local s_80
+//                                 ^^^^^^^^^^^^^^ reference local validCRDSchema_74
+//                                                ^ reference local s_80
+    else
+      true
+  
+  local function validCRDJsonSchema(schema: JsonSchema) =
+//               ^^^^^^^^^^^^^^^^^^ definition local validCRDJsonSchema_84
+//                                  ^^^^^^ definition local schema_84
+//                                          ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+    schema.definitions == null
+//  ^^^^^^ reference local schema_84
+//         ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/definitions.
+      && schema.$defs == null
+//       ^^^^^^ reference local schema_84
+//              ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/$defs.
+      && schema.deprecated == null
+//       ^^^^^^ reference local schema_84
+//              ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/deprecated.
+      && schema.$id == null
+//       ^^^^^^ reference local schema_84
+//              ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/$id.
+      && schema.patternProperties == null
+//       ^^^^^^ reference local schema_84
+//              ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/patternProperties.
+      && schema.readOnly == null
+//       ^^^^^^ reference local schema_84
+//              ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/readOnly.
+      && schema.writeOnly == null
+//       ^^^^^^ reference local schema_84
+//              ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/writeOnly.
+      && schema.$ref == null
+//       ^^^^^^ reference local schema_84
+//              ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/$ref.
+      && schema.uniqueItems != true
+//       ^^^^^^ reference local schema_84
+//              ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/uniqueItems.
+      && (schema.properties?.toMap()?.values?.every((s) -> validCRDSchema(s)) ?? true)
+//        ^^^^^^ reference local schema_84
+//               ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/properties.
+//                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+//                                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#values.
+//                                            ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#every().
+//                                                   ^ definition local s_94
+//                                                         ^^^^^^^^^^^^^^ reference local validCRDSchema_74
+//                                                                        ^ reference local s_94
+      && schema.additionalProperties != false
+//       ^^^^^^ reference local schema_84
+//              ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/additionalProperties.
+      && !(schema.additionalProperties != null && schema.properties != null)
+//         ^^^^^^ reference local schema_84
+//                ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/additionalProperties.
+//                                                ^^^^^^ reference local schema_84
+//                                                       ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/properties.
+      && validCRDSchema(schema.additionalProperties)
+//       ^^^^^^^^^^^^^^ reference local validCRDSchema_74
+//                      ^^^^^^ reference local schema_84
+//                             ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/additionalProperties.
+      && validCRDSchema(schema.propertyNames)
+//       ^^^^^^^^^^^^^^ reference local validCRDSchema_74
+//                      ^^^^^^ reference local schema_84
+//                             ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/propertyNames.
+      && validCRDSchema(schema.items)
+//       ^^^^^^^^^^^^^^ reference local validCRDSchema_74
+//                      ^^^^^^ reference local schema_84
+//                             ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/items.
+      && validCRDSchema(schema.additionalItems)
+//       ^^^^^^^^^^^^^^ reference local validCRDSchema_74
+//                      ^^^^^^ reference local schema_84
+//                             ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/additionalItems.
+      && validCRDSchema(schema.contains)
+//       ^^^^^^^^^^^^^^ reference local validCRDSchema_74
+//                      ^^^^^^ reference local schema_84
+//                             ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/contains.
+      && validCRDSchema(schema.oneOf)
+//       ^^^^^^^^^^^^^^ reference local validCRDSchema_74
+//                      ^^^^^^ reference local schema_84
+//                             ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/oneOf.
+      && validCRDSchema(schema.anyOf)
+//       ^^^^^^^^^^^^^^ reference local validCRDSchema_74
+//                      ^^^^^^ reference local schema_84
+//                             ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/anyOf.
+      && validCRDSchema(schema.allOf)
+//       ^^^^^^^^^^^^^^ reference local validCRDSchema_74
+//                      ^^^^^^ reference local schema_84
+//                             ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/allOf.
+      && validCRDSchema(schema.not)
+//       ^^^^^^^^^^^^^^ reference local validCRDSchema_74
+//                      ^^^^^^ reference local schema_84
+//                             ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/not.
+  
+  
+  
+  converters: Mapping<List<String>, Module|Class|TypeAlias>
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/converters.
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#
+//                                         ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                                               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/TypeAlias#
+  
+  /// The URI representing the root schema, used for the doc comment.
+  baseUri: URI
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/baseUri.
+//         ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+  
+  /// The name of this module
+  moduleName: String = crd.spec.group.split(".").reverse()
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/moduleName.
+//            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/crd.
+//                         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1/CustomResourceDefinition.pkl`/spec.
+//                              ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1/CustomResourceDefinition.pkl`/CustomResourceDefinitionSpec#group.
+//                                    ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+//                                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#reverse().
+    .add(version.name)
+//   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//       ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/version.
+//               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1beta1/CustomResourceDefinition.pkl`/CustomResourceDefinitionVersion#name.
+    .add(crd.spec.names.kind)
+//   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//       ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/crd.
+//           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1/CustomResourceDefinition.pkl`/spec.
+//                ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1/CustomResourceDefinition.pkl`/CustomResourceDefinitionSpec#names.
+//                      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1/CustomResourceDefinition.pkl`/CustomResourceDefinitionNames#kind.
+    .join(".")
+//   ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  
+  local typesGenerator: TypesGenerator = new { baseUri = new {}; enclosingModuleName = moduleName }
+//      ^^^^^^^^^^^^^^ definition local typesGenerator_120
+//                      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                                             ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/baseUri.
+//                                                               ^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/enclosingModuleName.
+//                                                                                     ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/moduleName.
+  
+  /// The types described in this JSON Schema document, included those replaced via converters
+  moduleTypes: Type.TypeNames = convertedSchemas.map((schema, importAndType) -> Pair(schema, importAndType.type)) + classSchemas
+//^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/moduleTypes.
+//documentation
+//> The types described in this JSON Schema document, included those replaced via converters
+//                  ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/TypeNames#
+//                              ^^^^^^^^^^^^^^^^ reference local convertedSchemas_404
+//                                               ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#map().
+//                                                    ^^^^^^ definition local schema_123
+//                                                            ^^^^^^^^^^^^^ definition local importAndType_123
+//                                                                              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair().
+//                                                                                   ^^^^^^ reference local schema_123
+//                                                                                           ^^^^^^^^^^^^^ reference local importAndType_123
+//                                                                                                         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/ImportAndType#type.
+//                                                                                                                  ^^^^^^^^^^^^ reference local classSchemas_350
+  
+  /// Generate a Pkl [ModuleNode] from a given schema.
+  moduleNode: ModuleNode =
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/moduleNode.
+//documentation
+//> Generate a Pkl [`ModuleNode`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.syntax/ModuleNode.pkl#L18,C1) from a given schema.
+//            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ModuleNode.pkl`/
+    let (allTypeNames = moduleTypes)
+//       ^^^^^^^^^^^^ definition local allTypeNames_127
+//                      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/moduleTypes.
+      new {
+        imports {
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/imports.
+          new {
+            value = "\(k8sImportPath)/apimachinery/pkg/apis/meta/v1/ObjectMeta.pkl"
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/value.
+//                     ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/k8sImportPath.
+          }
+          for (_import in convertedSchemas.values.map((it) -> it._import).toSet()) {
+//             ^^^^^^^ definition local _import_133
+//                        ^^^^^^^^^^^^^^^^ reference local convertedSchemas_404
+//                                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#values.
+//                                                ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                                                     ^^ definition local it_133
+//                                                            ^^ reference local it_133
+//                                                               ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/ImportAndType#_import.
+//                                                                        ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#toSet().
+            new {
+              value = _import
+//            ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/value.
+//                    ^^^^^^^ reference local _import_133
+            }
+          }
+        }
+        classes {
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/classes.
+          for (schema, type in classSchemas) {
+//             ^^^^^^ definition local schema_140
+//                     ^^^^ definition local type_140
+//                             ^^^^^^^^^^^^ reference local classSchemas_350
+            generatePklClass(schema, type, allTypeNames)
+//          ^^^^^^^^^^^^^^^^ reference local generatePklClass_265
+//                           ^^^^^^ reference local schema_140
+//                                   ^^^^ reference local type_140
+//                                         ^^^^^^^^^^^^ reference local allTypeNames_127
+          }
+        }
+        declaration {
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/declaration.
+          docComment = getDocComment(filteredRootSchema, "module")
+//        ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/docComment.
+//                     ^^^^^^^^^^^^^ reference local getDocComment_208
+//                                   ^^^^^^^^^^^^^^^^^^ reference local filteredRootSchema_61
+          moduleHeader {
+//        ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/moduleHeader.
+            name {
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/name.
+              parts {
+//            ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/parts.
+                for (part in moduleName.split(".")) {
+//                   ^^^^ definition local part_149
+//                           ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/moduleName.
+//                                      ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+                  new { value = part }
+//                      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/value.
+//                              ^^^^ reference local part_149
+                }
+              }
+            }
+            moduleExtendsOrAmendsClause {
+//          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/moduleExtendsOrAmendsClause.
+              type = "extends"
+//            ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/type.
+              extendedModule = "\(k8sImportPath)/K8sResource.pkl"
+//            ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/extendedModule.
+//                                ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/k8sImportPath.
+            }
+          }
+        }
+        properties {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/properties.
+          new {
+            modifiers { "fixed" }
+//          ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/modifiers.
+            name { value = "apiVersion" }
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/name.
+//                 ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/value.
+            typeAnnotation {
+//          ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/typeAnnotation.
+              type = new TypeNode.StringLiteralTypeNode {
+//            ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/type.
+//                                ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/StringLiteralTypeNode#
+                value = "\(crd.spec.group)/\(version.name)"
+//              ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/value.
+//                         ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/crd.
+//                             ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1/CustomResourceDefinition.pkl`/spec.
+//                                  ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1/CustomResourceDefinition.pkl`/CustomResourceDefinitionSpec#group.
+//                                           ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/version.
+//                                                   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1beta1/CustomResourceDefinition.pkl`/CustomResourceDefinitionVersion#name.
+              }
+            }
+          }
+          new {
+            modifiers { "fixed" }
+//          ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/modifiers.
+            name { value = "kind" }
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/name.
+//                 ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/value.
+            typeAnnotation {
+//          ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/typeAnnotation.
+              type = new TypeNode.StringLiteralTypeNode {
+//            ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/type.
+//                                ^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/StringLiteralTypeNode#
+                value = crd.spec.names.kind
+//              ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/value.
+//                      ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/crd.
+//                          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1/CustomResourceDefinition.pkl`/spec.
+//                               ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1/CustomResourceDefinition.pkl`/CustomResourceDefinitionSpec#names.
+//                                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-k8s/k8s 1.2.0 `apiextensions-apiserver/pkg/apis/apiextensions/v1/CustomResourceDefinition.pkl`/CustomResourceDefinitionNames#kind.
+              }
+            }
+          }
+          new {
+            name { value = "metadata" }
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/name.
+//                 ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/value.
+            docComment {
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/docComment.
+              value = """
+//            ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/value.
+                Standard object's metadata.
+  
+                More info: <https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata>.
+                """
+            }
+            typeAnnotation {
+//          ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/typeAnnotation.
+              type = new TypeNode.NullableTypeNode {
+//            ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/type.
+//                                ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/NullableTypeNode#
+                typeNode = new TypeNode.DeclaredTypeNode {
+//              ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/typeNode.
+//                                      ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/DeclaredTypeNode#
+                  name {
+//                ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/name.
+                    parts {
+//                  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/parts.
+                      new {
+                        value = "ObjectMeta"
+//                      ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/value.
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          when (isClassLike(filteredRootSchema)) {
+//              ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/isClassLike().
+//                          ^^^^^^^^^^^^^^^^^^ reference local filteredRootSchema_61
+            ...generateClassBody(filteredRootSchema, allTypeNames)
+//             ^^^^^^^^^^^^^^^^^ reference local generateClassBody_238
+//                               ^^^^^^^^^^^^^^^^^^ reference local filteredRootSchema_61
+//                                                   ^^^^^^^^^^^^ reference local allTypeNames_127
+          }
+        }
+      }
+  
+  /// Determine the doc comments of a schema.
+  ///
+  /// This combines a schema's title, description and "default" descriptions into one doc comment.
+  /// Wraps the comments at 100 columns.
+  local function getDocComment(schema: JsonSchema|Boolean, type: "class"|"module"|Null): DocCommentNode? =
+//               ^^^^^^^^^^^^^ definition local getDocComment_208
+//               documentation
+//               > Determine the doc comments of a schema.
+//               > 
+//               > This combines a schema's title, description and "default" descriptions into one doc comment.
+//               > Wraps the comments at 100 columns.
+//                             ^^^^^^ definition local schema_212
+//                                     ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                                                         ^^^^ definition local type_212
+//                                                                                ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Null#
+//                                                                                       ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `DocCommentNode.pkl`/
+    if (schema is Boolean)
+//      ^^^^^^ reference local schema_212
+//                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+      null
+    else
+      let (docCommentText: String =
+//         ^^^^^^^^^^^^^^ definition local docCommentText_216
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+        new Listing {
+//          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+          schema.description
+//        ^^^^^^ reference local schema_212
+//               ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/description.
+          when (type is "module") { "This module was generated from the CustomResourceDefinition at <\(baseUri)>." }
+//              ^^^^ reference local type_212
+//                                                                                                     ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/baseUri.
+          when (type is "class"|"module") { getWarnings(schema, type) }
+//              ^^^^ reference local type_212
+//                                          ^^^^^^^^^^^ reference local getWarnings_231
+//                                                      ^^^^^^ reference local schema_212
+//                                                              ^^^^ reference local type_212
+          when (schema.default != null) { "Default if undefined: `\(pcfRenderer.renderValue(schema.default))`" }
+//              ^^^^^^ reference local schema_212
+//                     ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/default.
+//                                                                  ^^^^^^^^^^^ reference local pcfRenderer_37
+//                                                                              ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/PcfRenderer#renderValue().
+//                                                                                          ^^^^^^ reference local schema_212
+//                                                                                                 ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/default.
+        }.toList().filterNonNull().join("\n\n")
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+//                 ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#filterNonNull().
+//                                 ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+      )
+        if (docCommentText.isEmpty) null
+//          ^^^^^^^^^^^^^^ reference local docCommentText_216
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#isEmpty.
+        else
+          new DocCommentNode {
+//            ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `DocCommentNode.pkl`/
+            value = docCommentText
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/value.
+//                  ^^^^^^^^^^^^^^ reference local docCommentText_216
+            autoWrap = true
+//          ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/autoWrap.
+          }
+  
+  local function getWarnings(schema: JsonSchema, type: "class"|"module"): String? =
+//               ^^^^^^^^^^^ definition local getWarnings_231
+//                           ^^^^^^ definition local schema_231
+//                                   ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                               ^^^^ definition local type_231
+//                                                                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    if (type == "class") null
+//      ^^^^ reference local type_231
+    else if (schema.type != null && schema.type != "object")
+//           ^^^^^^ reference local schema_231
+//                  ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/type.
+//                                  ^^^^^^ reference local schema_231
+//                                         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/type.
+      "WARN: The root schema's type is `\(jsonRenderer.renderValue(schema.type))`, and cannot be correctly mapped to a Pkl module."
+//                                        ^^^^^^^^^^^^ reference local jsonRenderer_38
+//                                                     ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/JsonRenderer#renderValue().
+//                                                                 ^^^^^^ reference local schema_231
+//                                                                        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/type.
+    else
+      null
+  
+  local function generateClassBody(
+//               ^^^^^^^^^^^^^^^^^ definition local generateClassBody_238
+    schema: JsonSchema(this.properties != null),
+//  ^^^^^^ definition local schema_239
+//          ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                          ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/properties.
+    typeNames: Type.TypeNames
+//  ^^^^^^^^^ definition local typeNames_240
+//                  ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/TypeNames#
+  ): Listing<ClassOrModuleNode.PropertyDefinitionNode> =
+//   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                             ^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#
+    new {
+      for (propName, propSchema in schema.properties!!) {
+//         ^^^^^^^^ definition local propName_243
+//                   ^^^^^^^^^^ definition local propSchema_243
+//                                 ^^^^^^ reference local schema_239
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/properties.
+        new {
+          name {
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/name.
+            value = propName
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/value.
+//                  ^^^^^^^^ reference local propName_243
+          }
+          when (propSchema is JsonSchema && propSchema.deprecated == true) {
+//              ^^^^^^^^^^ reference local propSchema_243
+//                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                          ^^^^^^^^^^ reference local propSchema_243
+//                                                     ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/deprecated.
+            annotations { utils.DEPRECATED }
+//          ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/annotations.
+//                        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/
+//                              ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/DEPRECATED.
+          }
+          docComment = getDocComment(propSchema, null)
+//        ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/docComment.
+//                     ^^^^^^^^^^^^^ reference local getDocComment_208
+//                                   ^^^^^^^^^^ reference local propSchema_243
+          typeAnnotation {
+//        ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/typeAnnotation.
+            // If this property doesn't appear in the `required` array, mark it as nullable.
+            // We can't do this within [TypesGenerator] because it doesn't have enough information available.
+            type = let (underlyingType = typesGenerator.generateTypeNode(propSchema, typeNames))
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/type.
+//                      ^^^^^^^^^^^^^^ definition local underlyingType_255
+//                                       ^^^^^^^^^^^^^^ reference local typesGenerator_120
+//                                                      ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                                                       ^^^^^^^^^^ reference local propSchema_243
+//                                                                                   ^^^^^^^^^ reference local typeNames_240
+                if (schema.required?.toSet()?.contains(propName) ?? false) underlyingType
+//                  ^^^^^^ reference local schema_239
+//                         ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/required.
+//                                   ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toSet().
+//                                            ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#contains().
+//                                                     ^^^^^^^^ reference local propName_243
+//                                                                         ^^^^^^^^^^^^^^ reference local underlyingType_255
+                // If the type is already nullable, no need to make it *more* nullable.
+                else if (underlyingType is TypeNode.NullableTypeNode) underlyingType
+//                       ^^^^^^^^^^^^^^ reference local underlyingType_255
+//                                                  ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/NullableTypeNode#
+//                                                                    ^^^^^^^^^^^^^^ reference local underlyingType_255
+                else new TypeNode.NullableTypeNode { typeNode = underlyingType }
+//                                ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/NullableTypeNode#
+//                                                   ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/typeNode.
+//                                                              ^^^^^^^^^^^^^^ reference local underlyingType_255
+          }
+        }
+      }
+    }
+  
+  /// Generates a [ClassNode] from a [CRDJsonSchema].
+  local function generatePklClass(schema: JsonSchema, className: Type, typeNames: Type.TypeNames): ClassNode =
+//               ^^^^^^^^^^^^^^^^ definition local generatePklClass_265
+//               documentation
+//               > Generates a [`ClassNode`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.syntax/ClassNode.pkl#L16,C1) from a `CRDJsonSchema`.
+//                                ^^^^^^ definition local schema_266
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                    ^^^^^^^^^ definition local className_266
+//                                                               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/
+//                                                                     ^^^^^^^^^ definition local typeNames_266
+//                                                                                     ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/TypeNames#
+//                                                                                                 ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassNode.pkl`/
+    new {
+      docComment = getDocComment(schema, "class")
+//    ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/docComment.
+//                 ^^^^^^^^^^^^^ reference local getDocComment_208
+//                               ^^^^^^ reference local schema_266
+      classHeader {
+//    ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/classHeader.
+        name {
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/name.
+          value = className.name
+//        ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/value.
+//                ^^^^^^^^^ reference local className_266
+//                          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/name.
+        }
+      }
+      properties = generateClassBody(schema, typeNames)
+//    ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/properties.
+//                 ^^^^^^^^^^^^^^^^^ reference local generateClassBody_238
+//                                   ^^^^^^ reference local schema_266
+//                                           ^^^^^^^^^ reference local typeNames_266
+    }
+  
+  function isClassLike(schema: JsonSchema.Schema): Boolean =
+//         ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/isClassLike().
+//                     ^^^^^^ definition local schema_277
+//                                        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+//                                                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+    !(schema is Boolean) && schema.properties != null
+//    ^^^^^^ reference local schema_277
+//              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                          ^^^^^^ reference local schema_277
+//                                 ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/properties.
+  
+  // only need to include stdlib names that would be used by the code generator
+  const local builtInNames = Set(
+//            ^^^^^^^^^^^^ definition local builtInNames_281
+//                           ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set().
+    "Mapping",
+    "Listing",
+    "Dynamic",
+    "String",
+    "Boolean",
+    "Int",
+    "Int16",
+    "Int32",
+    "UInt",
+    "UInt8",
+    "UInt16",
+    "UInt32",
+    "Float",
+    "Null",
+    "Number",
+    "Deprecated"
+  )
+  
+  local function normalizeTypeName(name: String) =
+//               ^^^^^^^^^^^^^^^^^ definition local normalizeTypeName_300
+//                                 ^^^^ definition local name_300
+//                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    let (capitalized = utils.pascalCase(name))
+//       ^^^^^^^^^^^ definition local capitalized_301
+//                     ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/
+//                           ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/pascalCase().
+//                                      ^^^^ reference local name_300
+      if (builtInNames.contains(capitalized)) "\(capitalized)1"
+//        ^^^^^^^^^^^^ reference local builtInNames_281
+//                     ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#contains().
+//                              ^^^^^^^^^^^ reference local capitalized_301
+//                                               ^^^^^^^^^^^ reference local capitalized_301
+      else capitalized
+//         ^^^^^^^^^^^ reference local capitalized_301
+  
+  /// Determines the name of a type.
+  ///
+  /// Try to use the parent property's name as part of the class name in case of conflict.
+  /// If already at the root, add a number at the end.
+  local function determineTypeName(
+//               ^^^^^^^^^^^^^^^^^ definition local determineTypeName_305
+//               documentation
+//               > Determines the name of a type.
+//               > 
+//               > Try to use the parent property's name as part of the class name in case of conflict.
+//               > If already at the root, add a number at the end.
+    path: List<String>,
+//  ^^^^ definition local path_310
+//        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    candidateName: String,
+//  ^^^^^^^^^^^^^ definition local candidateName_311
+//                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    existingTypeNames: Set<Type>,
+//  ^^^^^^^^^^^^^^^^^ definition local existingTypeNames_312
+//                     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#
+//                         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/
+    index: Int
+//  ^^^^^ definition local index_313
+//         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+  ): Type =
+//   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/
+    let (candidate = normalizeTypeName(candidateName))
+//       ^^^^^^^^^ definition local candidate_315
+//                   ^^^^^^^^^^^^^^^^^ reference local normalizeTypeName_300
+//                                     ^^^^^^^^^^^^^ reference local candidateName_311
+      if (existingTypeNames.findOrNull((it) -> it.name == candidate) != null)
+//        ^^^^^^^^^^^^^^^^^ reference local existingTypeNames_312
+//                          ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#findOrNull().
+//                                      ^^ definition local it_316
+//                                             ^^ reference local it_316
+//                                                ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/name.
+//                                                        ^^^^^^^^^ reference local candidate_315
+        if (path.isEmpty)
+//          ^^^^ reference local path_310
+//               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#isEmpty.
+          determineTypeName(
+//        ^^^^^^^^^^^^^^^^^ reference local determineTypeName_305
+            path,
+//          ^^^^ reference local path_310
+            candidateName + index.toString(),
+//          ^^^^^^^^^^^^^ reference local candidateName_311
+//                          ^^^^^ reference local index_313
+//                                ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toString().
+            existingTypeNames,
+//          ^^^^^^^^^^^^^^^^^ reference local existingTypeNames_312
+            index + 1
+//          ^^^^^ reference local index_313
+          )
+        else
+          let (newPath = dropLast(path))
+//             ^^^^^^^ definition local newPath_325
+//                       ^^^^^^^^ reference local dropLast_344
+//                                ^^^^ reference local path_310
+            determineTypeName(
+//          ^^^^^^^^^^^^^^^^^ reference local determineTypeName_305
+              newPath,
+//            ^^^^^^^ reference local newPath_325
+              getCandidateName(newPath) + candidate,
+//            ^^^^^^^^^^^^^^^^ reference local getCandidateName_336
+//                             ^^^^^^^ reference local newPath_325
+//                                        ^^^^^^^^^ reference local candidate_315
+              existingTypeNames,
+//            ^^^^^^^^^^^^^^^^^ reference local existingTypeNames_312
+              index
+//            ^^^^^ reference local index_313
+            )
+      else
+        new { name = candidate; moduleName = module.moduleName }
+//            ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/name.
+//                   ^^^^^^^^^ reference local candidate_315
+//                              ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/moduleName.
+//                                                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/moduleName.
+  
+  // noinspection TypeMismatch
+  local function getCandidateName(path: List<String>) =
+//               ^^^^^^^^^^^^^^^^ definition local getCandidateName_336
+//                                ^^^^ definition local path_336
+//                                      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    if (path.isEmpty)
+//      ^^^^ reference local path_336
+//           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#isEmpty.
+      "Item"
+    else if (path.last == "[]")
+//           ^^^^ reference local path_336
+//                ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#last.
+      path.dropLast(1).lastOrNull?.ifNonNull((it) -> utils.pascalCase(singularize.singularize(it))) ?? "Item"
+//    ^^^^ reference local path_336
+//         ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#dropLast().
+//                     ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#lastOrNull.
+//                                 ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#ifNonNull().
+//                                            ^^ definition local it_340
+//                                                   ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/
+//                                                         ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/pascalCase().
+//                                                                    ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/singularize.pkl`/
+//                                                                                ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/singularize.pkl`/singularize().
+//                                                                                            ^^ reference local it_340
+    else
+      utils.pascalCase(path.last)
+//    ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/
+//          ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/pascalCase().
+//                     ^^^^ reference local path_336
+//                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#last.
+  
+  local function dropLast(path: List<String>) =
+//               ^^^^^^^^ definition local dropLast_344
+//                        ^^^^ definition local path_344
+//                              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    if (path.last == "[]")
+//      ^^^^ reference local path_344
+//           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#last.
+      path.dropLast(2)
+//    ^^^^ reference local path_344
+//         ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#dropLast().
+    else
+      path.dropLast(1)
+//    ^^^^ reference local path_344
+//         ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#dropLast().
+  
+  /// The schemas that should be rendered as classes.
+  ///
+  /// Classes get rendered for any subschema that has [JsonSchema.properties] defined, and does not show up in converters
+  local classSchemas: Type.TypeNames =
+//      ^^^^^^^^^^^^ definition local classSchemas_350
+//      documentation
+//      > The schemas that should be rendered as classes.
+//      > 
+//      > Classes get rendered for any subschema that has [`JsonSchema.properties`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.json_schema/JsonSchema.pkl#L325,C1) defined, and does not show up in converters
+//                         ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/TypeNames#
+    utils._findMatchingSubSchemas(filteredRootSchema, List(), (elem) -> elem != filteredRootSchema && isClassLike(elem))
+//  ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/_findMatchingSubSchemas().
+//                                ^^^^^^^^^^^^^^^^^^ reference local filteredRootSchema_61
+//                                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                                             ^^^^ definition local elem_354
+//                                                                      ^^^^ reference local elem_354
+//                                                                              ^^^^^^^^^^^^^^^^^^ reference local filteredRootSchema_61
+//                                                                                                    ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/isClassLike().
+//                                                                                                                ^^^^ reference local elem_354
+      // path or prefix are not explicitly in converters
+      .filter((path, _) -> !pathPrefixes(path).any((prefix) -> converters.containsKey(prefix)))
+//     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#filter().
+//             ^^^^ definition local path_356
+//                          ^^^^^^^^^^^^ reference local pathPrefixes_366
+//                                       ^^^^ reference local path_356
+//                                             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#any().
+//                                                  ^^^^^^ definition local prefix_356
+//                                                             ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/converters.
+//                                                                        ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#containsKey().
+//                                                                                    ^^^^^^ reference local prefix_356
+      .entries
+//     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#entries.
+      .fold(Map(), (accumulator: Type.TypeNames, pair) ->
+//     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#fold().
+//          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                  ^^^^^^^^^^^ definition local accumulator_358
+//                                    ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/TypeNames#
+//                                               ^^^^ definition local pair_358
+        let (path = pair.first)
+//           ^^^^ definition local path_359
+//                  ^^^^ reference local pair_358
+//                       ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#first.
+        let (schema = pair.second)
+//           ^^^^^^ definition local schema_360
+//                    ^^^^ reference local pair_358
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#second.
+        let (typeName = determineTypeName(path, getCandidateName(path), accumulator.values.toSet(), 0))
+//           ^^^^^^^^ definition local typeName_361
+//                      ^^^^^^^^^^^^^^^^^ reference local determineTypeName_305
+//                                        ^^^^ reference local path_359
+//                                              ^^^^^^^^^^^^^^^^ reference local getCandidateName_336
+//                                                               ^^^^ reference local path_359
+//                                                                      ^^^^^^^^^^^ reference local accumulator_358
+//                                                                                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#values.
+//                                                                                         ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#toSet().
+          accumulator.put(schema, typeName)
+//        ^^^^^^^^^^^ reference local accumulator_358
+//                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#put().
+//                        ^^^^^^ reference local schema_360
+//                                ^^^^^^^^ reference local typeName_361
+      )
+  
+  // Return all possible path prefixes of this path, starting with its first entry and ending with the full path
+  local function pathPrefixes(path: List<String>): List<List<String>> = new Listing {
+//               ^^^^^^^^^^^^ definition local pathPrefixes_366
+//                            ^^^^ definition local path_366
+//                                  ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                 ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+    for (i, _ in path) {
+//       ^ definition local i_367
+//               ^^^^ reference local path_366
+      path.take(i + 1)
+//    ^^^^ reference local path_366
+//         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#take().
+//              ^ reference local i_367
+    }
+  }.toList()
+//  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+  
+  /// mapSchema deeply transforms a CRD schema. CRD schemas are significantly simplified, as many fields must not be set.
+  /// Nested types are *always* represented in properties, items or additionalProperties, even if they are also set in oneOf etc
+  function mapSchema(
+//         ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/mapSchema().
+//         documentation
+//         > mapSchema deeply transforms a CRD schema. CRD schemas are significantly simplified, as many fields must not be set.
+//         > Nested types are *always* represented in properties, items or additionalProperties, even if they are also set in oneOf etc
+    schema: JsonSchema.Schema,
+//  ^^^^^^ definition local schema_375
+//                     ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+    path: Listing<String>,
+//  ^^^^ definition local path_376
+//        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    f: (JsonSchema.Schema) -> JsonSchema.Schema
+//  ^ definition local f_377
+//                 ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+//                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+  ): JsonSchema.Schema =
+//              ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+    let (applied = f.apply(schema))
+//       ^^^^^^^ definition local applied_379
+//                 ^ reference local f_377
+//                   ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Function1#apply().
+//                         ^^^^^^ reference local schema_375
+      (applied) {
+//     ^^^^^^^ reference local applied_379
+        when (applied.properties != null) {
+//            ^^^^^^^ reference local applied_379
+//                    ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/properties.
+          properties = new {
+//        ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/properties.
+            for (name, property in applied.properties!!) {
+//               ^^^^ definition local name_383
+//                     ^^^^^^^^ definition local property_383
+//                                 ^^^^^^^ reference local applied_379
+//                                         ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/properties.
+              [name] = mapSchema(property, (path) { name }, f)
+//             ^^^^ reference local name_383
+//                     ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/mapSchema().
+//                               ^^^^^^^^ reference local property_383
+//                                          ^^^^ reference local path_376
+//                                                  ^^^^ reference local name_383
+//                                                          ^ reference local f_377
+            }
+          }
+        }
+        when (applied.additionalProperties != null) {
+//            ^^^^^^^ reference local applied_379
+//                    ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/additionalProperties.
+          additionalProperties =  mapSchema(applied.additionalProperties!!, (path) { "additionalProperties" }, f)
+//        ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/additionalProperties.
+//                                ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/mapSchema().
+//                                          ^^^^^^^ reference local applied_379
+//                                                  ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/additionalProperties.
+//                                                                           ^^^^ reference local path_376
+//                                                                                                             ^ reference local f_377
+        }
+        when (applied.items != null) {
+//            ^^^^^^^ reference local applied_379
+//                    ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/items.
+          when (applied.items is Listing<JsonSchema>) {
+//              ^^^^^^^ reference local applied_379
+//                      ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/items.
+//                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                       ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+            items = new {
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/items.
+              for (i, item in applied.items as Listing<JsonSchema.Schema>) {
+//                 ^ definition local i_394
+//                    ^^^^ definition local item_394
+//                            ^^^^^^^ reference local applied_379
+//                                    ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/items.
+//                                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                                                ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+                [i] = mapSchema(item, (path) { i.toString() }, f)
+//               ^ reference local i_394
+//                    ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/mapSchema().
+//                              ^^^^ reference local item_394
+//                                     ^^^^ reference local path_376
+//                                             ^ reference local i_394
+//                                               ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toString().
+//                                                             ^ reference local f_377
+              }
+            }
+          } else {
+            items = mapSchema(applied.items as JsonSchema.Schema, (path) { "items" }, f)
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/items.
+//                  ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/mapSchema().
+//                            ^^^^^^^ reference local applied_379
+//                                    ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/items.
+//                                                        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+//                                                                 ^^^^ reference local path_376
+//                                                                                    ^ reference local f_377
+          }
+        }
+      }
+  
+  local convertedSchemas: Map<JsonSchema, ImportAndType> =
+//      ^^^^^^^^^^^^^^^^ definition local convertedSchemas_404
+//                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                        ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/ImportAndType#
+    utils.findMatchingSubschemas(filteredRootSchema, (elem) -> elem != filteredRootSchema)
+//  ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/
+//        ^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/findMatchingSubschemas().
+//                               ^^^^^^^^^^^^^^^^^^ reference local filteredRootSchema_61
+//                                                    ^^^^ definition local elem_405
+//                                                             ^^^^ reference local elem_405
+//                                                                     ^^^^^^^^^^^^^^^^^^ reference local filteredRootSchema_61
+      .filter((path, _) -> converters.containsKey(if (logPaths) trace(path) else path))
+//     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#filter().
+//             ^^^^ definition local path_406
+//                         ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/converters.
+//                                    ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#containsKey().
+//                                                    ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/logPaths.
+//                                                                    ^^^^ reference local path_406
+//                                                                               ^^^^ reference local path_406
+      .entries
+//     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#entries.
+      .fold(Map(), (accumulator: Map<JsonSchema, ImportAndType>, pair) ->
+//     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#fold().
+//          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                  ^^^^^^^^^^^ definition local accumulator_408
+//                               ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                                   ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                               ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/ImportAndType#
+//                                                               ^^^^ definition local pair_408
+        let (path = pair.first)
+//           ^^^^ definition local path_409
+//                  ^^^^ reference local pair_408
+//                       ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#first.
+        let (schema = pair.second)
+//           ^^^^^^ definition local schema_410
+//                    ^^^^ reference local pair_408
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#second.
+        let (converted = converters[path])
+//           ^^^^^^^^^ definition local converted_411
+//                       ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/converters.
+//                                  ^^^^ reference local path_409
+        let (reflected =
+//           ^^^^^^^^^ definition local reflected_412
+          if (converted is Module)
+//            ^^^^^^^^^ reference local converted_411
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#
+            reflect.Module(converted)
+//          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Module().
+//                         ^^^^^^^^^ reference local converted_411
+          else if (converted is TypeAlias)
+//                 ^^^^^^^^^ reference local converted_411
+//                              ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/TypeAlias#
+            reflect.TypeAlias(converted)
+//          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                  ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeAlias().
+//                            ^^^^^^^^^ reference local converted_411
+          else
+            reflect.Class(converted)
+//          ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                  ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class().
+//                        ^^^^^^^^^ reference local converted_411
+        )
+          accumulator.put(schema, new ImportAndType {
+//        ^^^^^^^^^^^ reference local accumulator_408
+//                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#put().
+//                        ^^^^^^ reference local schema_410
+//                                    ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/ImportAndType#
+            type {
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/type.
+              moduleName = if (reflected is reflect.Module) module.moduleName else reflected.enclosingDeclaration.name
+//            ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/moduleName.
+//                             ^^^^^^^^^ reference local reflected_412
+//                                                  ^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Module#
+//                                                                 ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/moduleName.
+//                                                                                 ^^^^^^^^^ reference local reflected_412
+//                                                                                           ^^^^^^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeDeclaration#enclosingDeclaration.
+//                                                                                                                ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Declaration#name.
+              name = reflected.name.split(".").last
+//            ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/name.
+//                   ^^^^^^^^^ reference local reflected_412
+//                             ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Declaration#name.
+//                                  ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+//                                             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#last.
+            }
+            local uri =
+//                ^^^ definition local uri_425
+              if (reflected is reflect.Module)
+//                ^^^^^^^^^ reference local reflected_412
+//                                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Module#
+                reflected.uri
+//              ^^^^^^^^^ reference local reflected_412
+//                        ^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Module#uri.
+              else
+                reflected.enclosingDeclaration.uri
+//              ^^^^^^^^^ reference local reflected_412
+//                        ^^^^^^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeDeclaration#enclosingDeclaration.
+//                                             ^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Module#uri.
+            _import = determineImportPath(uri)
+//          ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/_import.
+//                    ^^^^^^^^^^^^^^^^^^^ reference local determineImportPath_434
+//                                        ^^^ reference local uri_425
+          })
+    )
+  
+  /// If any conversions are from the core k8s library, replace the import path with [k8sImportPath]
+  local function determineImportPath(uri: String): String =
+//               ^^^^^^^^^^^^^^^^^^^ definition local determineImportPath_434
+//               documentation
+//               > If any conversions are from the core k8s library, replace the import path with [`k8sImportPath`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/k8s.contrib.crd/internal/ModuleGenerator.pkl#L51,C1)
+//                                   ^^^ definition local uri_435
+//                                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    if (
+      uri.startsWith("package://pkg.pkl-lang.org/pkl-k8s/k8s")
+//    ^^^ reference local uri_435
+//        ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#startsWith().
+      || uri.startsWith("projectpackage://pkg.pkl-lang.org/pkl-k8s/k8s")
+//       ^^^ reference local uri_435
+//           ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#startsWith().
+    )
+      k8sImportPath + uri.dropWhile((it) -> it != "#").drop(1)
+//    ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/k8sImportPath.
+//                    ^^^ reference local uri_435
+//                        ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#dropWhile().
+//                                   ^^ definition local it_440
+//                                          ^^ reference local it_440
+//                                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#drop().
+    else uri
+//       ^^^ reference local uri_435
+  
+  class ImportAndType {
+//      ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/ImportAndType#
+    _import: String
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/ImportAndType#_import.
+//           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    type: Type
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.crd 4.0.0 `internal/ModuleGenerator.pkl`/ImportAndType#type.
+//        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/
+  }
+  

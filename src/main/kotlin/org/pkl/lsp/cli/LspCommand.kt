@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,9 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
-import com.github.ajalt.clikt.parameters.options.versionOption
 import org.pkl.lsp.PklLsp
-import org.pkl.lsp.Release
 
-class LspCommand : CliktCommand(name = "pkl-lsp") {
-  init {
-    versionOption(version = Release.version)
-  }
+class LspCommand : CliktCommand(name = "server") {
 
   private val verbose: Boolean by
     option(names = arrayOf("--verbose"), help = "Send debug information to the client")

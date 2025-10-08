@@ -1,0 +1,928 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module pkl.experimental.deepToTyped.deepToTyped
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/
+  
+  import "pkl:reflect"
+  
+  /// Takes a given structure `Any` and coerces it into a concrete type `Class|TypeAlias`.
+  ///
+  /// Facts:
+  /// ```
+  /// local class Foo { x: Int }
+  /// local class Bar { foo: Foo }
+  /// local dynamicBar = new Dynamic { foo { x = 1 } }
+  /// apply(Bar, dynamicBar) == new Bar { foo = new Foo { x = 1 } }
+  /// ```
+  function apply(type: Class|TypeAlias, value: Any): Any =
+//         ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/apply().
+//         documentation
+//         > Takes a given structure `Any` and coerces it into a concrete type `Class|TypeAlias`.
+//         > 
+//         > Facts:
+//         > ```
+//         > local class Foo { x: Int }
+//         > local class Bar { foo: Foo }
+//         > local dynamicBar = new Dynamic { foo { x = 1 } }
+//         > apply(Bar, dynamicBar) == new Bar { foo = new Foo { x = 1 } }
+//         > ```
+//               ^^^^ definition local type_29
+//                     ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                           ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/TypeAlias#
+//                                      ^^^^^ definition local value_29
+//                                             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                                   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+    let (result =
+//       ^^^^^^ definition local result_30
+      attemptApply(type, value)
+//    ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/attemptApply().
+//                 ^^^^ reference local type_29
+//                       ^^^^^ reference local value_29
+    )
+      if (result is ConversionFailure) throw(result.error) else result
+//        ^^^^^^ reference local result_30
+//                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+//                                           ^^^^^^ reference local result_30
+//                                                  ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#error.
+//                                                              ^^^^^^ reference local result_30
+  
+  /// Same as [apply], but returns [ConversionFailure] rather than throwing.
+  function attemptApply(type: Class|TypeAlias, value: Any): Any|ConversionFailure =
+//         ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/attemptApply().
+//         documentation
+//         > Same as `apply`, but returns [`ConversionFailure`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.deepToTyped/deepToTyped.pkl#L43,C7) rather than throwing.
+//                      ^^^^ definition local type_36
+//                            ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                                  ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/TypeAlias#
+//                                             ^^^^^ definition local value_36
+//                                                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                                              ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+    if (type is Class)
+//      ^^^^ reference local type_36
+//              ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+      applyClass(reflect.Class(type), List(), value)
+//    ^^^^^^^^^^ reference local applyClass_128
+//               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                       ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class().
+//                             ^^^^ reference local type_36
+//                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                            ^^^^^ reference local value_36
+    else
+      applyType(reflect.TypeAlias(type).referent, value)
+//    ^^^^^^^^^ reference local applyType_224
+//              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                      ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeAlias().
+//                                ^^^^ reference local type_36
+//                                      ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeAlias#referent.
+//                                                ^^^^^ reference local value_36
+  
+  
+  class ConversionFailure {
+//      ^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+    fixed error = "\(message) (at path \(renderedPath))"
+//        ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#error.
+//                   ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#message.
+//                                       ^^^^^^^^^^^^ reference local renderedPath_48
+    message: String
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#message.
+//           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    path: Listing<String|Int>
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#path.
+//        ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+  
+    local renderedPath = path.toList().reverse().fold("", (acc, v) ->
+//        ^^^^^^^^^^^^ definition local renderedPath_48
+//                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#path.
+//                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+//                                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#reverse().
+//                                               ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#fold().
+//                                                         ^^^ definition local acc_48
+//                                                              ^ definition local v_48
+      if (v is String) "\(acc).\(v)" else "\(acc)[\(v)]"
+//        ^ reference local v_48
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                        ^^^ reference local acc_48
+//                               ^ reference local v_48
+//                                           ^^^ reference local acc_48
+//                                                  ^ reference local v_48
+    )
+  
+    function toMapping(): ConversionFailure = this
+//           ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#toMapping().
+//                        ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+    function toListing(): ConversionFailure = this
+//           ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#toListing().
+//                        ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+    function appendPath(_path: String) = (this) {
+//           ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#appendPath().
+//                      ^^^^^ definition local _path_54
+//                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      path {
+//    ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#path.
+        _path
+//      ^^^^^ reference local _path_54
+      }
+    }
+    function appendIndex(idx: Int) = (this) {
+//           ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#appendIndex().
+//                       ^^^ definition local idx_59
+//                            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+      path {
+//    ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#path.
+        idx
+//      ^^^ reference local idx_59
+      }
+    }
+  }
+  
+  function Fail(_message: String): ConversionFailure = new {
+//         ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/Fail().
+//              ^^^^^^^^ definition local _message_66
+//                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+    message = _message
+//  ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/message.
+//            ^^^^^^^^ reference local _message_66
+  }
+  
+  function Unexpected(expected: String, actual: String): ConversionFailure =
+//         ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/Unexpected().
+//                    ^^^^^^^^ definition local expected_70
+//                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                      ^^^^^^ definition local actual_70
+//                                              ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                       ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+    Fail(#"Expected "\#(expected)" but got "\#(actual)""#)
+//  ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/Fail().
+//                      ^^^^^^^^ reference local expected_70
+//                                             ^^^^^^ reference local actual_70
+  
+  hidden classHandlers: Mapping<Class, (List<reflect.Type>, Any) -> Any|ConversionFailure> = new {
+//       ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/classHandlers.
+//                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                              ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                                      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                   ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Type#
+//                                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                                                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                                                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+    [Mapping] = (typeArguments, value) ->
+//   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//               ^^^^^^^^^^^^^ definition local typeArguments_74
+//                              ^^^^^ definition local value_74
+      if (value is Dynamic|Map|Mapping)
+//        ^^^^^ reference local value_74
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+        applyMapping(typeArguments.firstOrNull ?? reflect.unknownType, typeArguments.getOrNull(1) ?? reflect.unknownType, value)
+//      ^^^^^^^^^^^^ reference local applyMapping_241
+//                   ^^^^^^^^^^^^^ reference local typeArguments_74
+//                                 ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#firstOrNull.
+//                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                                                        ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/unknownType.
+//                                                                     ^^^^^^^^^^^^^ reference local typeArguments_74
+//                                                                                   ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#getOrNull().
+//                                                                                                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                                                                                                           ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/unknownType.
+//                                                                                                                        ^^^^^ reference local value_74
+      else
+        Unexpected("Dynamic|Map|Mapping", value.getClass().simpleName)
+//      ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/Unexpected().
+//                                        ^^^^^ reference local value_74
+//                                              ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                                                         ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#simpleName.
+  
+    [Map] = (typeArguments, value) ->
+//   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//           ^^^^^^^^^^^^^ definition local typeArguments_80
+//                          ^^^^^ definition local value_80
+      if (value is Dynamic|Map|Mapping)
+//        ^^^^^ reference local value_80
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+        applyMap(typeArguments.firstOrNull ?? reflect.unknownType, typeArguments.getOrNull(1) ?? reflect.unknownType, value)
+//      ^^^^^^^^ reference local applyMap_231
+//               ^^^^^^^^^^^^^ reference local typeArguments_80
+//                             ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#firstOrNull.
+//                                            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                                                    ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/unknownType.
+//                                                                 ^^^^^^^^^^^^^ reference local typeArguments_80
+//                                                                               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#getOrNull().
+//                                                                                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                                                                                                       ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/unknownType.
+//                                                                                                                    ^^^^^ reference local value_80
+      else
+        Unexpected("Dynamic|Map|Mapping", value.getClass().simpleName)
+//      ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/Unexpected().
+//                                        ^^^^^ reference local value_80
+//                                              ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                                                         ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#simpleName.
+  
+    [Listing] = (typeArguments, value) ->
+//   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//               ^^^^^^^^^^^^^ definition local typeArguments_86
+//                              ^^^^^ definition local value_86
+      if (value is Dynamic|Collection|Listing)
+//        ^^^^^ reference local value_86
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                         ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Collection#
+//                                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+        applyListing(typeArguments.firstOrNull ?? reflect.unknownType, value.toList())
+//      ^^^^^^^^^^^^ reference local applyListing_251
+//                   ^^^^^^^^^^^^^ reference local typeArguments_86
+//                                 ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#firstOrNull.
+//                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                                                        ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/unknownType.
+//                                                                     ^^^^^ reference local value_86
+//                                                                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+      else
+        Unexpected("Dynamic|Collection|Listing", value.getClass().simpleName)
+//      ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/Unexpected().
+//                                               ^^^^^ reference local value_86
+//                                                     ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                                                                ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#simpleName.
+  
+    [List] = (typeArguments, value) ->
+//   ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//            ^^^^^^^^^^^^^ definition local typeArguments_92
+//                           ^^^^^ definition local value_92
+      if (value is Dynamic|Collection)
+//        ^^^^^ reference local value_92
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                         ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Collection#
+        applyList(typeArguments.firstOrNull ?? reflect.unknownType, value)
+//      ^^^^^^^^^ reference local applyList_244
+//                ^^^^^^^^^^^^^ reference local typeArguments_92
+//                              ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#firstOrNull.
+//                                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                                                     ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/unknownType.
+//                                                                  ^^^^^ reference local value_92
+      else
+        Unexpected("Dynamic|Collection", value.getClass().simpleName)
+//      ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/Unexpected().
+//                                       ^^^^^ reference local value_92
+//                                             ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                                                        ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#simpleName.
+  
+    [Set] = (typeArguments, value) ->
+//   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#
+//           ^^^^^^^^^^^^^ definition local typeArguments_98
+//                          ^^^^^ definition local value_98
+      if (value is Dynamic|Collection)
+//        ^^^^^ reference local value_98
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                         ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Collection#
+        applyList(typeArguments.firstOrNull ?? reflect.unknownType, value).toSet()
+//      ^^^^^^^^^ reference local applyList_244
+//                ^^^^^^^^^^^^^ reference local typeArguments_98
+//                              ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#firstOrNull.
+//                                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                                                     ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/unknownType.
+//                                                                  ^^^^^ reference local value_98
+//                                                                         ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#toSet().
+      else
+        Unexpected("Dynamic|Collection", value.getClass().simpleName)
+//      ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/Unexpected().
+//                                       ^^^^^ reference local value_98
+//                                             ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                                                        ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#simpleName.
+  
+    [Collection] = (typeArguments, value) ->
+//   ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Collection#
+//                  ^^^^^^^^^^^^^ definition local typeArguments_104
+//                                 ^^^^^ definition local value_104
+      if (value is Dynamic|Collection)
+//        ^^^^^ reference local value_104
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                         ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Collection#
+        applyList(typeArguments.firstOrNull ?? reflect.unknownType, value)
+//      ^^^^^^^^^ reference local applyList_244
+//                ^^^^^^^^^^^^^ reference local typeArguments_104
+//                              ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#firstOrNull.
+//                                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                                                     ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/unknownType.
+//                                                                  ^^^^^ reference local value_104
+      else
+        Unexpected("Dynamic|Collection", value.getClass().simpleName)
+//      ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/Unexpected().
+//                                       ^^^^^ reference local value_104
+//                                             ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                                                        ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#simpleName.
+  
+    [Int] = (_, value) ->
+//   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//              ^^^^^ definition local value_110
+      if (value is Int) value else Unexpected("Int", value.getClass().simpleName)
+//        ^^^^^ reference local value_110
+//                 ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                      ^^^^^ reference local value_110
+//                                 ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/Unexpected().
+//                                                   ^^^^^ reference local value_110
+//                                                         ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                                                                    ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#simpleName.
+  
+    [String] = (_, value) ->
+//   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                 ^^^^^ definition local value_113
+      if (value is String) value else Unexpected("String", value.getClass().simpleName)
+//        ^^^^^ reference local value_113
+//                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                         ^^^^^ reference local value_113
+//                                    ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/Unexpected().
+//                                                         ^^^^^ reference local value_113
+//                                                               ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                                                                          ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#simpleName.
+  
+    [Float] = (_, value) ->
+//   ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Float#
+//                ^^^^^ definition local value_116
+      if (value is Number) value.toFloat() else Unexpected("Float", value.getClass().simpleName)
+//        ^^^^^ reference local value_116
+//                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+//                         ^^^^^ reference local value_116
+//                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#toFloat().
+//                                              ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/Unexpected().
+//                                                                  ^^^^^ reference local value_116
+//                                                                        ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                                                                                   ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#simpleName.
+  
+    [Number] = (_, value) ->
+//   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+//                 ^^^^^ definition local value_119
+      if (value is Number) value else Unexpected("Number", value.getClass().simpleName)
+//        ^^^^^ reference local value_119
+//                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Number#
+//                         ^^^^^ reference local value_119
+//                                    ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/Unexpected().
+//                                                         ^^^^^ reference local value_119
+//                                                               ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                                                                          ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#simpleName.
+  
+    [Boolean] = (_, value) ->
+//   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                  ^^^^^ definition local value_122
+      if (value is Boolean) value else Unexpected("Boolean", value.getClass().simpleName)
+//        ^^^^^ reference local value_122
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                          ^^^^^ reference local value_122
+//                                     ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/Unexpected().
+//                                                           ^^^^^ reference local value_122
+//                                                                 ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                                                                            ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#simpleName.
+  
+    [Any] = (_, value) -> value
+//   ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//              ^^^^^ definition local value_125
+//                        ^^^^^ reference local value_125
+  }
+  
+  local function applyClass(type: reflect.Class, typeArguments: List<reflect.Type>, value: Any): Any|ConversionFailure =
+//               ^^^^^^^^^^ definition local applyClass_128
+//                          ^^^^ definition local type_128
+//                                        ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#
+//                                               ^^^^^^^^^^^^^ definition local typeArguments_128
+//                                                              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                                           ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Type#
+//                                                                                  ^^^^^ definition local value_128
+//                                                                                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                                                                               ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                                                                                   ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+    let (clazz = type.reflectee)
+//       ^^^^^ definition local clazz_129
+//               ^^^^ reference local type_128
+//                    ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#reflectee.
+      if (classHandlers.containsKey(clazz))
+//        ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/classHandlers.
+//                      ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#containsKey().
+//                                  ^^^^^ reference local clazz_129
+        classHandlers[clazz].apply(typeArguments, value)
+//      ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/classHandlers.
+//                    ^^^^^ reference local clazz_129
+//                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Function2#apply().
+//                                 ^^^^^^^^^^^^^ reference local typeArguments_128
+//                                                ^^^^^ reference local value_128
+      else if (type.isSubclassOf(reflect.Class(Typed)))
+//             ^^^^ reference local type_128
+//                  ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#isSubclassOf().
+//                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                                       ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class().
+//                                             ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#
+        applyTyped(type, value)
+//      ^^^^^^^^^^ reference local applyTyped_169
+//                 ^^^^ reference local type_128
+//                       ^^^^^ reference local value_128
+      else
+        Fail("Unsupported type for conversion: \(type.reflectee.simpleName)")
+//      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/Fail().
+//                                               ^^^^ reference local type_128
+//                                                    ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#reflectee.
+//                                                              ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#simpleName.
+  
+  local function doesNotInherit(clazz: reflect.Class) =
+//               ^^^^^^^^^^^^^^ definition local doesNotInherit_137
+//                              ^^^^^ definition local clazz_137
+//                                             ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#
+    clazz.superclass == null || clazz.superclass.reflectee == Module || clazz.superclass.reflectee == Typed
+//  ^^^^^ reference local clazz_137
+//        ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#superclass.
+//                              ^^^^^ reference local clazz_137
+//                                    ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#superclass.
+//                                               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#reflectee.
+//                                                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#
+//                                                                      ^^^^^ reference local clazz_137
+//                                                                            ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#superclass.
+//                                                                                       ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#reflectee.
+//                                                                                                    ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#
+  
+  local function getAllProperties(clazz: reflect.Class?): Map<String, reflect.Property> =
+//               ^^^^^^^^^^^^^^^^ definition local getAllProperties_140
+//                                ^^^^^ definition local clazz_140
+//                                               ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#
+//                                                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                                                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                            ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#
+    if (clazz == null) Map()
+//      ^^^^^ reference local clazz_140
+//                     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+    else if (doesNotInherit(clazz)) clazz.properties
+//           ^^^^^^^^^^^^^^ reference local doesNotInherit_137
+//                          ^^^^^ reference local clazz_140
+//                                  ^^^^^ reference local clazz_140
+//                                        ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#properties.
+    else getAllProperties(clazz.superclass!!) + clazz.properties
+//       ^^^^^^^^^^^^^^^^ reference local getAllProperties_140
+//                        ^^^^^ reference local clazz_140
+//                              ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#superclass.
+//                                              ^^^^^ reference local clazz_140
+//                                                    ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#properties.
+  
+  hidden keyTransform: Function1<reflect.Property, String>?
+//       ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/keyTransform.
+//                     ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Function1#
+//                                       ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#
+//                                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+  
+  local function applyProperty(valueAsMap: Map, prop: reflect.Property) =
+//               ^^^^^^^^^^^^^ definition local applyProperty_147
+//                             ^^^^^^^^^^ definition local valueAsMap_147
+//                                         ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                                              ^^^^ definition local prop_147
+//                                                            ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#
+    let (propName = keyTransform?.ifNonNull((it) -> (it as Function1<reflect.Property, String>).apply(prop)) ?? prop.name)
+//       ^^^^^^^^ definition local propName_148
+//                  ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/keyTransform.
+//                                ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#ifNonNull().
+//                                           ^^ definition local it_148
+//                                                   ^^ reference local it_148
+//                                                         ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Function1#
+//                                                                           ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#
+//                                                                                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                                              ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Function1#apply().
+//                                                                                                    ^^^^ reference local prop_147
+//                                                                                                              ^^^^ reference local prop_147
+//                                                                                                                   ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Declaration#name.
+      if (valueAsMap.containsKey(propName)) applyType(prop.type, valueAsMap[propName])
+//        ^^^^^^^^^^ reference local valueAsMap_147
+//                   ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#containsKey().
+//                               ^^^^^^^^ reference local propName_148
+//                                          ^^^^^^^^^ reference local applyType_224
+//                                                    ^^^^ reference local prop_147
+//                                                         ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#type.
+//                                                               ^^^^^^^^^^ reference local valueAsMap_147
+//                                                                          ^^^^^^^^ reference local propName_148
+      else if (!(prop.type is reflect.NullableType) && prop.defaultValue != null) prop.defaultValue
+//               ^^^^ reference local prop_147
+//                    ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#type.
+//                                    ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/NullableType#
+//                                                     ^^^^ reference local prop_147
+//                                                          ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#defaultValue.
+//                                                                                ^^^^ reference local prop_147
+//                                                                                     ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#defaultValue.
+      else null
+  
+  local function applyDynamicOrMapping(type: reflect.Class, value: Dynamic|Mapping): Typed|ConversionFailure =
+//               ^^^^^^^^^^^^^^^^^^^^^ definition local applyDynamicOrMapping_153
+//                                     ^^^^ definition local type_153
+//                                                   ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#
+//                                                          ^^^^^ definition local value_153
+//                                                                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                                                   ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#
+//                                                                                         ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+    let (valueAsMap = value.toMap())
+//       ^^^^^^^^^^ definition local valueAsMap_154
+//                    ^^^^^ reference local value_153
+//                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+      let (converted = getAllProperties(type)
+//         ^^^^^^^^^ definition local converted_155
+//                     ^^^^^^^^^^^^^^^^ reference local getAllProperties_140
+//                                      ^^^^ reference local type_153
+        .fold(
+//       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#fold().
+          Map(),
+//        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+          (acc: Map|ConversionFailure, name: String, prop: reflect.Property) ->
+//         ^^^ definition local acc_158
+//              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+//                                     ^^^^ definition local name_158
+//                                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                   ^^^^ definition local prop_158
+//                                                                 ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Property#
+            // Fixed properties are automatically initialised by `toTyped`
+            if (acc is ConversionFailure || prop.modifiers.contains("fixed"))
+//              ^^^ reference local acc_158
+//                     ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+//                                          ^^^^ reference local prop_158
+//                                               ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Declaration#modifiers.
+//                                                         ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#contains().
+              acc
+//            ^^^ reference local acc_158
+            else
+              let (result = applyProperty(valueAsMap, prop))
+//                 ^^^^^^ definition local result_163
+//                          ^^^^^^^^^^^^^ reference local applyProperty_147
+//                                        ^^^^^^^^^^ reference local valueAsMap_154
+//                                                    ^^^^ reference local prop_158
+                if (result is ConversionFailure) result.appendPath(name) else acc.put(name, result)
+//                  ^^^^^^ reference local result_163
+//                            ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+//                                               ^^^^^^ reference local result_163
+//                                                      ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#appendPath().
+//                                                                 ^^^^ reference local name_158
+//                                                                            ^^^ reference local acc_158
+//                                                                                ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#put().
+//                                                                                    ^^^^ reference local name_158
+//                                                                                          ^^^^^^ reference local result_163
+        )
+      )
+        if (converted is ConversionFailure) converted else converted.toTyped(type.reflectee)
+//          ^^^^^^^^^ reference local converted_155
+//                       ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+//                                          ^^^^^^^^^ reference local converted_155
+//                                                         ^^^^^^^^^ reference local converted_155
+//                                                                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#toTyped().
+//                                                                           ^^^^ reference local type_153
+//                                                                                ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#reflectee.
+  
+  local function applyTyped(type: reflect.Class, value: Any): Typed|ConversionFailure =
+//               ^^^^^^^^^^ definition local applyTyped_169
+//                          ^^^^ definition local type_169
+//                                        ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#
+//                                               ^^^^^ definition local value_169
+//                                                      ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                                            ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#
+//                                                                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+    if (value is Dynamic|Mapping) applyDynamicOrMapping(type, value)
+//      ^^^^^ reference local value_169
+//               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                ^^^^^^^^^^^^^^^^^^^^^ reference local applyDynamicOrMapping_153
+//                                                      ^^^^ reference local type_169
+//                                                            ^^^^^ reference local value_169
+    else if (value is Typed && value.getClass() == type.reflectee) value
+//           ^^^^^ reference local value_169
+//                    ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Typed#
+//                             ^^^^^ reference local value_169
+//                                   ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                                                 ^^^^ reference local type_169
+//                                                      ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class#reflectee.
+//                                                                 ^^^^^ reference local value_169
+    else Unexpected(type.name, value.getClass().simpleName)
+//       ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/Unexpected().
+//                  ^^^^ reference local type_169
+//                       ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Declaration#name.
+//                             ^^^^^ reference local value_169
+//                                   ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                                              ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#simpleName.
+  
+  hidden reflectTypeHandlers: Mapping<Class, (reflect.Type, Any) -> Any|ConversionFailure> = new Mapping {
+//       ^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/reflectTypeHandlers.
+//                            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                    ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+//                                                    ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Type#
+//                                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                                                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                                                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+//                                                                                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+    [reflect.DeclaredType] = (type, value) ->
+//   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//           ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#
+//                            ^^^^ definition local type_175
+//                                  ^^^^^ definition local value_175
+        let (_type = type as reflect.DeclaredType)
+//           ^^^^^ definition local _type_176
+//                   ^^^^ reference local type_175
+//                                   ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#
+          let (reflectee = _type.referent.reflectee)
+//             ^^^^^^^^^ definition local reflectee_177
+//                         ^^^^^ reference local _type_176
+//                               ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#referent.
+//                                        ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeDeclaration#reflectee.
+            if (reflectee is Class)
+//              ^^^^^^^^^ reference local reflectee_177
+//                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#
+              applyClass(reflect.Class(reflectee), _type.typeArguments, value)
+//            ^^^^^^^^^^ reference local applyClass_128
+//                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                               ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Class().
+//                                     ^^^^^^^^^ reference local reflectee_177
+//                                                 ^^^^^ reference local _type_176
+//                                                       ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/DeclaredType#typeArguments.
+//                                                                      ^^^^^ reference local value_175
+            else
+              // TODO: Assert that typeParameters.isEmpty??
+              applyType(reflect.TypeAlias(reflectee).referent, value)
+//            ^^^^^^^^^ reference local applyType_224
+//                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                              ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeAlias().
+//                                        ^^^^^^^^^ reference local reflectee_177
+//                                                   ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeAlias#referent.
+//                                                             ^^^^^ reference local value_175
+  
+    [reflect.StringLiteralType] = (type, value) ->
+//   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//           ^^^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/StringLiteralType#
+//                                 ^^^^ definition local type_184
+//                                       ^^^^^ definition local value_184
+        let (expected = (type as reflect.StringLiteralType).value)
+//           ^^^^^^^^ definition local expected_185
+//                       ^^^^ reference local type_184
+//                                       ^^^^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/StringLiteralType#
+//                                                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/StringLiteralType#value.
+          if (value is String)
+//            ^^^^^ reference local value_184
+//                     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+            if (value == expected)
+//              ^^^^^ reference local value_184
+//                       ^^^^^^^^ reference local expected_185
+              value
+//            ^^^^^ reference local value_184
+            else
+              Unexpected(expected, value)
+//            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/Unexpected().
+//                       ^^^^^^^^ reference local expected_185
+//                                 ^^^^^ reference local value_184
+          else
+            Unexpected(expected, value.getClass().simpleName)
+//          ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/Unexpected().
+//                     ^^^^^^^^ reference local expected_185
+//                               ^^^^^ reference local value_184
+  
+    [reflect.UnionType] = (type, value) ->
+//   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//           ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/UnionType#
+//                         ^^^^ definition local type_194
+//                               ^^^^^ definition local value_194
+      (type as reflect.UnionType).members.fold(
+//     ^^^^ reference local type_194
+//                     ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/UnionType#
+//                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/UnionType#members.
+//                                        ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#fold().
+        Fail("No member of union type matched value '\(value)'"),
+//      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/Fail().
+//                                                     ^^^^^ reference local value_194
+        (acc, _type) ->
+//       ^^^ definition local acc_197
+//            ^^^^^ definition local _type_197
+          if (acc is ConversionFailure)
+//            ^^^ reference local acc_197
+//                   ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+            let (attempt = applyType(_type, value))
+//               ^^^^^^^ definition local attempt_199
+//                         ^^^^^^^^^ reference local applyType_224
+//                                   ^^^^^ reference local _type_197
+//                                          ^^^^^ reference local value_194
+              if (attempt is ConversionFailure) acc else attempt
+//                ^^^^^^^ reference local attempt_199
+//                           ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+//                                              ^^^ reference local acc_197
+//                                                       ^^^^^^^ reference local attempt_199
+          else
+            acc
+//          ^^^ reference local acc_197
+      )
+  
+    [reflect.NullableType] = (type, value) ->
+//   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//           ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/NullableType#
+//                            ^^^^ definition local type_205
+//                                  ^^^^^ definition local value_205
+      if (value == null) null else applyType((type as reflect.NullableType).member, value)
+//        ^^^^^ reference local value_205
+//                                 ^^^^^^^^^ reference local applyType_224
+//                                            ^^^^ reference local type_205
+//                                                            ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/NullableType#
+//                                                                          ^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/NullableType#member.
+//                                                                                  ^^^^^ reference local value_205
+  
+    [reflect.FunctionType] = (_, _) ->
+//   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//           ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/FunctionType#
+      Fail("Cannot convert function types")
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/Fail().
+  
+    [reflect.ModuleType] = (_, _) ->
+//   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//           ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/ModuleType#
+      Fail("unimplmeneted")
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/Fail().
+  
+    [reflect.UnknownType] = (_, value) ->
+//   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//           ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/UnknownType#
+//                              ^^^^^ definition local value_214
+      value
+//    ^^^^^ reference local value_214
+  
+    [reflect.NothingType] = (_, _) ->
+//   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//           ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/NothingType#
+      Fail("Cannot convert anything to `nothing`")
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/Fail().
+  
+    [reflect.TypeVariable] = (type, value) ->
+//   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//           ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/TypeVariable#
+//                            ^^^^ definition local type_220
+//                                  ^^^^^ definition local value_220
+      Fail("The type variable `\(type)` is unbound when trying to convert `\(value)`")
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/Fail().
+//                               ^^^^ reference local type_220
+//                                                                           ^^^^^ reference local value_220
+  }
+  
+  local function applyType(type: reflect.Type, value: Any): Any|ConversionFailure =
+//               ^^^^^^^^^ definition local applyType_224
+//                         ^^^^ definition local type_224
+//                                       ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Type#
+//                                             ^^^^^ definition local value_224
+//                                                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#
+//                                                              ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+    let (clazz = type.getClass())
+//       ^^^^^ definition local clazz_225
+//               ^^^^ reference local type_224
+//                    ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+      if (reflectTypeHandlers.containsKey(clazz))
+//        ^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/reflectTypeHandlers.
+//                            ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#containsKey().
+//                                        ^^^^^ reference local clazz_225
+        reflectTypeHandlers[clazz].apply(type, value)
+//      ^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/reflectTypeHandlers.
+//                          ^^^^^ reference local clazz_225
+//                                 ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Function2#apply().
+//                                       ^^^^ reference local type_224
+//                                             ^^^^^ reference local value_224
+      else
+        Fail("Unknown reflect.Type: \(type.getClass().simpleName)")
+//      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/Fail().
+//                                    ^^^^ reference local type_224
+//                                         ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#getClass().
+//                                                    ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Class#simpleName.
+  
+  local function applyMap(keyType: reflect.Type, valueType: reflect.Type, value: Dynamic|Map|Mapping): Map|ConversionFailure =
+//               ^^^^^^^^ definition local applyMap_231
+//                        ^^^^^^^ definition local keyType_231
+//                                         ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Type#
+//                                               ^^^^^^^^^ definition local valueType_231
+//                                                                  ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Type#
+//                                                                        ^^^^^ definition local value_231
+//                                                                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                                       ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                                                                                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                                                                     ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                                                                                                         ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+    let (_value = if (value is Map) value else value.toMap())
+//       ^^^^^^ definition local _value_232
+//                    ^^^^^ reference local value_231
+//                             ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                                  ^^^^^ reference local value_231
+//                                             ^^^^^ reference local value_231
+//                                                   ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+      _value.fold(Map(), (acc, k, v) -> if (acc is ConversionFailure) acc else
+//    ^^^^^^ reference local _value_232
+//           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#fold().
+//                ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                        ^^^ definition local acc_233
+//                             ^ definition local k_233
+//                                ^ definition local v_233
+//                                          ^^^ reference local acc_233
+//                                                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+//                                                                    ^^^ reference local acc_233
+        let (_k = applyType(keyType, k))
+//           ^^ definition local _k_234
+//                ^^^^^^^^^ reference local applyType_224
+//                          ^^^^^^^ reference local keyType_231
+//                                   ^ reference local k_233
+          if (_k is ConversionFailure) _k else
+//            ^^ reference local _k_234
+//                  ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+//                                     ^^ reference local _k_234
+            let (_v = applyType(valueType, v))
+//               ^^ definition local _v_236
+//                    ^^^^^^^^^ reference local applyType_224
+//                              ^^^^^^^^^ reference local valueType_231
+//                                         ^ reference local v_233
+              if (_v is ConversionFailure) _v else
+//                ^^ reference local _v_236
+//                      ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+//                                         ^^ reference local _v_236
+                acc.put(_k, _v)
+//              ^^^ reference local acc_233
+//                      ^^ reference local _k_234
+//                          ^^ reference local _v_236
+      )
+  
+  local function applyMapping(keyType: reflect.Type, valueType: reflect.Type, value: Dynamic|Map|Mapping): Mapping|ConversionFailure =
+//               ^^^^^^^^^^^^ definition local applyMapping_241
+//                            ^^^^^^^ definition local keyType_241
+//                                             ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Type#
+//                                                   ^^^^^^^^^ definition local valueType_241
+//                                                                      ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Type#
+//                                                                            ^^^^^ definition local value_241
+//                                                                                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                                                           ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#
+//                                                                                               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                                                                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                                                                                 ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+    applyMap(keyType, valueType, value).toMapping()
+//  ^^^^^^^^ reference local applyMap_231
+//           ^^^^^^^ reference local keyType_241
+//                    ^^^^^^^^^ reference local valueType_241
+//                               ^^^^^ reference local value_241
+//                                      ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#toMapping().
+  
+  local function applyList(type: reflect.Type, value: Dynamic|Collection): List|ConversionFailure =
+//               ^^^^^^^^^ definition local applyList_244
+//                         ^^^^ definition local type_244
+//                                       ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Type#
+//                                             ^^^^^ definition local value_244
+//                                                    ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                            ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Collection#
+//                                                                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                                              ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+    value.toList().foldIndexed(List(), (idx: Int, acc: List|ConversionFailure, v) -> if (acc is ConversionFailure) acc else
+//  ^^^^^ reference local value_244
+//        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Collection#toList().
+//                 ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#foldIndexed().
+//                             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                      ^^^ definition local idx_245
+//                                           ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                                                ^^^ definition local acc_245
+//                                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                          ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+//                                                                             ^ definition local v_245
+//                                                                                       ^^^ reference local acc_245
+//                                                                                              ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+//                                                                                                                 ^^^ reference local acc_245
+      let (_v = applyType(type, v))
+//         ^^ definition local _v_246
+//              ^^^^^^^^^ reference local applyType_224
+//                        ^^^^ reference local type_244
+//                              ^ reference local v_245
+        if (_v is ConversionFailure) _v.appendIndex(idx) else
+//          ^^ reference local _v_246
+//                ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+//                                   ^^ reference local _v_246
+//                                      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#appendIndex().
+//                                                  ^^^ reference local idx_245
+          acc.add(_v)
+//        ^^^ reference local acc_245
+//            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                ^^ reference local _v_246
+    )
+  
+  local function applyListing(type: reflect.Type, value: Dynamic|Collection): Listing|ConversionFailure =
+//               ^^^^^^^^^^^^ definition local applyListing_251
+//                            ^^^^ definition local type_251
+//                                          ^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Type#
+//                                                ^^^^^ definition local value_251
+//                                                       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Dynamic#
+//                                                               ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Collection#
+//                                                                            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                                                                    ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#
+    applyList(type, value).toListing()
+//  ^^^^^^^^^ reference local applyList_244
+//            ^^^^ reference local type_251
+//                  ^^^^^ reference local value_251
+//                         ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.deepToTyped 1.1.1 `deepToTyped.pkl`/ConversionFailure#toListing().
+  

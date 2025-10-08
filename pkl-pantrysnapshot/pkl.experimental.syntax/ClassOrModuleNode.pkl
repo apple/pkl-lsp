@@ -1,0 +1,333 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  abstract module pkl.experimental.syntax.ClassOrModuleNode
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/
+  
+  extends "Node.pkl"
+  
+  import "Node.pkl"
+  import "DocCommentNode.pkl"
+  import "AnnotationNode.pkl"
+  import "ExpressionNode.pkl"
+  import "TypeAnnotationNode.pkl"
+  import "IdentifierNode.pkl"
+  import "ObjectBodyNode.pkl"
+  import "ParameterNode.pkl"
+  
+  /// The properties as defined in the class or module.
+  properties: Listing<PropertyDefinitionNode>?
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/properties.
+//documentation
+//> The properties as defined in the class or module.
+//            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                    ^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#
+  
+  /// The methods as defined in the class or module.
+  methods: Listing<MethodNode>?
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/methods.
+//documentation
+//> The methods as defined in the class or module.
+//         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                 ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/MethodNode#
+  
+  /// A node representing the definition of a new property.
+  class PropertyDefinitionNode extends Node {
+//      ^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#
+//      documentation
+//      > A node representing the definition of a new property.
+//                                     ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/
+    docComment: DocCommentNode?
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#docComment.
+//              ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `DocCommentNode.pkl`/
+    annotations: Listing<AnnotationNode>?
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#annotations.
+//               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                       ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `AnnotationNode.pkl`/
+    modifiers: Listing<"abstract"|"const"|"external"|"fixed"|"hidden"|"local">(isDistinct)?
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#modifiers.
+//             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                                                             ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#isDistinct.
+    name: IdentifierNode
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#name.
+//        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `IdentifierNode.pkl`/
+    typeAnnotation: TypeAnnotationNode?
+//  ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#typeAnnotation.
+//                  ^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeAnnotationNode.pkl`/
+  
+    defaultValue: ExpressionNode?
+//  ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#defaultValue.
+//                ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+  
+    /// The object body for a property definition.
+    ///
+    /// * `foo: Bar { ... }` is invalid syntax.
+    /// * `foo = myBar { ... }` is technically valid syntax but should be acheived using an amends expression node.
+    objectBody: ObjectBodyNode(typeAnnotation == null && defaultValue == null)?
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#objectBody.
+//  documentation
+//  > The object body for a property definition.
+//  > 
+//  > * `foo: Bar { ... }` is invalid syntax.
+//  > * `foo = myBar { ... }` is technically valid syntax but should be acheived using an amends expression node.
+//              ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ObjectBodyNode.pkl`/
+//                             ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#typeAnnotation.
+//                                                       ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#defaultValue.
+  
+    local function renderPropertyLine(currentIndent: String) = currentIndent + List(
+//                 ^^^^^^^^^^^^^^^^^^ definition local renderPropertyLine_51
+//                                    ^^^^^^^^^^^^^ definition local currentIndent_51
+//                                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                             ^^^^^^^^^^^^^ reference local currentIndent_51
+//                                                                             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+      if (modifiers != null) modifiers.join(" ") + " " else null,
+//        ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#modifiers.
+//                           ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#modifiers.
+//                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#join().
+      name.render(currentIndent),
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#name.
+//         ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `IdentifierNode.pkl`/render().
+//                ^^^^^^^^^^^^^ reference local currentIndent_51
+      typeAnnotation?.render(currentIndent),
+//    ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#typeAnnotation.
+//                    ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeAnnotationNode.pkl`/render().
+//                           ^^^^^^^^^^^^^ reference local currentIndent_51
+      if (defaultValue != null) " = " + defaultValue.render(currentIndent) else null,
+//        ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#defaultValue.
+//                                      ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#defaultValue.
+//                                                   ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                                                          ^^^^^^^^^^^^^ reference local currentIndent_51
+      if (objectBody != null) " " + objectBody.render(currentIndent) else null
+//        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#objectBody.
+//                                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#objectBody.
+//                                             ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ObjectBodyNode.pkl`/render().
+//                                                    ^^^^^^^^^^^^^ reference local currentIndent_51
+    ).filterNonNull().join("")
+//    ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#filterNonNull().
+//                    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  
+    function render(currentIndent: String) = List(
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#render().
+//                  ^^^^^^^^^^^^^ definition local currentIndent_59
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+      docComment?.render(currentIndent),
+//    ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#docComment.
+//                ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `DocCommentNode.pkl`/render().
+//                       ^^^^^^^^^^^^^ reference local currentIndent_59
+      annotations?.toList()?.map((a) -> a.render(currentIndent))?.join("\n"),
+//    ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#annotations.
+//                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+//                           ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                                ^ definition local a_61
+//                                      ^ reference local a_61
+//                                        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `AnnotationNode.pkl`/render().
+//                                               ^^^^^^^^^^^^^ reference local currentIndent_59
+//                                                                ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+      renderPropertyLine(currentIndent)
+//    ^^^^^^^^^^^^^^^^^^ reference local renderPropertyLine_51
+//                       ^^^^^^^^^^^^^ reference local currentIndent_59
+    )
+      .filter((it) -> it != null && !it.isEmpty)
+//     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#filter().
+//             ^^ definition local it_64
+//                    ^^ reference local it_64
+//                                   ^^ reference local it_64
+//                                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#isEmpty.
+      .join("\n")
+//     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  }
+  
+  class MethodNode extends Node {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/MethodNode#
+//                         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/
+    docComment: DocCommentNode?
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/MethodNode#docComment.
+//              ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `DocCommentNode.pkl`/
+    annotations: Listing<AnnotationNode>?
+//  ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/MethodNode#annotations.
+//               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                       ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `AnnotationNode.pkl`/
+    modifiers: Listing<"abstract"|"const"|"external"|"local">(isDistinct)?
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/MethodNode#modifiers.
+//             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                                                            ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#isDistinct.
+    name: IdentifierNode
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/MethodNode#name.
+//        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `IdentifierNode.pkl`/
+    // TODO typeParameters?
+    parameters: Listing<ParameterNode>
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/MethodNode#parameters.
+//              ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                      ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ParameterNode.pkl`/
+    returnTypeAnnotation: TypeAnnotationNode?
+//  ^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/MethodNode#returnTypeAnnotation.
+//                        ^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeAnnotationNode.pkl`/
+    body: ExpressionNode
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/MethodNode#body.
+//        ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ExpressionNode.pkl`/
+  
+    local function renderMethodHeader(currentIndent: String) = List(
+//                 ^^^^^^^^^^^^^^^^^^ definition local renderMethodHeader_78
+//                                    ^^^^^^^^^^^^^ definition local currentIndent_78
+//                                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+      currentIndent,
+//    ^^^^^^^^^^^^^ reference local currentIndent_78
+      if (modifiers != null) modifiers.join(" ") + " " else null,
+//        ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/MethodNode#modifiers.
+//                           ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/MethodNode#modifiers.
+//                                     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#join().
+      "function ",
+      name.render(currentIndent),
+//    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/MethodNode#name.
+//         ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `IdentifierNode.pkl`/render().
+//                ^^^^^^^^^^^^^ reference local currentIndent_78
+      "(",
+      parameters?.toList()?.map((p) -> p.render(currentIndent)).join(", "),
+//    ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/MethodNode#parameters.
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+//                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                               ^ definition local p_84
+//                                     ^ reference local p_84
+//                                       ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ParameterNode.pkl`/render().
+//                                              ^^^^^^^^^^^^^ reference local currentIndent_78
+//                                                              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+      ")",
+      returnTypeAnnotation?.render(currentIndent),
+//    ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/MethodNode#returnTypeAnnotation.
+//                          ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeAnnotationNode.pkl`/render().
+//                                 ^^^^^^^^^^^^^ reference local currentIndent_78
+      " ="
+    ).filterNonNull().join("")
+//    ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#filterNonNull().
+//                    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  
+    function renderMethodBody(currentIndent: String) =
+//           ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/MethodNode#renderMethodBody().
+//                            ^^^^^^^^^^^^^ definition local currentIndent_90
+//                                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+      let (header = renderMethodHeader(currentIndent))
+//         ^^^^^^ definition local header_91
+//                  ^^^^^^^^^^^^^^^^^^ reference local renderMethodHeader_78
+//                                     ^^^^^^^^^^^^^ reference local currentIndent_90
+        let (inlineBody = body.render(currentIndent))
+//           ^^^^^^^^^^ definition local inlineBody_92
+//                        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/MethodNode#body.
+//                             ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                                    ^^^^^^^^^^^^^ reference local currentIndent_90
+          let (firstInlineBodyLine = inlineBody.takeWhile((it) -> !it.endsWith("\n")))
+//             ^^^^^^^^^^^^^^^^^^^ definition local firstInlineBodyLine_93
+//                                   ^^^^^^^^^^ reference local inlineBody_92
+//                                              ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#takeWhile().
+//                                                         ^^ definition local it_93
+//                                                                 ^^ reference local it_93
+//                                                                    ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#endsWith().
+            if ("\(header) \(firstInlineBodyLine)".length <= maxColumnWidth)
+//                 ^^^^^^ reference local header_91
+//                           ^^^^^^^^^^^^^^^^^^^ reference local firstInlineBodyLine_93
+//                                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#length.
+//                                                           ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/maxColumnWidth.
+              "\(header) \(inlineBody)"
+//               ^^^^^^ reference local header_91
+//                         ^^^^^^^^^^ reference local inlineBody_92
+            else
+              "\(header)\n\(currentIndent + indent)\(body.render(currentIndent + indent))"
+//               ^^^^^^ reference local header_91
+//                          ^^^^^^^^^^^^^ reference local currentIndent_90
+//                                          ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/indent.
+//                                                   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/MethodNode#body.
+//                                                        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/render().
+//                                                               ^^^^^^^^^^^^^ reference local currentIndent_90
+//                                                                               ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `Node.pkl`/indent.
+  
+    function render(currentIndent: String) = List(
+//           ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/MethodNode#render().
+//                  ^^^^^^^^^^^^^ definition local currentIndent_99
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+      docComment?.render(currentIndent),
+//    ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/MethodNode#docComment.
+//                ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `DocCommentNode.pkl`/render().
+//                       ^^^^^^^^^^^^^ reference local currentIndent_99
+      annotations?.toList()?.map((a) -> a.render(currentIndent))?.join("\n"),
+//    ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/MethodNode#annotations.
+//                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+//                           ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                                ^ definition local a_101
+//                                      ^ reference local a_101
+//                                        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `AnnotationNode.pkl`/render().
+//                                               ^^^^^^^^^^^^^ reference local currentIndent_99
+//                                                                ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+      renderMethodBody(currentIndent)
+//    ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/MethodNode#renderMethodBody().
+//                     ^^^^^^^^^^^^^ reference local currentIndent_99
+    )
+      .filter((it) -> it != null && !it.isEmpty)
+//     ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#filter().
+//             ^^ definition local it_104
+//                    ^^ reference local it_104
+//                                   ^^ reference local it_104
+//                                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#isEmpty.
+      .join("\n")
+//     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  }
+  
+  function renderProperties(currentIndent: String) = properties
+//         ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/renderProperties().
+//                          ^^^^^^^^^^^^^ definition local currentIndent_108
+//                                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                   ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/properties.
+    ?.toList()
+//    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+    ?.map((p) -> p.render(currentIndent))
+//    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//         ^ definition local p_110
+//               ^ reference local p_110
+//                 ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#render().
+//                        ^^^^^^^^^^^^^ reference local currentIndent_108
+    ?.join("\n\n")
+//    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  
+  function renderMethods(currentIndent: String) = methods
+//         ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/renderMethods().
+//                       ^^^^^^^^^^^^^ definition local currentIndent_113
+//                                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/methods.
+    ?.toList()
+//    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toList().
+    ?.map((m) -> m.render(currentIndent))
+//    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//         ^ definition local m_115
+//               ^ reference local m_115
+//                 ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/MethodNode#render().
+//                        ^^^^^^^^^^^^^ reference local currentIndent_113
+    ?.join("\n\n")
+//    ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  
+  function render(currentIndent: String) = List(renderProperties(currentIndent), renderMethods(currentIndent))
+//         ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/render().
+//                ^^^^^^^^^^^^^ definition local currentIndent_118
+//                               ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                              ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/renderProperties().
+//                                                               ^^^^^^^^^^^^^ reference local currentIndent_118
+//                                                                               ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/renderMethods().
+//                                                                                             ^^^^^^^^^^^^^ reference local currentIndent_118
+    .filterNonNull()
+//   ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#filterNonNull().
+    .join("\n\n")
+//   ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+  

@@ -1,0 +1,68 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  amends "../Telegraf.pkl"
+  
+  agent {
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/InputJolokiaAgent.pkl`/agent.
+    collection_jitter = 0.s
+//  ^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/InputJolokiaAgent.pkl`/collection_jitter.
+//                        ^ reference pkl . pkl 0.29.0 `pkl.base`/Int#s.
+    debug = true
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/InputJolokiaAgent.pkl`/debug.
+    flush_interval = 30.s
+//  ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/InputJolokiaAgent.pkl`/flush_interval.
+//                      ^ reference pkl . pkl 0.29.0 `pkl.base`/Int#s.
+    flush_jitter = 0.s
+//  ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/InputJolokiaAgent.pkl`/flush_jitter.
+//                   ^ reference pkl . pkl 0.29.0 `pkl.base`/Int#s.
+    interval = 30.s
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/InputJolokiaAgent.pkl`/interval.
+//                ^ reference pkl . pkl 0.29.0 `pkl.base`/Int#s.
+  }
+  
+  inputs {
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/InputJolokiaAgent.pkl`/inputs.
+    jolokia2_agent {
+//  ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/InputJolokiaAgent.pkl`/jolokia2_agent.
+      new {
+        urls {
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/InputJolokiaAgent.pkl`/urls.
+          "http://localhost:7883"
+        }
+        response_timeout = 3.s
+//      ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/InputJolokiaAgent.pkl`/response_timeout.
+//                           ^ reference pkl . pkl 0.29.0 `pkl.base`/Int#s.
+        tls_cert = "/var/private/client.pem"
+//      ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/InputJolokiaAgent.pkl`/tls_cert.
+        tls_key  = "/var/private/client-key.pem"
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/InputJolokiaAgent.pkl`/tls_key.
+        metric {
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/InputJolokiaAgent.pkl`/metric.
+          new {
+            name = "java_runtime"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/InputJolokiaAgent.pkl`/name.
+            mbean = "java.lang:type=Runtime"
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/InputJolokiaAgent.pkl`/mbean.
+            paths {
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/com.influxdata.telegraf 1.5.0 `examples/InputJolokiaAgent.pkl`/paths.
+              "Uptime"
+            }
+          }
+        }
+      }
+    }
+  }
+  

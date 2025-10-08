@@ -1,0 +1,88 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module pkl.toml.examples.converters
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/converters.pkl`/
+  
+  import "../toml.pkl"
+  
+  class Dog {
+//      ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/converters.pkl`/Dog#
+    breed: String
+//  ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/converters.pkl`/Dog#breed.
+//         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    sleepTime: Duration
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/converters.pkl`/Dog#sleepTime.
+//             ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+  }
+  
+  dogs {
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/converters.pkl`/dogs.
+    new Dog {
+//      ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/converters.pkl`/Dog#
+      breed = "Golden Retreiver"
+//    ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/converters.pkl`/breed.
+      sleepTime = 12.h
+//    ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/converters.pkl`/sleepTime.
+//                   ^ reference pkl . pkl 0.29.0 `pkl.base`/Int#h.
+    }
+    new Dog {
+//      ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/converters.pkl`/Dog#
+      breed = "GERMAN SHEPHERD"
+//    ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/converters.pkl`/breed.
+      sleepTime = 10.h
+//    ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/converters.pkl`/sleepTime.
+//                   ^ reference pkl . pkl 0.29.0 `pkl.base`/Int#h.
+    }
+    new Dog {
+//      ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/converters.pkl`/Dog#
+      breed = "greyhound"
+//    ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/converters.pkl`/breed.
+      sleepTime = 18.h
+//    ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/converters.pkl`/sleepTime.
+//                   ^ reference pkl . pkl 0.29.0 `pkl.base`/Int#h.
+    }
+  }
+  
+  output {
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/converters.pkl`/output.
+    renderer = new toml.Renderer {
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/converters.pkl`/renderer.
+//                      ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `toml.pkl`/Renderer#
+      converters {
+//    ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/converters.pkl`/converters.
+        [Dog] = (dog: Dog) -> (dog) {
+//       ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/converters.pkl`/Dog#
+//               ^^^ definition local dog_43
+//                    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/converters.pkl`/Dog#
+//                             ^^^ reference local dog_43
+            breed = dog.breed.toLowerCase()
+//          ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/converters.pkl`/breed.
+//                  ^^^ reference local dog_43
+//                      ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.toml 1.0.2 `examples/converters.pkl`/Dog#breed.
+//                            ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#toLowerCase().
+          }
+        [Duration] = (dur: Duration) -> "\(dur.value)\(dur.unit)"
+//       ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+//                    ^^^ definition local dur_46
+//                         ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#
+//                                         ^^^ reference local dur_46
+//                                             ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#value.
+//                                                     ^^^ reference local dur_46
+//                                                         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Duration#unit.
+      }
+    }
+  }
+  

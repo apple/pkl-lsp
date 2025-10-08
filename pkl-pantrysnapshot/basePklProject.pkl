@@ -1,0 +1,131 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module basePklProject
+//^^^^^^^^^^^^^^^^^^^^^ definition pkl . . . `basePklProject.pkl`/
+  
+  amends "pkl:Project"
+  
+  import "pkl:reflect"
+  
+  local myModule = reflect.Module(module)
+//      ^^^^^^^^ definition local myModule_22
+//                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Module().
+  
+  local packageName: String =
+//      ^^^^^^^^^^^ definition local packageName_24
+//                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    findRootModule(myModule)
+//  ^^^^^^^^^^^^^^ reference local findRootModule_29
+//                 ^^^^^^^^ reference local myModule_22
+      .relativePathTo(module)
+//     ^^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#relativePathTo().
+      .last
+//     ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#last.
+  
+  local function findRootModule(mod: reflect.Module): Module =
+//               ^^^^^^^^^^^^^^ definition local findRootModule_29
+//                              ^^^ definition local mod_29
+//                                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Module#
+//                                                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Module#
+    let (supermodule = mod.supermodule)
+//       ^^^^^^^^^^^ definition local supermodule_30
+//                     ^^^ reference local mod_29
+//                         ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Module#supermodule.
+      if (supermodule == null || !supermodule.isAmend) mod.reflectee
+//        ^^^^^^^^^^^ reference local supermodule_30
+//                                ^^^^^^^^^^^ reference local supermodule_30
+//                                            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Module#isAmend.
+//                                                     ^^^ reference local mod_29
+//                                                         ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Module#reflectee.
+      else findRootModule(supermodule)
+//         ^^^^^^^^^^^^^^ reference local findRootModule_29
+//                        ^^^^^^^^^^^ reference local supermodule_30
+  
+  const local allTests = import*("**/tests/**.pkl").keys.filter((it) -> !it.contains("tests/fixtures/"))
+//            ^^^^^^^^ definition local allTests_34
+//                                                  ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#keys.
+//                                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#filter().
+//                                                               ^^ definition local it_34
+//                                                                       ^^ reference local it_34
+//                                                                          ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#contains().
+  
+  package {
+//^^^^^^^ definition pkl . . . `basePklProject.pkl`/package.
+    name = packageName
+//  ^^^^ definition pkl . . . `basePklProject.pkl`/name.
+//         ^^^^^^^^^^^ reference local packageName_24
+    apiTests = tests // api tests are shared with module tests
+//  ^^^^^^^^ definition pkl . . . `basePklProject.pkl`/apiTests.
+//             ^^^^^ reference pkl . . . `basePklProject.pkl`/tests.
+    baseUri = "package://pkg.pkl-lang.org/pkl-pantry/\(name)"
+//  ^^^^^^^ definition pkl . . . `basePklProject.pkl`/baseUri.
+//                                                     ^^^^ reference pkl . . . `basePklProject.pkl`/name.
+    packageZipUrl = "https://github.com/apple/pkl-pantry/releases/download/\(name)@\(version)/\(name)@\(version).zip"
+//  ^^^^^^^^^^^^^ definition pkl . . . `basePklProject.pkl`/packageZipUrl.
+//                                                                           ^^^^ reference pkl . . . `basePklProject.pkl`/name.
+//                                                                                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.Project`/Package#version.
+//                                                                                              ^^^^ reference pkl . . . `basePklProject.pkl`/name.
+//                                                                                                      ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.Project`/Package#version.
+    license = "Apache-2.0"
+//  ^^^^^^^ definition pkl . . . `basePklProject.pkl`/license.
+    authors {
+//  ^^^^^^^ definition pkl . . . `basePklProject.pkl`/authors.
+      "The Pkl Authors <pkl-oss@group.apple.com>"
+    }
+    exclude {
+//  ^^^^^^^ definition pkl . . . `basePklProject.pkl`/exclude.
+      "examples/**"
+      "tests/**"
+    }
+    description = myModule.docComment
+//  ^^^^^^^^^^^ definition pkl . . . `basePklProject.pkl`/description.
+//                ^^^^^^^^ reference local myModule_22
+//                         ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.reflect`/Declaration#docComment.
+    issueTracker = "https://github.com/apple/pkl-pantry/issues"
+//  ^^^^^^^^^^^^ definition pkl . . . `basePklProject.pkl`/issueTracker.
+    sourceCode = "https://github.com/apple/pkl-pantry/tree/\(name)@\(version)/packages/\(name)"
+//  ^^^^^^^^^^ definition pkl . . . `basePklProject.pkl`/sourceCode.
+//                                                           ^^^^ reference pkl . . . `basePklProject.pkl`/name.
+//                                                                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.Project`/Package#version.
+//                                                                                       ^^^^ reference pkl . . . `basePklProject.pkl`/name.
+    sourceCodeUrlScheme = "https://github.com/apple/pkl-pantry/blob/\(name)@\(version)/packages/\(name)%{path}#L%{line}-%{endLine}"
+//  ^^^^^^^^^^^^^^^^^^^ definition pkl . . . `basePklProject.pkl`/sourceCodeUrlScheme.
+//                                                                    ^^^^ reference pkl . . . `basePklProject.pkl`/name.
+//                                                                            ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.Project`/Package#version.
+//                                                                                                ^^^^ reference pkl . . . `basePklProject.pkl`/name.
+  }
+  
+  tests {
+//^^^^^ definition pkl . . . `basePklProject.pkl`/tests.
+    for (test in allTests) {
+//       ^^^^ definition local test_56
+//               ^^^^^^^^ reference local allTests_34
+      when (test.split("/").first == package.name) {
+//          ^^^^ reference local test_56
+//               ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+//                          ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#first.
+//                                   ^^^^^^^ reference pkl . . . `basePklProject.pkl`/package.
+//                                           ^^^^ reference pkl . pkl 0.29.0 `pkl.Project`/Package#name.
+        test.replaceFirst(package.name, ".")
+//      ^^^^ reference local test_56
+//           ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceFirst().
+//                        ^^^^^^^ reference pkl . . . `basePklProject.pkl`/package.
+//                                ^^^^ reference pkl . pkl 0.29.0 `pkl.Project`/Package#name.
+      }
+    }
+  }
+  

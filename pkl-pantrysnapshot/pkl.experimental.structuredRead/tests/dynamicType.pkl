@@ -1,0 +1,129 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module pkl.experimental.structuredRead.tests.dynamicType
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/dynamicType.pkl`/
+  amends "pkl:test"
+  
+  import ".../structuredRead.pkl"
+  
+  local function testHarness(name: String, value: String) = (structuredRead.fromExternalProps) {
+//               ^^^^^^^^^^^ definition local testHarness_21
+//                           ^^^^ definition local name_21
+//                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                         ^^^^^ definition local value_21
+//                                                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                           ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/
+//                                                                          ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fromExternalProps.
+    local responses = Map(name, value)
+//        ^^^^^^^^^ definition local responses_22
+//                    ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                        ^^^^ reference local name_21
+//                              ^^^^^ reference local value_21
+    readFunc = (s:String) -> responses.getOrNull(s.replaceFirst(inputScheme, ""))
+//  ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/dynamicType.pkl`/readFunc.
+//              ^ definition local s_23
+//                ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                           ^^^^^^^^^ reference local responses_22
+//                                     ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#getOrNull().
+//                                               ^ reference local s_23
+//                                                 ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceFirst().
+//                                                              ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/inputScheme.
+  }
+  
+  
+  local class DynamicValues {
+//            ^^^^^^^^^^^^^ definition local DynamicValues_27
+    TestInput {
+//  ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/dynamicType.pkl`/DynamicValues#TestInput.
+      Nested = "String"
+//    ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/dynamicType.pkl`/DynamicValues#Nested.
+    }
+  }
+  
+  local class NestedDynamic {
+//            ^^^^^^^^^^^^^ definition local NestedDynamic_33
+    Layer1 {
+//  ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/dynamicType.pkl`/NestedDynamic#Layer1.
+      Layer2 {
+//    ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/dynamicType.pkl`/NestedDynamic#Layer2.
+        Layer3 {
+//      ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/dynamicType.pkl`/NestedDynamic#Layer3.
+          TestValue = 40
+//        ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/dynamicType.pkl`/NestedDynamic#TestValue.
+          DefaultString = "Still here"
+//        ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/dynamicType.pkl`/NestedDynamic#DefaultString.
+        }
+        TestIntType = 32
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/dynamicType.pkl`/NestedDynamic#TestIntType.
+      }
+      DefaultInt = 42
+//    ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/dynamicType.pkl`/NestedDynamic#DefaultInt.
+    }
+  }
+  examples {
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/dynamicType.pkl`/examples.
+    ["dynamic types"] {
+      testHarness("TestInput.Nested", "A new string").fill(DynamicValues)
+//    ^^^^^^^^^^^ reference local testHarness_21
+//                                                    ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fill().
+//                                                         ^^^^^^^^^^^^^ reference local DynamicValues_27
+    }
+    ["nested dynamic types"] {
+      testHarness("Layer1.Layer2.Layer3.TestValue", "999").fill(NestedDynamic)
+//    ^^^^^^^^^^^ reference local testHarness_21
+//                                                         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fill().
+//                                                              ^^^^^^^^^^^^^ reference local NestedDynamic_33
+    }
+    ["incorrect dynamic value"] {
+      module.catch(() -> testHarness("Layer1.Layer2.TestIntType", "String").fill(NestedDynamic))
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                       ^^^^^^^^^^^ reference local testHarness_21
+//                                                                          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fill().
+//                                                                               ^^^^^^^^^^^^^ reference local NestedDynamic_33
+    }
+  }
+  
+  local underTest = testHarness("Layer1.Layer2.Layer3.TestValue", "999").fill(NestedDynamic) as NestedDynamic
+//      ^^^^^^^^^ definition local underTest_57
+//                  ^^^^^^^^^^^ reference local testHarness_21
+//                                                                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fill().
+//                                                                            ^^^^^^^^^^^^^ reference local NestedDynamic_33
+//                                                                                              ^^^^^^^^^^^^^ reference local NestedDynamic_33
+  
+  facts {
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/dynamicType.pkl`/facts.
+    ["incorrect type for dynamic property causes coerce error"] {
+      module.catch(() -> testHarness("Layer1.Layer2.TestIntType", "String").fill(NestedDynamic)).contains("coerce")
+//           ^^^^^ reference pkl . pkl 0.29.0 `pkl.test`/catch().
+//                       ^^^^^^^^^^^ reference local testHarness_21
+//                                                                          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `structuredRead.pkl`/fill().
+//                                                                               ^^^^^^^^^^^^^ reference local NestedDynamic_33
+//                                                                                               ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#contains().
+    }
+    ["nested dynamic value set"] {
+        underTest.Layer1.Layer2.Layer3.TestValue == 999
+//      ^^^^^^^^^ reference local underTest_57
+//                ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/dynamicType.pkl`/NestedDynamic#Layer1.
+    }
+    ["nested dynamic default values preserved"] {
+        underTest.Layer1.Layer2.Layer3.DefaultString == "Still here" &&
+//      ^^^^^^^^^ reference local underTest_57
+//                ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/dynamicType.pkl`/NestedDynamic#Layer1.
+        underTest.Layer1.DefaultInt == 42
+//      ^^^^^^^^^ reference local underTest_57
+//                ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.structuredRead 1.0.4 `tests/dynamicType.pkl`/NestedDynamic#Layer1.
+    }
+  }

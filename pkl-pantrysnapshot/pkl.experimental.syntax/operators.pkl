@@ -1,0 +1,240 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module pkl.experimental.syntax.operators
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/
+  
+  typealias Multiply = "*"
+//          ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Multiply#
+  
+  typealias Divide = "/"
+//          ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Divide#
+  
+  typealias Plus = "+"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Plus#
+  
+  typealias BinaryMinus = "-"
+//          ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/BinaryMinus#
+  
+  typealias Modulo = "%"
+//          ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Modulo#
+  
+  typealias GreaterThan = ">"
+//          ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/GreaterThan#
+  
+  typealias LessThan = "<"
+//          ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/LessThan#
+  
+  typealias GreaterThanOrEquals = ">="
+//          ^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/GreaterThanOrEquals#
+  
+  typealias LessThanOrEquals = "<="
+//          ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/LessThanOrEquals#
+  
+  typealias IntegerDivide = "~/"
+//          ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/IntegerDivide#
+  
+  typealias Equals = "=="
+//          ^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Equals#
+  
+  typealias NotEquals = "!="
+//          ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/NotEquals#
+  
+  typealias NullishCoalesce = "??"
+//          ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/NullishCoalesce#
+  
+  typealias Pipe = "|>"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Pipe#
+  
+  typealias BitwiseAnd = "&"
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/BitwiseAnd#
+  
+  typealias BitwiseOr = "|"
+//          ^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/BitwiseOr#
+  
+  typealias Exponent = "**"
+//          ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Exponent#
+  
+  typealias Is = "is"
+//          ^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Is#
+  
+  typealias As = "as"
+//          ^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/As#
+  
+  typealias And = "&&"
+//          ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/And#
+  
+  typealias Or = "||"
+//          ^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Or#
+  
+  typealias Not = "!"
+//          ^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Not#
+  
+  typealias UnaryMinus = "-"
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/UnaryMinus#
+  
+  typealias NonNullAssertion = "!!"
+//          ^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/NonNullAssertion#
+  
+  typealias BinaryOperator =
+//          ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/BinaryOperator#
+    Multiply
+//  ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Multiply#
+    |Divide
+//   ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Divide#
+    |Plus
+//   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Plus#
+    |BinaryMinus
+//   ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/BinaryMinus#
+    |Modulo
+//   ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Modulo#
+    |GreaterThan
+//   ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/GreaterThan#
+    |GreaterThanOrEquals
+//   ^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/GreaterThanOrEquals#
+    |LessThan
+//   ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/LessThan#
+    |LessThanOrEquals
+//   ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/LessThanOrEquals#
+    |IntegerDivide
+//   ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/IntegerDivide#
+    |Equals
+//   ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Equals#
+    |NotEquals
+//   ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/NotEquals#
+    |NullishCoalesce
+//   ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/NullishCoalesce#
+    |Pipe
+//   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Pipe#
+    |BitwiseAnd
+//   ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/BitwiseAnd#
+    |BitwiseOr
+//   ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/BitwiseOr#
+    |Exponent
+//   ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Exponent#
+    |Is
+//   ^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Is#
+    |As
+//   ^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/As#
+    |And
+//   ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/And#
+    |Or
+//   ^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Or#
+  
+  typealias PrefixOperator = Not|UnaryMinus
+//          ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/PrefixOperator#
+//                           ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Not#
+//                               ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/UnaryMinus#
+  
+  typealias PostfixOperator = NonNullAssertion
+//          ^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/PostfixOperator#
+//                            ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/NonNullAssertion#
+  
+  MULTIPLY: Multiply
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/MULTIPLY.
+//          ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Multiply#
+  
+  DIVIDE: Divide
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/DIVIDE.
+//        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Divide#
+  
+  PLUS: Plus
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/PLUS.
+//      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Plus#
+  
+  BINARY_MINUS: BinaryMinus
+//^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/BINARY_MINUS.
+//              ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/BinaryMinus#
+  
+  MODULO: Modulo
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/MODULO.
+//        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Modulo#
+  
+  GREATER_THAN: GreaterThan
+//^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/GREATER_THAN.
+//              ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/GreaterThan#
+  
+  LESS_THAN: LessThan
+//^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/LESS_THAN.
+//           ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/LessThan#
+  
+  GREATER_THAN_OR_EQUALS: GreaterThanOrEquals
+//^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/GREATER_THAN_OR_EQUALS.
+//                        ^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/GreaterThanOrEquals#
+  
+  LESS_THAN_OR_EQUALS: LessThanOrEquals
+//^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/LESS_THAN_OR_EQUALS.
+//                     ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/LessThanOrEquals#
+  
+  INTEGER_DIVIDE: IntegerDivide
+//^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/INTEGER_DIVIDE.
+//                ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/IntegerDivide#
+  
+  EQUALS: Equals
+//^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/EQUALS.
+//        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Equals#
+  
+  NOT_EQUALS: NotEquals
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/NOT_EQUALS.
+//            ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/NotEquals#
+  
+  NULLISH_COALESCE: NullishCoalesce
+//^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/NULLISH_COALESCE.
+//                  ^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/NullishCoalesce#
+  
+  PIPE: Pipe
+//^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/PIPE.
+//      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Pipe#
+  
+  BITWISE_AND: BitwiseAnd
+//^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/BITWISE_AND.
+//             ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/BitwiseAnd#
+  
+  BITWISE_OR: BitwiseOr
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/BITWISE_OR.
+//            ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/BitwiseOr#
+  
+  EXPONENT: Exponent
+//^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/EXPONENT.
+//          ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Exponent#
+  
+  IS: Is
+//^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/IS.
+//    ^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Is#
+  
+  AS: As
+//^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/AS.
+//    ^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/As#
+  
+  AND: And
+//^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/AND.
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/And#
+  
+  OR: Or
+//^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/OR.
+//    ^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Or#
+  
+  NOT: Not
+//^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/NOT.
+//     ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/Not#
+  
+  NON_NULL_ASSERTION: NonNullAssertion
+//^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/NON_NULL_ASSERTION.
+//                    ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/NonNullAssertion#
+  
+  UNARY_MINUS: UnaryMinus
+//^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/UNARY_MINUS.
+//             ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `operators.pkl`/UnaryMinus#
+  

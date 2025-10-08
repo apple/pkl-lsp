@@ -1,0 +1,874 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  /// Support for generating classes.
+  @ModuleInfo { minPklVersion = "0.25.0" }
+// ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/ModuleInfo#
+//              ^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/minPklVersion.
+  @Unlisted
+// ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Unlisted#
+  module org.json_schema.contrib.internal.ModuleGenerator
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/
+  
+  import "@syntax/TypeNode.pkl"
+  import "@syntax/ClassNode.pkl"
+  import "@syntax/ClassOrModuleNode.pkl"
+  import "@syntax/TypeAliasNode.pkl"
+  import "@syntax/ModuleNode.pkl"
+  import "@syntax/DocCommentNode.pkl"
+  import "@jsonschema/JsonSchema.pkl"
+  import "@uri/URI.pkl"
+  import "utils.pkl"
+  import "TypesGenerator.pkl"
+  import "../ref.pkl"
+  import "Type.pkl"
+  import "singularize.pkl"
+  
+  local pcfRenderer = new PcfRenderer { useCustomStringDelimiters = true }
+//      ^^^^^^^^^^^ definition local pcfRenderer_35
+//                        ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/PcfRenderer#
+//                                      ^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/useCustomStringDelimiters.
+  local jsonRenderer = new JsonRenderer {}
+//      ^^^^^^^^^^^^ definition local jsonRenderer_36
+//                         ^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/JsonRenderer#
+  
+  /// The root schema, used to resolve `$ref` values.
+  rootSchema: JsonSchema
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/rootSchema.
+//documentation
+//> The root schema, used to resolve `$ref` values.
+//            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+  
+  // local collatedRootSchema = rootSchema
+  local collatedRootSchema = if (rootSchema.allOf != null) TypesGenerator.collateAllOf(rootSchema) else rootSchema
+//      ^^^^^^^^^^^^^^^^^^ definition local collatedRootSchema_42
+//                               ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/rootSchema.
+//                                          ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/allOf.
+//                                                         ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                                                                        ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/collateAllOf().
+//                                                                                     ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/rootSchema.
+//                                                                                                      ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/rootSchema.
+  
+  /// The URI representing the root schema, used to resolve `$ref` values.
+  baseUri: URI
+//^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/baseUri.
+//         ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+  
+  /// Existing type names that have been generated prior to generating this module.
+  existingTypes: Type.TypeNames
+//^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/existingTypes.
+//documentation
+//> Existing type names that have been generated prior to generating this module.
+//                    ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/TypeNames#
+  
+  /// The name of this module
+  moduleName: String = utils.pascalCase(baseUri.pathSegments.last.replaceAll(".json", ""))
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleName.
+//            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                     ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/
+//                           ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/pascalCase().
+//                                      ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/baseUri.
+//                                              ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/pathSegments.
+//                                                           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#last.
+//                                                                ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#replaceAll().
+  
+  local typesGenerator: TypesGenerator = new { baseUri = module.baseUri; enclosingModuleName = moduleName }
+//      ^^^^^^^^^^^^^^ definition local typesGenerator_53
+//                      ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                                             ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/baseUri.
+//                                                              ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/baseUri.
+//                                                                       ^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/enclosingModuleName.
+//                                                                                             ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleName.
+  
+  /// The types described directly in this JSON Schema document (excludes types in an external reference).
+  moduleTypes: Type.TypeNames = typeAliasSchemas + classSchemas
+//^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleTypes.
+//documentation
+//> The types described directly in this JSON Schema document (excludes types in an external reference).
+//                  ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/TypeNames#
+//                              ^^^^^^^^^^^^^^^^ reference local typeAliasSchemas_293
+//                                                 ^^^^^^^^^^^^ reference local classSchemas_269
+  
+  /// Generate a Pkl [ModuleNode] from a given schema.
+  moduleNode: ModuleNode =
+//^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleNode.
+//documentation
+//> Generate a Pkl [`ModuleNode`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.syntax/ModuleNode.pkl#L18,C1) from a given schema.
+//            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ModuleNode.pkl`/
+    let (allTypeNames = moduleTypes + existingTypes)
+//       ^^^^^^^^^^^^ definition local allTypeNames_60
+//                      ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleTypes.
+//                                    ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/existingTypes.
+      new {
+        imports {
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/imports.
+          for (moduleName in existingTypes.values.map((it) -> it.moduleName).toSet()) {
+//             ^^^^^^^^^^ definition local moduleName_63
+//                           ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/existingTypes.
+//                                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#values.
+//                                                ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#map().
+//                                                     ^^ definition local it_63
+//                                                            ^^ reference local it_63
+//                                                               ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/moduleName.
+//                                                                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#toSet().
+            new {
+              // TODO: shouldn't include transitive deps
+              value = "\(moduleName.split(".").last).pkl"
+//            ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/value.
+//                       ^^^^^^^^^^ reference local moduleName_63
+//                                  ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+//                                             ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#last.
+            }
+          }
+        }
+        classes {
+//      ^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/classes.
+          for (schema, type in classSchemas) {
+//             ^^^^^^ definition local schema_71
+//                     ^^^^ definition local type_71
+//                             ^^^^^^^^^^^^ reference local classSchemas_269
+            generatePklClass(schema, type, allTypeNames)
+//          ^^^^^^^^^^^^^^^^ reference local generatePklClass_174
+//                           ^^^^^^ reference local schema_71
+//                                   ^^^^ reference local type_71
+//                                         ^^^^^^^^^^^^ reference local allTypeNames_60
+          }
+        }
+        typealiases {
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/typealiases.
+          for (schema, type in typeAliasSchemas) {
+//             ^^^^^^ definition local schema_76
+//                     ^^^^ definition local type_76
+//                             ^^^^^^^^^^^^^^^^ reference local typeAliasSchemas_293
+            generatePklTypeAlias(schema, type, allTypeNames)
+//          ^^^^^^^^^^^^^^^^^^^^ reference local generatePklTypeAlias_189
+//                               ^^^^^^ reference local schema_76
+//                                       ^^^^ reference local type_76
+//                                             ^^^^^^^^^^^^ reference local allTypeNames_60
+          }
+        }
+        declaration {
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/declaration.
+          docComment = getDocComment(collatedRootSchema, "module")
+//        ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/docComment.
+//                     ^^^^^^^^^^^^^ reference local getDocComment_100
+//                                   ^^^^^^^^^^^^^^^^^^ reference local collatedRootSchema_42
+          when (moduleName != null) {
+//              ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleName.
+            moduleHeader {
+//          ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleHeader.
+              name {
+//            ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/name.
+                parts {
+//              ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/parts.
+                  for (part in moduleName.split(".")) {
+//                     ^^^^ definition local part_86
+//                             ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleName.
+//                                        ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#split().
+                    new { value = part }
+//                        ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/value.
+//                                ^^^^ reference local part_86
+                  }
+                }
+              }
+            }
+          }
+        }
+        properties =
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/properties.
+          if (isClassLike(collatedRootSchema))
+//            ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/isClassLike().
+//                        ^^^^^^^^^^^^^^^^^^ reference local collatedRootSchema_42
+            generateClassBody(collatedRootSchema, allTypeNames)
+//          ^^^^^^^^^^^^^^^^^ reference local generateClassBody_140
+//                            ^^^^^^^^^^^^^^^^^^ reference local collatedRootSchema_42
+//                                                ^^^^^^^^^^^^ reference local allTypeNames_60
+          else null
+      }
+  
+  /// Determine the doc comments of a schema.
+  ///
+  /// This combines a schema's title, description and "default" descriptions into one doc comment.
+  /// Wraps the comments at 100 columns.
+  local function getDocComment(schema: JsonSchema|Boolean, type: "class"|"module"|Null): DocCommentNode? =
+//               ^^^^^^^^^^^^^ definition local getDocComment_100
+//               documentation
+//               > Determine the doc comments of a schema.
+//               > 
+//               > This combines a schema's title, description and "default" descriptions into one doc comment.
+//               > Wraps the comments at 100 columns.
+//                             ^^^^^^ definition local schema_104
+//                                     ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+//                                                         ^^^^ definition local type_104
+//                                                                                ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Null#
+//                                                                                       ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `DocCommentNode.pkl`/
+    if (schema is Boolean)
+//      ^^^^^^ reference local schema_104
+//                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+      null
+    else
+      let (docCommentText: String =
+//         ^^^^^^^^^^^^^^ definition local docCommentText_108
+//                         ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+        List(
+//      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+          schema.title,
+//        ^^^^^^ reference local schema_104
+//               ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/title.
+          schema.description,
+//        ^^^^^^ reference local schema_104
+//               ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/description.
+          if (type is "module") "This module was generated from JSON Schema from <\(baseUri)>." else null,
+//            ^^^^ reference local type_104
+//                                                                                  ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/baseUri.
+          if (type is "class"|"module") getWarnings(schema, type) else null,
+//            ^^^^ reference local type_104
+//                                      ^^^^^^^^^^^ reference local getWarnings_125
+//                                                  ^^^^^^ reference local schema_104
+//                                                          ^^^^ reference local type_104
+          if (schema.default != null) "Default if undefined: `\(pcfRenderer.renderValue(schema.default))`" else null
+//            ^^^^^^ reference local schema_104
+//                   ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/default.
+//                                                              ^^^^^^^^^^^ reference local pcfRenderer_35
+//                                                                          ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/PcfRenderer#renderValue().
+//                                                                                      ^^^^^^ reference local schema_104
+//                                                                                             ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/default.
+        )
+          .filterNonNull()
+//         ^^^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#filterNonNull().
+          .join("\n\n")
+//         ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#join().
+      )
+        if (docCommentText.isEmpty) null
+//          ^^^^^^^^^^^^^^ reference local docCommentText_108
+//                         ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#isEmpty.
+        else new DocCommentNode {
+//               ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `DocCommentNode.pkl`/
+          value = docCommentText
+//        ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/value.
+//                ^^^^^^^^^^^^^^ reference local docCommentText_108
+          autoWrap = true
+//        ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/autoWrap.
+        }
+  
+  local function getWarnings(schema: JsonSchema, type: "class"|"module"): String? =
+//               ^^^^^^^^^^^ definition local getWarnings_125
+//                           ^^^^^^ definition local schema_125
+//                                   ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                               ^^^^ definition local type_125
+//                                                                        ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    if (schema.properties != null && (schema.additionalProperties is JsonSchema || schema.patternProperties != null))
+//      ^^^^^^ reference local schema_125
+//             ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/properties.
+//                                    ^^^^^^ reference local schema_125
+//                                           ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/additionalProperties.
+//                                                                   ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                                                 ^^^^^^ reference local schema_125
+//                                                                                        ^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/patternProperties.
+      """
+      WARN: both properties and at least one of additionalProperties and patternProperties are set.
+      This is ambiguously defined; can either be defined as a `Mapping` or a class.
+      """
+    else if (type == "class") null
+//           ^^^^ reference local type_125
+    else if (schema.type == "object" && schema.additionalProperties != false)
+//           ^^^^^^ reference local schema_125
+//                  ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/type.
+//                                      ^^^^^^ reference local schema_125
+//                                             ^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/additionalProperties.
+      "WARN: The root schema describes open-ended properties, but this is not possible to describe at the module level."
+    else if (schema.type != null && schema.type != "object")
+//           ^^^^^^ reference local schema_125
+//                  ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/type.
+//                                  ^^^^^^ reference local schema_125
+//                                         ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/type.
+      "WARN: The root schema's type is `\(jsonRenderer.renderValue(schema.type))`, and cannot be correctly mapped to a Pkl module."
+//                                        ^^^^^^^^^^^^ reference local jsonRenderer_36
+//                                                     ^^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/JsonRenderer#renderValue().
+//                                                                 ^^^^^^ reference local schema_125
+//                                                                        ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/type.
+    else if (schema.properties == null)
+//           ^^^^^^ reference local schema_125
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/properties.
+      "WARN: unable to determine module-level properties on the root schema."
+    else null
+  
+  local function generateClassBody(
+//               ^^^^^^^^^^^^^^^^^ definition local generateClassBody_140
+    schema: JsonSchema(this.properties != null),
+//  ^^^^^^ definition local schema_141
+//          ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                          ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/properties.
+    typeNames: Type.TypeNames
+//  ^^^^^^^^^ definition local typeNames_142
+//                  ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/TypeNames#
+  ): Listing<ClassOrModuleNode.PropertyDefinitionNode> =
+//   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#
+//                             ^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassOrModuleNode.pkl`/PropertyDefinitionNode#
+    if (schema.$$refUri != null)
+//      ^^^^^^ reference local schema_141
+//             ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/$$refUri.
+      let (referencedSchema = ref.resolveRef(baseUri, schema))
+//         ^^^^^^^^^^^^^^^^ definition local referencedSchema_145
+//                            ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `ref.pkl`/
+//                                ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `ref.pkl`/resolveRef().
+//                                           ^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/baseUri.
+//                                                    ^^^^^^ reference local schema_141
+        if (referencedSchema == null) new {}
+//          ^^^^^^^^^^^^^^^^ reference local referencedSchema_145
+        else if (referencedSchema is Boolean) let (_ = trace("WARN: `$ref` points to a boolean somehow")) new {}
+//               ^^^^^^^^^^^^^^^^ reference local referencedSchema_145
+//                                   ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+        else generateClassBody(referencedSchema as JsonSchema, typeNames)
+//           ^^^^^^^^^^^^^^^^^ reference local generateClassBody_140
+//                             ^^^^^^^^^^^^^^^^ reference local referencedSchema_145
+//                                                 ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                             ^^^^^^^^^ reference local typeNames_142
+    else if (schema.allOf != null) generateClassBody(TypesGenerator.collateAllOf(schema), typeNames)
+//           ^^^^^^ reference local schema_141
+//                  ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/allOf.
+//                                 ^^^^^^^^^^^^^^^^^ reference local generateClassBody_140
+//                                                   ^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/
+//                                                                  ^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/collateAllOf().
+//                                                                               ^^^^^^ reference local schema_141
+//                                                                                        ^^^^^^^^^ reference local typeNames_142
+    else
+      new {
+        for (propName, propSchema in schema.properties!!) {
+//           ^^^^^^^^ definition local propName_152
+//                     ^^^^^^^^^^ definition local propSchema_152
+//                                   ^^^^^^ reference local schema_141
+//                                          ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/properties.
+          new {
+            name {
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/name.
+              value = propName
+//            ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/value.
+//                    ^^^^^^^^ reference local propName_152
+            }
+            when (propSchema is JsonSchema && propSchema.deprecated == true) {
+//                ^^^^^^^^^^ reference local propSchema_152
+//                              ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                            ^^^^^^^^^^ reference local propSchema_152
+//                                                       ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/deprecated.
+              annotations { utils.DEPRECATED }
+//            ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/annotations.
+//                          ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/
+//                                ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/DEPRECATED.
+            }
+            docComment = getDocComment(propSchema, null)
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/docComment.
+//                       ^^^^^^^^^^^^^ reference local getDocComment_100
+//                                     ^^^^^^^^^^ reference local propSchema_152
+            typeAnnotation {
+//          ^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/typeAnnotation.
+              // If this property doesn't appear in the `required` array, mark it as nullable.
+              // We can't do this within [TypesGenerator] because it doesn't have enough information available.
+              type = let (underlyingType = typesGenerator.generateTypeNode(propSchema, typeNames))
+//            ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/type.
+//                        ^^^^^^^^^^^^^^ definition local underlyingType_164
+//                                         ^^^^^^^^^^^^^^ reference local typesGenerator_53
+//                                                        ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                                                         ^^^^^^^^^^ reference local propSchema_152
+//                                                                                     ^^^^^^^^^ reference local typeNames_142
+                if (schema.required?.toSet()?.contains(propName) ?? false) underlyingType
+//                  ^^^^^^ reference local schema_141
+//                         ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/required.
+//                                   ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Listing#toSet().
+//                                            ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#contains().
+//                                                     ^^^^^^^^ reference local propName_152
+//                                                                         ^^^^^^^^^^^^^^ reference local underlyingType_164
+                // If the type is already nullable, no need to make it *more* nullable.
+                else if (underlyingType is TypeNode.NullableTypeNode) underlyingType
+//                       ^^^^^^^^^^^^^^ reference local underlyingType_164
+//                                                  ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/NullableTypeNode#
+//                                                                    ^^^^^^^^^^^^^^ reference local underlyingType_164
+                else new TypeNode.NullableTypeNode { typeNode = underlyingType }
+//                                ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeNode.pkl`/NullableTypeNode#
+//                                                   ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/typeNode.
+//                                                              ^^^^^^^^^^^^^^ reference local underlyingType_164
+            }
+          }
+        }
+      }
+  
+  /// Generates a [ClassNode] from a [JsonSchema].
+  local function generatePklClass(schema: JsonSchema, className: Type, typeNames: Type.TypeNames): ClassNode =
+//               ^^^^^^^^^^^^^^^^ definition local generatePklClass_174
+//               documentation
+//               > Generates a [`ClassNode`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.syntax/ClassNode.pkl#L16,C1) from a [`JsonSchema`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.json_schema/JsonSchema.pkl#L22,C1).
+//                                ^^^^^^ definition local schema_175
+//                                        ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                    ^^^^^^^^^ definition local className_175
+//                                                               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/
+//                                                                     ^^^^^^^^^ definition local typeNames_175
+//                                                                                     ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/TypeNames#
+//                                                                                                 ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `ClassNode.pkl`/
+    new {
+      docComment = getDocComment(schema, "class")
+//    ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/docComment.
+//                 ^^^^^^^^^^^^^ reference local getDocComment_100
+//                               ^^^^^^ reference local schema_175
+      when (schema.deprecated == true) {
+//          ^^^^^^ reference local schema_175
+//                 ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/deprecated.
+        annotations { utils.DEPRECATED }
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/annotations.
+//                    ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/
+//                          ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/DEPRECATED.
+      }
+      classHeader {
+//    ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/classHeader.
+        name {
+//      ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/name.
+          value = className.name
+//        ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/value.
+//                ^^^^^^^^^ reference local className_175
+//                          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/name.
+        }
+      }
+      properties = generateClassBody(schema, typeNames)
+//    ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/properties.
+//                 ^^^^^^^^^^^^^^^^^ reference local generateClassBody_140
+//                                   ^^^^^^ reference local schema_175
+//                                           ^^^^^^^^^ reference local typeNames_175
+    }
+  
+  /// Generates a [TypeAliasNode] from a [JsonSchema].
+  local function generatePklTypeAlias(
+//               ^^^^^^^^^^^^^^^^^^^^ definition local generatePklTypeAlias_189
+//               documentation
+//               > Generates a [`TypeAliasNode`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/pkl.experimental.syntax/TypeAliasNode.pkl#L16,C1) from a [`JsonSchema`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.json_schema/JsonSchema.pkl#L22,C1).
+    schema: JsonSchema,
+//  ^^^^^^ definition local schema_191
+//          ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+    typeAliasName: Type,
+//  ^^^^^^^^^^^^^ definition local typeAliasName_192
+//                 ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/
+    typeNames: Type.TypeNames
+//  ^^^^^^^^^ definition local typeNames_193
+//                  ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/TypeNames#
+  ): TypeAliasNode = new {
+//   ^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.syntax 1.1.0 `TypeAliasNode.pkl`/
+    name {
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/name.
+      value = typeAliasName.name
+//    ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/value.
+//            ^^^^^^^^^^^^^ reference local typeAliasName_192
+//                          ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/name.
+    }
+    docComment = getDocComment(schema, null)
+//  ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/docComment.
+//               ^^^^^^^^^^^^^ reference local getDocComment_100
+//                             ^^^^^^ reference local schema_191
+    type = typesGenerator.generateTypeNode(schema, typeNames.remove(schema))
+//  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/type.
+//         ^^^^^^^^^^^^^^ reference local typesGenerator_53
+//                        ^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/TypesGenerator.pkl`/generateTypeNode().
+//                                         ^^^^^^ reference local schema_191
+//                                                 ^^^^^^^^^ reference local typeNames_193
+//                                                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#remove().
+//                                                                  ^^^^^^ reference local schema_191
+  }
+  
+  function isClassLike(schema: JsonSchema.Schema): Boolean =
+//         ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/isClassLike().
+//                     ^^^^^^ definition local schema_202
+//                                        ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+//                                                 ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+    if (schema is Boolean)
+//      ^^^^^^ reference local schema_202
+//                ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+      false
+    else
+      // Edge case: if `$ref` exists, any other property should be ignored.
+      schema.$ref == null && schema.properties != null
+//    ^^^^^^ reference local schema_202
+//           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/$ref.
+//                           ^^^^^^ reference local schema_202
+//                                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/properties.
+  
+  // only need to include stdlib names that would be used by the code generator
+  const local builtInNames = Set(
+//            ^^^^^^^^^^^^ definition local builtInNames_210
+//                           ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set().
+    "Mapping",
+    "Listing",
+    "Dynamic",
+    "String",
+    "Boolean",
+    "Int",
+    "Int16",
+    "Int32",
+    "UInt",
+    "UInt8",
+    "UInt16",
+    "UInt32",
+    "Float",
+    "Null",
+    "Number",
+    "Deprecated"
+  )
+  
+  local function normalizeTypeName(name: String) =
+//               ^^^^^^^^^^^^^^^^^ definition local normalizeTypeName_229
+//                                 ^^^^ definition local name_229
+//                                       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    let (capitalized = utils.pascalCase(name))
+//       ^^^^^^^^^^^ definition local capitalized_230
+//                     ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/
+//                           ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/pascalCase().
+//                                      ^^^^ reference local name_229
+      if (builtInNames.contains(capitalized)) "\(capitalized)1"
+//        ^^^^^^^^^^^^ reference local builtInNames_210
+//                     ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#contains().
+//                              ^^^^^^^^^^^ reference local capitalized_230
+//                                               ^^^^^^^^^^^ reference local capitalized_230
+      else capitalized
+//         ^^^^^^^^^^^ reference local capitalized_230
+  
+  /// Determine the name of a type.
+  ///
+  /// Try to use the parent property's name as part of the class name in case of conflict.
+  /// If already at the root, add a number at the end.
+  local function determineTypeName(path: List<String>, candidateName: String, existingTypeNames: Set<Type>, index: Int): Type =
+//               ^^^^^^^^^^^^^^^^^ definition local determineTypeName_234
+//               documentation
+//               > Determine the name of a type.
+//               > 
+//               > Try to use the parent property's name as part of the class name in case of conflict.
+//               > If already at the root, add a number at the end.
+//                                 ^^^^ definition local path_238
+//                                       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                            ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                     ^^^^^^^^^^^^^ definition local candidateName_238
+//                                                                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                            ^^^^^^^^^^^^^^^^^ definition local existingTypeNames_238
+//                                                                                               ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#
+//                                                                                                   ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/
+//                                                                                                          ^^^^^ definition local index_238
+//                                                                                                                 ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#
+//                                                                                                                       ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/
+    let (candidateType = new Type { name = normalizeTypeName(candidateName); moduleName = module.moduleName })
+//       ^^^^^^^^^^^^^ definition local candidateType_239
+//                           ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/
+//                                  ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/name.
+//                                         ^^^^^^^^^^^^^^^^^ reference local normalizeTypeName_229
+//                                                           ^^^^^^^^^^^^^ reference local candidateName_238
+//                                                                           ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleName.
+//                                                                                               ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/moduleName.
+      if (existingTypeNames.contains(candidateType))
+//        ^^^^^^^^^^^^^^^^^ reference local existingTypeNames_238
+//                          ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#contains().
+//                                   ^^^^^^^^^^^^^ reference local candidateType_239
+        if (path.isEmpty)
+//          ^^^^ reference local path_238
+//               ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#isEmpty.
+          determineTypeName(path, candidateName + index.toString(), existingTypeNames, index + 1)
+//        ^^^^^^^^^^^^^^^^^ reference local determineTypeName_234
+//                          ^^^^ reference local path_238
+//                                ^^^^^^^^^^^^^ reference local candidateName_238
+//                                                ^^^^^ reference local index_238
+//                                                      ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Int#toString().
+//                                                                  ^^^^^^^^^^^^^^^^^ reference local existingTypeNames_238
+//                                                                                     ^^^^^ reference local index_238
+        else
+          let (newPath = dropLast(path))
+//             ^^^^^^^ definition local newPath_244
+//                       ^^^^^^^^ reference local dropLast_263
+//                                ^^^^ reference local path_238
+            determineTypeName(
+//          ^^^^^^^^^^^^^^^^^ reference local determineTypeName_234
+              newPath,
+//            ^^^^^^^ reference local newPath_244
+              getCandidateName(newPath) + normalizeTypeName(candidateName),
+//            ^^^^^^^^^^^^^^^^ reference local getCandidateName_255
+//                             ^^^^^^^ reference local newPath_244
+//                                        ^^^^^^^^^^^^^^^^^ reference local normalizeTypeName_229
+//                                                          ^^^^^^^^^^^^^ reference local candidateName_238
+              existingTypeNames,
+//            ^^^^^^^^^^^^^^^^^ reference local existingTypeNames_238
+              index
+//            ^^^^^ reference local index_238
+            )
+      else
+        candidateType
+//      ^^^^^^^^^^^^^ reference local candidateType_239
+  
+  // noinspection TypeMismatch
+  local function getCandidateName(path: List<String>) =
+//               ^^^^^^^^^^^^^^^^ definition local getCandidateName_255
+//                                ^^^^ definition local path_255
+//                                      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    if (path.isEmpty)
+//      ^^^^ reference local path_255
+//           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#isEmpty.
+      "Item"
+    else if (path.last == "[]")
+//           ^^^^ reference local path_255
+//                ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#last.
+      path.dropLast(1).lastOrNull?.ifNonNull((it) -> utils.pascalCase(singularize.singularize(it))) ?? "Item"
+//    ^^^^ reference local path_255
+//         ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#dropLast().
+//                     ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#lastOrNull.
+//                                 ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#ifNonNull().
+//                                            ^^ definition local it_259
+//                                                   ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/
+//                                                         ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/pascalCase().
+//                                                                    ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/singularize.pkl`/
+//                                                                                ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/singularize.pkl`/singularize().
+//                                                                                            ^^ reference local it_259
+    else
+      utils.pascalCase(path.last)
+//    ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/
+//          ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/pascalCase().
+//                     ^^^^ reference local path_255
+//                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#last.
+  
+  local function dropLast(path: List<String>) =
+//               ^^^^^^^^ definition local dropLast_263
+//                        ^^^^ definition local path_263
+//                              ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                   ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+    if (path.last == "[]")
+//      ^^^^ reference local path_263
+//           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#last.
+      path.dropLast(2)
+//    ^^^^ reference local path_263
+//         ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#dropLast().
+    else
+      path.dropLast(1)
+//    ^^^^ reference local path_263
+//         ^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#dropLast().
+  
+  /// The schemas that should be rendered as classes.
+  ///
+  /// Classes get rendered for any subschema that has [JsonSchema.properties] defined, and does not have [JsonSchema.`$ref`] defined.
+  local classSchemas: Type.TypeNames =
+//      ^^^^^^^^^^^^ definition local classSchemas_269
+//      documentation
+//      > The schemas that should be rendered as classes.
+//      > 
+//      > Classes get rendered for any subschema that has [`JsonSchema.properties`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.json_schema/JsonSchema.pkl#L325,C1) defined, and does not have `JsonSchema.`$ref`` defined.
+//                         ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/TypeNames#
+    let (schemas = utils._findMatchingSubSchemas(rootSchema, List(), (elem) -> elem != rootSchema && isClassLike(elem)))
+//       ^^^^^^^ definition local schemas_273
+//                 ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/
+//                       ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/_findMatchingSubSchemas().
+//                                               ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/rootSchema.
+//                                                           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                                                    ^^^^ definition local elem_273
+//                                                                             ^^^^ reference local elem_273
+//                                                                                     ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/rootSchema.
+//                                                                                                   ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/isClassLike().
+//                                                                                                               ^^^^ reference local elem_273
+    let (collatedSchemas =
+//       ^^^^^^^^^^^^^^^ definition local collatedSchemas_274
+      if (collatedRootSchema == rootSchema) Map()
+//        ^^^^^^^^^^^^^^^^^^ reference local collatedRootSchema_42
+//                              ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/rootSchema.
+//                                          ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+      else utils._findMatchingSubSchemas(
+//         ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/
+//               ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/_findMatchingSubSchemas().
+        collatedRootSchema,
+//      ^^^^^^^^^^^^^^^^^^ reference local collatedRootSchema_42
+        List(),
+//      ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+        (elem) -> elem != collatedRootSchema && isClassLike(elem)
+//       ^^^^ definition local elem_279
+//                ^^^^ reference local elem_279
+//                        ^^^^^^^^^^^^^^^^^^ reference local collatedRootSchema_42
+//                                              ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/isClassLike().
+//                                                          ^^^^ reference local elem_279
+      )
+    )
+      (schemas + collatedSchemas)
+//     ^^^^^^^ reference local schemas_273
+//               ^^^^^^^^^^^^^^^ reference local collatedSchemas_274
+        .entries
+//       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#entries.
+        .fold(Map(), (accumulator: Type.TypeNames, pair) ->
+//       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#fold().
+//            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                    ^^^^^^^^^^^ definition local accumulator_284
+//                                      ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/TypeNames#
+//                                                 ^^^^ definition local pair_284
+          let (path = pair.first)
+//             ^^^^ definition local path_285
+//                    ^^^^ reference local pair_284
+//                         ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#first.
+          let (schema = pair.second)
+//             ^^^^^^ definition local schema_286
+//                      ^^^^ reference local pair_284
+//                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#second.
+          let (typeName = determineTypeName(path, getCandidateName(path), accumulator.values.toSet(), 0))
+//             ^^^^^^^^ definition local typeName_287
+//                        ^^^^^^^^^^^^^^^^^ reference local determineTypeName_234
+//                                          ^^^^ reference local path_285
+//                                                ^^^^^^^^^^^^^^^^ reference local getCandidateName_255
+//                                                                 ^^^^ reference local path_285
+//                                                                        ^^^^^^^^^^^ reference local accumulator_284
+//                                                                                    ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#values.
+//                                                                                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#toSet().
+            accumulator.put(schema, typeName)
+//          ^^^^^^^^^^^ reference local accumulator_284
+//                      ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#put().
+//                          ^^^^^^ reference local schema_286
+//                                  ^^^^^^^^ reference local typeName_287
+        )
+  
+  local classNames: Set<Type> = classSchemas.values.toSet()
+//      ^^^^^^^^^^ definition local classNames_291
+//                  ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Set#
+//                      ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/
+//                              ^^^^^^^^^^^^ reference local classSchemas_269
+//                                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#values.
+//                                                  ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#toSet().
+  
+  /// The schemas that should be rendered as typealiases.
+  ///
+  /// This is done by traversing schema definintions.
+  /// Typealiases get rendered for any [JsonSchema.definitions] or [JsonSchema.`$defs`] that should not be rendered as a class.
+  local typeAliasSchemas: Type.TypeNames =
+//      ^^^^^^^^^^^^^^^^ definition local typeAliasSchemas_293
+//      documentation
+//      > The schemas that should be rendered as typealiases.
+//      > 
+//      > This is done by traversing schema definintions.
+//      > Typealiases get rendered for any [`JsonSchema.definitions`](file:///Users/thomas/src/github.com/apple/pkl-pantry/packages/org.json_schema/JsonSchema.pkl#L127,C1) or `JsonSchema.`$defs`` that should not be rendered as a class.
+//                             ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/TypeNames#
+    // Grab all schemas that have `definitions` or `$defs`
+    let (schemasWithDefinitions = utils._findMatchingSubSchemas(rootSchema, List(), (elem) -> (elem.definitions ?? elem.$defs) != null))
+//       ^^^^^^^^^^^^^^^^^^^^^^ definition local schemasWithDefinitions_299
+//                                ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/
+//                                      ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/_findMatchingSubSchemas().
+//                                                              ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/rootSchema.
+//                                                                          ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                                                                   ^^^^ definition local elem_299
+//                                                                                             ^^^^ reference local elem_299
+//                                                                                                  ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/definitions.
+//                                                                                                                 ^^^^ reference local elem_299
+//                                                                                                                      ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/$defs.
+    let (collatedSchemasWithDefinitions = if (collatedRootSchema == rootSchema) Map() else utils._findMatchingSubSchemas(collatedRootSchema, List(), (elem) -> (elem.definitions ?? elem.$defs) != null))
+//       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition local collatedSchemasWithDefinitions_300
+//                                            ^^^^^^^^^^^^^^^^^^ reference local collatedRootSchema_42
+//                                                                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/rootSchema.
+//                                                                              ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                                                                                         ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/
+//                                                                                               ^^^^^^^^^^^^^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/utils.pkl`/_findMatchingSubSchemas().
+//                                                                                                                       ^^^^^^^^^^^^^^^^^^ reference local collatedRootSchema_42
+//                                                                                                                                           ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List().
+//                                                                                                                                                    ^^^^ definition local elem_300
+//                                                                                                                                                              ^^^^ reference local elem_300
+//                                                                                                                                                                   ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/definitions.
+//                                                                                                                                                                                  ^^^^ reference local elem_300
+//                                                                                                                                                                                       ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/$defs.
+      (schemasWithDefinitions + collatedSchemasWithDefinitions)
+//     ^^^^^^^^^^^^^^^^^^^^^^ reference local schemasWithDefinitions_299
+//                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ reference local collatedSchemasWithDefinitions_300
+        .entries
+//       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#entries.
+        // For each schema, return the child json schema properties that are not class-like
+        .flatMap((pair) ->
+//       ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#flatMap().
+//                ^^^^ definition local pair_304
+          let (path = pair.first)
+//             ^^^^ definition local path_305
+//                    ^^^^ reference local pair_304
+//                         ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#first.
+          let (schema = pair.second)
+//             ^^^^^^ definition local schema_306
+//                      ^^^^ reference local pair_304
+//                           ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#second.
+            (schema.definitions ?? schema.$defs ?? new Mapping<String, JsonSchema> {}).toMap()
+//           ^^^^^^ reference local schema_306
+//                  ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/definitions.
+//                                 ^^^^^^ reference local schema_306
+//                                        ^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/$defs.
+//                                                     ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#
+//                                                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                     ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                                                     ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+              .filter((_, value) -> value is JsonSchema && value.$ref == null && !isClassLike(value))
+//             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#filter().
+//                        ^^^^^ definition local value_308
+//                                  ^^^^^ reference local value_308
+//                                           ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                         ^^^^^ reference local value_308
+//                                                               ^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/$ref.
+//                                                                                ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/ModuleGenerator.pkl`/isClassLike().
+//                                                                                            ^^^^^ reference local value_308
+              .mapKeys((key, _) -> path.add(key))
+//             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#mapKeys().
+//                      ^^^ definition local key_309
+//                                 ^^^^ reference local path_305
+//                                      ^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#add().
+//                                          ^^^ reference local key_309
+              .entries
+//             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#entries.
+        )
+        .filter((pair) -> pair.second is JsonSchema)
+//       ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#filter().
+//               ^^^^ definition local pair_312
+//                        ^^^^ reference local pair_312
+//                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#second.
+//                                       ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        .fold(Map(), (accumulator: Type.TypeNames, pair: Pair<List<String>, JsonSchema.Schema>) ->
+//       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#fold().
+//            ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map().
+//                    ^^^^^^^^^^^ definition local accumulator_313
+//                                      ^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `internal/Type.pkl`/TypeNames#
+//                                                 ^^^^ definition local pair_313
+//                                                       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#
+//                                                            ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#
+//                                                                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#
+//                                                                                     ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+          if (pair.second is Boolean)
+//            ^^^^ reference local pair_313
+//                 ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#second.
+//                           ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Boolean#
+            accumulator
+//          ^^^^^^^^^^^ reference local accumulator_313
+          else
+            let (schema = pair.second as JsonSchema)
+//               ^^^^^^ definition local schema_317
+//                        ^^^^ reference local pair_313
+//                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#second.
+//                                       ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+            let (path = pair.first)
+//               ^^^^ definition local path_318
+//                      ^^^^ reference local pair_313
+//                           ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Pair#first.
+            let (typeName = determineTypeName(path, path.last.capitalize(), accumulator.values.toSet() + classNames, 0))
+//               ^^^^^^^^ definition local typeName_319
+//                          ^^^^^^^^^^^^^^^^^ reference local determineTypeName_234
+//                                            ^^^^ reference local path_318
+//                                                  ^^^^ reference local path_318
+//                                                       ^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#last.
+//                                                            ^^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/String#capitalize().
+//                                                                          ^^^^^^^^^^^ reference local accumulator_313
+//                                                                                      ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#values.
+//                                                                                             ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/List#toSet().
+//                                                                                                       ^^^^^^^^^^ reference local classNames_291
+              accumulator.put(schema, typeName)
+//            ^^^^^^^^^^^ reference local accumulator_313
+//                        ^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#put().
+//                            ^^^^^^ reference local schema_317
+//                                    ^^^^^^^^ reference local typeName_319
+        )
+  

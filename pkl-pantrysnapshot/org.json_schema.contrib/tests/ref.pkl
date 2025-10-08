@@ -1,0 +1,148 @@
+  //===----------------------------------------------------------------------===//
+  // Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     https://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  //===----------------------------------------------------------------------===//
+  module org.json_schema.contrib.tests.ref
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ref.pkl`/
+  
+  amends "pkl:test"
+  
+  import "@jsonschema/JsonSchema.pkl"
+  import "@uri/URI.pkl"
+  import "../ref.pkl"
+  
+  local function stripRefOrig(schema: JsonSchema.Schema?): JsonSchema.Schema? =
+//               ^^^^^^^^^^^^ definition local stripRefOrig_24
+//                            ^^^^^^ definition local schema_24
+//                                               ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+//                                                                    ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+    schema.ifNonNull((it) -> (it as JsonSchema.Schema) {
+//  ^^^^^^ reference local schema_24
+//         ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Any#ifNonNull().
+//                    ^^ definition local it_25
+//                            ^^ reference local it_25
+//                                             ^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/Schema#
+      local newInline = super._inline_.toMap().remove("__ref_orig__").toMapping()
+//          ^^^^^^^^^ definition local newInline_26
+//                            ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/_inline_.
+//                                     ^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#toMap().
+//                                             ^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#remove().
+//                                                                    ^^^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Map#toMapping().
+      _inline_ = if (newInline.isEmpty) null else newInline
+//    ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ref.pkl`/_inline_.
+//                   ^^^^^^^^^ reference local newInline_26
+//                             ^^^^^^^ reference pkl . pkl 0.29.0 `pkl.base`/Mapping#isEmpty.
+//                                                ^^^^^^^^^ reference local newInline_26
+    })
+  
+  facts {
+//^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ref.pkl`/facts.
+    ["resolveRef()"] {
+      local schema: JsonSchema = new {
+//          ^^^^^^ definition local schema_32
+//                  ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+        properties {
+//      ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ref.pkl`/properties.
+          ["foo"] {
+            type = "string"
+//          ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ref.pkl`/type.
+          }
+        }
+        definitions {
+//      ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ref.pkl`/definitions.
+          ["bar"] {
+            properties {
+//          ^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ref.pkl`/properties.
+              ["baz"] {
+                title = "This is a baz"
+//              ^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ref.pkl`/title.
+                type = "object"
+//              ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ref.pkl`/type.
+              }
+            }
+            _inline_ {
+//          ^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ref.pkl`/_inline_.
+              ["bizzy"] {
+                type = "array"
+//              ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ref.pkl`/type.
+              }
+            }
+          }
+        }
+      }
+      stripRefOrig(ref.resolveRef(new URI {}, new JsonSchema { $ref = "#/definitions/bar"; $$baseSchema = schema })) == schema.definitions!!["bar"]
+//    ^^^^^^^^^^^^ reference local stripRefOrig_24
+//                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `ref.pkl`/
+//                     ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `ref.pkl`/resolveRef().
+//                                    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                                                ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                             ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ref.pkl`/$ref.
+//                                                                                         ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ref.pkl`/$$baseSchema.
+//                                                                                                        ^^^^^^ reference local schema_32
+//                                                                                                                      ^^^^^^ reference local schema_32
+//                                                                                                                             ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/definitions.
+      stripRefOrig(ref.resolveRef(new URI {}, new JsonSchema { $ref = "#/definitions/bar/properties/baz"; $$baseSchema = schema })) == schema.definitions!!["bar"].properties!!["baz"]
+//    ^^^^^^^^^^^^ reference local stripRefOrig_24
+//                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `ref.pkl`/
+//                     ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `ref.pkl`/resolveRef().
+//                                    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                                                ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                             ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ref.pkl`/$ref.
+//                                                                                                        ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ref.pkl`/$$baseSchema.
+//                                                                                                                       ^^^^^^ reference local schema_32
+//                                                                                                                                     ^^^^^^ reference local schema_32
+//                                                                                                                                            ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/definitions.
+//                                                                                                                                                                 ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/properties.
+      stripRefOrig(ref.resolveRef(new URI {}, new JsonSchema { $ref = "#/properties/foo"; $$baseSchema = schema })) == schema.properties!!["foo"]
+//    ^^^^^^^^^^^^ reference local stripRefOrig_24
+//                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `ref.pkl`/
+//                     ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `ref.pkl`/resolveRef().
+//                                    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                                                ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                             ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ref.pkl`/$ref.
+//                                                                                        ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ref.pkl`/$$baseSchema.
+//                                                                                                       ^^^^^^ reference local schema_32
+//                                                                                                                     ^^^^^^ reference local schema_32
+//                                                                                                                            ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/properties.
+      stripRefOrig(ref.resolveRef(new URI {}, new JsonSchema { $ref = "#/definitions/bar/bizzy"; $$baseSchema = schema })) == schema.definitions!!["bar"]._inline_!!["bizzy"]
+//    ^^^^^^^^^^^^ reference local stripRefOrig_24
+//                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `ref.pkl`/
+//                     ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `ref.pkl`/resolveRef().
+//                                    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                                                ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                             ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ref.pkl`/$ref.
+//                                                                                               ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ref.pkl`/$$baseSchema.
+//                                                                                                              ^^^^^^ reference local schema_32
+//                                                                                                                            ^^^^^^ reference local schema_32
+//                                                                                                                                   ^^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/definitions.
+//                                                                                                                                                        ^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/_inline_.
+      stripRefOrig(ref.resolveRef(new URI {}, new JsonSchema { description = "This is a bizzy"; $ref = "#/definitions/bar/bizzy"; $$baseSchema = schema })) == new JsonSchema {
+//    ^^^^^^^^^^^^ reference local stripRefOrig_24
+//                 ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `ref.pkl`/
+//                     ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `ref.pkl`/resolveRef().
+//                                    ^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/pkl.experimental.uri 1.0.3 `URI.pkl`/
+//                                                ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+//                                                             ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ref.pkl`/description.
+//                                                                                              ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ref.pkl`/$ref.
+//                                                                                                                                ^^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ref.pkl`/$$baseSchema.
+//                                                                                                                                               ^^^^^^ reference local schema_32
+//                                                                                                                                                                 ^^^^^^^^^^ reference pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema 1.1.0 `JsonSchema.pkl`/
+          description = "This is a bizzy"
+//        ^^^^^^^^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ref.pkl`/description.
+          type = "array"
+//        ^^^^ definition pkl . package://pkg.pkl-lang.org/pkl-pantry/org.json_schema.contrib 1.1.5 `tests/ref.pkl`/type.
+        }
+    }
+  }
+  
