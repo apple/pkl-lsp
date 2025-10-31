@@ -1,5 +1,24 @@
 = Changelog
 
+[[release-0.5.0]]
+== 0.5.0 (TBD)
+
+=== Fixes
+
+* Improves type checking around `is NonNull` checks (https://github.com/apple/pkl-lsp/pull/102[#102]).
+* Fixes an edge case when type checking complex union types (https://github.com/apple/pkl-lsp/pull/105[#105]).
+
+=== Changes
+
+* Update Pkl standard library and grammar to 0.30 and add support for trailing commas (TBD).
+
+=== Contributors ❤️
+
+Thank you to all of our contributors!
+
+* https://github.com/HT154[@HT154]
+* https://github.com/stackoverflow[@stackoverflow]
+
 [[release-0.4.0]]
 == 0.4.0 (2025-07-28)
 
