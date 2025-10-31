@@ -10,4 +10,18 @@
 | Required: Int
 | Actual: Null
  
+ class Expr
+ typealias Expression = Expr|String(startsWith("!"))
+ 
+ class A {
+   username: String|Expression
+ }
+ 
+ // none of these should have diags
+ a = new A {
+   username = "admin"
+ }
+ b = new A {
+   username = "!foo"
+ }
  
