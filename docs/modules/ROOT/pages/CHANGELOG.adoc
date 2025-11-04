@@ -1,22 +1,47 @@
 = Changelog
 
+[[release-0.5.0]]
+== 0.5.0 (2025-11-04)
+
+=== Fixes
+
+* Improve type checking around `is NonNull` checks (https://github.com/apple/pkl-lsp/pull/102[#102]).
+* Fix an edge case when type checking complex union types (https://github.com/apple/pkl-lsp/pull/105[#105]).
+
+=== Changes
+
+* Update Pkl to 0.30 (https://github.com/apple/pkl-lsp/pull/107[#107]).
+** Update the grammar to add support for trailing commas.
+** Update the fallback standard library.
+* Add support for formatting (https://github.com/apple/pkl-lsp/pull/107[#107]). +
++
+This adds new workspace configuration request item: `pkl.formatter.grammarVersion`. Valid values are `1` (Pkl 0.25 - 0.29) and `2` (Pkl 0.30+).
+
+=== Contributors ❤️
+
+Thank you to all of our contributors!
+
+* https://github.com/bioball[@bioball]
+* https://github.com/HT154[@HT154]
+* https://github.com/stackoverflow[@stackoverflow]
+
 [[release-0.4.0]]
 == 0.4.0 (2025-07-28)
 
 === Fixes
 
-* Fixes a deadlock that arises when computing diagnostics (https://github.com/apple/pkl-lsp/pull/92[#92]).
+* Fix a deadlock that arises when computing diagnostics (https://github.com/apple/pkl-lsp/pull/92[#92]).
 
 === Changes
 
-* Improves modifier analysis (https://github.com/apple/pkl-lsp/pull/90[#90]).
-** Adds quickfix to add `local` modifier.
-** Adds diagnostic for non-local object properties with type annotations.
-* Switches publishing to sonatype central (https://github.com/apple/pkl-lsp/pull/96[#96]).
+* Improve modifier analysis (https://github.com/apple/pkl-lsp/pull/90[#90]).
+** Add quickfix to add `local` modifier.
+** Add diagnostic for non-local object properties with type annotations.
+* Switch publishing to sonatype central (https://github.com/apple/pkl-lsp/pull/96[#96]).
 
 === Additions
 
-* Adds support for Pkl 0.29 (https://github.com/apple/pkl-lsp/pull/95[#95]).
+* Add support for Pkl 0.29 (https://github.com/apple/pkl-lsp/pull/95[#95]).
 
 === Contributors ❤️
 
@@ -30,15 +55,15 @@ Thank you to all of our contributors!
 
 === Fixes
 
-* Fixes an issue that causes the type-check analyzer to short-circuit (https://github.com/apple/pkl-lsp/pull/86[#86]).
-* Fixes analysis of local properties with type annotations (https://github.com/apple/pkl-lsp/pull/87[#87]).
+* Fix an issue that causes the type-check analyzer to short-circuit (https://github.com/apple/pkl-lsp/pull/86[#86]).
+* Fix analysis of local properties with type annotations (https://github.com/apple/pkl-lsp/pull/87[#87]).
 
 [[release-0.3.1]]
 == 0.3.1 (2025-04-17)
 
 === Fixes
 
-* Fixes an issue with analyzing nullish propagation, which can lead to incorrect diagnostics (https://github.com/apple/pkl-lsp/pull/84[#84]).
+* Fix an issue with analyzing nullish propagation, which can lead to incorrect diagnostics (https://github.com/apple/pkl-lsp/pull/84[#84]).
 
 [[release-0.3.0]]
 == 0.3.0 (2025-04-14)
@@ -47,14 +72,14 @@ This change adds many more diagnostics to better match the capabilities of pkl-i
 
 === Fixes
 
-* Fixes a runtime crash that happens when interpolation start tokens are used within an invalid syntactic block (https://github.com/apple/pkl-lsp/pull/67[#67]).
-* Fixes stack overflow exceptions when analyzing recursive methods (https://github.com/apple/pkl-lsp/pull/68[#68]).
-* Fixes parsing of modifier nodes (https://github.com/apple/pkl-lsp/pull/74[#74]).
-* Fixes an issue where some nodes are constructed twice, causing analysis to fail (https://github.com/apple/pkl-lsp/pull/74[#74]).
-* Fixes an issue where stdlib modules can possibly be initialized multiple times, causing analysis to fail (https://github.com/apple/pkl-lsp/pull/74[#74]).
+* Fix a runtime crash that happens when interpolation start tokens are used within an invalid syntactic block (https://github.com/apple/pkl-lsp/pull/67[#67]).
+* Fix stack overflow exceptions when analyzing recursive methods (https://github.com/apple/pkl-lsp/pull/68[#68]).
+* Fix parsing of modifier nodes (https://github.com/apple/pkl-lsp/pull/74[#74]).
+* Fix an issue where some nodes are constructed twice, causing analysis to fail (https://github.com/apple/pkl-lsp/pull/74[#74]).
+* Fix an issue where stdlib modules can possibly be initialized multiple times, causing analysis to fail (https://github.com/apple/pkl-lsp/pull/74[#74]).
 * Improve cache-ing of expensive operations (https://github.com/apple/pkl-lsp/pull/74[#74]).
-* Fixes an issue that causes the language server to hang indefinitely (https://github.com/apple/pkl-lsp/pull/78[#78]).
-* Fixes a false positive warning on nullable spreads (https://github.com/apple/pkl-lsp/pull/79[#79]).
+* Fix an issue that causes the language server to hang indefinitely (https://github.com/apple/pkl-lsp/pull/78[#78]).
+* Fix a false positive warning on nullable spreads (https://github.com/apple/pkl-lsp/pull/79[#79]).
 
 === Changes
 
