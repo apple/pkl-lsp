@@ -11,9 +11,11 @@
 === Changes
 
 * Update Pkl to 0.30 (https://github.com/apple/pkl-lsp/pull/107[#107]).
-** Add support for formatting.
 ** Update the grammar to add support for trailing commas.
 ** Update the fallback standard library.
+* Add support for formatting (https://github.com/apple/pkl-lsp/pull/107[#107]). +
++
+This adds new workspace configuration request item: `pkl.formatter.grammarVersion`. Valid values are `1` (Pkl 0.25 - 0.29) and `2` (Pkl 0.30+).
 
 === Contributors ❤️
 
