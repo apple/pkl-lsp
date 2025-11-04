@@ -47,8 +47,8 @@ class SettingsManager(project: Project) : Component(project) {
     initialized.cancel(true)
   }
 
-  private fun decodeString(value: Any, configName: String): String? {
-    value as JsonElement
+  @Suppress("SameParameterValue")
+  private fun decodeString(value: JsonElement, configName: String): String? {
     if (value.isJsonNull) {
       return null
     }
@@ -58,7 +58,18 @@ class SettingsManager(project: Project) : Component(project) {
     return value.asString.ifEmpty { null }
   }
 
-  private fun resolvePklCliPath(settingsValue: Any): Path? {
+  @Suppress("SameParameterValue")
+  private fun decodeInt(value: JsonElement, configName: String): Int? {
+    if (value.isJsonNull) {
+      return null
+    }
+    if (value !is JsonPrimitive || !value.isNumber) {
+      logger.warn("Got non-string value for configuration: $configName. Value: $value")
+    }
+    return value.asInt
+  }
+
+  private fun resolvePklCliPath(settingsValue: JsonElement): Path? {
     val decodedCliPath = decodeString(settingsValue, "pkl.cli.path")
     if (decodedCliPath != null) {
       return Path.of(decodedCliPath)
@@ -66,11 +77,11 @@ class SettingsManager(project: Project) : Component(project) {
     return findPklCliOnPath()
   }
 
-  private fun resolveGrammarVersion(value: Any): GrammarVersion {
-    return when (val str = decodeString(value, "pkl.formatter.grammarVersion")) {
+  private fun resolveGrammarVersion(value: JsonElement): GrammarVersion {
+    return when (val str = decodeInt(value, "pkl.formatter.grammarVersion")) {
       null -> GrammarVersion.latest()
-      "1" -> GrammarVersion.V1
-      "2" -> GrammarVersion.V2
+      1 -> GrammarVersion.V1
+      2 -> GrammarVersion.V2
       else -> {
         logger.warn("Got invalid value for pkl.formatter.grammarVersion: $str")
         GrammarVersion.latest()
@@ -97,8 +108,8 @@ class SettingsManager(project: Project) : Component(project) {
       .configuration(params)
       .thenApply { (cliPath, grammarVersion) ->
         logger.log("Got configuration: cliPath = $cliPath, grammarVersion = $grammarVersion")
-        settings.pklCliPath = resolvePklCliPath(cliPath)
-        settings.grammarVersion = resolveGrammarVersion(grammarVersion)
+        settings.pklCliPath = resolvePklCliPath(cliPath as JsonElement)
+        settings.grammarVersion = resolveGrammarVersion(grammarVersion as JsonElement)
       }
       .exceptionally { logger.error("Failed to fetch settings: ${it.cause}") }
       .whenComplete { _, _ -> logger.log("Settings changed to $settings") }
