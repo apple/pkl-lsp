@@ -96,7 +96,6 @@ sealed interface PklSuppressWarningsTarget : PklNode {
       is PklObjectEntry -> "entry"
       is PklMethod -> "method"
       is PklForGenerator -> "for generator"
-      else -> error("Unexpected suppress warnings target: ${this::class.qualifiedName}")
     }
 }
 

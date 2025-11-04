@@ -22,10 +22,15 @@ import java.util.concurrent.CompletableFuture
 import kotlin.io.path.isExecutable
 import kotlinx.serialization.Serializable
 import org.eclipse.lsp4j.*
+import org.pkl.formatter.GrammarVersion
 import org.pkl.lsp.*
 import org.pkl.lsp.messages.ActionableNotification
 
-@Serializable data class WorkspaceSettings(var pklCliPath: Path? = null)
+@Serializable
+data class WorkspaceSettings(
+  var pklCliPath: Path? = null,
+  var grammarVersion: GrammarVersion? = null,
+)
 
 class SettingsManager(project: Project) : Component(project) {
   var settings: WorkspaceSettings = WorkspaceSettings()
@@ -42,6 +47,37 @@ class SettingsManager(project: Project) : Component(project) {
     initialized.cancel(true)
   }
 
+  private fun decodeString(value: Any, configName: String): String? {
+    value as JsonElement
+    if (value.isJsonNull) {
+      return null
+    }
+    if (value !is JsonPrimitive || !value.isString) {
+      logger.warn("Got non-string value for configuration: $configName. Value: $value")
+    }
+    return value.asString.ifEmpty { null }
+  }
+
+  private fun resolvePklCliPath(settingsValue: Any): Path? {
+    val decodedCliPath = decodeString(settingsValue, "pkl.cli.path")
+    if (decodedCliPath != null) {
+      return Path.of(decodedCliPath)
+    }
+    return findPklCliOnPath()
+  }
+
+  private fun resolveGrammarVersion(value: Any): GrammarVersion {
+    return when (val str = decodeString(value, "pkl.formatter.grammarVersion")) {
+      null -> GrammarVersion.latest()
+      "1" -> GrammarVersion.V1
+      "2" -> GrammarVersion.V2
+      else -> {
+        logger.warn("Got invalid value for pkl.formatter.grammarVersion: $str")
+        GrammarVersion.latest()
+      }
+    }
+  }
+
   private fun loadSettings(): CompletableFuture<Unit> {
     logger.log("Fetching configuration")
     val params =
@@ -50,24 +86,19 @@ class SettingsManager(project: Project) : Component(project) {
           ConfigurationItem().apply {
             scopeUri = "Pkl"
             section = "pkl.cli.path"
-          }
+          },
+          ConfigurationItem().apply {
+            scopeUri = "Pkl"
+            section = "pkl.formatter.grammarVersion"
+          },
         )
       )
     return project.languageClient
       .configuration(params)
-      .thenApply { (cliPath) ->
-        logger.log("Got configuration: $cliPath")
-        cliPath as JsonElement
-        if (cliPath.isJsonNull) {
-          settings.pklCliPath = findPklCliOnPath()
-          return@thenApply
-        }
-        if (!(cliPath is JsonPrimitive && cliPath.isString)) {
-          logger.warn("Got non-string value for configuration: $cliPath")
-          return@thenApply
-        }
-        settings.pklCliPath =
-          cliPath.asString.let { if (it.isEmpty()) findPklCliOnPath() else Path.of(it) }
+      .thenApply { (cliPath, grammarVersion) ->
+        logger.log("Got configuration: cliPath = $cliPath, grammarVersion = $grammarVersion")
+        settings.pklCliPath = resolvePklCliPath(cliPath)
+        settings.grammarVersion = resolveGrammarVersion(grammarVersion)
       }
       .exceptionally { logger.error("Failed to fetch settings: ${it.cause}") }
       .whenComplete { _, _ -> logger.log("Settings changed to $settings") }

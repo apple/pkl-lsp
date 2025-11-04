@@ -67,7 +67,8 @@ val devLauncher: SourceSet by
     // use test {compile,runtime}Classpath because it has the pkl stdlib
     // important that main output is first because of monkey-patched jtreesitter
     compileClasspath = sourceSets.main.get().output + sourceSets.test.get().compileClasspath
-    runtimeClasspath = sourceSets.main.get().output + sourceSets.test.get().runtimeClasspath
+    runtimeClasspath =
+      output + sourceSets.main.get().output + sourceSets.test.get().runtimeClasspath
   }
 
 dependencies {
@@ -77,6 +78,7 @@ dependencies {
   implementation(libs.kotlinxSerializationJson)
   implementation(libs.jspecify) // used by jtreesitter
   implementation(libs.jtreesitter)
+  implementation(libs.pklFormatter)
   // stdlib files are included from a one-off configuration then bundled into shadow jar (see
   // shadowJar spec).
   // declare a regular dependency for testing only.
