@@ -22,6 +22,7 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.eclipse.lsp4j.services.TextDocumentService
 import org.pkl.lsp.features.CodeActionFeature
 import org.pkl.lsp.features.CompletionFeature
+import org.pkl.lsp.features.FormattingFeature
 import org.pkl.lsp.features.GoToDefinitionFeature
 import org.pkl.lsp.features.HoverFeature
 import org.pkl.lsp.services.Topic
@@ -48,6 +49,7 @@ class PklTextDocumentService(project: Project) : Component(project), TextDocumen
   private val definition = GoToDefinitionFeature(project)
   private val completion = CompletionFeature(project)
   private val codeAction = CodeActionFeature(project)
+  private val formatting = FormattingFeature(project)
 
   override fun didOpen(params: DidOpenTextDocumentParams) {
     val uri = URI(params.textDocument.uri)
@@ -105,5 +107,9 @@ class PklTextDocumentService(project: Project) : Component(project), TextDocumen
     params: CodeActionParams
   ): CompletableFuture<List<Either<Command, CodeAction>>> {
     return codeAction.onCodeAction(params)
+  }
+
+  override fun formatting(params: DocumentFormattingParams): CompletableFuture<List<TextEdit>> {
+    return formatting.onFormat(params)
   }
 }

@@ -65,13 +65,25 @@ Tell the server that the client supports additional capabilities made available 
 |The client supports the `pkl.configure` command.
 |===
 
-== Pkl CLI configuration
+== Configuration Requests
 
-To support flows like sync projects, and package downloading, the server will look for a path to the Pkl CLI.
+Some settings are fetched using the https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspace_configuration[`workspace/configuration` request], if supported by the client:
 
-By default, the server will look for the CLI within the environment's `$PATH`.
+The language server uses "Pkl" for its scope URI.
 
-If the client supports the https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspace_configuration[Configuration Request], it will look for the configuration value `pkl.cli.path` at scope `Pkl`.
+|===
+|Name | Type | Description | Default
+
+|`pkl.cli.path`
+|String
+|The path for the configured Pkl CLI.
+|Determined by looking in `$PATH`
+
+|`pkl.formatter.grammarVersion`
+|Int (`1` or `2`)
+|The grammar version to use when formatting Pkl code.
+|`2`
+|===
 
 == Additional message types
 
