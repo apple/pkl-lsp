@@ -108,7 +108,7 @@ tasks.test {
   dependsOn(configurePklCliExecutable)
   jvmArgs("--enable-native-access=ALL-UNNAMED")
   systemProperties["pklExecutable"] = pklCli.singleFile.absolutePath
-  useJUnitPlatform { includeEngines("ParserSnippetTestEngine") }
+  useJUnitPlatform { includeEngines("ParserSnippetTestEngine", "DiagnosticsSnippetTestEngine") }
   System.getProperty("testReportsDir")?.let { reportsDir ->
     reports.junitXml.outputLocation.set(file(reportsDir).resolve(project.name).resolve(name))
   }
