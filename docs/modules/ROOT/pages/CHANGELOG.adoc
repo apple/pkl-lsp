@@ -1,5 +1,22 @@
 = Changelog
 
+[[release-0.5.1]]
+== 0.5.1 (2025-11-05)
+
+=== Fixes
+
+* Fix a stack overflow error when analyzing types (https://github.com/apple/pkl-lsp/pull/111[#111]).
+
+=== Changes
+* Change configuration request property `pkl.formatter.grammarVersion` to use a string instead of an int (https://github.com/apple/pkl-lsp/pull/113[#113]).
+
+=== Contributors ❤️
+
+Thank you to all of our contributors!
+
+* https://github.com/bioball[@bioball]
+* https://github.com/HT154[@HT154]
+
 [[release-0.5.0]]
 == 0.5.0 (2025-11-04)
 
