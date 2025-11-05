@@ -492,7 +492,7 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
       strictConstraints: Boolean,
     ): Boolean =
       when (type) {
-        is Module -> isSubtypeOf(type, base, context, strictConstraints)
+        is Module -> isSubtypeOf(type, context)
         else -> doIsSubtypeOf(type, base, context, strictConstraints)
       }
 

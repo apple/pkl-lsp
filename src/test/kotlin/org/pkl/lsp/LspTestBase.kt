@@ -23,6 +23,7 @@ import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import org.assertj.core.api.Assertions.assertThat
 import org.eclipse.lsp4j.*
+import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -173,6 +174,20 @@ abstract class LspTestBase {
       result.isLeft -> result.left
       else -> result.right.items
     }
+  }
+
+  protected fun getCodeActions(): List<Either<Command, CodeAction>> {
+    ensureActiveFile()
+    ensureCaret()
+    val params =
+      CodeActionParams(
+        TextDocumentIdentifier(fileInFocus!!.toUri().toString()),
+        Range(caretPosition!!, caretPosition!!),
+        CodeActionContext(
+          getDiagnostics(fakeProject.virtualFileManager.get(fileInFocus!!)!!).map { it.toMessage() }
+        ),
+      )
+    return server.textDocumentService.codeAction(params).get()
   }
 
   protected fun typeText(text: String) {
