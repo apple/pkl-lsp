@@ -47,7 +47,6 @@ class SettingsManager(project: Project) : Component(project) {
     initialized.cancel(true)
   }
 
-  @Suppress("SameParameterValue")
   private fun decodeString(value: JsonElement, configName: String): String? {
     if (value.isJsonNull) {
       return null
@@ -56,17 +55,6 @@ class SettingsManager(project: Project) : Component(project) {
       logger.warn("Got non-string value for configuration: $configName. Value: $value")
     }
     return value.asString.ifEmpty { null }
-  }
-
-  @Suppress("SameParameterValue")
-  private fun decodeInt(value: JsonElement, configName: String): Int? {
-    if (value.isJsonNull) {
-      return null
-    }
-    if (value !is JsonPrimitive || !value.isNumber) {
-      logger.warn("Got non-string value for configuration: $configName. Value: $value")
-    }
-    return value.asInt
   }
 
   private fun resolvePklCliPath(settingsValue: JsonElement): Path? {
@@ -78,10 +66,10 @@ class SettingsManager(project: Project) : Component(project) {
   }
 
   private fun resolveGrammarVersion(value: JsonElement): GrammarVersion {
-    return when (val str = decodeInt(value, "pkl.formatter.grammarVersion")) {
+    return when (val str = decodeString(value, "pkl.formatter.grammarVersion")) {
       null -> GrammarVersion.latest()
-      1 -> GrammarVersion.V1
-      2 -> GrammarVersion.V2
+      "1" -> GrammarVersion.V1
+      "2" -> GrammarVersion.V2
       else -> {
         logger.warn("Got invalid value for pkl.formatter.grammarVersion: $str")
         GrammarVersion.latest()
