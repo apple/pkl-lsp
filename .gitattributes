@@ -12,3 +12,5 @@
 
 # All other files should use lf
 * text eol=lf
+
+.github/workflows/*.yml linguist-generated=true
