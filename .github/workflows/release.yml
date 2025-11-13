@@ -1,0 +1,187 @@
+# Do not modify!
+# This file was generated from a template using https://github.com/StefMa/pkl-gha
+
+name: Release
+'on':
+  push:
+    branches-ignore:
+    - '**'
+    tags:
+    - '**'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+    - uses: actions/setup-java@v5
+      with:
+        java-version: '21'
+        distribution: temurin
+        cache: gradle
+    - if: github.repository != 'apple/pkl-lsp'
+      run: |-
+        git remote add upstream https://github.com/apple/pkl-lsp.git
+        git fetch upstream main
+        echo 'PKL_ORIGINAL_REMOTE_NAME=upstream' > "$GITHUB_ENV"
+    - run: ./gradlew --info --stacktrace check shadowJar verifyDistribution
+    - name: Upload build artifacts
+      if: '!cancelled()'
+      uses: actions/upload-artifact@v5
+      with:
+        name: pkl-lsp-build-artifacts
+        path: build/libs/
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@v5
+      with:
+        name: test-results-xml-build
+        path: build/test-results/**/*.xml
+  build-release:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+    - uses: actions/setup-java@v5
+      with:
+        java-version: '21'
+        distribution: temurin
+        cache: gradle
+    - if: github.repository != 'apple/pkl-lsp'
+      run: |-
+        git remote add upstream https://github.com/apple/pkl-lsp.git
+        git fetch upstream main
+        echo 'PKL_ORIGINAL_REMOTE_NAME=upstream' > "$GITHUB_ENV"
+    - run: ./gradlew --info --stacktrace -DreleaseBuild=true check shadowJar verifyDistribution
+    - name: Upload build artifacts
+      if: '!cancelled()'
+      uses: actions/upload-artifact@v5
+      with:
+        name: pkl-lsp-build-artifacts
+        path: build/libs/
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@v5
+      with:
+        name: test-results-xml-build-release
+        path: build/test-results/**/*.xml
+  test-macos:
+    if: github.repository_owner == 'apple'
+    needs:
+    - build-release
+    runs-on:
+    - self-hosted
+    - macos
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-java@v5
+      with:
+        java-version: '21'
+        distribution: temurin
+        cache: gradle
+    - uses: actions/download-artifact@v6
+      with:
+        name: pkl-lsp-build-artifacts
+        path: build/libs/
+    - run: ./gradlew --info --stacktrace verifyDistribution
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@v5
+      with:
+        name: test-results-xml-test-macos
+        path: build/test-results/**/*.xml
+  test-windows:
+    needs:
+    - build-release
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-java@v5
+      with:
+        java-version: '21'
+        distribution: temurin
+        cache: gradle
+    - uses: actions/download-artifact@v6
+      with:
+        name: pkl-lsp-build-artifacts
+        path: build/libs/
+    - run: ./gradlew --info --stacktrace verifyDistribution
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@v5
+      with:
+        name: test-results-xml-test-windows
+        path: build/test-results/**/*.xml
+  deploy-github-release:
+    needs:
+    - test-macos
+    - test-windows
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/download-artifact@v6
+      with:
+        name: pkl-lsp-build-artifacts
+        path: build/libs/
+    - name: Publish release to GitHub
+      env:
+        GH_TOKEN: ${{ github.token }}
+        GH_REPO: ${{ github.repository }}
+      run: |-
+        gh release create "${{ github.ref_name }}" \
+          --title "${{ github.ref_name }}" \
+          --target "${{ github.sha }}" \
+          --verify-tag \
+          --notes "Release notes: https://pkl-lang.org/lsp/current/CHANGELOG.html#release-${{ github.ref_name }}" \
+          build/libs/*
+  deploy-maven-release:
+    needs:
+    - deploy-github-release
+    runs-on: ubuntu-latest
+    environment: maven-release
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-java@v5
+      with:
+        java-version: '21'
+        distribution: temurin
+        cache: gradle
+    - uses: actions/download-artifact@v6
+      with:
+        name: pkl-lsp-build-artifacts
+        path: build/libs/
+    - name: Publish to Maven Central
+      env:
+        ORG_GRADLE_PROJECT_signingKeyId: ${{ secrets.ORG_GRADLE_PROJECT_SIGNINGKEYID }}
+        ORG_GRADLE_PROJECT_signingKey: ${{ secrets.ORG_GRADLE_PROJECT_SIGNINGKEY }}
+        ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.ORG_GRADLE_PROJECT_SIGNINGPASSWORD }}
+        ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.ORG_GRADLE_PROJECT_SONATYPEPASSWORD }}
+        ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.ORG_GRADLE_PROJECT_SONATYPEUSERNAME }}
+      run: ./gradlew -DreleaseBuild=true publishToSonatype closeAndReleaseSonatypeStagingRepository"
+  publish-test-results:
+    needs:
+    - build
+    - build-release
+    - test-macos
+    - test-windows
+    permissions:
+      checks: write
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/download-artifact@v6
+      with:
+        pattern: test-results-xml-*
+    - name: Publish test results
+      if: '!cancelled()'
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      with:
+        comment_mode: 'off'
+        files: build/test-results/**/*.xml

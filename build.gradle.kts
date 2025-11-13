@@ -188,7 +188,7 @@ fun configureRepo(
 
 val setupTreeSitterRepo =
   configureRepo(
-    "git@github.com:tree-sitter/tree-sitter",
+    "https://github.com/tree-sitter/tree-sitter",
     "treeSitter",
     libs.versions.treeSitterRepo,
     treeSitterRepoDir,
@@ -196,7 +196,7 @@ val setupTreeSitterRepo =
 
 val setupTreeSitterPklRepo =
   configureRepo(
-    "git@github.com:apple/tree-sitter-pkl",
+    "https://github.com/apple/tree-sitter-pkl",
     "treeSitterPkl",
     libs.versions.treeSitterPklRepo,
     treeSitterPklRepoDir,
