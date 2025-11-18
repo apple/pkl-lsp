@@ -1,0 +1,184 @@
+ 
+ mapping0: Mapping
+ mapping1: Mapping<String>
+           ^^^^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 2
+| Actual: 1
+ mapping2: Mapping<String, String>
+ mapping3: Mapping<String, String, String>
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 2
+| Actual: 3
+ 
+ map0: Map
+ map1: Map<String>
+       ^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 2
+| Actual: 1
+ map2: Map<String, String>
+ map3: Map<String, String, String>
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 2
+| Actual: 3
+ 
+ listing0: Listing
+ listing1: Listing<String>
+ listing2: Listing<String, String>
+           ^^^^^^^^^^^^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 1
+| Actual: 2
+ 
+ list0: List
+ list1: List<String>
+ list2: List<String, String>
+        ^^^^^^^^^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 1
+| Actual: 2
+ 
+ set0: Set
+ set1: Set<String>
+ set2: Set<String, String>
+       ^^^^^^^^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 1
+| Actual: 2
+ 
+ collection0: Collection
+ collection1: Collection<String>
+ collection2: Collection<String, String>
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 1
+| Actual: 2
+ 
+ class0: Class
+ class1: Class<String>
+ class2: Class<String, String>
+         ^^^^^^^^^^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 1
+| Actual: 2
+ 
+ pair0: Pair
+ pair1: Pair<String>
+        ^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 2
+| Actual: 1
+ pair2: Pair<String, String>
+ pair3: Pair<String, String, String>
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 2
+| Actual: 3
+ 
+ mixin0: Mixin
+ mixin1: Mixin<String>
+ mixin2: Mixin<String, String>
+         ^^^^^^^^^^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 1
+| Actual: 2
+ 
+ function0: Function
+ function1: Function<String>
+ function2: Function<String, String>
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 1
+| Actual: 2
+ 
+ function00: Function0
+ function01: Function0<String>
+ function02: Function0<String, String>
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 1
+| Actual: 2
+ 
+ function10: Function1
+ function11: Function1<String>
+             ^^^^^^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 2
+| Actual: 1
+ function12: Function1<String, String>
+ function13: Function1<String, String, String>
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 2
+| Actual: 3
+ 
+ function20: Function2
+ function22: Function2<String, String>
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 3
+| Actual: 2
+ function23: Function2<String, String, String>
+ function24: Function2<String, String, String, String>
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 3
+| Actual: 4
+ 
+ function30: Function3
+ function33: Function3<String, String, String>
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 4
+| Actual: 3
+ function34: Function3<String, String, String, String>
+ function35: Function3<String, String, String, String, String>
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 4
+| Actual: 5
+ 
+ function40: Function4
+ function44: Function4<String, String, String, String>
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 5
+| Actual: 4
+ function45: Function4<String, String, String, String, String>
+ function46: Function4<String, String, String, String, String, String>
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 5
+| Actual: 6
+ 
+ function50: Function5
+ function55: Function5<String, String, String, String, String>
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 6
+| Actual: 5
+ function56: Function5<String, String, String, String, String, String>
+ function57: Function5<String, String, String, String, String, String, String>
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 6
+| Actual: 7
+ 
+ typealias MyTypeAlias<T, U, V, W, X, Y, Z> = Mapping<Pair<T, U>, Mapping<Pair<V, W>, Mapping<Pair<X, Y>, Z>>>
+ 
+ myTypeAlias0: MyTypeAlias
+ myTypeAlias6: MyTypeAlias<String, String, String, String, String, String>
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 7
+| Actual: 6
+ myTypeAlias7: MyTypeAlias<String, String, String, String, String, String, String>
+ myTypeAlias8: MyTypeAlias<String, String, String, String, String, String, String, String>
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| Error: Incorrect type argument count.
+| Required: 0 or 7
+| Actual: 8
+ 

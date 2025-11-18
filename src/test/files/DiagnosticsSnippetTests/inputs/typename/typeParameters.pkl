@@ -1,0 +1,79 @@
+
+mapping0: Mapping
+mapping1: Mapping<String>
+mapping2: Mapping<String, String>
+mapping3: Mapping<String, String, String>
+
+map0: Map
+map1: Map<String>
+map2: Map<String, String>
+map3: Map<String, String, String>
+
+listing0: Listing
+listing1: Listing<String>
+listing2: Listing<String, String>
+
+list0: List
+list1: List<String>
+list2: List<String, String>
+
+set0: Set
+set1: Set<String>
+set2: Set<String, String>
+
+collection0: Collection
+collection1: Collection<String>
+collection2: Collection<String, String>
+
+class0: Class
+class1: Class<String>
+class2: Class<String, String>
+
+pair0: Pair
+pair1: Pair<String>
+pair2: Pair<String, String>
+pair3: Pair<String, String, String>
+
+mixin0: Mixin
+mixin1: Mixin<String>
+mixin2: Mixin<String, String>
+
+function0: Function
+function1: Function<String>
+function2: Function<String, String>
+
+function00: Function0
+function01: Function0<String>
+function02: Function0<String, String>
+
+function10: Function1
+function11: Function1<String>
+function12: Function1<String, String>
+function13: Function1<String, String, String>
+
+function20: Function2
+function22: Function2<String, String>
+function23: Function2<String, String, String>
+function24: Function2<String, String, String, String>
+
+function30: Function3
+function33: Function3<String, String, String>
+function34: Function3<String, String, String, String>
+function35: Function3<String, String, String, String, String>
+
+function40: Function4
+function44: Function4<String, String, String, String>
+function45: Function4<String, String, String, String, String>
+function46: Function4<String, String, String, String, String, String>
+
+function50: Function5
+function55: Function5<String, String, String, String, String>
+function56: Function5<String, String, String, String, String, String>
+function57: Function5<String, String, String, String, String, String, String>
+
+typealias MyTypeAlias<T, U, V, W, X, Y, Z> = Mapping<Pair<T, U>, Mapping<Pair<V, W>, Mapping<Pair<X, Y>, Z>>>
+
+myTypeAlias0: MyTypeAlias
+myTypeAlias6: MyTypeAlias<String, String, String, String, String, String>
+myTypeAlias7: MyTypeAlias<String, String, String, String, String, String, String>
+myTypeAlias8: MyTypeAlias<String, String, String, String, String, String, String, String>
