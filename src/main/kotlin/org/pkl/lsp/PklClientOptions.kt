@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 package org.pkl.lsp
 
+const val DEFAULT_PKL_AUTHORITY = "pkg.pkl-lang.org"
+
 /** Additional options passed by a language client when initializing the LSP. */
 data class PklClientOptions(
   /**
@@ -24,6 +26,17 @@ data class PklClientOptions(
 
   /** Additional capabilities supported by this client. */
   val extendedClientCapabilities: ExtendedClientCapabilities = ExtendedClientCapabilities(),
+
+  /**
+   * Map of package server authorities to their documentation URL patterns. The URL pattern should
+   * contain placeholders: {packagePath}, {version}, {modulePath}, {path} Example:
+   * "https://pkl-lang.org/package-docs/{packagePath}/{version}/{modulePath}/{path}"
+   */
+  val packageDocumentationUrls: Map<String, String> =
+    mapOf(
+      DEFAULT_PKL_AUTHORITY to
+        "https://pkl-lang.org/package-docs/{packagePath}/{version}/{modulePath}/{path}"
+    ),
 ) {
   companion object {
     val default = PklClientOptions()
