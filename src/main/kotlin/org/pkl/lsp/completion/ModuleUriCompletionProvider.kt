@@ -65,7 +65,7 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
         PklObjectBody::class,
       )
     if (import is PklObjectBody) return
-    val isGlobImport = (import as? PklImportBase)?.isGlob == true
+    val isGlobImport = (import as? PklImportBase)?.isGlob ?: false
     val targetUri =
       node.escapedText()?.let { text ->
         text.substring(0, min(params.position.character - node.span.beginCol, text.length))
@@ -152,6 +152,7 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
           isGlobImport = isGlobImport,
           isAbsoluteUri = true,
           stringCharsNode = stringChars,
+          targetUri = targetUri,
         )
       }
       targetUri.startsWith(PACKAGE_SCHEME) -> {
@@ -177,6 +178,7 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
               isGlobImport = isGlobImport,
               isAbsoluteUri = true,
               stringCharsNode = stringChars,
+              targetUri = targetUri,
             )
           }
         }
@@ -211,6 +213,7 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
                 isGlobImport = isGlobImport,
                 isAbsoluteUri = false,
                 stringCharsNode = stringChars,
+                targetUri = targetUri,
               )
             }
         }
@@ -302,56 +305,76 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
     isGlobImport: Boolean,
     isAbsoluteUri: Boolean,
     stringCharsNode: PklNode,
+    targetUri: String,
   ) {
     val isTripleDotDirPath = relativeTargetFilePath.startsWith("...")
 
     for (root in roots) {
-      val dirs =
+      val (dirs, childMatch) =
         if (isTripleDotDirPath) {
-          resolveTripleDotDirPath(root, relativeSourceDirPath, relativeTargetFilePath)
+          resolveTripleDotDirPath(root, relativeSourceDirPath, relativeTargetFilePath) to ""
         } else {
           val sourceDir = root.resolve(relativeSourceDirPath) ?: return
-          val targetPathDir =
-            if (relativeTargetFilePath.endsWith("/")) relativeTargetFilePath
-            else relativeTargetFilePath.substringBeforeLast('/')
+          val (targetPathDir, childMatch) =
+            if (relativeTargetFilePath.endsWith("/")) relativeTargetFilePath to ""
+            else
+              relativeTargetFilePath.substringBeforeLast('/') to
+                relativeTargetFilePath.substringAfterLast('/')
           val resolved = sourceDir.resolve(targetPathDir) ?: return
-          listOf(resolved)
+          listOf(resolved) to childMatch
         }
 
       for (dir in dirs) {
         if (!dir.isDirectory) continue
         dir.children!!.forEach { child ->
+          if (!child.name.lowercase().startsWith(childMatch.lowercase()))
+            return@forEach // FIXME: do a fuzzier match
           val isDirectory = child.isDirectory
           val extension = child.path.extension
           val name = child.name
           if (
-            !name.startsWith('.') &&
-              (isDirectory || extension == "pkl" || extension == "pcf" || name == "PklProject")
-          ) {
-            // prefix with `./` if name starts with `@`, becuase this is reserved for dependency
-            // notation.
-            val completionName =
-              if (name.startsWith("@") && relativeTargetFilePath.count() == 1) "./$name" else name
-            var completionText = completionName
-            if (isDirectory) {
-              completionText = "$completionText/"
-            }
-            if (isGlobImport) {
-              val replacement = "\\\\\\\\$1"
-              completionText = completionText.replace(Regex("([*\\\\{\\[])"), replacement)
-            }
-            if (isAbsoluteUri) {
-              completionText = URI(null, null, completionText, null).rawPath
-            }
-            val completion =
-              CompletionItem().apply {
-                kind = if (isDirectory) CompletionItemKind.Folder else CompletionItemKind.Module
-                label = completionName
-                insertText = completionText
-                data = completionItemData(stringCharsNode, child.uri.toString())
-              }
-            collector.add(completion)
+            name.startsWith('.') ||
+              !(isDirectory || extension == "pkl" || extension == "pcf" || name == "PklProject")
+          )
+            return@forEach
+          // prefix with `./` if name starts with `@`, as this is reserved for dependency notation.
+          val completionName =
+            if (name.startsWith("@") && relativeTargetFilePath.count() == 1) "./$name" else name
+          var completionText = completionName
+          if (isDirectory) {
+            completionText = "$completionText/"
           }
+          if (isGlobImport) {
+            val replacement = "\\\\\\\\$1"
+            completionText = completionText.replace(Regex("([*\\\\{\\[])"), replacement)
+          }
+          if (isAbsoluteUri) {
+            completionText = URI(null, null, completionText, null).rawPath
+          }
+          val targetUriNode = stringCharsNode.children[1]
+          val componentRemainder = targetUriNode.text.removePrefix(targetUri).substringBefore('/')
+          val completion =
+            CompletionItem().apply {
+              kind = if (isDirectory) CompletionItemKind.Folder else CompletionItemKind.Module
+              label = completionName
+              textEdit =
+                Either.forLeft(
+                  TextEdit().apply {
+                    this.newText = completionText
+                    this.range =
+                      targetUriNode.span.toRange().apply {
+                        start.character += targetUri.length - childMatch.length
+                        end =
+                          start.apply {
+                            if (completionText.endsWith(componentRemainder))
+                              character += componentRemainder.length
+                          }
+                      }
+                  }
+                )
+              data = completionItemData(stringCharsNode, child.uri.toString())
+            }
+          collector.add(completion)
         }
       }
     }
@@ -415,6 +438,7 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
       isGlobImport = isGlobImport,
       isAbsoluteUri = false,
       stringCharsNode = stringCharsNode,
+      targetUri = targetUri,
     )
   }
 }
