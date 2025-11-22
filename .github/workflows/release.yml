@@ -167,6 +167,7 @@ jobs:
         ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.ORG_GRADLE_PROJECT_SONATYPEUSERNAME }}
       run: ./gradlew -DreleaseBuild=true publishToSonatype closeAndReleaseSonatypeStagingRepository"
   publish-test-results:
+    if: '!failure() && !cancelled()'
     needs:
     - build
     - build-release
@@ -184,4 +185,4 @@ jobs:
       uses: EnricoMi/publish-unit-test-result-action@v2
       with:
         comment_mode: 'off'
-        files: build/test-results/**/*.xml
+        files: test-results-xml-*/**/*.xml
