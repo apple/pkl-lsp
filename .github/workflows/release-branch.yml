@@ -91,6 +91,7 @@ jobs:
         name: test-results-xml-test-windows
         path: build/test-results/**/*.xml
   publish-test-results:
+    if: '!failure() && !cancelled()'
     needs:
     - build
     - test-macos
@@ -107,4 +108,4 @@ jobs:
       uses: EnricoMi/publish-unit-test-result-action@v2
       with:
         comment_mode: 'off'
-        files: build/test-results/**/*.xml
+        files: test-results-xml-*/**/*.xml
