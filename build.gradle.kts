@@ -169,14 +169,20 @@ fun configureRepo(
       dependsOn(cloneTask)
       inputs.property("gitTagOrCommit", gitTagOrCommit)
       doLast {
-        exec {
-          workingDir = repoDir.get().asFile
-          commandLine("git", "fetch", "--tags", "origin")
-        }
-        exec {
-          workingDir = repoDir.get().asFile
-          commandLine("git", "checkout", "-f", gitTagOrCommit.get())
-        }
+        providers
+          .exec {
+            workingDir = repoDir.get().asFile
+            commandLine("git", "fetch", "--tags", "origin")
+          }
+          .result
+          .get()
+        providers
+          .exec {
+            workingDir = repoDir.get().asFile
+            commandLine("git", "checkout", "-f", gitTagOrCommit.get())
+          }
+          .result
+          .get()
       }
     }
 

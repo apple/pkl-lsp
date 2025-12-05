@@ -11,7 +11,7 @@ ktfmt = "0.53"
 lsp4j = "0.23.1"
 nexusPublishPlugin = "2.0.0"
 pkl = "0.30.0"
-shadowPlugin = "8.1.1"
+shadowPlugin = "9.2.2"
 spotless = "6.25.0"
 treeSitterRepo = "v0.25.3" # git tag name
 treeSitterPklRepo = "v0.20.0" # git tag name
@@ -41,6 +41,6 @@ pklStdlib = { group = "org.pkl-lang", name = "pkl-stdlib", version.ref = "pkl" }
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadowPlugin" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadowPlugin" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 nexusPublish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexusPublishPlugin" }
