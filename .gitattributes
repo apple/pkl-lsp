@@ -2,15 +2,14 @@
 # https://help.github.com/articles/dealing-with-line-endings/
 #
 # Linux start script should use lf
-/gradlew        text eol=lf
+
+# By default all files should use lf
+* text eol=lf
 
 # These are Windows script files and should use crlf
-*.bat           text eol=crlf
+*.bat text eol=crlf
 
 # Binary files should be left untouched
-*.jar           binary
-
-# All other files should use lf
-* text eol=lf
+*.jar binary
 
 .github/workflows/*.yml linguist-generated=true
