@@ -16,11 +16,9 @@
 
 amends "@pkl.impl.ghactions/PklCI.pkl"
 
-import "@gha/actions/Artifact.pkl"
-import "@gha/actions/Common.pkl"
-import "@gha/actions/Setup.pkl"
-import "@gha/Context.pkl"
-import "@gha/Workflow.pkl"
+import "@com.github.actions/catalog.pkl"
+import "@com.github.actions/context.pkl"
+import "@com.github.actions/Workflow.pkl"
 import "@pkl.impl.ghactions/helpers.pkl"
 
 local buildArtifactsName = "pkl-lsp-build-artifacts"
@@ -43,12 +41,12 @@ local buildAndTest: Workflow = new {
 local function buildJob(isRelease: Boolean): Workflow.Job = new {
   `runs-on` = "ubuntu-latest"
   steps {
-    new Common.Checkout {
+    (catalog.`actions/checkout@v6`) {
       with {
         `fetch-depth` = 0 // needed for spotless
       }
     }
-    new Setup.Java {
+    (catalog.`actions/setup-java@v5`) {
       with {
         `java-version` = "21"
         distribution = "temurin"
@@ -77,7 +75,7 @@ local function buildJob(isRelease: Boolean): Workflow.Job = new {
         ./gradlew \(args.join(" ")) check shadowJar verifyDistribution
         """
     }
-    new Artifact.Upload {
+    (catalog.`actions/upload-artifact@v5`) {
       name = "Upload build artifacts"
       `if` = "!cancelled()"
       with {
@@ -92,15 +90,15 @@ local function verifyJobs(requiresJob: String): Mapping<String, Workflow.Job> = 
   default {
     needs { requiresJob }
     steps {
-      new Common.Checkout {}
-      new Setup.Java {
+      (catalog.`actions/checkout@v6`) {}
+      (catalog.`actions/setup-java@v5`) {
         with {
           `java-version` = "21"
           distribution = "temurin"
           cache = "gradle"
         }
       }
-      new Artifact.Download {
+      (catalog.`actions/download-artifact@v6`) {
         with {
           name = buildArtifactsName
           path = "build/libs/"
@@ -129,15 +127,15 @@ local baseMavenDeploy: Workflow.Job = new {
   `runs-on` = "ubuntu-latest"
   environment = "maven-release"
   steps {
-    new Common.Checkout {}
-    new Setup.Java {
+    (catalog.`actions/checkout@v6`) {}
+    (catalog.`actions/setup-java@v5`) {
       with {
         `java-version` = "21"
         distribution = "temurin"
         cache = "gradle"
       }
     }
-    new Artifact.Download {
+    (catalog.`actions/download-artifact@v6`) {
       with {
         name = buildArtifactsName
         path = "build/libs/"
@@ -156,8 +154,8 @@ build {
   jobs {
     ["build"] = buildJob(false)
     ...(verifyJobs("build")) {
-      // TODO use lower priority runners for on-push macOS jobs
-      // ["test-macos"] { `runs-on` { "nightly" } }
+    // TODO use lower priority runners for on-push macOS jobs
+    // ["test-macos"] { `runs-on` { "nightly" } }
     }
   }
 }
@@ -191,7 +189,7 @@ release = (buildAndTest) {
         contents = "write"
       }
       steps {
-        new Artifact.Download {
+        (catalog.`actions/download-artifact@v6`) {
           with {
             name = buildArtifactsName
             path = "build/libs/"
@@ -200,16 +198,16 @@ release = (buildAndTest) {
         new {
           name = "Publish release to GitHub"
           env {
-            ["GH_TOKEN"] = Context.github.token
-            ["GH_REPO"] = Context.github.repository
+            ["GH_TOKEN"] = context.github.token
+            ["GH_REPO"] = context.github.repository
           }
           run =
             #"""
-            gh release create "\#(Context.github.refName)" \
-              --title "\#(Context.github.refName)" \
-              --target "\#(Context.github.sha)" \
+            gh release create "\#(context.github.refName)" \
+              --title "\#(context.github.refName)" \
+              --target "\#(context.github.sha)" \
               --verify-tag \
-              --notes "Release notes: https://pkl-lang.org/lsp/current/CHANGELOG.html#release-\#(Context.github.refName)" \
+              --notes "Release notes: https://pkl-lang.org/lsp/current/CHANGELOG.html#release-\#(context.github.refName)" \
               build/libs/*
             """#
         }
