@@ -219,8 +219,9 @@ release {
         new Workflow.Step {
           name = "Publish to Maven Central"
           run =
+            // language=bash
             """
-            ./gradlew -DreleaseBuild=true publishToSonatype closeAndReleaseSonatypeStagingRepository"
+            ./gradlew -DreleaseBuild=true publishToSonatype closeAndReleaseSonatypeStagingRepository
             """
         } |> helpers.withMavenPublishSecrets
       }
