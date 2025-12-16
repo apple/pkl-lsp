@@ -141,7 +141,7 @@ jobs:
         ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.ORG_GRADLE_PROJECT_SIGNINGPASSWORD }}
         ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.ORG_GRADLE_PROJECT_SONATYPEPASSWORD }}
         ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.ORG_GRADLE_PROJECT_SONATYPEUSERNAME }}
-      run: ./gradlew -DreleaseBuild=true publishToSonatype closeAndReleaseSonatypeStagingRepository"
+      run: ./gradlew -DreleaseBuild=true publishToSonatype closeAndReleaseSonatypeStagingRepository
   publish-test-results:
     if: '!cancelled()'
     needs:
