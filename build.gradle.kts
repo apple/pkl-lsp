@@ -124,22 +124,44 @@ tasks.named("startScripts") { dependsOn(tasks.shadowJar) }
 
 tasks.named("startShadowScripts") { dependsOn(tasks.jar) }
 
+val verifyShadowJar by
+  tasks.registering {
+    dependsOn(tasks.jar)
+    dependsOn(tasks.shadowJar)
+    inputs.files(tasks.shadowJar)
+    group = "verification"
+    doLast {
+      val shadowJarFile = tasks.shadowJar.get().archiveFile.get().asFile
+      val entries = zipTree(shadowJarFile).files.map { it.name }
+
+      val nestedStdlibJars = entries.filter { it.matches(Regex("pkl-stdlib-.*\\.jar")) }
+      if (nestedStdlibJars.isNotEmpty()) {
+        throw GradleException("Shadow jar contains nested pkl-stdlib")
+      }
+
+      val pklFiles = entries.filter { it.endsWith(".pkl") }
+      if (pklFiles.isEmpty()) {
+        throw GradleException("Shadow jar does not contain any .pkl files")
+      }
+    }
+  }
+
 tasks.shadowJar {
   archiveClassifier = null
-  // Need to rename `.zip` to `.jar`, otherwise the shadow plugin ends up bundling whole zip file
-  // as-is inside the
-  // shadow jar instead of extracting them.
-  from(pklStdlibFiles) { rename("(.*).zip", "$1.jar") }
+  // Ensure stdlib files are extracted into the shadow jar, rather than included as a `.jar` or
+  // `.zip`
+  from(pklStdlibFiles.map { zipTree(it) })
+  finalizedBy(verifyShadowJar)
 }
 
-val javadocDummy by tasks.creating(Javadoc::class) { source = dummy.allJava }
+val javadocDummy by tasks.registering(Javadoc::class) { source = dummy.allJava }
 
 // create a dummy javadoc jar to make maven central happy
 val javadocJar by
   tasks.registering(Jar::class) {
     dependsOn(javadocDummy)
     archiveClassifier = "javadoc"
-    from(javadocDummy.destinationDir)
+    from(javadocDummy.map { it.destinationDir })
   }
 
 val sourcesJar by
