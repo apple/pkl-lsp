@@ -12,36 +12,6 @@ concurrency:
 permissions:
   contents: read
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
-      with:
-        persist-credentials: false
-        fetch-depth: 0
-    - uses: actions/setup-java@f2beeb24e141e01a676f977032f5a29d81c9e27e # v5
-      with:
-        java-version: '21'
-        distribution: temurin
-        cache: gradle
-    - if: github.repository != 'apple/pkl-lsp'
-      run: |-
-        git remote add upstream https://github.com/apple/pkl-lsp.git
-        git fetch upstream main
-        echo 'PKL_ORIGINAL_REMOTE_NAME=upstream' > "$GITHUB_ENV"
-    - run: ./gradlew --info --stacktrace check shadowJar verifyDistribution
-    - name: Upload build artifacts
-      if: '!cancelled()'
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
-      with:
-        name: pkl-lsp-build-artifacts
-        path: build/libs/
-    - name: Upload Test Result XML
-      if: '!cancelled()'
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
-      with:
-        name: test-results-xml-build
-        path: build/test-results/**/*.xml
   build-release:
     runs-on: ubuntu-latest
     steps:
@@ -175,7 +145,6 @@ jobs:
   publish-test-results:
     if: '!cancelled()'
     needs:
-    - build
     - build-release
     - test-macos
     - test-windows

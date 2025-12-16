@@ -176,7 +176,7 @@ main = (build) {
   }
 }
 
-release = (buildAndTest) {
+release {
   jobs {
     ["build-release"] = buildJob(true)
     ...verifyJobs("build-release")
@@ -184,7 +184,7 @@ release = (buildAndTest) {
     // publishing to Maven Central is final.
     ["deploy-github-release"] {
       `runs-on` = "ubuntu-latest"
-      needs = verifyJobNames
+      needs = verifyJobs("build-release").keys.toListing()
       permissions {
         contents = "write"
       }
