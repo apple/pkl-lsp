@@ -1,5 +1,5 @@
 name: lsp
 title: Pkl Language Server
-version: 0.5.2
+version: 0.5.3
 nav:
   - nav.adoc
