@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package org.pkl.lsp.services
 
+import java.io.IOException
 import java.net.URI
 import java.nio.file.FileVisitResult
 import java.nio.file.Files
@@ -74,7 +75,7 @@ class PklProjectManager(project: Project) : Component(project) {
   val addedOrRemovedFilesModificationTracker =
     project.pklFileTracker.filter { event -> event.files.any { it.path.endsWith("PklProject") } }
 
-  /** Tracks when projects get sync'd. */
+  /** Tracks when projects get synced. */
   val syncTracker = SimpleModificationTracker()
 
   fun initialize(folders: List<Path>?) {
@@ -90,7 +91,23 @@ class PklProjectManager(project: Project) : Component(project) {
   }
 
   fun syncProjects(emitEvents: Boolean = false): CompletableFuture<Unit> {
-    val pklProjectFiles = discoverProjectFiles()
+    val pklProjectFiles =
+      try {
+        discoverProjectFiles()
+      } catch (e: IOException) {
+        project.languageClient.showMessage(
+          MessageParams(
+            MessageType.Error,
+            """
+          Failed to discover PklProject files within workspace:
+
+          ${e.stackTraceToString()}
+          """
+              .trimIndent(),
+          )
+        )
+        return CompletableFuture.completedFuture(Unit)
+      }
     if (pklProjectFiles.isEmpty()) {
       pklProjects.clear()
       lastPklProjectSyncState.clear()
