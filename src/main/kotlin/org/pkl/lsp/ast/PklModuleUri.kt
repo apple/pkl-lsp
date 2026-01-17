@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,7 @@ package org.pkl.lsp.ast
 import io.github.treesitter.jtreesitter.Node
 import java.nio.file.Path
 import org.pkl.lsp.*
-import org.pkl.lsp.FsFile
-import org.pkl.lsp.HttpsFile
-import org.pkl.lsp.JarFile
 import org.pkl.lsp.LspUtil.firstInstanceOf
-import org.pkl.lsp.VirtualFile
 import org.pkl.lsp.packages.dto.PackageUri
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.util.CachedValue
@@ -125,6 +121,7 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
               ?.resolve(targetUri.fragment)
           vfile?.getModule()?.get()
         }
+        "modulepath" -> project.modulepathResolver.resolve(targetUri.path, context)
         // targetUri is a relative URI
         null -> {
           when {
