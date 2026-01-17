@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import org.pkl.lsp.ast.PklModuleImpl
 import org.pkl.lsp.services.PklWorkspaceState
 
 class SyncProjectsTest : LspTestBase() {
@@ -34,10 +35,16 @@ class SyncProjectsTest : LspTestBase() {
         "PklProject",
         """
       amends "pkl:Project"
-      
+
       dependencies {
         ["appEnvCluster"] {
           uri = "package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.appEnvCluster@1.0.2"
+        }
+      }
+
+      evaluatorSettings {
+        modulePath {
+          "lib"
         }
       }
     """
@@ -84,6 +91,8 @@ class SyncProjectsTest : LspTestBase() {
         "package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.appEnvCluster@1",
       )
     assertThat(project.declaredDependencies).containsOnlyKeys("appEnvCluster")
+    assertThat(project.evaluatorSettings?.modulePath).hasSize(1)
+    assertThat(project.evaluatorSettings?.modulePath!![0]).isEqualTo("lib")
   }
 
   @Test
@@ -123,5 +132,21 @@ class SyncProjectsTest : LspTestBase() {
     assertThat(resolved).hasSize(1)
     val resolvedFile = resolved.first().containingFile
     assertThat(resolvedFile).isInstanceOf(JarFile::class.java)
+  }
+
+  @Test
+  fun `resolve modulepath import`() {
+    createPklFile("lib/target.pkl", "")
+    createPklFile(
+      """
+      import "modulepath:/target<caret>.pkl"
+    """
+        .trimIndent()
+    )
+    val resolved = goToDefinition()
+    assertThat(resolved).hasSize(1)
+    assertThat(resolved[0]).isInstanceOf(PklModuleImpl::class.java)
+    val resolvedFile = resolved.first().containingFile
+    assertThat(resolvedFile.uri.path).endsWith("/lib/target.pkl")
   }
 }
