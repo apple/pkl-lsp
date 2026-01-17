@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
     private const val FILE_SCHEME = "file:///"
     private const val HTTPS_SCHEME = "https://"
     private const val PACKAGE_SCHEME = "package://"
+    private const val MODULEPATH_SCHEME = "modulepath:/"
 
     private val SCHEME_ELEMENTS =
       listOf(
@@ -44,6 +45,7 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
         CompletionItem(FILE_SCHEME),
         CompletionItem(HTTPS_SCHEME),
         CompletionItem(PACKAGE_SCHEME),
+        CompletionItem(MODULEPATH_SCHEME),
       )
 
     private val GLOBBABLE_SCHEME_ELEMENTS =
@@ -182,6 +184,21 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
             )
           }
         }
+      }
+      targetUri.startsWith(MODULEPATH_SCHEME) -> {
+        val context = sourceModule.virtualFile.pklProject
+        val roots =
+          project.modulepathResolver.paths(context).mapNotNull(project.virtualFileManager::get)
+        completeHierarchicalUri(
+          roots,
+          ".",
+          targetUri.substring(12),
+          collector,
+          isGlobImport = isGlobImport,
+          isAbsoluteUri = true,
+          stringCharsNode = stringChars,
+          targetUri = targetUri,
+        )
       }
       targetUri.startsWith("@") && !packageUriOnly -> {
         val dependencies = sourceModule.dependencies(null) ?: return
