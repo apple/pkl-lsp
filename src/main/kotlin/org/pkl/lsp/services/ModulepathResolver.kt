@@ -16,6 +16,7 @@
 package org.pkl.lsp.services
 
 import java.nio.file.Files
+import java.nio.file.Path
 import org.pkl.lsp.Component
 import org.pkl.lsp.Project
 import org.pkl.lsp.ast.PklModule
@@ -36,5 +37,13 @@ class ModulepathResolver(project: Project) : Component(project) {
           ?.firstOrNull(Files::exists)
         ?: return null
     return project.virtualFileManager.get(file)?.getModule()?.get()
+  }
+
+  fun paths(context: PklProject?): List<Path> {
+    val fromSettings = project.settingsManager.settings.modulepath
+    val fromProject =
+      context?.metadata?.evaluatorSettings?.modulePath?.map(context.projectDir::resolve)
+        ?: return fromSettings
+    return fromSettings + fromProject
   }
 }
