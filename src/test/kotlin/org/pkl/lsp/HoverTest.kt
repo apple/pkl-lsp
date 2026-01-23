@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package org.pkl.lsp
 
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class HoverTest : LspTestBase() {
@@ -172,5 +173,81 @@ class HoverTest : LspTestBase() {
     )
     val hoverText = getHoverText()
     assertThat(hoverText).contains("foo: UInt8")
+  }
+
+  @Test
+  fun `BaseValueRenderer convertPropertyTransformers entry value object body this resolution`() {
+    createPklFile(
+      """
+        /// this is foo
+        class Foo extends ConvertProperty { 
+          /// this is bar
+          bar: String = "bar"
+          render = (_, _) -> Pair(bar, bar) 
+        }
+        
+        output {
+          renderer {
+            convertPropertyTransformers {
+              [Foo] { b<caret>ar = "baz" }
+            }
+          }
+        }
+        """
+        .trimIndent()
+    )
+    val hoverText = getHoverText()
+    assertThat(hoverText).contains("this is bar")
+  }
+
+  @Test
+  fun `BaseValueRenderer convertPropertyTransformers entry value assigned lambda parameter resolution`() {
+    createPklFile(
+      """
+        /// this is foo
+        class Foo extends ConvertProperty { 
+          /// this is bar
+          bar: String = "bar"
+          render = (_, _) -> Pair(bar, bar) 
+        }
+        
+        output {
+          renderer {
+            convertPropertyTransformers {
+              [Foo] = (it) -> (i<caret>t) { bar = "qux" }
+            }
+          }
+        }
+        """
+        .trimIndent()
+    )
+    val hoverText = getHoverText()
+    assertThat(hoverText).contains("it: Foo")
+  }
+
+  @Test
+  @Disabled
+  fun `BaseValueRenderer convertPropertyTransformers entry value assigned lambda parameter property resolution`() {
+    createPklFile(
+      """
+        /// this is foo
+        class Foo extends ConvertProperty { 
+          /// this is bar
+          bar: String = "bar"
+          render = (_, _) -> Pair(bar, bar) 
+        }
+        
+        output {
+          renderer {
+            convertPropertyTransformers {
+              [Foo] = (it) -> (it) { b<caret>ar = "quux" }
+            }
+          }
+        }
+        """
+        .trimIndent()
+    )
+    val hoverText = getHoverText()
+    assertThat(hoverText).contains("this is bar")
   }
 }
