@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.pkl.lsp
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.io.path.createParentDirectories
 import kotlin.io.path.name
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
@@ -121,7 +122,11 @@ abstract class LspTestBase {
     val caret = contents.indexOf("<caret>")
     val effectiveContents =
       if (caret == -1) contents else contents.replaceRange(caret, caret + 7, "")
-    val file = testProjectDir.resolve(name).also { it.writeText(effectiveContents) }
+    val file =
+      testProjectDir
+        .resolve(name)
+        .also { it.createParentDirectories() }
+        .also { it.writeText(effectiveContents) }
     // need to trigger this so the LSP knows about this file.
     server.textDocumentService.didOpen(
       DidOpenTextDocumentParams(file.toTextDocument(effectiveContents))
