@@ -266,11 +266,20 @@ class PklProjectManager(project: Project) : Component(project) {
   }
 
   private fun discoverProjectFiles(): List<FsFile> {
+    val excludedDirs = project.settingsManager.settings.excludedDirectories
     return workspaceFolders.flatMap { folderRoot ->
       buildList {
         Files.walkFileTree(
           folderRoot,
           object : SimpleFileVisitor<Path>() {
+            override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
+              val relativePath = folderRoot.relativize(dir).toString()
+              if (excludedDirs.any { pattern -> matchesPattern(relativePath, pattern) }) {
+                return FileVisitResult.SKIP_SUBTREE
+              }
+              return FileVisitResult.CONTINUE
+            }
+
             override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
               if (file.name == PKL_PROJECT_FILENAME) {
                 add(project.virtualFileManager.getFsFile(file)!!)
@@ -281,6 +290,17 @@ class PklProjectManager(project: Project) : Component(project) {
         )
       }
     }
+  }
+
+  private fun matchesPattern(path: String, pattern: String): Boolean {
+    // support glob patterns like * and **
+    val regexPattern =
+      pattern
+        .replace(".", "\\.")
+        .replace("**", "\u0000") // placeholder for **
+        .replace("*", "[^/]*")
+        .replace("\u0000", ".*")
+    return Regex("^$regexPattern(/.*)?$").matches(path)
   }
 
   private fun persistState() {

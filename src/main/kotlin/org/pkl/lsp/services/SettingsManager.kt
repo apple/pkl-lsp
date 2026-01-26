@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.pkl.lsp.messages.ActionableNotification
 data class WorkspaceSettings(
   var pklCliPath: Path? = null,
   var grammarVersion: GrammarVersion? = null,
+  var excludedDirectories: List<String> = emptyList(),
 )
 
 class SettingsManager(project: Project) : Component(project) {
@@ -77,6 +78,26 @@ class SettingsManager(project: Project) : Component(project) {
     }
   }
 
+  private fun resolveExcludedDirectories(value: JsonElement): List<String> {
+    if (value.isJsonNull) {
+      return emptyList()
+    }
+    if (!value.isJsonArray) {
+      logger.warn(
+        "Got non-array value for configuration: pkl.projects.excludedDirectories. Value: $value"
+      )
+      return emptyList()
+    }
+    return value.asJsonArray.mapNotNull { element ->
+      if (element.isJsonPrimitive && element.asJsonPrimitive.isString) {
+        element.asString.ifEmpty { null }
+      } else {
+        logger.warn("Got non-string element in pkl.projects.excludedDirectories: $element")
+        null
+      }
+    }
+  }
+
   private fun loadSettings(): CompletableFuture<Unit> {
     logger.log("Fetching configuration")
     val params =
@@ -90,14 +111,22 @@ class SettingsManager(project: Project) : Component(project) {
             scopeUri = "Pkl"
             section = "pkl.formatter.grammarVersion"
           },
+          ConfigurationItem().apply {
+            scopeUri = "Pkl"
+            section = "pkl.projects.excludedDirectories"
+          },
         )
       )
     return project.languageClient
       .configuration(params)
-      .thenApply { (cliPath, grammarVersion) ->
-        logger.log("Got configuration: cliPath = $cliPath, grammarVersion = $grammarVersion")
+      .thenApply { (cliPath, grammarVersion, excludedDirectories) ->
+        logger.log(
+          "Got configuration: cliPath = $cliPath, grammarVersion = $grammarVersion, excludedDirectories = $excludedDirectories"
+        )
         settings.pklCliPath = resolvePklCliPath(cliPath as JsonElement)
         settings.grammarVersion = resolveGrammarVersion(grammarVersion as JsonElement)
+        settings.excludedDirectories =
+          resolveExcludedDirectories(excludedDirectories as JsonElement)
       }
       .exceptionally { logger.error("Failed to fetch settings: ${it.cause}") }
       .whenComplete { _, _ -> logger.log("Settings changed to $settings") }
