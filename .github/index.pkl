@@ -50,7 +50,7 @@ local function buildJob(isRelease: Boolean): Workflow.Job = new {
       with {
         `java-version` = "21"
         distribution = "temurin"
-        cache = "gradle"
+        cache = if (isRelease) null else "gradle"
       }
     }
     new {
@@ -95,7 +95,7 @@ local function verifyJobs(requiresJob: String): Mapping<String, Workflow.Job> = 
         with {
           `java-version` = "21"
           distribution = "temurin"
-          cache = "gradle"
+          cache = if (requiresJob.contains("release")) null else "gradle"
         }
       }
       (catalog.`actions/download-artifact@v6`) {
@@ -132,7 +132,7 @@ local baseMavenDeploy: Workflow.Job = new {
       with {
         `java-version` = "21"
         distribution = "temurin"
-        cache = "gradle"
+        cache = null
       }
     }
     (catalog.`actions/download-artifact@v6`) {

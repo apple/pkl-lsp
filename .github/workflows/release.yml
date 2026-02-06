@@ -23,7 +23,6 @@ jobs:
       with:
         java-version: '21'
         distribution: temurin
-        cache: gradle
     - if: github.repository != 'apple/pkl-lsp'
       run: |-
         git remote add upstream https://github.com/apple/pkl-lsp.git
@@ -57,7 +56,6 @@ jobs:
       with:
         java-version: '21'
         distribution: temurin
-        cache: gradle
     - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
       with:
         name: pkl-lsp-build-artifacts
@@ -81,7 +79,6 @@ jobs:
       with:
         java-version: '21'
         distribution: temurin
-        cache: gradle
     - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
       with:
         name: pkl-lsp-build-artifacts
@@ -129,7 +126,6 @@ jobs:
       with:
         java-version: '21'
         distribution: temurin
-        cache: gradle
     - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
       with:
         name: pkl-lsp-build-artifacts
