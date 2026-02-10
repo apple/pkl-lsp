@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,31 +20,91 @@ import java.nio.file.Path
 import kotlin.io.path.extension
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
+import org.eclipse.lsp4j.WorkspaceFoldersChangeEvent
 import org.pkl.lsp.packages.dto.Version
 
 class Stdlib(project: Project) : Component(project) {
+
+  lateinit var myFiles: Map<String, VirtualFile>
+  lateinit var myVersion: Version
+  private var initialized: Boolean = false
+  private val workspaceFolders: MutableSet<Path> = mutableSetOf()
+
+  var resolvedWorkspaceFolder: Path? = null
+
   @Suppress("MemberVisibilityCanBePrivate")
-  val files: Map<String, VirtualFile> by lazy {
-    val baseModuleUri = javaClass.getResource("/org/pkl/stdlib/base.pkl")!!.toURI()
-    ensureJarFileSystem(baseModuleUri)
-    val path = Path.of(baseModuleUri)
-    path.parent
-      .listDirectoryEntries()
-      .filter { it.extension == "pkl" && it.name != "doc-package-info.pkl" }
-      .associate { file ->
-        val name = file.name.replace(".pkl", "")
-        logger.log("Found stdlib file: pkl:$name")
-        name to project.virtualFileManager.get(URI("pkl:$name"))!!
-      }
-  }
+  val files: Map<String, VirtualFile>
+    get() = if (!initialized) loadState() else myFiles
 
   val base: VirtualFile
     get() = files["base"]!!
 
-  val version: Version by lazy {
-    val baseModule = base.getModule().get()!!
-    // The base module should always have a minPklVersion, otherwise it's a bug
-    baseModule.minPklVersion
-      ?: throw PklLspBugException("Pkl base module does not have a minimum Pkl version")
+  val version: Version
+    get() = myVersion
+
+  fun initialize(folders: List<Path>?) {
+    project.messageBus.subscribe(workspaceFolderTopic, ::handleWorkspaceFolderEvent)
+    workspaceFolders.clear()
+    initialized = false
+    if (folders != null) {
+      workspaceFolders.addAll(folders)
+    }
   }
+
+  private fun loadState(): Map<String, VirtualFile> {
+    val workspaceWithStdlib = run {
+      for (folder in workspaceFolders) {
+        if (project.virtualFileManager.get(folder.resolve("stdlib/base.pkl")) != null) {
+          resolvedWorkspaceFolder = folder
+          return@run resolvedWorkspaceFolder
+        }
+      }
+      return@run null
+    }
+
+    if (initialized && workspaceWithStdlib == resolvedWorkspaceFolder) {
+      return myFiles
+    }
+
+    val stdlibFolder =
+      workspaceWithStdlib?.resolve("stdlib")
+        ?: run {
+          val baseModuleUri1 =
+            this@Stdlib.javaClass.getResource("/org/pkl/stdlib/base.pkl")!!.toURI()
+          ensureJarFileSystem(baseModuleUri1)
+          Path.of(baseModuleUri1).parent
+        }
+    myFiles =
+      stdlibFolder
+        .listDirectoryEntries()
+        .filter { it.extension == "pkl" && it.name != "doc-package-info.pkl" }
+        .associate { file ->
+          val name = file.name.replace(".pkl", "")
+          logger.log("Found stdlib file: pkl:$name")
+          name to project.virtualFileManager.get(URI("pkl:$name"))!!
+        }
+
+    initialized = true
+
+    val baseModule = myFiles["base"]!!.getModule().get()!!
+    // The base module should always have a minPklVersion, otherwise it's a bug
+    myVersion =
+      baseModule.minPklVersion
+        ?: throw PklLspBugException("Pkl base module does not have a minimum Pkl version")
+
+    return myFiles
+  }
+
+  private fun handleWorkspaceFolderEvent(event: WorkspaceFoldersChangeEvent) =
+    synchronized(this) {
+      for (workspaceFolder in event.added) {
+        val path = Path.of(URI(workspaceFolder.uri))
+        workspaceFolders.add(path)
+      }
+      for (workspaceFolder in event.removed) {
+        val path = Path.of(URI(workspaceFolder.uri))
+        workspaceFolders.removeIf { it.toUri() == path.toUri() }
+      }
+      loadState()
+    }
 }
