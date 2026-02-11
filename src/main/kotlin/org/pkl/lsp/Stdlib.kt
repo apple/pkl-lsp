@@ -27,75 +27,90 @@ class Stdlib(project: Project) : Component(project) {
 
   lateinit var myFiles: Map<String, VirtualFile>
   lateinit var myVersion: Version
-  private var initialized: Boolean = false
+  private var initializedFiles: Boolean = false
+  private var initilizedVersion: Boolean = false
   private val workspaceFolders: MutableSet<Path> = mutableSetOf()
+  private var workspaceFoldersDirty: Boolean = false
 
   var resolvedWorkspaceFolder: Path? = null
+    private set
 
-  @Suppress("MemberVisibilityCanBePrivate")
   val files: Map<String, VirtualFile>
-    get() = if (!initialized) loadState() else myFiles
+    get() = loadFiles()
 
   val base: VirtualFile
     get() = files["base"]!!
 
   val version: Version
-    get() = myVersion
+    get() = loadVersion()
 
   fun initialize(folders: List<Path>?) {
     project.messageBus.subscribe(workspaceFolderTopic, ::handleWorkspaceFolderEvent)
     workspaceFolders.clear()
-    initialized = false
+    initializedFiles = false
+    initilizedVersion = false
     if (folders != null) {
       workspaceFolders.addAll(folders)
     }
   }
 
-  private fun loadState(): Map<String, VirtualFile> {
-    val workspaceWithStdlib = run {
-      for (folder in workspaceFolders) {
-        if (project.virtualFileManager.get(folder.resolve("stdlib/base.pkl")) != null) {
-          resolvedWorkspaceFolder = folder
-          return@run resolvedWorkspaceFolder
+  private fun loadFiles(): Map<String, VirtualFile> =
+    synchronized(this) {
+      val workspaceWithStdlib by lazy {
+        for (folder in workspaceFolders) {
+          if (project.virtualFileManager.get(folder.resolve("stdlib/base.pkl")) != null) {
+            resolvedWorkspaceFolder = folder
+            return@lazy resolvedWorkspaceFolder
+          }
         }
+        workspaceFoldersDirty = false
+        return@lazy null
       }
-      return@run null
-    }
 
-    if (initialized && workspaceWithStdlib == resolvedWorkspaceFolder) {
+      if (
+        initializedFiles &&
+          (!workspaceFoldersDirty || (workspaceWithStdlib == resolvedWorkspaceFolder))
+      ) {
+        return myFiles
+      }
+
+      val stdlibFolder =
+        workspaceWithStdlib?.resolve("stdlib")
+          ?: run {
+            val baseModuleUri1 =
+              this@Stdlib.javaClass.getResource("/org/pkl/stdlib/base.pkl")!!.toURI()
+            ensureJarFileSystem(baseModuleUri1)
+            Path.of(baseModuleUri1).parent
+          }
+      myFiles =
+        stdlibFolder
+          .listDirectoryEntries()
+          .filter { it.extension == "pkl" && it.name != "doc-package-info.pkl" }
+          .associate { file ->
+            val name = file.name.replace(".pkl", "")
+            logger.log("Found stdlib file: pkl:$name")
+            name to project.virtualFileManager.get(URI("pkl:$name"))!!
+          }
+
+      initilizedVersion = false
+      initializedFiles = true
       return myFiles
     }
 
-    val stdlibFolder =
-      workspaceWithStdlib?.resolve("stdlib")
-        ?: run {
-          val baseModuleUri1 =
-            this@Stdlib.javaClass.getResource("/org/pkl/stdlib/base.pkl")!!.toURI()
-          ensureJarFileSystem(baseModuleUri1)
-          Path.of(baseModuleUri1).parent
-        }
-    myFiles =
-      stdlibFolder
-        .listDirectoryEntries()
-        .filter { it.extension == "pkl" && it.name != "doc-package-info.pkl" }
-        .associate { file ->
-          val name = file.name.replace(".pkl", "")
-          logger.log("Found stdlib file: pkl:$name")
-          name to project.virtualFileManager.get(URI("pkl:$name"))!!
-        }
+  private fun loadVersion(): Version =
+    synchronized(this) {
+      if (initilizedVersion) return myVersion
 
-    initialized = true
+      val baseModule = files["base"]!!.getModule().get()!!
+      // The base module should always have a minPklVersion, otherwise it's a bug
+      myVersion =
+        baseModule.minPklVersion
+          ?: throw PklLspBugException("Pkl base module does not have a minimum Pkl version")
 
-    val baseModule = myFiles["base"]!!.getModule().get()!!
-    // The base module should always have a minPklVersion, otherwise it's a bug
-    myVersion =
-      baseModule.minPklVersion
-        ?: throw PklLspBugException("Pkl base module does not have a minimum Pkl version")
+      return myVersion
+    }
 
-    return myFiles
-  }
-
-  private fun handleWorkspaceFolderEvent(event: WorkspaceFoldersChangeEvent) =
+  private fun handleWorkspaceFolderEvent(event: WorkspaceFoldersChangeEvent) {
     synchronized(this) {
       for (workspaceFolder in event.added) {
         val path = Path.of(URI(workspaceFolder.uri))
@@ -105,6 +120,8 @@ class Stdlib(project: Project) : Component(project) {
         val path = Path.of(URI(workspaceFolder.uri))
         workspaceFolders.removeIf { it.toUri() == path.toUri() }
       }
-      loadState()
+      workspaceFoldersDirty = true
     }
+    loadFiles()
+  }
 }
