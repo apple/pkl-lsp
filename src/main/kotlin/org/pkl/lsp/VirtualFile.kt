@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -211,7 +211,9 @@ class StdlibFile(moduleName: String, override val project: Project) : BaseFile()
   override val uri: URI = URI("pkl:$moduleName")
   override val pklAuthority: String = Origin.STDLIB.name.lowercase()
   override val path: Path
-    get() = throw OperationNotSupportedException()
+    get() =
+      project.stdlib.resolvedWorkspaceFolder?.resolve("stdlib/$name.pkl")
+        ?: throw OperationNotSupportedException()
 
   override val pklProject: PklProject? = null
   override val pklProjectDir: VirtualFile? = null
@@ -228,10 +230,9 @@ class StdlibFile(moduleName: String, override val project: Project) : BaseFile()
   override fun resolve(path: String): VirtualFile? = null
 
   override fun doReadContents(): String {
-    return javaClass.getResourceAsStream("/org/pkl/stdlib/$name.pkl")!!.bufferedReader().use {
-      reader ->
-      reader.readText()
-    }
+    return (project.stdlib.resolvedWorkspaceFolder?.resolve("stdlib/$name.pkl")?.bufferedReader()
+        ?: javaClass.getResourceAsStream("/org/pkl/stdlib/$name.pkl")!!.bufferedReader())
+      .use { reader -> reader.readText() }
   }
 
   override fun canModify(): Boolean = false

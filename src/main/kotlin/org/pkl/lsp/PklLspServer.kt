@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,7 +77,9 @@ class PklLspServer(val verbose: Boolean) : LanguageServer {
 
   override fun initialized(params: InitializedParams) {
     if (clientCapabilities.standard.workspace.workspaceFolders == true) {
-      project.pklProjectManager.initialize(workspaceFolders?.map { Path.of(URI(it.uri)) })
+      val folderPaths = workspaceFolders?.map { Path.of(URI(it.uri)) }
+      project.stdlib.initialize(folderPaths)
+      project.pklProjectManager.initialize(folderPaths)
     }
     // listen for configuration changes
     if (clientCapabilities.standard.workspace.didChangeConfiguration?.dynamicRegistration == true) {
