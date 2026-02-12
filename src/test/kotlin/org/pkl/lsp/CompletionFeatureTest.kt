@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ class CompletionFeatureTest : LspTestBase() {
     createPklFile("amends \"<caret>\"")
     val completions = getCompletions()
     assertThat(completions.map { it.label })
-      .isEqualTo(listOf("pkl:", "file:///", "https://", "package://", "main.pkl"))
+      .isEqualTo(listOf("pkl:", "file:///", "https://", "package://", "modulepath:/", "main.pkl"))
   }
 
   @Test
@@ -32,7 +32,7 @@ class CompletionFeatureTest : LspTestBase() {
     createPklFile("import \"<caret>\"")
     val completions = getCompletions()
     assertThat(completions.map { it.label })
-      .isEqualTo(listOf("pkl:", "file:///", "https://", "package://", "main.pkl"))
+      .isEqualTo(listOf("pkl:", "file:///", "https://", "package://", "modulepath:/", "main.pkl"))
   }
 
   @Test
@@ -40,6 +40,15 @@ class CompletionFeatureTest : LspTestBase() {
     createPklFile("res = import(\"<caret>\")")
     val completions = getCompletions()
     assertThat(completions.map { it.label })
-      .isEqualTo(listOf("pkl:", "file:///", "https://", "package://", "main.pkl"))
+      .isEqualTo(listOf("pkl:", "file:///", "https://", "package://", "modulepath:/", "main.pkl"))
+  }
+
+  @Test
+  fun `complete modulepath import`() {
+    fakeProject.settingsManager.settings.modulepath = listOf(testProjectDir.resolve("lib"))
+    createPklFile("lib/target.pkl", "")
+    createPklFile("import \"modulepath:/<caret>\"")
+    val completions = getCompletions()
+    assertThat(completions.map { it.label }).isEqualTo(listOf("target.pkl"))
   }
 }
