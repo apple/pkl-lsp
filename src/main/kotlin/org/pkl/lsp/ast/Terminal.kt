@@ -159,11 +159,11 @@ fun Node.toTerminal(parent: PklNode): Terminal? {
       "\\####(" -> TokenType.InterpolationStart
       "\\#####(" -> TokenType.InterpolationStart
       "\n" -> TokenType.Whitespace
+      "#!" -> TokenType.ShebangComment
       // TODO: see if we need these
       //      PklParser.NewlineSemicolon -> TokenType.NewlineSemicolon
       //      PklParser.BlockComment -> TokenType.BlockComment
       //      PklParser.LineComment -> TokenType.LineComment
-      //      PklParser.ShebangComment -> TokenType.ShebangComment
       //      PklParser.SLInterpolation -> TokenType.SLInterpolation
       //      PklParser.MLInterpolation -> TokenType.MLInterpolation
       //      PklParser.MLNewline -> TokenType.MLNewline

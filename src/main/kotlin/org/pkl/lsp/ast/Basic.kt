@@ -60,3 +60,10 @@ class PklBlockCommentImpl(project: Project, parent: PklNode, override val ctx: N
     return visitor.visitBlockComment(this)
   }
 }
+
+class PklShebangCommentImpl(project: Project, parent: PklNode, override val ctx: Node) :
+  AbstractPklNode(project, parent, ctx), PklShebangComment {
+  override fun <R> accept(visitor: PklVisitor<R>): R? {
+    return visitor.visitShebangComment(this)
+  }
+}

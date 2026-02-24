@@ -438,6 +438,8 @@ interface PklLineComment : PklNode, PklWhiteSpace
 
 interface PklBlockComment : PklNode, PklWhiteSpace
 
+interface PklShebangComment : PklNode, PklWhiteSpace
+
 interface Terminal : PklNode {
   val type: TokenType
 }
@@ -944,6 +946,7 @@ fun Node.toNode(project: Project, parent: PklNode?): PklNode? {
     "stringInterpolation" -> children[1].toNode(project, parent)
     "lineComment" -> PklLineCommentImpl(project, parent!!, this)
     "blockComment" -> PklBlockCommentImpl(project, parent!!, this)
+    "shebangComment" -> PklShebangCommentImpl(project, parent!!, this)
     "ERROR" -> PklErrorImpl(project, parent!!, this)
     else -> {
       val term = toTerminal(parent!!)

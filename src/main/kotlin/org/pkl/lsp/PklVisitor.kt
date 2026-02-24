@@ -414,4 +414,8 @@ open class PklVisitor<R> {
   open fun visitBlockComment(o: PklBlockComment): R? {
     return null
   }
+
+  open fun visitShebangComment(o: PklShebangComment): R? {
+    return null
+  }
 }
