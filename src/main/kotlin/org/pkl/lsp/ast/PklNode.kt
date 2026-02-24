@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -437,6 +437,8 @@ interface PklWhiteSpace
 interface PklLineComment : PklNode, PklWhiteSpace
 
 interface PklBlockComment : PklNode, PklWhiteSpace
+
+interface PklShebangComment : PklNode, PklWhiteSpace
 
 interface Terminal : PklNode {
   val type: TokenType
@@ -944,6 +946,7 @@ fun Node.toNode(project: Project, parent: PklNode?): PklNode? {
     "stringInterpolation" -> children[1].toNode(project, parent)
     "lineComment" -> PklLineCommentImpl(project, parent!!, this)
     "blockComment" -> PklBlockCommentImpl(project, parent!!, this)
+    "shebangComment" -> PklShebangCommentImpl(project, parent!!, this)
     "ERROR" -> PklErrorImpl(project, parent!!, this)
     else -> {
       val term = toTerminal(parent!!)
