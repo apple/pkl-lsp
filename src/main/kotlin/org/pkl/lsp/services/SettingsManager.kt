@@ -90,7 +90,7 @@ class SettingsManager(project: Project) : Component(project) {
       for (path in value.asJsonArray) {
         val decodedPath = decodeString(path, "pkl.modulepath")
         if (path != null) {
-          val entry = Path.of(path.asString)
+          val entry = Path.of(decodedPath)
           if (!Files.exists(entry)) logger.warn("Entry in pkl.modulepath does not exist: $entry")
           add(entry)
         }
