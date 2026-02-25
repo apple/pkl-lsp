@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -159,11 +159,11 @@ fun Node.toTerminal(parent: PklNode): Terminal? {
       "\\####(" -> TokenType.InterpolationStart
       "\\#####(" -> TokenType.InterpolationStart
       "\n" -> TokenType.Whitespace
+      "#!" -> TokenType.ShebangComment
       // TODO: see if we need these
       //      PklParser.NewlineSemicolon -> TokenType.NewlineSemicolon
       //      PklParser.BlockComment -> TokenType.BlockComment
       //      PklParser.LineComment -> TokenType.LineComment
-      //      PklParser.ShebangComment -> TokenType.ShebangComment
       //      PklParser.SLInterpolation -> TokenType.SLInterpolation
       //      PklParser.MLInterpolation -> TokenType.MLInterpolation
       //      PklParser.MLNewline -> TokenType.MLNewline

@@ -1,0 +1,2 @@
+#!/usr/bin/env pkl
+foo = 1
