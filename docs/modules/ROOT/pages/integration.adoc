@@ -83,6 +83,11 @@ The language server uses "Pkl" for its scope URI.
 |Int (`1` or `2`)
 |The grammar version to use when formatting Pkl code.
 |`2`
+
+|`pkl.projects.excludedDirectories`
+|String Array
+|Workspace-relative directories to exclude when syncing projects.
+|`[]`
 |===
 
 == Additional message types
