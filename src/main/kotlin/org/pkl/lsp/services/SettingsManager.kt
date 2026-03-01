@@ -17,6 +17,7 @@ package org.pkl.lsp.services
 
 import com.google.gson.JsonElement
 import com.google.gson.JsonPrimitive
+import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import kotlin.io.path.isExecutable
@@ -30,6 +31,7 @@ import org.pkl.lsp.messages.ActionableNotification
 data class WorkspaceSettings(
   var pklCliPath: Path? = null,
   var grammarVersion: GrammarVersion? = null,
+  var modulepath: List<Path> = emptyList(),
   var excludedDirectories: List<String> = emptyList(),
 )
 
@@ -78,6 +80,24 @@ class SettingsManager(project: Project) : Component(project) {
     }
   }
 
+  private fun resolveModulepath(value: JsonElement): List<Path> {
+    if (value.isJsonNull) return emptyList()
+    if (!value.isJsonArray) {
+      logger.warn("Got non-array value for configuration: pkl.modulepath. Value: $value")
+      return emptyList()
+    }
+    return buildList {
+      for (path in value.asJsonArray) {
+        val decodedPath = decodeString(path, "pkl.modulepath")
+        if (decodedPath != null) {
+          val entry = Path.of(decodedPath)
+          if (!Files.exists(entry)) logger.warn("Entry in pkl.modulepath does not exist: $entry")
+          add(entry)
+        }
+      }
+    }
+  }
+
   private fun resolveExcludedDirectories(value: JsonElement): List<String> {
     if (value.isJsonNull) {
       return emptyList()
@@ -113,18 +133,29 @@ class SettingsManager(project: Project) : Component(project) {
           },
           ConfigurationItem().apply {
             scopeUri = "Pkl"
+            section = "pkl.modulepath"
+          },
+          ConfigurationItem().apply {
+            scopeUri = "Pkl"
             section = "pkl.projects.excludedDirectories"
           },
         )
       )
     return project.languageClient
       .configuration(params)
-      .thenApply { (cliPath, grammarVersion, excludedDirectories) ->
+      .thenApply { (cliPath, grammarVersion, modulepath, excludedDirectories) ->
         logger.log(
-          "Got configuration: cliPath = $cliPath, grammarVersion = $grammarVersion, excludedDirectories = $excludedDirectories"
+          buildString {
+            append("Got configuration: ")
+            append("cliPath = $cliPath, ")
+            append("grammarVersion = $grammarVersion, ")
+            append("modulepath = $modulepath, ")
+            append("excludedDirectories = $excludedDirectories")
+          }
         )
         settings.pklCliPath = resolvePklCliPath(cliPath as JsonElement)
         settings.grammarVersion = resolveGrammarVersion(grammarVersion as JsonElement)
+        settings.modulepath = resolveModulepath(modulepath as JsonElement)
         settings.excludedDirectories =
           resolveExcludedDirectories(excludedDirectories as JsonElement)
       }
