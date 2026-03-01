@@ -1,5 +1,28 @@
 = Changelog
 
+[[release-0.6.0]]
+== 0.6.0 (2026-02-27)
+
+=== Changes
+
+* Update to Pkl 0.31.0 (pr:https://github.com/apple/pkl-lsp/pull/150[]).
+* Add support for type inference of pkldoc:BaseValueRenderer#convertPropertyTransformers[] entries (pr:https://github.com/apple/pkl-lsp/pull/144[]).
+* Add setting for excluding directories from project sync (pr:https://github.com/apple/pkl-lsp/pull/145[]).
+* Support loading the Pkl standard library from the local workspace when developing against https://github.com/apple/pkl[apple/pkl] (pr:https://github.com/apple/pkl-lsp/pull/148[]).
+
+=== Fixes
+
+* Handle errors when discovering `PklProject` files (pr:https://github.com/apple/pkl-lsp/pull/136[]).
+* Fix handling of files with shebang lines (pr:https://github.com/apple/pkl-lsp/pull/149[]).
+
+=== Contributors ❤️
+
+Thank you to all of our contributors!
+
+* https://github.com/bioball[@bioball]
+* https://github.com/HT154[@HT154]
+* https://github.com/stackoverflow[@stackoverflow]
+
 [[release-0.5.3]]
 == 0.5.3 (2025-12-16)
 
