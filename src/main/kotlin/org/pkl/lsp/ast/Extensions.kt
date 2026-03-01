@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -417,6 +417,7 @@ val VirtualFile.lspUri
     return when (this) {
       is StdlibFile -> URI("pkl-lsp://stdlib/${name}.pkl")
       is FsFile -> uri
+      is JarFile -> URI("zip${uri.schemeSpecificPart.replaceFirst("!/", "::")}")
       else -> {
         val uri = uri.toString()
         URI("pkl-lsp://${pklAuthority}/${URLEncoder.encode(uri, Charsets.UTF_8)}")

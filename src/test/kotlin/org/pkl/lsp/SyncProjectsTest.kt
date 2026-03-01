@@ -45,6 +45,7 @@ class SyncProjectsTest : LspTestBase() {
       evaluatorSettings {
         modulePath {
           "lib"
+          "archive.jar"
         }
       }
     """
@@ -91,8 +92,9 @@ class SyncProjectsTest : LspTestBase() {
         "package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.appEnvCluster@1",
       )
     assertThat(project.declaredDependencies).containsOnlyKeys("appEnvCluster")
-    assertThat(project.evaluatorSettings?.modulePath).hasSize(1)
+    assertThat(project.evaluatorSettings?.modulePath).hasSize(2)
     assertThat(project.evaluatorSettings?.modulePath!![0]).isEqualTo("lib")
+    assertThat(project.evaluatorSettings.modulePath[1]).isEqualTo("archive.jar")
   }
 
   @Test
@@ -148,5 +150,21 @@ class SyncProjectsTest : LspTestBase() {
     assertThat(resolved[0]).isInstanceOf(PklModuleImpl::class.java)
     val resolvedFile = resolved.first().containingFile
     assertThat(resolvedFile.uri.path).endsWith("/lib/target.pkl")
+  }
+
+  @Test
+  fun `resolve modulepath archive import`() {
+    createArchive("archive.jar", mapOf("dir/target.pkl" to ""))
+    createPklFile(
+      """
+      import "modulepath:/dir/target<caret>.pkl"
+    """
+        .trimIndent()
+    )
+    val resolved = goToDefinition()
+    assertThat(resolved).hasSize(1)
+    assertThat(resolved[0]).isInstanceOf(PklModuleImpl::class.java)
+    val resolvedFile = resolved.first().containingFile
+    assertThat(resolvedFile.uri.schemeSpecificPart).endsWith("/archive.jar!/dir/target.pkl")
   }
 }

@@ -18,8 +18,11 @@ package org.pkl.lsp
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import kotlin.io.path.createParentDirectories
 import kotlin.io.path.name
+import kotlin.io.path.outputStream
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import org.assertj.core.api.Assertions.assertThat
@@ -135,6 +138,20 @@ abstract class LspTestBase {
       caretPosition = getPosition(effectiveContents, caret)
     }
     fileInFocus = file
+    return file
+  }
+
+  /** Creates an archive of Pkl files with contents in the test project. */
+  protected fun createArchive(name: String, entries: Map<String, String>): Path {
+    val file = testProjectDir.resolve(name).also { it.createParentDirectories() }
+    ZipOutputStream(file.outputStream()).use { zip ->
+      entries.forEach { (entryName, content) ->
+        val zipEntry = ZipEntry(entryName)
+        zip.putNextEntry(zipEntry)
+        zip.write(content.toByteArray())
+        zip.closeEntry()
+      }
+    }
     return file
   }
 

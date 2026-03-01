@@ -187,8 +187,7 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
       }
       targetUri.startsWith(MODULEPATH_SCHEME) -> {
         val context = sourceModule.virtualFile.pklProject
-        val roots =
-          project.modulepathResolver.paths(context).mapNotNull(project.virtualFileManager::get)
+        val roots = project.modulepathResolver.paths(context)
         completeHierarchicalUri(
           roots,
           ".",
@@ -389,7 +388,7 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
                       }
                   }
                 )
-              data = completionItemData(stringCharsNode, child.uri.toString())
+              data = completionItemData(stringCharsNode, child.lspUri.toString())
             }
           collector.add(completion)
         }

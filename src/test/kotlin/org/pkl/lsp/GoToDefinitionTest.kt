@@ -352,4 +352,21 @@ class GoToDefinitionTest : LspTestBase() {
     val resolvedFile = resolved.first().containingFile
     assertThat(resolvedFile.uri.path).endsWith("/nested/Target.pkl")
   }
+
+  @Test
+  fun `resolve modulepath archive import`() {
+    fakeProject.settingsManager.settings.modulepath = listOf(testProjectDir.resolve("lib.jar"))
+    createArchive("lib.jar", mapOf("dir/target.pkl" to ""))
+    createPklFile(
+      """
+      import "modulepath:/dir/target<caret>.pkl"
+    """
+        .trimIndent()
+    )
+    val resolved = goToDefinition()
+    assertThat(resolved).hasSize(1)
+    assertThat(resolved[0]).isInstanceOf(PklModule::class.java)
+    val resolvedFile = resolved.first().containingFile
+    assertThat(resolvedFile.uri.schemeSpecificPart).endsWith("/lib.jar!/dir/target.pkl")
+  }
 }

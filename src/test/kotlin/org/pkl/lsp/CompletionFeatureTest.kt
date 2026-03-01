@@ -51,4 +51,22 @@ class CompletionFeatureTest : LspTestBase() {
     val completions = getCompletions()
     assertThat(completions.map { it.label }).isEqualTo(listOf("target.pkl"))
   }
+
+  @Test
+  fun `complete modulepath archive import`() {
+    fakeProject.settingsManager.settings.modulepath = listOf(testProjectDir.resolve("lib.jar"))
+    createArchive("lib.jar", mapOf("file.pkl" to "", "dir/file2.pkl" to ""))
+    createPklFile("import \"modulepath:/<caret>\"")
+    val completions = getCompletions()
+    assertThat(completions.map { it.label }).isEqualTo(listOf("dir", "file.pkl"))
+  }
+
+  @Test
+  fun `complete modulepath archive import in directory`() {
+    fakeProject.settingsManager.settings.modulepath = listOf(testProjectDir.resolve("lib.jar"))
+    createArchive("lib.jar", mapOf("dir/target.pkl" to ""))
+    createPklFile("import \"modulepath:/dir/<caret>\"")
+    val completions = getCompletions()
+    assertThat(completions.map { it.label }).isEqualTo(listOf("target.pkl"))
+  }
 }

@@ -15,35 +15,54 @@
  */
 package org.pkl.lsp.services
 
-import java.nio.file.Files
-import java.nio.file.Path
+import java.net.URI
+import java.nio.file.*
 import org.pkl.lsp.Component
 import org.pkl.lsp.Project
+import org.pkl.lsp.VirtualFile
 import org.pkl.lsp.ast.PklModule
+import org.pkl.lsp.ensureJarFileSystem
 import org.pkl.lsp.packages.dto.PklProject
 
 class ModulepathResolver(project: Project) : Component(project) {
-  fun resolve(path: String, context: PklProject?): PklModule? {
-    val path = path.trimStart('/')
-    val file =
-      project.settingsManager.settings.modulepath
-        .map { it.resolve(path) }
-        .firstOrNull(Files::exists)
-        ?: context
-          ?.metadata
-          ?.evaluatorSettings
-          ?.modulePath
-          ?.map { context.projectDir.resolve(it, path) }
-          ?.firstOrNull(Files::exists)
-        ?: return null
-    return project.virtualFileManager.get(file)?.getModule()?.get()
+
+  private val archivePathMatcher: PathMatcher by lazy {
+    FileSystems.getDefault().getPathMatcher("glob:**/*.{zip,jar}")
   }
 
-  fun paths(context: PklProject?): List<Path> {
-    val fromSettings = project.settingsManager.settings.modulepath
-    val fromProject =
-      context?.metadata?.evaluatorSettings?.modulePath?.map(context.projectDir::resolve)
-        ?: return fromSettings
-    return fromSettings + fromProject
+  private fun fromSettings(): List<Path> {
+    return project.settingsManager.settings.modulepath.map(this::normalizeArchivePath)
   }
+
+  private fun fromProject(context: PklProject): List<Path> {
+    val modulepath = context.metadata.evaluatorSettings?.modulePath ?: return emptyList()
+    return modulepath.map { this.normalizeArchivePath(context.projectDir.resolve(it)) }
+  }
+
+  private fun all(context: PklProject?): List<Path> =
+    fromSettings() + context?.let(::fromProject).orEmpty()
+
+  private fun normalizeArchivePath(path: Path): Path {
+    val path = path.normalize()
+    if (Files.isRegularFile(path) && archivePathMatcher.matches(path)) {
+      val uri = URI.create("jar:${path.toUri()}!/")
+      ensureJarFileSystem(uri)
+      return Paths.get(uri)
+    }
+    return path
+  }
+
+  fun resolve(path: String, context: PklProject?): PklModule? {
+    val path = path.trimStart('/')
+    return all(context)
+      .asSequence()
+      .map { it.resolve(path) }
+      .firstOrNull(Files::exists)
+      ?.let(project.virtualFileManager::get)
+      ?.getModule()
+      ?.get()
+  }
+
+  fun paths(context: PklProject?): List<VirtualFile> =
+    all(context).mapNotNull(project.virtualFileManager::get)
 }
