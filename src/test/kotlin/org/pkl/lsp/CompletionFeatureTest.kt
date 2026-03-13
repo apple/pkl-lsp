@@ -17,6 +17,7 @@ package org.pkl.lsp
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.pkl.lsp.completion.ModuleUriCompletionProvider.Companion.ModuleUriCompletionData
 
 class CompletionFeatureTest : LspTestBase() {
   @Test
@@ -50,6 +51,19 @@ class CompletionFeatureTest : LspTestBase() {
     createPklFile("import \"modulepath:/<caret>\"")
     val completions = getCompletions()
     assertThat(completions.map { it.label }).isEqualTo(listOf("target.pkl"))
+  }
+
+  @Test
+  fun `modulepath import completion prioritizes earlier entries`() {
+    fakeProject.settingsManager.settings.modulepath =
+      listOf(testProjectDir.resolve("lib"), testProjectDir.resolve("lib2"))
+    createPklFile("lib/target.pkl", "")
+    createPklFile("lib2/target.pkl", "")
+    createPklFile("import \"modulepath:/<caret>\"")
+    val completions = getCompletions().map { (it.data as ModuleUriCompletionData).moduleUri }
+    assertThat(completions).hasSize(2)
+    assertThat(completions[0]).endsWith("/lib/target.pkl")
+    assertThat(completions[1]).endsWith("/lib2/target.pkl")
   }
 
   @Test

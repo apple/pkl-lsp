@@ -237,6 +237,25 @@ class GoToDefinitionTest : LspTestBase() {
   }
 
   @Test
+  fun `modulepath import resolving prioritizes earlier entries`() {
+    fakeProject.settingsManager.settings.modulepath =
+      listOf(testProjectDir.resolve("lib"), testProjectDir.resolve("lib2"))
+    createPklFile("lib/target.pkl", "")
+    createPklFile("lib2/target.pkl", "")
+    createPklFile(
+      """
+      import "modulepath:/target<caret>.pkl"
+    """
+        .trimIndent()
+    )
+    val resolved = goToDefinition()
+    assertThat(resolved).hasSize(1)
+    assertThat(resolved[0]).isInstanceOf(PklModule::class.java)
+    val resolvedFile = resolved.first().containingFile
+    assertThat(resolvedFile.uri.path).endsWith("/lib/target.pkl")
+  }
+
+  @Test
   fun `resolve field in modulepath`() {
     fakeProject.settingsManager.settings.modulepath = listOf(testProjectDir.resolve("lib"))
     createPklFile(
