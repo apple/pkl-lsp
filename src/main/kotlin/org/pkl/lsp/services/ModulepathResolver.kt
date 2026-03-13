@@ -16,6 +16,7 @@
 package org.pkl.lsp.services
 
 import java.net.URI
+import java.nio.charset.StandardCharsets
 import java.nio.file.*
 import org.pkl.lsp.Component
 import org.pkl.lsp.Project
@@ -44,12 +45,30 @@ class ModulepathResolver(project: Project) : Component(project) {
 
   private fun normalizeArchivePath(path: Path): Path {
     val path = path.normalize()
-    if (Files.isRegularFile(path) && archivePathMatcher.matches(path)) {
+    if (isArchive(path)) {
       val uri = URI.create("jar:${path.toUri()}!/")
       ensureJarFileSystem(uri)
       return Paths.get(uri)
     }
     return path
+  }
+
+  private fun isArchive(path: Path): Boolean {
+    if (!Files.isRegularFile(path)) return false
+    if (archivePathMatcher.matches(path)) return true
+    val execHeader =
+      "#!/bin/sh\n      exec java  -jar $0 \"$@\"".toByteArray(StandardCharsets.UTF_8)
+    return try {
+      Files.newInputStream(path).use { stream ->
+        val buffer = stream.readNBytes(execHeader.size)
+        // zip magic number or executable jar (e.g. jpkl)
+        (buffer.size >= 4 &&
+          buffer.copyOfRange(0, 4).contentEquals(byteArrayOf(0x50, 0x4b, 0x03, 0x04))) ||
+          buffer.contentEquals(execHeader)
+      }
+    } catch (_: Exception) {
+      false
+    }
   }
 
   fun resolve(path: String, context: PklProject?): PklModule? {
