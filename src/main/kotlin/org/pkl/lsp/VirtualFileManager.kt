@@ -54,11 +54,6 @@ class VirtualFileManager(project: Project) : Component(project) {
           ensureJarFileSystem(effectiveUri)
           JarFile(path ?: Path.of(effectiveUri), effectiveUri, project)
         }
-        "zipfile" -> {
-          val jarUri = URI("jar:file:${effectiveUri.schemeSpecificPart.replaceFirst("::", "!/")}")
-          ensureJarFileSystem(jarUri)
-          JarFile(path ?: Path.of(jarUri), jarUri, project)
-        }
         "https" -> HttpsFile(effectiveUri, project)
         "pkl" -> StdlibFile(effectiveUri.schemeSpecificPart, project)
         else -> throw Exception("Unsupported scheme: ${effectiveUri.scheme}")

@@ -417,7 +417,6 @@ val VirtualFile.lspUri
     return when (this) {
       is StdlibFile -> URI("pkl-lsp://stdlib/${name}.pkl")
       is FsFile -> uri
-      is JarFile -> URI("zip${uri.schemeSpecificPart.replaceFirst("!/", "::")}")
       else -> {
         val uri = uri.toString()
         URI("pkl-lsp://${pklAuthority}/${URLEncoder.encode(uri, Charsets.UTF_8)}")
