@@ -138,7 +138,7 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
               } else null
             }
             sourceFile is FsFile || sourceFile is JarFile ->
-              findOnFileSystem(sourceFile, targetUri.path)?.getModule()?.get()
+              findOnFileSystem(project, context, sourceFile, targetUri.path)
             // TODO: handle other types of relative uris
             else -> null
           }
@@ -229,11 +229,20 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
       return dependency.getRoot(project)
     }
 
-    private fun findOnFileSystem(sourceFile: VirtualFile, targetPath: String): VirtualFile? {
+    private fun findOnFileSystem(
+      project: Project,
+      context: PklProject?,
+      sourceFile: VirtualFile,
+      targetPath: String,
+    ): PklModule? {
       return when {
-        targetPath.startsWith(".../") -> findTripleDotPathOnFileSystem(sourceFile, targetPath)
-        targetPath.startsWith("/") -> findByAbsolutePath(sourceFile, targetPath)
-        else -> sourceFile.parent()?.resolve(targetPath)
+        targetPath.startsWith(".../") ->
+          findTripleDotPathOnFileSystem(sourceFile, targetPath)
+            ?: project.modulepathResolver.resolve(targetPath, context)
+        targetPath.startsWith("/") -> findByAbsolutePath(sourceFile, targetPath)?.getModule()?.get()
+        else ->
+          sourceFile.parent()?.resolve(targetPath)?.getModule()?.get()
+            ?: project.modulepathResolver.resolve(targetPath, context)
       }
     }
 
@@ -245,7 +254,7 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
     private fun findTripleDotPathOnFileSystem(
       sourceFile: VirtualFile,
       targetPath: String,
-    ): VirtualFile? {
+    ): PklModule? {
       val targetPathAfterTripleDot = targetPath.substring(4)
 
       var currentDir = sourceFile.parent()?.parent()
@@ -255,7 +264,7 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
           currentDir = currentDir.parent()
           continue
         }
-        return file
+        return file.getModule().get()
       }
       return null
     }

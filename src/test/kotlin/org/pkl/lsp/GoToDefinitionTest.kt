@@ -15,6 +15,7 @@
  */
 package org.pkl.lsp
 
+import java.nio.file.Paths
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.pkl.lsp.ast.*
@@ -387,5 +388,84 @@ class GoToDefinitionTest : LspTestBase() {
     assertThat(resolved[0]).isInstanceOf(PklModule::class.java)
     val resolvedFile = resolved.first().containingFile
     assertThat(resolvedFile.uri.schemeSpecificPart).endsWith("/lib.jar!/dir/target.pkl")
+  }
+
+  @Test
+  fun `relative resolution across modulepath elements prefers earlier directory`() {
+    fakeProject.settingsManager.settings.modulepath =
+      listOf(
+        testProjectDir.resolve("x/y"),
+        testProjectDir.resolve("x/z"),
+        testProjectDir.resolve("x/z.zip"),
+      )
+    createArchive("x/z.zip", mapOf("Bar.pkl" to "baz = 1"))
+    createPklFile("x/z/Bar.pkl", "baz = 0")
+    createPklFile(
+      "x/y/Foo.pkl",
+      """
+      import "./Bar.pkl"
+
+      bar: Bar
+    """
+        .trimIndent(),
+    )
+    createPklFile(
+      "x/test.pkl",
+      """
+      import("modulepath:/Foo.pkl")
+
+      foo = new Foo {
+        bar {
+          baz<caret> = 2
+        }
+      }
+    """
+        .trimIndent(),
+    )
+    var resolved = goToDefinition().single()
+    assertThat(resolved).isInstanceOf(PklClassProperty::class.java)
+    var uri = resolved.enclosingModule!!.uri
+    var path = Paths.get(uri.path).normalize().toString()
+    assertThat(path).endsWith("/x/z/Bar.pkl")
+  }
+
+  @Test
+  fun `relative resolution across modulepath elements prefers earlier archive`() {
+    fakeProject.settingsManager.settings.modulepath =
+      listOf(
+        testProjectDir.resolve("x/y"),
+        testProjectDir.resolve("x/z.zip"),
+        testProjectDir.resolve("x/z"),
+      )
+    createArchive("x/z.zip", mapOf("Bar.pkl" to "baz = 1"))
+    createPklFile("x/z/Bar.pkl", "baz = 0")
+    createPklFile(
+      "x/y/Foo.pkl",
+      """
+      import "./Bar.pkl"
+
+      bar: Bar
+    """
+        .trimIndent(),
+    )
+    createPklFile(
+      "x/test.pkl",
+      """
+      import("modulepath:/Foo.pkl")
+
+      foo = new Foo {
+        bar {
+          baz<caret> = 2
+        }
+      }
+    """
+        .trimIndent(),
+    )
+    val resolved = goToDefinition().single()
+    assertThat(resolved).isInstanceOf(PklClassProperty::class.java)
+    var uri = resolved.enclosingModule!!.uri
+    assertThat(uri.scheme).isEqualTo("jar")
+    assertThat(uri.schemeSpecificPart).startsWith("file:")
+    assertThat(uri.schemeSpecificPart).endsWith("/x/z.zip!/Bar.pkl")
   }
 }
