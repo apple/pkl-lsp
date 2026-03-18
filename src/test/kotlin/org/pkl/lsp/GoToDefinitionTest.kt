@@ -468,4 +468,47 @@ class GoToDefinitionTest : LspTestBase() {
     assertThat(uri.schemeSpecificPart).startsWith("file:")
     assertThat(uri.schemeSpecificPart).endsWith("/x/z.zip!/Bar.pkl")
   }
+
+  @Test
+  fun `relative import from non-modulepath source does not resolve into modulepath`() {
+    fakeProject.settingsManager.settings.modulepath = listOf(testProjectDir.resolve("lib"))
+    createPklFile("lib/target.pkl", "value = 1")
+    createPklFile(
+      """
+      import "./target<caret>.pkl"
+      """
+        .trimIndent()
+    )
+    val resolved = goToDefinition()
+    assertThat(resolved).isEmpty()
+  }
+
+  @Test
+  fun `relative import from modulepath source does not escape to filesystem`() {
+    fakeProject.settingsManager.settings.modulepath = listOf(testProjectDir.resolve("lib"))
+    createPklFile("External.pkl", "value = 0")
+    createPklFile(
+      "lib/Foo.pkl",
+      """
+      import "../External.pkl"
+
+      external: External
+      """
+        .trimIndent(),
+    )
+    createPklFile(
+      """
+      import "modulepath:/Foo.pkl"
+
+      foo = new Foo {
+        external {
+          value<caret> = 1
+        }
+      }
+      """
+        .trimIndent()
+    )
+    val resolved = goToDefinition()
+    assertThat(resolved).isEmpty()
+  }
 }
