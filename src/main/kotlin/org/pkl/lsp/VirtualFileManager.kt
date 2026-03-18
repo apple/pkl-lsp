@@ -54,6 +54,7 @@ class VirtualFileManager(project: Project) : Component(project) {
           ensureJarFileSystem(effectiveUri)
           JarFile(path ?: Path.of(effectiveUri), effectiveUri, project)
         }
+        "modulepath" -> FsFile(path ?: Path.of(effectiveUri), this.project, isOnModulepath = true)
         "https" -> HttpsFile(effectiveUri, project)
         "pkl" -> StdlibFile(effectiveUri.schemeSpecificPart, project)
         else -> throw Exception("Unsupported scheme: ${effectiveUri.scheme}")

@@ -121,7 +121,7 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
               ?.resolve(targetUri.fragment)
           vfile?.getModule()?.get()
         }
-        "modulepath" -> project.modulepathResolver.resolve(targetUri.path, context)
+        "modulepath" -> project.modulepathResolver.resolveDirect(targetUri.path, context)
         // targetUri is a relative URI
         null -> {
           when {
@@ -137,8 +137,10 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
                 root.resolve(resolvedTargetUri)?.getModule()?.get()
               } else null
             }
+            sourceFile is FsFile && sourceFile.isOnModulepath ->
+              project.modulepathResolver.resolveRelative(sourceFile, targetUri.path, context)
             sourceFile is FsFile || sourceFile is JarFile ->
-              findOnFileSystem(project, context, sourceFile, targetUri.path)
+              findOnFileSystem(sourceFile, targetUri.path)?.getModule()?.get()
             // TODO: handle other types of relative uris
             else -> null
           }
@@ -229,20 +231,11 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
       return dependency.getRoot(project)
     }
 
-    private fun findOnFileSystem(
-      project: Project,
-      context: PklProject?,
-      sourceFile: VirtualFile,
-      targetPath: String,
-    ): PklModule? {
+    private fun findOnFileSystem(sourceFile: VirtualFile, targetPath: String): VirtualFile? {
       return when {
-        targetPath.startsWith(".../") ->
-          findTripleDotPathOnFileSystem(sourceFile, targetPath)
-            ?: project.modulepathResolver.resolve(targetPath, context)
-        targetPath.startsWith("/") -> findByAbsolutePath(sourceFile, targetPath)?.getModule()?.get()
-        else ->
-          sourceFile.parent()?.resolve(targetPath)?.getModule()?.get()
-            ?: project.modulepathResolver.resolve(targetPath, context)
+        targetPath.startsWith(".../") -> findTripleDotPathOnFileSystem(sourceFile, targetPath)
+        targetPath.startsWith("/") -> findByAbsolutePath(sourceFile, targetPath)
+        else -> sourceFile.parent()?.resolve(targetPath)
       }
     }
 
@@ -254,7 +247,7 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
     private fun findTripleDotPathOnFileSystem(
       sourceFile: VirtualFile,
       targetPath: String,
-    ): PklModule? {
+    ): VirtualFile? {
       val targetPathAfterTripleDot = targetPath.substring(4)
 
       var currentDir = sourceFile.parent()?.parent()
@@ -264,7 +257,7 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
           currentDir = currentDir.parent()
           continue
         }
-        return file.getModule().get()
+        return file
       }
       return null
     }

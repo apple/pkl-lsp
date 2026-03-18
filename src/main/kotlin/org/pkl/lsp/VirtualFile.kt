@@ -158,7 +158,11 @@ sealed class BaseFile : VirtualFile, CachedValueDataHolderBase() {
   }
 }
 
-class FsFile(override val path: Path, override val project: Project) : BaseFile() {
+class FsFile(
+  override val path: Path,
+  override val project: Project,
+  val isOnModulepath: Boolean = false,
+) : BaseFile() {
   override val name: String = path.name
   override val uri: URI = path.toUri()
   override val pklAuthority: String = Origin.FILE.name.lowercase()

@@ -44,7 +44,7 @@ class ModulepathResolver(project: Project) : Component(project) {
     fromSettings() + context?.let(::fromProject).orEmpty()
 
   private fun normalizeArchivePath(path: Path): Path {
-    val path = path.normalize()
+    val path = path.normalize().toAbsolutePath()
     if (isArchive(path)) {
       val uri = URI.create("jar:${path.toUri()}!/")
       ensureJarFileSystem(uri)
@@ -71,15 +71,25 @@ class ModulepathResolver(project: Project) : Component(project) {
     }
   }
 
-  fun resolve(path: String, context: PklProject?): PklModule? {
-    val path = path.trimStart('/')
-    return all(context)
+  private fun resolve(path: String, modulepath: List<Path>): PklModule? {
+    return modulepath
       .asSequence()
-      .map { it.resolve(path) }
+      .map { it.resolve(path).normalize() }
       .firstOrNull(Files::exists)
-      ?.let(project.virtualFileManager::get)
+      ?.let { project.virtualFileManager.get(URI.create("modulepath:${it.toUri()}"), it) }
       ?.getModule()
       ?.get()
+  }
+
+  fun resolveDirect(path: String, context: PklProject?): PklModule? =
+    resolve(path.trimStart('/'), all(context))
+
+  fun resolveRelative(sourceFile: VirtualFile, path: String, context: PklProject?): PklModule? {
+    val all = all(context)
+    val root = all.firstOrNull(sourceFile.path::startsWith) ?: return null
+    val relative =
+      runCatching { root.relativize(sourceFile.path.parent) }.getOrNull() ?: return null
+    return resolve(relative.resolve(path).normalize().toString(), all)
   }
 
   fun paths(context: PklProject?): List<VirtualFile> =
