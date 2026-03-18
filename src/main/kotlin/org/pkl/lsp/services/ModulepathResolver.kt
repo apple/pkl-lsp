@@ -81,7 +81,7 @@ class ModulepathResolver(project: Project) : Component(project) {
       ?.get()
   }
 
-  fun resolveDirect(path: String, context: PklProject?): PklModule? =
+  fun resolveAbsolute(path: String, context: PklProject?): PklModule? =
     resolve(path.trimStart('/'), all(context))
 
   fun resolveRelative(sourceFile: VirtualFile, path: String, context: PklProject?): PklModule? {

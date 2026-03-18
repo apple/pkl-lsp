@@ -121,7 +121,7 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
               ?.resolve(targetUri.fragment)
           vfile?.getModule()?.get()
         }
-        "modulepath" -> project.modulepathResolver.resolveDirect(targetUri.path, context)
+        "modulepath" -> project.modulepathResolver.resolveAbsolute(targetUri.path, context)
         // targetUri is a relative URI
         null -> {
           when {
