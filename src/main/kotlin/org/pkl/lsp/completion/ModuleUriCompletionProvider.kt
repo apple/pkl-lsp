@@ -191,7 +191,7 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
         completeHierarchicalUri(
           roots,
           ".",
-          targetUri.substring(12),
+          targetUri.substring(MODULEPATH_SCHEME.length),
           collector,
           isGlobImport = isGlobImport,
           isAbsoluteUri = true,
