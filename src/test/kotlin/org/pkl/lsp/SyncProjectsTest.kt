@@ -167,4 +167,18 @@ class SyncProjectsTest : LspTestBase() {
     val resolvedFile = resolved.first().containingFile
     assertThat(resolvedFile.uri.schemeSpecificPart).endsWith("/archive.jar!/dir/target.pkl")
   }
+
+  @Test
+  fun `project modulepath overrides lsp setting`() {
+    fakeProject.settingsManager.settings.modulepath = listOf(testProjectDir.resolve("foo"))
+    createPklFile("foo/bar.pkl", "")
+    createPklFile(
+      """
+      import "modulepath:/bar<caret>.pkl"
+    """
+        .trimIndent()
+    )
+    val resolved = goToDefinition()
+    assertThat(resolved).isEmpty()
+  }
 }

@@ -31,17 +31,12 @@ class ModulepathResolver(project: Project) : Component(project) {
     FileSystems.getDefault().getPathMatcher("glob:**/*.{zip,jar}")
   }
 
-  private fun fromSettings(): List<Path> {
-    return project.settingsManager.settings.modulepath.map(this::normalizeArchivePath)
+  private fun modulepaths(context: PklProject?): List<Path> {
+    val paths =
+      context?.metadata?.evaluatorSettings?.modulePath?.map(context.projectDir::resolve)
+        ?: project.settingsManager.settings.modulepath
+    return paths.map(::normalizeArchivePath)
   }
-
-  private fun fromProject(context: PklProject): List<Path> {
-    val modulepath = context.metadata.evaluatorSettings?.modulePath ?: return emptyList()
-    return modulepath.map { this.normalizeArchivePath(context.projectDir.resolve(it)) }
-  }
-
-  private fun all(context: PklProject?): List<Path> =
-    fromSettings() + context?.let(::fromProject).orEmpty()
 
   private fun normalizeArchivePath(path: Path): Path {
     val path = path.normalize().toAbsolutePath()
@@ -85,15 +80,15 @@ class ModulepathResolver(project: Project) : Component(project) {
     project.virtualFileManager.get(URI.create("modulepath:${path.toUri()}"), path)
 
   fun resolveAbsolute(path: String, context: PklProject?): PklModule? =
-    resolve(path.trimStart('/'), all(context))
+    resolve(path.trimStart('/'), modulepaths(context))
 
   fun resolveRelative(sourceFile: VirtualFile, path: String, context: PklProject?): PklModule? {
-    val all = all(context)
-    val root = all.firstOrNull(sourceFile.path::startsWith) ?: return null
+    val paths = modulepaths(context)
+    val root = paths.firstOrNull(sourceFile.path::startsWith) ?: return null
     val relative =
       runCatching { root.relativize(sourceFile.path.parent) }.getOrNull() ?: return null
-    return resolve(relative.resolve(path).normalize().toString(), all)
+    return resolve(relative.resolve(path).normalize().toString(), paths)
   }
 
-  fun paths(context: PklProject?): List<VirtualFile> = all(context).mapNotNull(::getFile)
+  fun paths(context: PklProject?): List<VirtualFile> = modulepaths(context).mapNotNull(::getFile)
 }
