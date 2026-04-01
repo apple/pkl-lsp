@@ -39,13 +39,13 @@ class ModulepathResolver(project: Project) : Component(project) {
   }
 
   private fun normalizeArchivePath(path: Path): Path {
-    val path = path.normalize().toAbsolutePath()
-    if (isArchive(path)) {
-      val uri = URI.create("jar:${path.toUri()}!/")
+    val normalizedPath = path.normalize().toAbsolutePath()
+    if (isArchive(normalizedPath)) {
+      val uri = URI.create("jar:${normalizedPath.toUri()}!/")
       ensureJarFileSystem(uri)
       return Paths.get(uri)
     }
-    return path
+    return normalizedPath
   }
 
   private fun isArchive(path: Path): Boolean {
