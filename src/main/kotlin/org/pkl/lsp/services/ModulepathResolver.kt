@@ -76,10 +76,13 @@ class ModulepathResolver(project: Project) : Component(project) {
       .asSequence()
       .map { it.resolve(path).normalize() }
       .firstOrNull(Files::exists)
-      ?.let { project.virtualFileManager.get(URI.create("modulepath:${it.toUri()}"), it) }
+      ?.let(::getFile)
       ?.getModule()
       ?.get()
   }
+
+  private fun getFile(path: Path): VirtualFile? =
+    project.virtualFileManager.get(URI.create("modulepath:${path.toUri()}"), path)
 
   fun resolveAbsolute(path: String, context: PklProject?): PklModule? =
     resolve(path.trimStart('/'), all(context))
@@ -92,6 +95,5 @@ class ModulepathResolver(project: Project) : Component(project) {
     return resolve(relative.resolve(path).normalize().toString(), all)
   }
 
-  fun paths(context: PklProject?): List<VirtualFile> =
-    all(context).mapNotNull(project.virtualFileManager::get)
+  fun paths(context: PklProject?): List<VirtualFile> = all(context).mapNotNull(::getFile)
 }
