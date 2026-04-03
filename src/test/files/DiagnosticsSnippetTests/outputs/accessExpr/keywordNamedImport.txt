@@ -1,0 +1,8 @@
+ import ".../inputHelpers/accessExpr/module.pkl"
+ 
+ foo = `module`.bar
+ 
+ bar = `module`.foo
+                ^^^
+| Error: Unresolved reference `foo`
+ 
