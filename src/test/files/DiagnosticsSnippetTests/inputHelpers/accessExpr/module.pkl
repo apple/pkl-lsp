@@ -1,0 +1,3 @@
+module `module`
+
+bar: Int = 1
