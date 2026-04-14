@@ -37,6 +37,10 @@ class PklUnknownTypeImpl(project: Project, override val parent: PklNode, ctx: No
   }
 }
 
+class PklFakeUnknownTypeImpl(project: Project) : FakePklNode(project), PklUnknownType {
+  override fun <R> accept(visitor: PklVisitor<R>): R? = visitor.visitUnknownType(this)
+}
+
 class PklNothingTypeImpl(project: Project, override val parent: PklNode, ctx: Node) :
   AbstractPklNode(project, parent, ctx), PklNothingType {
   override fun <R> accept(visitor: PklVisitor<R>): R? {
@@ -153,6 +157,25 @@ class PklUnionTypeImpl(project: Project, override val parent: PklNode, ctx: Node
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitUnionType(this)
+  }
+}
+
+class PklFakeUnionTypeImpl(
+  project: Project,
+  override val leftType: PklType,
+  override val rightType: PklType,
+) : FakePklNode(project), PklUnionType {
+  override val typeList: List<PklType> by lazy { listOf(leftType, rightType) }
+
+  override fun <R> accept(visitor: PklVisitor<R>): R? = visitor.visitUnionType(this)
+
+  companion object {
+    fun create(project: Project, types: List<PklType>): PklType =
+      when {
+        types.isEmpty() -> PklFakeUnknownTypeImpl(project)
+        types.size == 1 -> types.single()
+        else -> types.reduce { t1, t2 -> PklFakeUnionTypeImpl(project, t1, t2) }
+      }
   }
 }
 

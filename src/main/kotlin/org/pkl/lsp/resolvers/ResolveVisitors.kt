@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -167,13 +167,17 @@ object ResolveVisitors {
 
         val type =
           when (element) {
+            is PklReferenceQualifiedAccessProxy ->
+              base.referenceType!!.withTypeArguments(
+                element.referent.toType(base, bindings, context, preserveUnboundTypeVars)
+              )
             is PklImport ->
               element
                 .resolve(context)
                 .computeResolvedImportType(base, bindings, preserveUnboundTypeVars, context)
             is PklTypeParameter -> bindings[element] ?: Type.Unknown
             is PklMethod -> computeMethodReturnType(element, bindings, context)
-            is PklClass -> base.classType.withTypeArguments(Type.Class(element))
+            is PklClass -> base.classType.withTypeArguments(Type.Class.create(element))
             is PklTypeAlias -> base.typeAliasType.withTypeArguments(Type.alias(element, context))
             is PklNavigableElement ->
               element.computeResolvedImportType(base, bindings, context, preserveUnboundTypeVars)
@@ -236,7 +240,7 @@ object ResolveVisitors {
           base.mapConstructor -> {
             val arguments = argumentList?.elements
             if (arguments == null || arguments.size < 2) {
-              Type.Class(base.mapType.ctx)
+              Type.Class.create(base.mapType.ctx)
             } else {
               var keyType = arguments[0].computeExprType(base, bindings, context)
               var valueType = arguments[1].computeExprType(base, bindings, context)
@@ -259,7 +263,7 @@ object ResolveVisitors {
                     )
                 }
               }
-              Type.Class(base.mapType.ctx, listOf(keyType, valueType))
+              Type.Class.create(base.mapType.ctx, listOf(keyType, valueType))
             }
           }
           else -> {
@@ -357,6 +361,7 @@ object ResolveVisitors {
         if (name != expectedName) return true
 
         when {
+          element is PklReferenceQualifiedAccessProxy -> result = element
           element is PklImport -> {
             result =
               if (resolveImports && !element.isGlob) {
@@ -412,6 +417,7 @@ object ResolveVisitors {
             }
           }
           element is PklNavigableElement -> result.add(element)
+          element is PklReferenceQualifiedAccessProxy -> result.add(element)
           element is PklExpr -> return true
           else -> unexpectedType(element)
         }
@@ -453,6 +459,7 @@ object ResolveVisitors {
             result.add(element.complete())
           }
           is PklExpr -> {}
+          is PklReferenceQualifiedAccessProxy -> result.add(element.toCompletionItem())
           else -> throw AssertionError("Unexpected type: ${element::class.java.typeName ?: "null"}")
         }
         return true

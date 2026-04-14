@@ -97,11 +97,14 @@ private fun PklExpr?.doInferExprTypeFromContext(
                 when (expr.parentOfType<PklProperty>()?.name) {
                   "converters" ->
                     resolvedKeyClass?.let {
-                      base.function1Type.withTypeArguments(Type.Class(it), base.anyType)
+                      base.function1Type.withTypeArguments(Type.Class.create(it), base.anyType)
                     } ?: defaultExpectedType
                   "convertPropertyTransformers" ->
                     resolvedKeyClass?.let {
-                      base.function1Type.withTypeArguments(Type.Class(it), Type.Class(it))
+                      base.function1Type.withTypeArguments(
+                        Type.Class.create(it),
+                        Type.Class.create(it),
+                      )
                     } ?: defaultExpectedType
                   else -> defaultExpectedType
                 }

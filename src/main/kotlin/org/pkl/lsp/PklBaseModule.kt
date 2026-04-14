@@ -41,9 +41,9 @@ class PklBaseModule(project: Project) : Component(project) {
               val typeParameters =
                 member.typeParameterList?.typeParameters
                   ?: listOf(PklNodeFactory.createTypeParameter(project, "Type"))
-              types[className] = Type.Class(member, listOf(), listOf(), typeParameters)
+              types[className] = Type.Class.create(member, listOf(), listOf(), typeParameters)
             }
-            else -> types[className] = Type.Class(member)
+            else -> types[className] = Type.Class.create(member)
           }
         is PklTypeAlias -> types[member.name] = Type.Alias.unchecked(member, listOf(), listOf())
         is PklClassMethod -> methods[member.name] = member
@@ -105,6 +105,8 @@ class PklBaseModule(project: Project) : Component(project) {
   // Will be `null` for versions < 0.29
   val bytesType: Type.Class? = classTypeOrNull("Bytes")
   val uint8Type: Type.Alias = aliasType("UInt8")
+  // Will be `null` for versions < 0.32
+  val referenceType: Type.Reference? = classTypeOrNull("Reference") as? Type.Reference
 
   val comparableType: Type = aliasType("Comparable")
 
@@ -170,6 +172,7 @@ class PklBaseModule(project: Project) : Component(project) {
     val types =
       mutableListOf(stringType, collectionType, mapType, listingType, mappingType, dynamicType)
     if (bytesType != null) types += bytesType
+    if (referenceType != null) types += referenceType
     Type.union(types, this, null)
   }
 
