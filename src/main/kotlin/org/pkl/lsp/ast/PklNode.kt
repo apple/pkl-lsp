@@ -505,7 +505,9 @@ interface PklAmendExpr : PklExpr, PklObjectBodyOwner {
   override val objectBody: PklObjectBody
 }
 
-interface PklSuperSubscriptExpr : PklExpr
+interface PklSuperSubscriptExpr : PklExpr {
+  val expr: PklExpr
+}
 
 interface PklAccessExpr : PklExpr, PklReference, IdentifierOwner {
   val memberNameText: String
@@ -829,6 +831,19 @@ abstract class AbstractPklNode(
       else -> false
     }
   }
+}
+
+abstract class FakePklNode(override val project: Project, override val parent: PklNode? = null) :
+  PklNode {
+  override val span: Span = Span(0, 0, 0, 0)
+  override val children: List<PklNode> = emptyList()
+  override val containingFile: VirtualFile = EphemeralFile("", project)
+  override val enclosingModule: PklModule? = null
+  override val terminals: List<Terminal> = emptyList()
+  override val text: String = ""
+  override val isMissing: Boolean = false
+  override val source: String = ""
+  override var index: Int = 0
 }
 
 class PklErrorImpl(

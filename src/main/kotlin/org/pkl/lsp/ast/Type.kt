@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,10 @@ class PklUnknownTypeImpl(project: Project, override val parent: PklNode, ctx: No
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitUnknownType(this)
   }
+}
+
+class PklFakeUnknownTypeImpl(project: Project) : FakePklNode(project), PklUnknownType {
+  override fun <R> accept(visitor: PklVisitor<R>): R? = visitor.visitUnknownType(this)
 }
 
 class PklNothingTypeImpl(project: Project, override val parent: PklNode, ctx: Node) :
@@ -153,6 +157,25 @@ class PklUnionTypeImpl(project: Project, override val parent: PklNode, ctx: Node
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitUnionType(this)
+  }
+}
+
+class PklFakeUnionTypeImpl(
+  project: Project,
+  override val leftType: PklType,
+  override val rightType: PklType,
+) : FakePklNode(project), PklUnionType {
+  override val typeList: List<PklType> by lazy { listOf(leftType, rightType) }
+
+  override fun <R> accept(visitor: PklVisitor<R>): R? = visitor.visitUnionType(this)
+
+  companion object {
+    fun create(project: Project, types: List<PklType>): PklType =
+      when {
+        types.isEmpty() -> PklFakeUnknownTypeImpl(project)
+        types.size == 1 -> types.single()
+        else -> types.reduce { t1, t2 -> PklFakeUnionTypeImpl(project, t1, t2) }
+      }
   }
 }
 
