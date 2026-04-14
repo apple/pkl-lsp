@@ -78,7 +78,7 @@ fun PklNode.computeThisType(
               ->
               val visitor = ResolveVisitors.firstElementNamed(keyExpr.memberNameText, base, true)
               (keyExpr.resolve(base, null, bindings, visitor, context) as? PklClass)?.let {
-                return Type.Class(it)
+                return Type.Class.create(it)
               }
             }
           }
