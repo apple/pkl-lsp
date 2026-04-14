@@ -321,6 +321,8 @@ class PklSuperSubscriptExprImpl(
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitSuperSubscriptExpr(this)
   }
+
+  override val expr: PklExpr by lazy { children.firstInstanceOf<PklExpr>()!! }
 }
 
 class PklQualifiedAccessExprImpl(

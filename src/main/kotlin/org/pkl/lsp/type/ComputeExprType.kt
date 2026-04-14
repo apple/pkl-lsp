@@ -119,11 +119,13 @@ private fun PklNode.doComputeExprType(
       is PklOuterExpr -> Type.Unknown // TODO
       is PklSubscriptExpr -> {
         val receiverType = leftExpr.computeExprType(base, bindings, context)
-        doComputeSubscriptExprType(receiverType, base, context)
+        val getKeyType = { rightExpr.computeExprType(base, bindings, context) }
+        doComputeSubscriptExprType(receiverType, getKeyType, base, context)
       }
       is PklSuperSubscriptExpr -> {
         val receiverType = computeThisType(base, bindings, context)
-        doComputeSubscriptExprType(receiverType, base, context)
+        val getKeyType = { expr.computeExprType(base, bindings, context) }
+        doComputeSubscriptExprType(receiverType, getKeyType, base, context)
       }
       is PklEqualityExpr -> base.booleanType
       is PklComparisonExpr -> base.booleanType
@@ -401,11 +403,13 @@ private fun PklNode.doComputeExprType(
 
 private fun doComputeSubscriptExprType(
   receiverType: Type,
+  getKeyType: () -> Type,
   base: PklBaseModule,
   context: PklProject?,
 ) =
   when (receiverType) {
     is Type.StringLiteral -> base.stringType
+    is Type.Reference -> receiverType.valueTypeForSubscriptKeyType(getKeyType(), base, context)
     else -> {
       val receiverClassType = receiverType.toClassType(base, context)
       when {

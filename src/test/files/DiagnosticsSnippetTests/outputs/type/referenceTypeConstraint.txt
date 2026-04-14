@@ -1,0 +1,31 @@
+ hidden a: String
+ foo = Reference(a) as Reference<String(true)>
+       ^^^^^^^^^
+| Error: Unresolved reference `Reference`
+                       ^^^^^^^^^
+| Error: Unresolved reference `Reference`
+ bar = Reference(a) as Reference<String(true) | Int>
+       ^^^^^^^^^
+| Error: Unresolved reference `Reference`
+                       ^^^^^^^^^
+| Error: Unresolved reference `Reference`
+ baz = Reference(a) as Reference<Listing<String(true)>>
+       ^^^^^^^^^
+| Error: Unresolved reference `Reference`
+                       ^^^^^^^^^
+| Error: Unresolved reference `Reference`
+ qux = Reference(a) as Reference<Alias1?>
+       ^^^^^^^^^
+| Error: Unresolved reference `Reference`
+                       ^^^^^^^^^
+| Error: Unresolved reference `Reference`
+ 
+ typealias Alias1 = Int | Alias2?
+ typealias Alias2 = String(length < 5)
+ 
+ xxx: Reference<String(true)> = Reference(a)
+                                ^^^^^^^^^
+| Error: Unresolved reference `Reference`
+      ^^^^^^^^^
+| Error: Unresolved reference `Reference`
+ 
