@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -177,7 +177,7 @@ val PklImport.memberName: String?
     identifier?.text
       ?: moduleUri?.stringConstant?.escapedText()?.let { inferImportPropertyName(it) }
 
-fun PklStringConstant.escapedText(): String? = getEscapedText()
+fun PklStringConstant.escapedText(): String? = getEscapedTextSl()
 
 fun PklStringLiteral.escapedText(): String? =
   when (this) {
@@ -185,44 +185,71 @@ fun PklStringLiteral.escapedText(): String? =
     is PklMultiLineStringLiteral -> escapedText()
   }
 
-fun PklSingleLineStringLiteral.escapedText(): String? =
-  if (exprs.isEmpty()) getEscapedText() else null
+private fun PklSingleLineStringLiteral.escapedText(): String? =
+  if (!exprs.isEmpty()) null else getEscapedTextSl()
 
-fun PklMultiLineStringLiteral.escapedText(): String? =
-  if (exprs.isEmpty()) getEscapedText() else null
-
-private fun PklNode.getEscapedText(): String? = buildString {
+private fun PklNode.getEscapedTextSl(): String? = buildString {
   for (terminal in terminals) {
     when (terminal.type) {
       TokenType.SLQuote,
-      TokenType.SLEndQuote,
-      TokenType.MLQuote,
-      TokenType.MLEndQuote -> {} // ignore open/close quotes
-      TokenType.SLCharacters,
-      TokenType.MLCharacters -> append(terminal.text)
-      TokenType.CharacterEscape -> {
-        val text = terminal.text
-        if (text.contains("u{")) {
-          val index = text.indexOf('{') + 1
-          val hexString = text.substring(index, text.length - 1)
-          try {
-            append(Character.toChars(Integer.parseInt(hexString, 16)))
-          } catch (ignored: NumberFormatException) {} catch (ignored: IllegalArgumentException) {}
-        } else {
-          when (text[text.lastIndex]) {
-            'n' -> append('\n')
-            'r' -> append('\r')
-            't' -> append('\t')
-            '\\' -> append('\\')
-            '"' -> append('"')
-            else -> throw AssertionError("Unknown char escape: $text")
-          }
-        }
-      }
-      TokenType.MLNewline -> append('\n')
+      TokenType.SLEndQuote -> {} // ignore open/close quotes
+      TokenType.SLCharacters -> append(terminal.text)
+      TokenType.CharacterEscape -> appendEscape(terminal)
       else ->
         // interpolated or invalid string -> bail out
         return null
+    }
+  }
+}
+
+private fun PklMultiLineStringLiteral.escapedText(): String? =
+  if (!exprs.isEmpty()) null
+  else
+    buildString {
+        // assumes lines can only end in \n (or \r\n)
+        val mlPrefix = terminals.dropLast(1).last().text.takeLastWhile { it != '\n' }
+        var afterContinuation = false
+        for ((idx, terminal) in terminals.withIndex()) {
+          when (terminal.type) {
+            TokenType.MLQuote,
+            TokenType.MLEndQuote -> {} // ignore open/close quotes
+            TokenType.MLCharacters -> {
+              var text = terminal.text
+              if (idx == 1) text = text.removePrefix("\n$mlPrefix") // MLQuote is idx 0
+              else if (afterContinuation) {
+                text = text.removePrefix(mlPrefix)
+                afterContinuation = false
+              }
+              text = text.replace("\n$mlPrefix", "\n")
+              append(text)
+            }
+            TokenType.CharacterEscape -> appendEscape(terminal)
+            TokenType.MLNewline -> append('\n')
+            TokenType.StringContinuation -> afterContinuation = true
+            else ->
+              // interpolated or invalid string -> bail out
+              return null
+          }
+        }
+      }
+      .removeSuffix("\n")
+
+private fun Appendable.appendEscape(terminal: Terminal) {
+  val text = terminal.text
+  if (text.contains("u{")) {
+    val index = text.indexOf('{') + 1
+    val hexString = text.substring(index, text.length - 1)
+    try {
+      append(Character.toChars(Integer.parseInt(hexString, 16)).concatToString())
+    } catch (_: NumberFormatException) {} catch (_: IllegalArgumentException) {}
+  } else {
+    when (text[text.lastIndex]) {
+      'n' -> append('\n')
+      'r' -> append('\r')
+      't' -> append('\t')
+      '\\' -> append('\\')
+      '"' -> append('"')
+      else -> throw AssertionError("Unknown char escape: $text")
     }
   }
 }

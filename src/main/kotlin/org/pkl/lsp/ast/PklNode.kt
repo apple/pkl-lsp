@@ -942,6 +942,7 @@ fun Node.toNode(project: Project, parent: PklNode?): PklNode? {
     "identifier" -> toTerminal(parent!!)
     "docComment" -> toTerminal(parent!!)
     "escapeSequence" -> toTerminal(parent!!)
+    "mlStringContinuation" -> toTerminal(parent!!)
     // just becomes an expression
     "stringInterpolation" -> children[1].toNode(project, parent)
     "lineComment" -> PklLineCommentImpl(project, parent!!, this)

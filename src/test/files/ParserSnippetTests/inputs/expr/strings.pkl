@@ -1,2 +1,6 @@
 res1 = "one"
 res2 = "// one"
+res3 = """
+  hello \
+  world
+  """
