@@ -63,3 +63,13 @@ listing1 = new Listing<MyStr> {
 listing2: Listing<MyStr> = new {
   "Invalid"
 }
+
+mlString1: String(this == "hello\nworld") = """
+  hello
+  world
+  """
+
+mlString1: String(this == "hello world") = """
+  hello \
+  world
+  """

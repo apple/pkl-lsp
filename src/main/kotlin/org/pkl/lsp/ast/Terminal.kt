@@ -152,6 +152,7 @@ fun Node.toTerminal(parent: PklNode): Terminal? {
       "identifier" -> TokenType.Identifier
       "docComment" -> TokenType.DocComment
       "escapeSequence" -> TokenType.CharacterEscape
+      "mlStringContinuation" -> TokenType.StringContinuation
       "\\(" -> TokenType.InterpolationStart
       "\\#(" -> TokenType.InterpolationStart
       "\\##(" -> TokenType.InterpolationStart

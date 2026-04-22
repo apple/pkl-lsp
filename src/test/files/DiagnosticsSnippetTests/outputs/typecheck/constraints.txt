@@ -183,3 +183,14 @@
 | Required: matches(Regex(#"\d*"#))
 | Found: "Invalid"
  }
+ 
+ mlString1: String(this == "hello\nworld") = """
+   hello
+   world
+   """
+ 
+ mlString1: String(this == "hello world") = """
+   hello \
+   world
+   """
+ 

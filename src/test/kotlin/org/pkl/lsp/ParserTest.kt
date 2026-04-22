@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,6 +63,37 @@ class ParserTest {
     val strLiteral2 = mod.children[1].children[2]
     assertThat(strLiteral2).isInstanceOf(PklSingleLineStringLiteral::class.java)
     strLiteral2 as PklSingleLineStringLiteral
+    assertThat(strLiteral2.escapedText()).isNull()
+  }
+
+  @Test
+  fun `parse multiline strings`() {
+    val code =
+      """
+      foo = ${'"'}""
+        
+         hello \
+        world
+        
+        xyz
+        
+        ${'"'}""
+      bar = ${'"'}""
+        hello \
+        \(inter)
+        ${'"'}""
+    """
+        .trimIndent()
+
+    val mod = parse(code)
+    val strLiteral = mod.children[0].children[2]
+    assertThat(strLiteral).isInstanceOf(PklMultiLineStringLiteral::class.java)
+    strLiteral as PklMultiLineStringLiteral
+    assertThat(strLiteral.escapedText()).isEqualTo("\n hello world\n\nxyz\n")
+
+    val strLiteral2 = mod.children[1].children[2]
+    assertThat(strLiteral2).isInstanceOf(PklMultiLineStringLiteral::class.java)
+    strLiteral2 as PklMultiLineStringLiteral
     assertThat(strLiteral2.escapedText()).isNull()
   }
 
