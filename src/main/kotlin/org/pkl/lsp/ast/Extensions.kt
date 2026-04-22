@@ -226,17 +226,17 @@ val PklImport.memberName: String?
         ?.stringConstant
         ?.escapedText()
         ?.let { inferImportPropertyName(it) }
-        ?.let { if (shouldQuoteIdentifier(it)) "`$it`" else it }
+        ?.let { if (isRegularIdentifier(it)) it else "`$it`" }
 
-private fun shouldQuoteIdentifier(identifier: String): Boolean {
-  if (identifier.isEmpty()) return true
-  if (identifier in KEYWORDS) return true
+private fun isRegularIdentifier(identifier: String): Boolean {
+  if (identifier.isEmpty()) return false
+  if (identifier in KEYWORDS) return false
 
   val firstCp = identifier.codePointAt(0)
   if (firstCp != '$'.code && firstCp != '_'.code && !Character.isUnicodeIdentifierStart(firstCp))
-    return true
+    return false
 
-  return !identifier.codePoints().skip(1).allMatch { cp ->
+  return identifier.codePoints().skip(1).allMatch { cp ->
     cp == '$'.code || Character.isUnicodeIdentifierPart(cp)
   }
 }
