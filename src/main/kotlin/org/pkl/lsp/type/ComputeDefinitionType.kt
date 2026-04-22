@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ fun PklNode?.computeResolvedImportType(
   return RecursionManager.doPreventingRecursion(this, "computeResolvedImportType", Type.Unknown) {
     when (this) {
       is PklModule -> Type.module(this, shortDisplayName, context)
-      is PklClass -> Type.Class(this)
+      is PklClass -> Type.Class.create(this)
       is PklTypeAlias -> Type.alias(this, context)
       is PklMethod ->
         when {
