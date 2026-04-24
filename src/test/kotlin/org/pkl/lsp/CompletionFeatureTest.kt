@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package org.pkl.lsp
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.pkl.lsp.completion.ModuleUriCompletionProvider.Companion.ModuleUriCompletionData
 
 class CompletionFeatureTest : LspTestBase() {
   @Test
@@ -24,7 +25,7 @@ class CompletionFeatureTest : LspTestBase() {
     createPklFile("amends \"<caret>\"")
     val completions = getCompletions()
     assertThat(completions.map { it.label })
-      .isEqualTo(listOf("pkl:", "file:///", "https://", "package://", "main.pkl"))
+      .isEqualTo(listOf("pkl:", "file:///", "https://", "package://", "modulepath:/", "main.pkl"))
   }
 
   @Test
@@ -32,7 +33,7 @@ class CompletionFeatureTest : LspTestBase() {
     createPklFile("import \"<caret>\"")
     val completions = getCompletions()
     assertThat(completions.map { it.label })
-      .isEqualTo(listOf("pkl:", "file:///", "https://", "package://", "main.pkl"))
+      .isEqualTo(listOf("pkl:", "file:///", "https://", "package://", "modulepath:/", "main.pkl"))
   }
 
   @Test
@@ -40,6 +41,46 @@ class CompletionFeatureTest : LspTestBase() {
     createPklFile("res = import(\"<caret>\")")
     val completions = getCompletions()
     assertThat(completions.map { it.label })
-      .isEqualTo(listOf("pkl:", "file:///", "https://", "package://", "main.pkl"))
+      .isEqualTo(listOf("pkl:", "file:///", "https://", "package://", "modulepath:/", "main.pkl"))
+  }
+
+  @Test
+  fun `complete modulepath import`() {
+    fakeProject.settingsManager.settings.modulepath = listOf(testProjectDir.resolve("lib"))
+    createPklFile("lib/target.pkl", "")
+    createPklFile("import \"modulepath:/<caret>\"")
+    val completions = getCompletions()
+    assertThat(completions.map { it.label }).isEqualTo(listOf("target.pkl"))
+  }
+
+  @Test
+  fun `modulepath import completion prioritizes earlier entries`() {
+    fakeProject.settingsManager.settings.modulepath =
+      listOf(testProjectDir.resolve("lib"), testProjectDir.resolve("lib2"))
+    createPklFile("lib/target.pkl", "")
+    createPklFile("lib2/target.pkl", "")
+    createPklFile("import \"modulepath:/<caret>\"")
+    val completions = getCompletions().map { (it.data as ModuleUriCompletionData).moduleUri }
+    assertThat(completions).hasSize(2)
+    assertThat(completions[0]).endsWith("/lib/target.pkl")
+    assertThat(completions[1]).endsWith("/lib2/target.pkl")
+  }
+
+  @Test
+  fun `complete modulepath archive import`() {
+    fakeProject.settingsManager.settings.modulepath = listOf(testProjectDir.resolve("lib.jar"))
+    createArchive("lib.jar", mapOf("file.pkl" to "", "dir/file2.pkl" to ""))
+    createPklFile("import \"modulepath:/<caret>\"")
+    val completions = getCompletions()
+    assertThat(completions.map { it.label }).isEqualTo(listOf("dir", "file.pkl"))
+  }
+
+  @Test
+  fun `complete modulepath archive import in directory`() {
+    fakeProject.settingsManager.settings.modulepath = listOf(testProjectDir.resolve("lib.jar"))
+    createArchive("lib.jar", mapOf("dir/target.pkl" to ""))
+    createPklFile("import \"modulepath:/dir/<caret>\"")
+    val completions = getCompletions()
+    assertThat(completions.map { it.label }).isEqualTo(listOf("target.pkl"))
   }
 }

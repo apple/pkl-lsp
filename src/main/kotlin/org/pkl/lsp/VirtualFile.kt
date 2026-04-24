@@ -158,7 +158,11 @@ sealed class BaseFile : VirtualFile, CachedValueDataHolderBase() {
   }
 }
 
-class FsFile(override val path: Path, override val project: Project) : BaseFile() {
+class FsFile(
+  override val path: Path,
+  override val project: Project,
+  val isOnModulepath: Boolean = false,
+) : BaseFile() {
   override val name: String = path.name
   override val uri: URI = path.toUri()
   override val pklAuthority: String = Origin.FILE.name.lowercase()
@@ -186,11 +190,9 @@ class FsFile(override val path: Path, override val project: Project) : BaseFile(
     get() = path.isDirectory()
 
   override val children: List<VirtualFile>?
-    get() =
-      if (!isDirectory) null
-      else path.listDirectoryEntries().mapNotNull { project.virtualFileManager.get(it) }
+    get() = if (!isDirectory) null else path.listDirectoryEntries().mapNotNull(::getFile)
 
-  override fun parent(): VirtualFile? = path.parent?.let { project.virtualFileManager.get(it) }
+  override fun parent(): VirtualFile? = path.parent?.let(::getFile)
 
   override fun resolve(path: String): VirtualFile? {
     val resolvedPath = this.path.resolve(path).normalize()
@@ -202,6 +204,11 @@ class FsFile(override val path: Path, override val project: Project) : BaseFile(
   override fun canModify(): Boolean = true
 
   override fun doReadContents(): String = path.readText()
+
+  private fun getFile(path: Path): VirtualFile? =
+    if (isOnModulepath)
+      project.virtualFileManager.get(URI.create("modulepath:${path.toUri()}"), path)
+    else project.virtualFileManager.get(path)
 
   private val lock = Object()
 }
@@ -275,8 +282,12 @@ class HttpsFile(override val uri: URI, override val project: Project) : BaseFile
   override fun canModify(): Boolean = false
 }
 
-class JarFile(override val path: Path, override val uri: URI, override val project: Project) :
-  BaseFile() {
+class JarFile(
+  override val path: Path,
+  override val uri: URI,
+  override val project: Project,
+  val isOnModulepath: Boolean = false,
+) : BaseFile() {
   private val lock = Object()
 
   override val name: String
@@ -289,9 +300,7 @@ class JarFile(override val path: Path, override val uri: URI, override val proje
     get() = path.isDirectory()
 
   override val children: List<VirtualFile>?
-    get() =
-      if (!isDirectory) null
-      else path.listDirectoryEntries().mapNotNull { project.virtualFileManager.get(it) }
+    get() = if (!isDirectory) null else path.listDirectoryEntries().mapNotNull(::getFile)
 
   override val `package`: PackageDependency?
     get() =
@@ -309,7 +318,7 @@ class JarFile(override val path: Path, override val uri: URI, override val proje
   override val pklAuthority: String
     get() = Origin.JAR.name.lowercase()
 
-  override fun parent(): VirtualFile? = path.parent?.let { project.virtualFileManager.get(it) }
+  override fun parent(): VirtualFile? = path.parent?.let(::getFile)
 
   override fun resolve(path: String): VirtualFile? =
     project.virtualFileManager.get(this.path.resolve(path))
@@ -324,6 +333,11 @@ class JarFile(override val path: Path, override val uri: URI, override val proje
     }!!
 
   override fun canModify(): Boolean = false
+
+  private fun getFile(path: Path): VirtualFile? =
+    if (isOnModulepath)
+      project.virtualFileManager.get(URI.create("modulepath:${path.toUri()}"), path)
+    else project.virtualFileManager.get(path)
 }
 
 class EphemeralFile(private val text: String, override val project: Project) : BaseFile() {

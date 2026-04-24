@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package org.pkl.lsp
 
+import java.nio.file.Paths
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.pkl.lsp.ast.*
@@ -62,7 +63,7 @@ class GoToDefinitionTest : LspTestBase() {
     createPklFile(
       """
       function foo() = 42
-      
+
       result = fo<caret>o()
     """
         .trimIndent()
@@ -94,7 +95,7 @@ class GoToDefinitionTest : LspTestBase() {
     createPklFile(
       """
         class Person
-        
+
         person: Person<caret>
       """
         .trimIndent()
@@ -132,7 +133,7 @@ class GoToDefinitionTest : LspTestBase() {
     createPklFile(
       """
       import "lib.pkl"
-      
+
       result = lib.foo<caret>
     """
         .trimIndent()
@@ -217,5 +218,297 @@ class GoToDefinitionTest : LspTestBase() {
     assertThat(resolved).hasSize(1)
     assertThat(resolved[0]).isInstanceOf(PklClassProperty::class.java)
     assertThat((resolved[0] as PklClassProperty).name).isEqualTo("name")
+  }
+
+  @Test
+  fun `resolve modulepath import`() {
+    fakeProject.settingsManager.settings.modulepath = listOf(testProjectDir.resolve("lib"))
+    createPklFile("lib/target.pkl", "")
+    createPklFile(
+      """
+      import "modulepath:/target<caret>.pkl"
+    """
+        .trimIndent()
+    )
+    val resolved = goToDefinition()
+    assertThat(resolved).hasSize(1)
+    assertThat(resolved[0]).isInstanceOf(PklModule::class.java)
+    val resolvedFile = resolved.first().containingFile
+    assertThat(resolvedFile.uri.path).endsWith("/lib/target.pkl")
+  }
+
+  @Test
+  fun `modulepath import resolving prioritizes earlier entries`() {
+    fakeProject.settingsManager.settings.modulepath =
+      listOf(testProjectDir.resolve("lib"), testProjectDir.resolve("lib2"))
+    createPklFile("lib/target.pkl", "")
+    createPklFile("lib2/target.pkl", "")
+    createPklFile(
+      """
+      import "modulepath:/target<caret>.pkl"
+    """
+        .trimIndent()
+    )
+    val resolved = goToDefinition()
+    assertThat(resolved).hasSize(1)
+    assertThat(resolved[0]).isInstanceOf(PklModule::class.java)
+    val resolvedFile = resolved.first().containingFile
+    assertThat(resolvedFile.uri.path).endsWith("/lib/target.pkl")
+  }
+
+  @Test
+  fun `resolve field in modulepath`() {
+    fakeProject.settingsManager.settings.modulepath = listOf(testProjectDir.resolve("lib"))
+    createPklFile(
+      "lib/Target.pkl",
+      """
+      module Target
+
+      field: String
+    """
+        .trimIndent(),
+    )
+    createPklFile(
+      """
+      import "modulepath:/Target.pkl"
+
+      target: Target = new {
+        field<caret> = "field"
+      }
+    """
+        .trimIndent()
+    )
+    val resolved = goToDefinition()
+    assertThat(resolved).hasSize(1)
+    assertThat(resolved[0]).isInstanceOf(PklClassProperty::class.java)
+    assertThat((resolved[0] as PklClassProperty).name).isEqualTo("field")
+    val resolvedFile = resolved.first().containingFile
+    assertThat(resolvedFile.uri.path).endsWith("/lib/Target.pkl")
+  }
+
+  @Test
+  fun `resolve relative field in modulepath`() {
+    fakeProject.settingsManager.settings.modulepath = listOf(testProjectDir.resolve("lib"))
+    createPklFile(
+      "lib/Target.pkl",
+      """
+      module Target
+
+      field: String
+    """
+        .trimIndent(),
+    )
+    createPklFile(
+      "lib/Stopover.pkl",
+      """
+      module Stopover
+
+      import "./Target.pkl"
+
+      target: Target
+    """
+        .trimIndent(),
+    )
+    createPklFile(
+      """
+      import "modulepath:/Stopover.pkl"
+
+      stopover: Stopover = new {
+        target {
+          field<caret> = "field"
+        }
+      }
+    """
+        .trimIndent()
+    )
+    val resolved = goToDefinition()
+    assertThat(resolved).hasSize(1)
+    assertThat(resolved[0]).isInstanceOf(PklClassProperty::class.java)
+    assertThat((resolved[0] as PklClassProperty).name).isEqualTo("field")
+    val resolvedFile = resolved.first().containingFile
+    assertThat(resolvedFile.uri.path).endsWith("/lib/Target.pkl")
+  }
+
+  @Test
+  fun `resolve modulepath field in modulepath`() {
+    fakeProject.settingsManager.settings.modulepath =
+      listOf(testProjectDir.resolve("nested"), testProjectDir.resolve("lib"))
+    createPklFile(
+      "nested/Target.pkl",
+      """
+      module Target
+
+      field: String
+    """
+        .trimIndent(),
+    )
+    createPklFile(
+      "lib/Stopover.pkl",
+      """
+      module Stopover
+
+      import "modulepath:/Target.pkl"
+
+      target: Target
+    """
+        .trimIndent(),
+    )
+    createPklFile(
+      """
+      import "modulepath:/Stopover.pkl"
+
+      stopover: Stopover = new {
+        target {
+          field<caret> = "field"
+        }
+      }
+    """
+        .trimIndent()
+    )
+    val resolved = goToDefinition()
+    assertThat(resolved).hasSize(1)
+    assertThat(resolved[0]).isInstanceOf(PklClassProperty::class.java)
+    assertThat((resolved[0] as PklClassProperty).name).isEqualTo("field")
+    val resolvedFile = resolved.first().containingFile
+    assertThat(resolvedFile.uri.path).endsWith("/nested/Target.pkl")
+  }
+
+  @Test
+  fun `resolve modulepath archive import`() {
+    fakeProject.settingsManager.settings.modulepath = listOf(testProjectDir.resolve("lib.jar"))
+    createArchive("lib.jar", mapOf("dir/target.pkl" to ""))
+    createPklFile(
+      """
+      import "modulepath:/dir/target<caret>.pkl"
+    """
+        .trimIndent()
+    )
+    val resolved = goToDefinition()
+    assertThat(resolved).hasSize(1)
+    assertThat(resolved[0]).isInstanceOf(PklModule::class.java)
+    val resolvedFile = resolved.first().containingFile
+    assertThat(resolvedFile.uri.schemeSpecificPart).endsWith("/lib.jar!/dir/target.pkl")
+  }
+
+  @Test
+  fun `relative resolution across modulepath elements prefers earlier directory`() {
+    fakeProject.settingsManager.settings.modulepath =
+      listOf(
+        testProjectDir.resolve("x/y"),
+        testProjectDir.resolve("x/z"),
+        testProjectDir.resolve("x/z.zip"),
+      )
+    createArchive("x/z.zip", mapOf("Bar.pkl" to "baz = 1"))
+    createPklFile("x/z/Bar.pkl", "baz = 0")
+    createPklFile(
+      "x/y/Foo.pkl",
+      """
+      import "./Bar.pkl"
+
+      bar: Bar
+    """
+        .trimIndent(),
+    )
+    createPklFile(
+      "x/test.pkl",
+      """
+      import("modulepath:/Foo.pkl")
+
+      foo = new Foo {
+        bar {
+          baz<caret> = 2
+        }
+      }
+    """
+        .trimIndent(),
+    )
+    var resolved = goToDefinition().single()
+    assertThat(resolved).isInstanceOf(PklClassProperty::class.java)
+    var uri = resolved.enclosingModule!!.uri
+    var path = Paths.get(uri.path).normalize().toString()
+    assertThat(path).endsWith("/x/z/Bar.pkl")
+  }
+
+  @Test
+  fun `relative resolution across modulepath elements prefers earlier archive`() {
+    fakeProject.settingsManager.settings.modulepath =
+      listOf(
+        testProjectDir.resolve("x/y"),
+        testProjectDir.resolve("x/z.zip"),
+        testProjectDir.resolve("x/z"),
+      )
+    createArchive("x/z.zip", mapOf("Bar.pkl" to "baz = 1"))
+    createPklFile("x/z/Bar.pkl", "baz = 0")
+    createPklFile(
+      "x/y/Foo.pkl",
+      """
+      import "./Bar.pkl"
+
+      bar: Bar
+    """
+        .trimIndent(),
+    )
+    createPklFile(
+      "x/test.pkl",
+      """
+      import("modulepath:/Foo.pkl")
+
+      foo = new Foo {
+        bar {
+          baz<caret> = 2
+        }
+      }
+    """
+        .trimIndent(),
+    )
+    val resolved = goToDefinition().single()
+    assertThat(resolved).isInstanceOf(PklClassProperty::class.java)
+    var uri = resolved.enclosingModule!!.uri
+    assertThat(uri.scheme).isEqualTo("jar")
+    assertThat(uri.schemeSpecificPart).startsWith("file:")
+    assertThat(uri.schemeSpecificPart).endsWith("/x/z.zip!/Bar.pkl")
+  }
+
+  @Test
+  fun `relative import from non-modulepath source does not resolve into modulepath`() {
+    fakeProject.settingsManager.settings.modulepath = listOf(testProjectDir.resolve("lib"))
+    createPklFile("lib/target.pkl", "value = 1")
+    createPklFile(
+      """
+      import "./target<caret>.pkl"
+      """
+        .trimIndent()
+    )
+    val resolved = goToDefinition()
+    assertThat(resolved).isEmpty()
+  }
+
+  @Test
+  fun `relative import from modulepath source does not escape to filesystem`() {
+    fakeProject.settingsManager.settings.modulepath = listOf(testProjectDir.resolve("lib"))
+    createPklFile("External.pkl", "value = 0")
+    createPklFile(
+      "lib/Foo.pkl",
+      """
+      import "../External.pkl"
+
+      external: External
+      """
+        .trimIndent(),
+    )
+    createPklFile(
+      """
+      import "modulepath:/Foo.pkl"
+
+      foo = new Foo {
+        external {
+          value<caret> = 1
+        }
+      }
+      """
+        .trimIndent()
+    )
+    val resolved = goToDefinition()
+    assertThat(resolved).isEmpty()
   }
 }

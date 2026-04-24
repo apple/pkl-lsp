@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,8 @@ class Project(private val server: PklLspServer) {
   val clientCapabilities: PklClientCapabilities by lazy { server.clientCapabilities }
 
   val pklParser: PklParser by lazy { PklParser(this) }
+
+  val modulepathResolver: ModulepathResolver by lazy { ModulepathResolver(this) }
 
   fun initialize(): CompletableFuture<*> {
     return CompletableFuture.allOf(*myComponents.map { it.initialize() }.toTypedArray())
