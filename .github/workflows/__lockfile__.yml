@@ -32,3 +32,5 @@ jobs:
       uses: github/codeql-action/analyze@95e58e9a2cdfd71adc6e0353d5c52f41a045d225 # v4
     - name: github/codeql-action/init@v4
       uses: github/codeql-action/init@95e58e9a2cdfd71adc6e0353d5c52f41a045d225 # v4
+    - name: gradle/actions/dependency-submission@v6
+      uses: gradle/actions/dependency-submission@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6
