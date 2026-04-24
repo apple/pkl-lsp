@@ -32,12 +32,6 @@ testReports {
   }
 }
 
-local buildAndTest: Workflow = new {
-  jobs {
-    ["build"] = buildJob(false)
-  }
-}
-
 local function buildJob(isRelease: Boolean): Workflow.Job = new {
   `runs-on` = "ubuntu-latest"
   steps {
@@ -225,6 +219,30 @@ release {
             """
         } |> helpers.withMavenPublishSecrets
       }
+    }
+  }
+}
+
+dependabot {
+  updates {
+    new {
+      `package-ecosystem` = "gradle"
+      directory = "/"
+      cooldown {
+        `default-days` = 7
+      }
+      schedule {
+        interval = "weekly"
+      }
+    }
+  }
+}
+
+codeql {
+  scans {
+    new {
+      language = "java-kotlin"
+      buildMode = "autobuild"
     }
   }
 }
