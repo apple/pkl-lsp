@@ -20,6 +20,7 @@ import "@com.github.actions/catalog.pkl"
 import "@com.github.actions/context.pkl"
 import "@com.github.actions/Workflow.pkl"
 import "@pkl.impl.ghactions/helpers.pkl"
+import "@com.github.actions/actions/setup-java/v5/SetupJava.pkl"
 
 local buildArtifactsName = "pkl-lsp-build-artifacts"
 
@@ -29,6 +30,16 @@ testReports {
   }
   excludeJobs {
     Regex("deploy-.*")
+    "dependency-submission"
+  }
+}
+
+local JAVA_VERSION = "21"
+
+local baseSetupJava: SetupJava = new {
+  with {
+    `java-version` = JAVA_VERSION
+    distribution = "temurin"
   }
 }
 
@@ -40,10 +51,8 @@ local function buildJob(isRelease: Boolean): Workflow.Job = new {
         `fetch-depth` = 0 // needed for spotless
       }
     }
-    (catalog.`actions/setup-java@v5`) {
+    (baseSetupJava) {
       with {
-        `java-version` = "21"
-        distribution = "temurin"
         cache = if (isRelease) null else "gradle"
       }
     }
@@ -85,10 +94,8 @@ local function verifyJobs(requiresJob: String): Mapping<String, Workflow.Job> = 
     needs { requiresJob }
     steps {
       (catalog.`actions/checkout@v6`) {}
-      (catalog.`actions/setup-java@v5`) {
+      (baseSetupJava) {
         with {
-          `java-version` = "21"
-          distribution = "temurin"
           cache = if (requiresJob.contains("release")) null else "gradle"
         }
       }
@@ -122,13 +129,7 @@ local baseMavenDeploy: Workflow.Job = new {
   environment = "maven-release"
   steps {
     (catalog.`actions/checkout@v6`) {}
-    (catalog.`actions/setup-java@v5`) {
-      with {
-        `java-version` = "21"
-        distribution = "temurin"
-        cache = null
-      }
-    }
+    baseSetupJava
     (catalog.`actions/download-artifact@v6`) {
       with {
         name = buildArtifactsName
@@ -165,6 +166,23 @@ main = (build) {
           name = "Publish snapshot release"
           run = "./gradlew publishToSonatype"
         } |> helpers.withMavenPublishSecrets
+      }
+    }
+    ["dependency-submission"] {
+      `runs-on` = "ubuntu-latest"
+      permissions {
+        contents = "write"
+      }
+      steps {
+        module.catalog.`actions/checkout@v6`
+        baseSetupJava
+        (module.catalog.`gradle/actions/dependency-submission@v6`) {
+          with {
+            // language=regexp
+            `dependency-graph-include-configurations` =
+              ".*[rR]untimeClasspath|.*[cC]ompileClasspath"
+          }
+        }
       }
     }
   }
