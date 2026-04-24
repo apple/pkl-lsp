@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,8 @@ kotlin {
 
 tasks.withType<JavaCompile>().configureEach { options.release = buildInfo.jdkTargetVersion }
 
+configurations { all { resolutionStrategy { failOnDynamicVersions() } } }
+
 val pklCli: Configuration by configurations.creating
 
 val stagedShadowJar: Configuration by configurations.creating
@@ -93,6 +95,7 @@ dependencies {
   pklCli(
     "org.pkl-lang:pkl-cli-${buildInfo.os.canonicalName}-${buildInfo.arch.name}:${libs.versions.pkl.get()}"
   )
+  constraints { implementation(libs.gson) }
 }
 
 val configurePklCliExecutable by

@@ -2,6 +2,7 @@
 assertj = "3.26.3"
 clikt = "5.0.1"
 downloadTaskPlugin = "5.6.0"
+gson = "2.13.2"
 jspecify = "1.0.0"
 jtreesitter = "0.25.0"
 junit = "5.11.3"
@@ -30,6 +31,7 @@ zigSha256-linux-aarch64 = "041ac42323837eb5624068acd8b00cd5777dac4cf91179e8dad7a
 assertJ = { group = "org.assertj", name = "assertj-core", version.ref = "assertj" }
 clikt = { group = "com.github.ajalt.clikt", name = "clikt", version.ref = "clikt" }
 downloadTaskPlugin = { group = "de.undercouch", name = "gradle-download-task", version.ref = "downloadTaskPlugin" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 jspecify = { group = "org.jspecify", name = "jspecify", version.ref = "jspecify" }
 jtreesitter = { group = "io.github.tree-sitter", name = "jtreesitter", version.ref = "jtreesitter" }
 junitJupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
