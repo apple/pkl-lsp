@@ -20,7 +20,6 @@ import "@com.github.actions/catalog.pkl"
 import "@com.github.actions/context.pkl"
 import "@com.github.actions/Workflow.pkl"
 import "@pkl.impl.ghactions/helpers.pkl"
-import "@com.github.actions/actions/setup-java/v5/SetupJava.pkl"
 
 local buildArtifactsName = "pkl-lsp-build-artifacts"
 
@@ -34,9 +33,9 @@ testReports {
   }
 }
 
-local JAVA_VERSION = "21"
+local JAVA_VERSION = "25"
 
-local baseSetupJava: SetupJava = new {
+local baseSetupJava = (catalog.`actions/setup-java@v5`) {
   with {
     `java-version` = JAVA_VERSION
     distribution = "temurin"

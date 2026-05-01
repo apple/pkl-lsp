@@ -1,5 +1,12 @@
 = Changelog
 
+[[release-0.7.0]]
+== 0.7.0 (UNRELEASED)
+
+=== Breaking Changes
+
+* The minimum Java has been bumped to Java 23 (pr:https://github.com/apple/pkl-lsp/pull/162[]).
+
 [[release-0.6.0]]
 == 0.6.0 (2026-02-27)
 

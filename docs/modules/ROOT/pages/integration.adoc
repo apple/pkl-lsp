@@ -20,7 +20,7 @@ For example:
 java -jar path/to/pkl-lsp.jar
 ----
 
-Pkl Language Server requires Java 22 or higher.
+Pkl Language Server requires Java 23 or higher.
 
 [NOTE]
 ====
