@@ -18,6 +18,7 @@ package org.pkl.lsp.services
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.*
+import kotlin.io.path.*
 import org.pkl.lsp.Component
 import org.pkl.lsp.Project
 import org.pkl.lsp.VirtualFile
@@ -27,8 +28,6 @@ import org.pkl.lsp.packages.dto.PklProject
 
 class ModulepathResolver(project: Project) : Component(project) {
 
-  private val archivePathMatcher: PathMatcher by lazy {
-    FileSystems.getDefault().getPathMatcher("glob:**/*.{zip,jar}")
   }
 
   private fun modulepaths(context: PklProject?): List<Path> {
@@ -50,7 +49,7 @@ class ModulepathResolver(project: Project) : Component(project) {
 
   private fun isArchive(path: Path): Boolean {
     if (!Files.isRegularFile(path)) return false
-    if (archivePathMatcher.matches(path)) return true
+    if (path.extension == "zip" || path.extension == "jar") return true
     val execHeader =
       "#!/bin/sh\n      exec java  -jar $0 \"$@\"".toByteArray(StandardCharsets.UTF_8)
     return try {
