@@ -422,10 +422,10 @@ class GoToDefinitionTest : LspTestBase() {
     """
         .trimIndent(),
     )
-    var resolved = goToDefinition().single()
+    val resolved = goToDefinition().single()
     assertThat(resolved).isInstanceOf(PklClassProperty::class.java)
-    var uri = resolved.enclosingModule!!.uri
-    var path = Paths.get(uri.path).normalize().toString()
+    val uri = resolved.enclosingModule!!.uri
+    val path = Paths.get(uri.path).normalize().toString()
     assertThat(path).endsWith("/x/z/Bar.pkl")
   }
 
@@ -463,7 +463,7 @@ class GoToDefinitionTest : LspTestBase() {
     )
     val resolved = goToDefinition().single()
     assertThat(resolved).isInstanceOf(PklClassProperty::class.java)
-    var uri = resolved.enclosingModule!!.uri
+    val uri = resolved.enclosingModule!!.uri
     assertThat(uri.scheme).isEqualTo("jar")
     assertThat(uri.schemeSpecificPart).startsWith("file:")
     assertThat(uri.schemeSpecificPart).endsWith("/x/z.zip!/Bar.pkl")
