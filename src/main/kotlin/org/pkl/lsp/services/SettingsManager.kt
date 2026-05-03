@@ -88,7 +88,7 @@ class SettingsManager(project: Project) : Component(project) {
     }
     return buildList {
       for (path in value.asJsonArray) {
-        val decodedPath = decodeString(path, "pkl.modulepath")
+        val decodedPath = decodeString(path, "pkl.modulepath[]")
         if (decodedPath != null) {
           val entry = Path.of(decodedPath)
           if (!Files.exists(entry)) logger.warn("Entry in pkl.modulepath does not exist: $entry")
