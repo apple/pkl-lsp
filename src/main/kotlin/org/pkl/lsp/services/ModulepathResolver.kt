@@ -22,7 +22,6 @@ import kotlin.io.path.*
 import org.pkl.lsp.Component
 import org.pkl.lsp.Project
 import org.pkl.lsp.VirtualFile
-import org.pkl.lsp.ast.PklModule
 import org.pkl.lsp.ensureJarFileSystem
 import org.pkl.lsp.packages.dto.PklProject
 
@@ -66,22 +65,16 @@ class ModulepathResolver(project: Project) : Component(project) {
     }
   }
 
-  private fun resolve(path: String, modulepath: List<Path>): PklModule? {
-    return modulepath
-      .map { it.resolve(path).normalize() }
-      .firstOrNull(Files::exists)
-      ?.let(::getFile)
-      ?.getModule()
-      ?.get()
-  }
+  private fun resolve(path: String, modulepath: List<Path>): VirtualFile? =
+    modulepath.map { it.resolve(path).normalize() }.firstOrNull(Files::exists)?.let(::getFile)
 
   private fun getFile(path: Path): VirtualFile? =
     project.virtualFileManager.get(URI.create("modulepath:${path.toUri()}"), path)
 
-  fun resolveAbsolute(path: String, context: PklProject?): PklModule? =
+  fun resolveAbsolute(path: String, context: PklProject?): VirtualFile? =
     resolve(path.trimStart('/'), modulepaths(context))
 
-  fun resolveRelative(sourceFile: VirtualFile, path: String, context: PklProject?): PklModule? {
+  fun resolveRelative(sourceFile: VirtualFile, path: String, context: PklProject?): VirtualFile? {
     val paths = modulepaths(context)
     val root = paths.firstOrNull(sourceFile.path::startsWith) ?: return null
     val relative =

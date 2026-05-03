@@ -121,7 +121,8 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
               ?.resolve(targetUri.fragment)
           vfile?.getModule()?.get()
         }
-        "modulepath" -> project.modulepathResolver.resolveAbsolute(targetUri.path, context)
+        "modulepath" ->
+          project.modulepathResolver.resolveAbsolute(targetUri.path, context)?.getModule()?.get()
         // targetUri is a relative URI
         null -> {
           when {
@@ -138,7 +139,10 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
               } else null
             }
             sourceFile is FsFile && sourceFile.isOnModulepath ->
-              project.modulepathResolver.resolveRelative(sourceFile, targetUri.path, context)
+              project.modulepathResolver
+                .resolveRelative(sourceFile, targetUri.path, context)
+                ?.getModule()
+                ?.get()
             sourceFile is FsFile || sourceFile is JarFile ->
               findOnFileSystem(sourceFile, targetUri.path)?.getModule()?.get()
             // TODO: handle other types of relative uris
