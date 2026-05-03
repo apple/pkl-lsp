@@ -83,6 +83,18 @@ class ModulepathResolver(project: Project) : Component(project) {
 
   fun paths(context: PklProject?): List<VirtualFile> = modulepaths(context).mapNotNull(::getFile)
 
+  fun listChildren(path: Path, context: PklProject?): List<VirtualFile> {
+    val paths = modulepaths(context)
+    println("modulepaths: $paths, startsWith: $path")
+    val root = paths.firstOrNull(path::startsWith) ?: return emptyList()
+    val relative = runCatching { root.relativize(path) }.getOrNull() ?: return emptyList()
+    return paths
+      .flatMap { it.resolve(relative).normalize().listDirectoryEntries() }
+      .map { it.toAbsolutePath().normalize() }
+      .distinct()
+      .mapNotNull(::getFile)
+  }
+
   fun isOnModulepath(path: Path, context: PklProject?): Boolean =
     modulepaths(context).stream().anyMatch(path::startsWith)
 }

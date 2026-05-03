@@ -190,7 +190,12 @@ class FsFile(
     get() = path.isDirectory()
 
   override val children: List<VirtualFile>?
-    get() = if (!isDirectory) null else path.listDirectoryEntries().mapNotNull(::getFile)
+    get() =
+      when {
+        !isDirectory -> null
+        isOnModulepath -> project.modulepathResolver.listChildren(path, null)
+        else -> path.listDirectoryEntries().mapNotNull(::getFile)
+      }
 
   override fun parent(): VirtualFile? = path.parent?.let(::getFile)
 
@@ -299,7 +304,12 @@ class JarFile(
     get() = path.isDirectory()
 
   override val children: List<VirtualFile>?
-    get() = if (!isDirectory) null else path.listDirectoryEntries().mapNotNull(::getFile)
+    get() =
+      when {
+        !isDirectory -> null
+        isOnModulepath -> project.modulepathResolver.listChildren(path, null)
+        else -> path.listDirectoryEntries().mapNotNull(::getFile)
+      }
 
   override val `package`: PackageDependency?
     get() =
