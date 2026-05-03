@@ -68,7 +68,6 @@ class ModulepathResolver(project: Project) : Component(project) {
 
   private fun resolve(path: String, modulepath: List<Path>): PklModule? {
     return modulepath
-      .asSequence()
       .map { it.resolve(path).normalize() }
       .firstOrNull(Files::exists)
       ?.let(::getFile)
