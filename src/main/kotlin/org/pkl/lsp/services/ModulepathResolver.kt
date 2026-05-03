@@ -28,6 +28,9 @@ import org.pkl.lsp.packages.dto.PklProject
 
 class ModulepathResolver(project: Project) : Component(project) {
 
+  companion object {
+    val execHeader =
+      "#!/bin/sh\n      exec java  -jar $0 \"$@\"".toByteArray(StandardCharsets.UTF_8)
   }
 
   private fun modulepaths(context: PklProject?): List<Path> {
@@ -50,8 +53,6 @@ class ModulepathResolver(project: Project) : Component(project) {
   private fun isArchive(path: Path): Boolean {
     if (!Files.isRegularFile(path)) return false
     if (path.extension == "zip" || path.extension == "jar") return true
-    val execHeader =
-      "#!/bin/sh\n      exec java  -jar $0 \"$@\"".toByteArray(StandardCharsets.UTF_8)
     return try {
       Files.newInputStream(path).use { stream ->
         val buffer = stream.readNBytes(execHeader.size)
