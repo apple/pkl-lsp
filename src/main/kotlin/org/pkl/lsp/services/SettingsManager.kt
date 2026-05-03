@@ -17,6 +17,7 @@ package org.pkl.lsp.services
 
 import com.google.gson.JsonElement
 import com.google.gson.JsonPrimitive
+import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
@@ -39,12 +40,18 @@ class SettingsManager(project: Project) : Component(project) {
   var settings: WorkspaceSettings = WorkspaceSettings()
   private lateinit var initialized: CompletableFuture<*>
 
-  override fun initialize(): CompletableFuture<*> {
-    initialized = loadSettings()
+  private val workspaceFolders: MutableSet<Path> = mutableSetOf()
+
+  fun initialize(folders: List<Path>?) {
     project.messageBus.subscribe(textDocumentTopic, ::handleTextDocumentEvent)
     project.messageBus.subscribe(workspaceConfigurationChangedTopic) { loadSettings() }
-    return initialized
+    project.messageBus.subscribe(workspaceFolderTopic, ::handleWorkspaceFolderEvent)
+    if (folders != null) {
+      workspaceFolders.addAll(folders)
+    }
   }
+
+  override fun initialize(): CompletableFuture<*> = loadSettings().also { initialized = it }
 
   override fun dispose() {
     initialized.cancel(true)
@@ -86,16 +93,14 @@ class SettingsManager(project: Project) : Component(project) {
       logger.warn("Got non-array value for configuration: pkl.modulepath. Value: $value")
       return emptyList()
     }
-    return buildList {
-      for (path in value.asJsonArray) {
-        val decodedPath = decodeString(path, "pkl.modulepath[]")
-        if (decodedPath != null) {
-          val entry = Path.of(decodedPath)
-          if (!Files.exists(entry)) logger.warn("Entry in pkl.modulepath does not exist: $entry")
-          add(entry)
+    return value.asJsonArray
+      .mapNotNull { decodeString(it, "pkl.modulepath[]") }
+      .mapNotNull { path ->
+        when {
+          path.startsWith("/") -> Path.of(path)
+          else -> workspaceFolders.map { it.resolve(path) }.firstOrNull(Files::exists)
         }
       }
-    }
   }
 
   private fun resolveExcludedDirectories(value: JsonElement): List<String> {
@@ -199,5 +204,19 @@ class SettingsManager(project: Project) : Component(project) {
         }
       }
     }
+  }
+
+  private fun handleWorkspaceFolderEvent(event: WorkspaceFoldersChangeEvent) {
+    synchronized(this) {
+      for (workspaceFolder in event.added) {
+        val path = Path.of(URI(workspaceFolder.uri))
+        workspaceFolders.add(path)
+      }
+      for (workspaceFolder in event.removed) {
+        val path = Path.of(URI(workspaceFolder.uri))
+        workspaceFolders.removeIf { it.toUri() == path.toUri() }
+      }
+    }
+    initialized = loadSettings()
   }
 }
