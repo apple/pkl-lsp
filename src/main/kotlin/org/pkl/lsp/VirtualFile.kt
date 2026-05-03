@@ -206,8 +206,7 @@ class FsFile(
   override fun doReadContents(): String = path.readText()
 
   private fun getFile(path: Path): VirtualFile? =
-    if (isOnModulepath)
-      project.virtualFileManager.get(URI.create("modulepath:${path.toUri()}"), path)
+    if (isOnModulepath) project.virtualFileManager.getModulepathFile(path)
     else project.virtualFileManager.get(path)
 
   private val lock = Object()
@@ -335,8 +334,7 @@ class JarFile(
   override fun canModify(): Boolean = false
 
   private fun getFile(path: Path): VirtualFile? =
-    if (isOnModulepath)
-      project.virtualFileManager.get(URI.create("modulepath:${path.toUri()}"), path)
+    if (isOnModulepath) project.virtualFileManager.getModulepathFile(path)
     else project.virtualFileManager.get(path)
 }
 
