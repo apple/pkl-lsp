@@ -80,6 +80,7 @@ class PklLspServer(val verbose: Boolean) : LanguageServer {
       val folderPaths = workspaceFolders?.map { Path.of(URI(it.uri)) }
       project.stdlib.initialize(folderPaths)
       project.pklProjectManager.initialize(folderPaths)
+      project.settingsManager.initialize(folderPaths)
     }
     // listen for configuration changes
     if (clientCapabilities.standard.workspace.didChangeConfiguration?.dynamicRegistration == true) {

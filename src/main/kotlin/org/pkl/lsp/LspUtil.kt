@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -315,10 +315,11 @@ fun editSource(source: String, line: Int, col: Int, edit: String): String {
 //
 // For every new package opened, its file system is never closed and kept on heap.
 fun ensureJarFileSystem(uri: URI) {
+  val rootUri = URI.create("${uri.toString().substringBeforeLast("!/")}!/")
   try {
-    FileSystems.newFileSystem(uri, HashMap<String, Any>())
+    FileSystems.newFileSystem(rootUri, HashMap<String, Any>())
   } catch (e: FileSystemAlreadyExistsException) {
-    FileSystems.getFileSystem(uri)
+    FileSystems.getFileSystem(rootUri)
   }
 }
 

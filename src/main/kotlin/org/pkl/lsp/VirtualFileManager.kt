@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,9 +35,38 @@ class VirtualFileManager(project: Project) : Component(project) {
     return create(effectiveUri, path)
   }
 
-  fun getFsFile(path: Path): FsFile? = get(path) as? FsFile
+  fun getFsFile(path: Path): FsFile? =
+    (if (project.modulepathResolver.isOnModulepath(path, null)) getModulepathFile(path)
+    else get(path))
+      as? FsFile
 
-  fun getFsFile(uri: URI): FsFile? = get(uri) as? FsFile
+  fun getFsFile(uri: URI): FsFile? =
+    (if (project.modulepathResolver.isOnModulepath(Path.of(uri), null))
+      getModulepathFile(Path.of(uri))
+    else get(uri))
+      as? FsFile
+
+  fun getModulepathFile(path: Path): VirtualFile? {
+    val jarUri = path.toUri()
+    val effectiveUri = jarUri.effectiveUri ?: return null
+    val existing = files[effectiveUri]
+    if (existing != null) {
+      return existing
+    }
+    val file =
+      when (jarUri?.scheme) {
+        "jar" -> {
+          ensureJarFileSystem(effectiveUri)
+          if (jarUri.toString().endsWith("!/"))
+            JarFile(path, jarUri, project, isOnModulepath = true)
+          else FsFile(path, project, isOnModulepath = true)
+        }
+        else -> {
+          FsFile(path, project, isOnModulepath = true)
+        }
+      }
+    return file.also { files[effectiveUri] = file }
+  }
 
   /**
    * Creates a one-off virtual file; this file does not get managed (workspace events do not cause

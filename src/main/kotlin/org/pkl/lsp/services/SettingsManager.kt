@@ -17,6 +17,8 @@ package org.pkl.lsp.services
 
 import com.google.gson.JsonElement
 import com.google.gson.JsonPrimitive
+import java.net.URI
+import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import kotlin.io.path.isExecutable
@@ -30,6 +32,7 @@ import org.pkl.lsp.messages.ActionableNotification
 data class WorkspaceSettings(
   var pklCliPath: Path? = null,
   var grammarVersion: GrammarVersion? = null,
+  var modulepath: List<Path> = emptyList(),
   var excludedDirectories: List<String> = emptyList(),
 )
 
@@ -37,12 +40,18 @@ class SettingsManager(project: Project) : Component(project) {
   var settings: WorkspaceSettings = WorkspaceSettings()
   private lateinit var initialized: CompletableFuture<*>
 
-  override fun initialize(): CompletableFuture<*> {
-    initialized = loadSettings()
+  private val workspaceFolders: MutableSet<Path> = mutableSetOf()
+
+  fun initialize(folders: List<Path>?) {
     project.messageBus.subscribe(textDocumentTopic, ::handleTextDocumentEvent)
     project.messageBus.subscribe(workspaceConfigurationChangedTopic) { loadSettings() }
-    return initialized
+    project.messageBus.subscribe(workspaceFolderTopic, ::handleWorkspaceFolderEvent)
+    if (folders != null) {
+      workspaceFolders.addAll(folders)
+    }
   }
+
+  override fun initialize(): CompletableFuture<*> = loadSettings().also { initialized = it }
 
   override fun dispose() {
     initialized.cancel(true)
@@ -76,6 +85,22 @@ class SettingsManager(project: Project) : Component(project) {
         GrammarVersion.latest()
       }
     }
+  }
+
+  private fun resolveModulepath(value: JsonElement): List<Path> {
+    if (value.isJsonNull) return emptyList()
+    if (!value.isJsonArray) {
+      logger.warn("Got non-array value for configuration: pkl.modulepath. Value: $value")
+      return emptyList()
+    }
+    return value.asJsonArray
+      .mapNotNull { decodeString(it, "pkl.modulepath[]") }
+      .mapNotNull { path ->
+        when {
+          path.startsWith("/") -> Path.of(path)
+          else -> workspaceFolders.map { it.resolve(path) }.firstOrNull(Files::exists)
+        }
+      }
   }
 
   private fun resolveExcludedDirectories(value: JsonElement): List<String> {
@@ -113,18 +138,29 @@ class SettingsManager(project: Project) : Component(project) {
           },
           ConfigurationItem().apply {
             scopeUri = "Pkl"
+            section = "pkl.modulepath"
+          },
+          ConfigurationItem().apply {
+            scopeUri = "Pkl"
             section = "pkl.projects.excludedDirectories"
           },
         )
       )
     return project.languageClient
       .configuration(params)
-      .thenApply { (cliPath, grammarVersion, excludedDirectories) ->
+      .thenApply { (cliPath, grammarVersion, modulepath, excludedDirectories) ->
         logger.log(
-          "Got configuration: cliPath = $cliPath, grammarVersion = $grammarVersion, excludedDirectories = $excludedDirectories"
+          buildString {
+            append("Got configuration: ")
+            append("cliPath = $cliPath, ")
+            append("grammarVersion = $grammarVersion, ")
+            append("modulepath = $modulepath, ")
+            append("excludedDirectories = $excludedDirectories")
+          }
         )
         settings.pklCliPath = resolvePklCliPath(cliPath as JsonElement)
         settings.grammarVersion = resolveGrammarVersion(grammarVersion as JsonElement)
+        settings.modulepath = resolveModulepath(modulepath as JsonElement)
         settings.excludedDirectories =
           resolveExcludedDirectories(excludedDirectories as JsonElement)
       }
@@ -168,5 +204,19 @@ class SettingsManager(project: Project) : Component(project) {
         }
       }
     }
+  }
+
+  private fun handleWorkspaceFolderEvent(event: WorkspaceFoldersChangeEvent) {
+    synchronized(this) {
+      for (workspaceFolder in event.added) {
+        val path = Path.of(URI(workspaceFolder.uri))
+        workspaceFolders.add(path)
+      }
+      for (workspaceFolder in event.removed) {
+        val path = Path.of(URI(workspaceFolder.uri))
+        workspaceFolders.removeIf { it.toUri() == path.toUri() }
+      }
+    }
+    initialized = loadSettings()
   }
 }
