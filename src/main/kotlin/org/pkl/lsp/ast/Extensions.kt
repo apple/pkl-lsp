@@ -38,6 +38,53 @@ import org.pkl.lsp.type.computeResolvedImportType
 import org.pkl.lsp.type.toType
 import org.pkl.lsp.util.ModificationTracker
 
+private val KEYWORDS =
+  setOf(
+    "_",
+    "abstract",
+    "amends",
+    "as",
+    "case",
+    "class",
+    "const",
+    "delete",
+    "else",
+    "extends",
+    "external",
+    "false",
+    "fixed",
+    "for",
+    "function",
+    "hidden",
+    "if",
+    "import",
+    "in",
+    "is",
+    "let",
+    "local",
+    "module",
+    "new",
+    "nothing",
+    "null",
+    "open",
+    "out",
+    "outer",
+    "override",
+    "protected",
+    "read",
+    "record",
+    "super",
+    "switch",
+    "this",
+    "throw",
+    "trace",
+    "true",
+    "typealias",
+    "unknown",
+    "vararg",
+    "when",
+  )
+
 val PklClass.supertype: PklType?
   get() = extends
 
@@ -175,7 +222,24 @@ fun PklClass.hasCommonSubclassWith(other: PklClass, context: PklProject?): Boole
 val PklImport.memberName: String?
   get() =
     identifier?.text
-      ?: moduleUri?.stringConstant?.escapedText()?.let { inferImportPropertyName(it) }
+      ?: moduleUri
+        ?.stringConstant
+        ?.escapedText()
+        ?.let { inferImportPropertyName(it) }
+        ?.let { if (isRegularIdentifier(it)) it else "`$it`" }
+
+private fun isRegularIdentifier(identifier: String): Boolean {
+  if (identifier.isEmpty()) return false
+  if (identifier in KEYWORDS) return false
+
+  val firstCp = identifier.codePointAt(0)
+  if (firstCp != '$'.code && firstCp != '_'.code && !Character.isUnicodeIdentifierStart(firstCp))
+    return false
+
+  return identifier.codePoints().skip(1).allMatch { cp ->
+    cp == '$'.code || Character.isUnicodeIdentifierPart(cp)
+  }
+}
 
 fun PklStringConstant.escapedText(): String? = getEscapedTextSl()
 
