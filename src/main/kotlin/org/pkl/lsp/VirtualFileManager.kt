@@ -35,16 +35,9 @@ class VirtualFileManager(project: Project) : Component(project) {
     return create(effectiveUri, path)
   }
 
-  fun getFsFile(path: Path): FsFile? =
-    (if (project.modulepathResolver.isOnModulepath(path, null)) getModulepathFile(path)
-    else get(path))
-      as? FsFile
+  fun getFsFile(path: Path): FsFile? = get(path) as? FsFile
 
-  fun getFsFile(uri: URI): FsFile? =
-    (if (project.modulepathResolver.isOnModulepath(Path.of(uri), null))
-      getModulepathFile(Path.of(uri))
-    else get(uri))
-      as? FsFile
+  fun getFsFile(uri: URI): FsFile? = get(uri) as? FsFile
 
   fun getModulepathFile(path: Path): VirtualFile? {
     val jarUri = path.toUri()
@@ -57,12 +50,11 @@ class VirtualFileManager(project: Project) : Component(project) {
       when (jarUri?.scheme) {
         "jar" -> {
           ensureJarFileSystem(effectiveUri)
-          if (jarUri.toString().endsWith("!/"))
-            JarFile(path, jarUri, project, isOnModulepath = true)
-          else FsFile(path, project, isOnModulepath = true)
+          if (jarUri.toString().endsWith("!/")) JarFile(path, jarUri, project)
+          else FsFile(path, project)
         }
         else -> {
-          FsFile(path, project, isOnModulepath = true)
+          FsFile(path, project)
         }
       }
     return file.also { files[effectiveUri] = file }

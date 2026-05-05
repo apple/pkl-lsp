@@ -20,10 +20,13 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.*
 import kotlin.io.path.*
 import org.pkl.lsp.Component
+import org.pkl.lsp.FsFile
+import org.pkl.lsp.JarFile
 import org.pkl.lsp.Project
 import org.pkl.lsp.VirtualFile
 import org.pkl.lsp.ensureJarFileSystem
 import org.pkl.lsp.packages.dto.PklProject
+import org.pkl.lsp.util.CachedValue
 
 class ModulepathResolver(project: Project) : Component(project) {
 
@@ -32,11 +35,19 @@ class ModulepathResolver(project: Project) : Component(project) {
       "#!/bin/sh\n      exec java  -jar $0 \"$@\"".toByteArray(StandardCharsets.UTF_8)
   }
 
+  private val lock = Any()
+
   private fun modulepaths(context: PklProject?): List<Path> {
-    val paths =
-      context?.metadata?.evaluatorSettings?.modulePath?.map(context.projectDir::resolve)
-        ?: project.settingsManager.settings.modulepath
-    return paths.map(::normalizeArchivePath)
+    return project.cachedValuesManager.getCachedValue("modulepaths(${context?.projectDir})", lock) {
+      val modulePathFromPklProject =
+        context?.metadata?.evaluatorSettings?.modulePath?.map(context.projectDir::resolve).orEmpty()
+      val explicitlyConfiguredPath = project.settingsManager.settings.modulepath
+      val dependencies = listOf(project.pklProjectManager.syncTracker, project.settingsManager)
+      CachedValue(
+        (modulePathFromPklProject + explicitlyConfiguredPath).map(::normalizeArchivePath),
+        dependencies,
+      )
+    } ?: emptyList()
   }
 
   private fun normalizeArchivePath(path: Path): Path {
@@ -65,27 +76,39 @@ class ModulepathResolver(project: Project) : Component(project) {
     }
   }
 
-  private fun resolve(path: String, modulepath: List<Path>): VirtualFile? =
-    modulepath.map { it.resolve(path).normalize() }.firstOrNull(Files::exists)?.let(::getFile)
-
-  private fun getFile(path: Path): VirtualFile? = project.virtualFileManager.getModulepathFile(path)
-
-  fun resolveAbsolute(path: String, context: PklProject?): VirtualFile? =
-    resolve(path.trimStart('/'), modulepaths(context))
-
-  fun resolveRelative(sourceFile: VirtualFile, path: String, context: PklProject?): VirtualFile? {
-    val paths = modulepaths(context)
-    val root = paths.firstOrNull(sourceFile.path::startsWith) ?: return null
-    val relative =
-      runCatching { root.relativize(sourceFile.path.parent) }.getOrNull() ?: return null
-    return resolve(relative.resolve(path).normalize().toString(), paths)
+  fun resolveAbsolute(path: String, context: PklProject?): VirtualFile? {
+    assert(path.startsWith("/")) { "path is not an absolute path" }
+    val roots = modulepaths(context)
+    return roots.firstNotNullOfOrNull { root ->
+      project.virtualFileManager.get(root.resolve(path.drop(1)))
+    }
   }
+
+  fun resolve(file: VirtualFile, path: String): VirtualFile? {
+    assert(file.isOnModulePath) { "ModulepathResolver.resolve() called by file not on modulepath" }
+    val absolutePath =
+      when {
+        path.startsWith("/") -> path
+        else -> {
+          val roots = modulepaths(file.pklProject)
+          val myRoot = roots.first { file.path.startsWith(it) }
+          val myRelativePath = myRoot.relativize(file.path)
+          "/${myRelativePath.resolve(path)}"
+        }
+      }
+    return resolveAbsolute(absolutePath, file.pklProject)
+  }
+
+  private fun getFile(path: Path): VirtualFile? = project.virtualFileManager.get(path)
 
   fun paths(context: PklProject?): List<VirtualFile> = modulepaths(context).mapNotNull(::getFile)
 
-  fun listChildren(path: Path, context: PklProject?): List<VirtualFile> {
-    val paths = modulepaths(context)
-    println("modulepaths: $paths, startsWith: $path")
+  fun listChildren(file: VirtualFile): List<VirtualFile> {
+    if (!isOnModulePath(file)) {
+      return file.path.listDirectoryEntries().mapNotNull { project.virtualFileManager.get(it) }
+    }
+    val path = file.path
+    val paths = modulepaths(file.pklProject)
     val root = paths.firstOrNull(path::startsWith) ?: return emptyList()
     val relative = runCatching { root.relativize(path) }.getOrNull() ?: return emptyList()
     return paths
@@ -95,6 +118,9 @@ class ModulepathResolver(project: Project) : Component(project) {
       .mapNotNull(::getFile)
   }
 
-  fun isOnModulepath(path: Path, context: PklProject?): Boolean =
-    modulepaths(context).stream().anyMatch(path::startsWith)
+  fun isOnModulePath(file: VirtualFile): Boolean {
+    if (file !is FsFile && file !is JarFile) return false
+    val paths = modulepaths(file.pklProject)
+    return paths.any(file.path::startsWith)
+  }
 }

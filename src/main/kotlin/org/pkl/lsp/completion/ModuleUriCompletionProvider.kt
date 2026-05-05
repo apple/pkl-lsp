@@ -144,6 +144,7 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
           )
         }
       }
+
       targetUri.startsWith(FILE_SCHEME) && !packageUriOnly -> {
         val roots = listOf(project.virtualFileManager.get(Path.of("/"))!!)
         completeHierarchicalUri(
@@ -157,6 +158,7 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
           targetUri = targetUri,
         )
       }
+
       targetUri.startsWith(PACKAGE_SCHEME) -> {
         // if there is no fragment part, offer completions from the cached directory
         when (val packageAssetUri = PackageAssetUri.create(targetUri)) {
@@ -167,6 +169,7 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
               completePackageBaseUris(collector)
             }
           }
+
           else -> {
             val packageService = project.packageManager
             val libraryRoots =
@@ -185,6 +188,7 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
           }
         }
       }
+
       targetUri.startsWith(MODULEPATH_SCHEME) -> {
         val context = sourceModule.virtualFile.pklProject
         val roots = project.modulepathResolver.paths(context)
@@ -199,6 +203,7 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
           targetUri = targetUri,
         )
       }
+
       targetUri.startsWith("@") && !packageUriOnly -> {
         val dependencies = sourceModule.dependencies(null) ?: return
         if (!targetUri.contains('/')) {
@@ -234,6 +239,7 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
             }
         }
       }
+
       !targetUri.contains(':') && packageUriOnly -> {
         collector.add(
           CompletionItem().apply {
@@ -242,6 +248,7 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
           }
         )
       }
+
       !targetUri.contains(':') -> {
         if (!targetUri.contains('/')) {
           collector.addAll(if (isGlobImport) GLOBBABLE_SCHEME_ELEMENTS else SCHEME_ELEMENTS)
@@ -334,7 +341,7 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
           val (targetPathDir, childMatch) =
             if (relativeTargetFilePath.endsWith("/")) relativeTargetFilePath to ""
             else
-              relativeTargetFilePath.substringBeforeLast('/') to
+              relativeTargetFilePath.substringBeforeLast('/', ".") to
                 relativeTargetFilePath.substringAfterLast('/')
           val resolved = sourceDir.resolve(targetPathDir) ?: return
           listOf(resolved) to childMatch
@@ -342,7 +349,7 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
 
       for (dir in dirs) {
         if (!dir.isDirectory) continue
-        dir.children!!.forEach { child ->
+        dir.children?.forEach { child ->
           if (!child.name.lowercase().startsWith(childMatch.lowercase()))
             return@forEach // FIXME: do a fuzzier match
           val isDirectory = child.isDirectory
@@ -433,21 +440,20 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
   ) {
     val sourceFile = sourceModule.virtualFile
     val sourceDir = sourceFile.parent() ?: return
-    val sourceRoot = sourceModule.virtualFile.path.root
+    val sourceRoot = sourceModule.virtualFile.resolve("/") ?: return
     val isAbsoluteTargetFilePath = targetUri.startsWith('/')
     val relativeTargetFilePath = if (isAbsoluteTargetFilePath) targetUri.drop(1) else targetUri
     if (isGlobImport && targetUri.startsWith("...")) {
       return
     }
-    val root = sourceModule.virtualFile.root ?: return
     val relativeSourceDirPath =
       if (isAbsoluteTargetFilePath) {
         "."
       } else {
-        sourceRoot.relativize(sourceDir.path).toString()
+        sourceRoot.path.relativize(sourceDir.path).toString()
       }
     completeHierarchicalUri(
-      listOf(root),
+      listOf(sourceRoot),
       relativeSourceDirPath,
       relativeTargetFilePath,
       collector,
