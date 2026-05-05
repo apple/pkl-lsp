@@ -19,14 +19,17 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonPrimitive
 import java.net.URI
 import java.nio.file.Files
+import java.nio.file.InvalidPathException
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.io.path.isExecutable
 import kotlinx.serialization.Serializable
 import org.eclipse.lsp4j.*
 import org.pkl.formatter.GrammarVersion
 import org.pkl.lsp.*
 import org.pkl.lsp.messages.ActionableNotification
+import org.pkl.lsp.util.ModificationTracker
 
 @Serializable
 data class WorkspaceSettings(
@@ -36,9 +39,10 @@ data class WorkspaceSettings(
   var excludedDirectories: List<String> = emptyList(),
 )
 
-class SettingsManager(project: Project) : Component(project) {
+class SettingsManager(project: Project) : Component(project), ModificationTracker {
   var settings: WorkspaceSettings = WorkspaceSettings()
   private lateinit var initialized: CompletableFuture<*>
+  private val updateCount = AtomicInteger(0)
 
   private val workspaceFolders: MutableSet<Path> = mutableSetOf()
 
@@ -96,9 +100,16 @@ class SettingsManager(project: Project) : Component(project) {
     return value.asJsonArray
       .mapNotNull { decodeString(it, "pkl.modulepath[]") }
       .mapNotNull { path ->
+        val resolvedPath =
+          try {
+            Path.of(path)
+          } catch (e: InvalidPathException) {
+            logger.warn("Configured module path $path is invalid: ${e.reason}")
+            return@mapNotNull null
+          }
         when {
-          path.startsWith("/") -> Path.of(path)
-          else -> workspaceFolders.map { it.resolve(path) }.firstOrNull(Files::exists)
+          resolvedPath.isAbsolute -> resolvedPath
+          else -> workspaceFolders.map { it.resolve(resolvedPath) }.firstOrNull(Files::exists)
         }
       }
   }
@@ -165,7 +176,10 @@ class SettingsManager(project: Project) : Component(project) {
           resolveExcludedDirectories(excludedDirectories as JsonElement)
       }
       .exceptionally { logger.error("Failed to fetch settings: ${it.cause}") }
-      .whenComplete { _, _ -> logger.log("Settings changed to $settings") }
+      .whenComplete { _, _ ->
+        logger.log("Settings changed to $settings")
+        updateCount.incrementAndGet()
+      }
   }
 
   private fun findPklCliOnPath(): Path? {
@@ -219,4 +233,6 @@ class SettingsManager(project: Project) : Component(project) {
     }
     initialized = loadSettings()
   }
+
+  override fun getModificationCount(): Long = updateCount.get().toLong()
 }
