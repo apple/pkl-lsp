@@ -15,8 +15,10 @@
  */
 package org.pkl.lsp
 
+import java.nio.file.Path
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 import org.pkl.lsp.completion.ModuleUriCompletionProvider.Companion.ModuleUriCompletionData
 
 class CompletionFeatureTest : LspTestBase() {
@@ -82,5 +84,26 @@ class CompletionFeatureTest : LspTestBase() {
     createPklFile("import \"modulepath:/dir/<caret>\"")
     val completions = getCompletions()
     assertThat(completions.map { it.label }).isEqualTo(listOf("target.pkl"))
+  }
+
+  @Test
+  fun `complete absolute paths within modulepath`(@TempDir tempDir: Path) {
+    fakeProject.settingsManager.settings.modulepath = listOf(tempDir)
+    createPklFile(tempDir.resolve("bar.pkl").toString(), "bar = 1")
+    createPklFile(tempDir.resolve("foo.pkl").toString(), "import \"/<caret>\"")
+    val completions = getCompletions()
+    assertThat(completions.map { it.label }).isEqualTo(listOf("foo.pkl", "bar.pkl"))
+  }
+
+  @Test
+  fun `complete relative paths within modulepath`(
+    @TempDir tempDir1: Path,
+    @TempDir tempDir2: Path,
+  ) {
+    fakeProject.settingsManager.settings.modulepath = listOf(tempDir1, tempDir2)
+    createPklFile(tempDir1.resolve("bar/baz.pkl").toString(), "bar = 1")
+    createPklFile(tempDir2.resolve("bar/foo.pkl").toString(), "import \"./<caret>\"")
+    val completions = getCompletions()
+    assertThat(completions.map { it.label }).isEqualTo(listOf("baz.pkl", "foo.pkl"))
   }
 }
