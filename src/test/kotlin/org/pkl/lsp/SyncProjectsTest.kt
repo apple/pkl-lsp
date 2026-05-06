@@ -169,7 +169,7 @@ class SyncProjectsTest : LspTestBase() {
   }
 
   @Test
-  fun `project modulepath overrides lsp setting`() {
+  fun `project modulepath is combined with lsp setting`() {
     fakeProject.settingsManager.settings.modulepath = listOf(testProjectDir.resolve("foo"))
     createPklFile("foo/bar.pkl", "")
     createPklFile(
@@ -179,6 +179,9 @@ class SyncProjectsTest : LspTestBase() {
         .trimIndent()
     )
     val resolved = goToDefinition()
-    assertThat(resolved).isEmpty()
+    assertThat(resolved).hasSize(1)
+    assertThat(resolved[0]).isInstanceOf(PklModuleImpl::class.java)
+    val resolvedFile = resolved.first().containingFile
+    assertThat(resolvedFile.uri.schemeSpecificPart).endsWith("/foo/bar.pkl")
   }
 }
