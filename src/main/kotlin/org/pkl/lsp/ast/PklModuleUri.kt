@@ -182,7 +182,7 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
         "file" -> {
           val listChildren = { it: VirtualFile -> it.children ?: emptyList() }
           val targetPath = targetUri.path ?: return null
-          return when {
+          when {
             targetPath.startsWith('/') -> {
               val fileRoot = project.virtualFileManager.getFsFile(Path.of("/")) ?: return null
               GlobResolver.resolveAbsoluteGlob(fileRoot, targetPath, isPartialUri, listChildren)
@@ -208,22 +208,6 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
                 isPartialUri,
                 listChildren,
               )
-          }
-        }
-
-        "modulepath" -> {
-          val listChildren = { it: VirtualFile -> it.children ?: emptyList() }
-          val targetPath = targetUri.path ?: return null
-          when {
-            targetPath.startsWith('/') -> {
-              val root = sourceFile.resolve("/") ?: return null
-              GlobResolver.resolveAbsoluteGlob(root, targetPath, isPartialUri, listChildren)
-            }
-
-            else -> {
-              val parent = sourceFile.parent() ?: return null
-              GlobResolver.resolveRelativeGlob(parent, targetUriString, isPartialUri, listChildren)
-            }
           }
         }
 
