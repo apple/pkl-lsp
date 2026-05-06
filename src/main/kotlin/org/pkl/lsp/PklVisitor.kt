@@ -19,403 +19,403 @@ import org.pkl.lsp.ast.*
 
 open class PklVisitor<R> {
 
-  open fun visitAccessExpr(o: PklAccessExpr): R? {
-    return visitExpr(o)
+  open fun visitAccessExpr(node: PklAccessExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitAdditiveExpr(o: PklAdditiveExpr): R? {
-    return visitExpr(o)
+  open fun visitAdditiveExpr(node: PklAdditiveExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitAmendExpr(o: PklAmendExpr): R? {
-    return visitExpr(o)
+  open fun visitAmendExpr(node: PklAmendExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitAnnotation(o: PklAnnotation): R? {
-    return visitObjectBodyOwner(o)
+  open fun visitAnnotation(node: PklAnnotation): R? {
+    return visitObjectBodyOwner(node)
   }
 
-  open fun visitArgumentList(o: PklArgumentList): R? {
-    return visitElement(o)
+  open fun visitArgumentList(node: PklArgumentList): R? {
+    return visitElement(node)
   }
 
-  open fun visitClass(o: PklClass): R? {
-    return visitModuleMember(o)
+  open fun visitClass(node: PklClass): R? {
+    return visitModuleMember(node)
   }
 
-  open fun visitClassBody(o: PklClassBody): R? {
-    return visitElement(o)
+  open fun visitClassBody(node: PklClassBody): R? {
+    return visitElement(node)
   }
 
-  open fun visitClassMember(o: PklClassMember): R? {
-    return visitModuleMember(o)
+  open fun visitClassMember(node: PklClassMember): R? {
+    return visitModuleMember(node)
   }
 
-  open fun visitClassMethod(o: PklClassMethod): R? {
-    return visitClassMember(o)
+  open fun visitClassMethod(node: PklClassMethod): R? {
+    return visitClassMember(node)
   }
 
-  open fun visitClassProperty(o: PklClassProperty): R? {
-    return visitClassMember(o)
+  open fun visitClassProperty(node: PklClassProperty): R? {
+    return visitClassMember(node)
   }
 
-  open fun visitComparisonExpr(o: PklComparisonExpr): R? {
-    return visitExpr(o)
+  open fun visitComparisonExpr(node: PklComparisonExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitConstrainedType(o: PklConstrainedType): R? {
-    return visitType(o)
+  open fun visitConstrainedType(node: PklConstrainedType): R? {
+    return visitType(node)
   }
 
-  open fun visitDeclaredType(o: PklDeclaredType): R? {
-    return visitType(o)
+  open fun visitDeclaredType(node: PklDeclaredType): R? {
+    return visitType(node)
   }
 
-  open fun visitDefaultUnionType(o: PklDefaultUnionType): R? {
-    return visitType(o)
+  open fun visitDefaultUnionType(node: PklDefaultUnionType): R? {
+    return visitType(node)
   }
 
-  open fun visitElement(o: PklNode): R? {
+  open fun visitElement(node: PklNode): R? {
     return null
   }
 
-  open fun visitEqualityExpr(o: PklEqualityExpr): R? {
-    return visitExpr(o)
+  open fun visitEqualityExpr(node: PklEqualityExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitError(o: PklError): R? {
-    return visitElement(o)
+  open fun visitError(node: PklError): R? {
+    return visitElement(node)
   }
 
-  open fun visitExponentiationExpr(o: PklExponentiationExpr): R? {
-    return visitExpr(o)
+  open fun visitExponentiationExpr(node: PklExponentiationExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitExpr(o: PklExpr): R? {
-    return visitElement(o)
+  open fun visitExpr(node: PklExpr): R? {
+    return visitElement(node)
   }
 
-  open fun visitFalseLiteralExpr(o: PklFalseLiteralExpr): R? {
-    return visitExpr(o)
+  open fun visitFalseLiteralExpr(node: PklFalseLiteralExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitFloatLiteralExpr(o: PklFloatLiteralExpr): R? {
-    return visitExpr(o)
+  open fun visitFloatLiteralExpr(node: PklFloatLiteralExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitForGenerator(o: PklForGenerator): R? {
-    return visitObjectMember(o)
+  open fun visitForGenerator(node: PklForGenerator): R? {
+    return visitObjectMember(node)
   }
 
-  open fun visitFunctionLiteral(o: PklFunctionLiteralExpr): R? {
-    return visitExpr(o)
+  open fun visitFunctionLiteral(node: PklFunctionLiteralExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitFunctionType(o: PklFunctionType): R? {
-    return visitType(o)
+  open fun visitFunctionType(node: PklFunctionType): R? {
+    return visitType(node)
   }
 
-  open fun visitIdentifierOwner(o: IdentifierOwner): R? {
-    return visitElement(o)
+  open fun visitIdentifierOwner(node: IdentifierOwner): R? {
+    return visitElement(node)
   }
 
-  open fun visitIfExpr(o: PklIfExpr): R? {
-    return visitExpr(o)
+  open fun visitIfExpr(node: PklIfExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitImport(o: PklImport): R? {
-    return visitElement(o)
+  open fun visitImport(node: PklImport): R? {
+    return visitElement(node)
   }
 
-  open fun visitImportExpr(o: PklImportExpr): R? {
-    return visitExpr(o)
+  open fun visitImportExpr(node: PklImportExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitIntLiteralExpr(o: PklIntLiteralExpr): R? {
-    return visitExpr(o)
+  open fun visitIntLiteralExpr(node: PklIntLiteralExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitLetExpr(o: PklLetExpr): R? {
-    return visitExpr(o)
+  open fun visitLetExpr(node: PklLetExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitLogicalAndExpr(o: PklLogicalAndExpr): R? {
-    return visitExpr(o)
+  open fun visitLogicalAndExpr(node: PklLogicalAndExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitLogicalNotExpr(o: PklLogicalNotExpr): R? {
-    return visitExpr(o)
+  open fun visitLogicalNotExpr(node: PklLogicalNotExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitLogicalOrExpr(o: PklLogicalOrExpr): R? {
-    return visitExpr(o)
+  open fun visitLogicalOrExpr(node: PklLogicalOrExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitMemberPredicate(o: PklMemberPredicate): R? {
-    return visitObjectMember(o)
+  open fun visitMemberPredicate(node: PklMemberPredicate): R? {
+    return visitObjectMember(node)
   }
 
-  open fun visitMethodHeader(o: PklMethodHeader): R? {
-    return visitModifierListOwner(o)
+  open fun visitMethodHeader(node: PklMethodHeader): R? {
+    return visitModifierListOwner(node)
   }
 
-  open fun visitMlStringLiteral(o: PklMultiLineStringLiteral): R? {
-    return visitExpr(o)
+  open fun visitMlStringLiteral(node: PklMultiLineStringLiteral): R? {
+    return visitExpr(node)
   }
 
-  open fun visitModifierListOwner(o: PklModifierListOwner): R? {
-    return visitElement(o)
+  open fun visitModifierListOwner(node: PklModifierListOwner): R? {
+    return visitElement(node)
   }
 
-  open fun visitModule(o: PklModule): R? {
-    return visitElement(o)
+  open fun visitModule(node: PklModule): R? {
+    return visitElement(node)
   }
 
-  open fun visitModuleHeader(o: PklModuleHeader): R? {
-    return visitDocCommentOwner(o)
+  open fun visitModuleHeader(node: PklModuleHeader): R? {
+    return visitDocCommentOwner(node)
   }
 
-  open fun visitModuleExpr(o: PklModuleExpr): R? {
-    return visitExpr(o)
+  open fun visitModuleExpr(node: PklModuleExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitModuleExtendsAmendsClause(o: PklModuleExtendsAmendsClause): R? {
-    return visitElement(o)
+  open fun visitModuleExtendsAmendsClause(node: PklModuleExtendsAmendsClause): R? {
+    return visitElement(node)
   }
 
-  open fun visitModuleClause(o: PklModuleClause): R? {
-    return visitElement(o)
+  open fun visitModuleClause(node: PklModuleClause): R? {
+    return visitElement(node)
   }
 
-  open fun visitModuleMember(o: PklModuleMember): R? {
-    return visitElement(o)
+  open fun visitModuleMember(node: PklModuleMember): R? {
+    return visitElement(node)
   }
 
-  open fun visitModuleType(o: PklModuleType): R? {
-    return visitType(o)
+  open fun visitModuleType(node: PklModuleType): R? {
+    return visitType(node)
   }
 
-  open fun visitModuleUri(o: PklModuleUri): R? {
-    return visitElement(o)
+  open fun visitModuleUri(node: PklModuleUri): R? {
+    return visitElement(node)
   }
 
-  open fun visitMultiplicativeExpr(o: PklMultiplicativeExpr): R? {
-    return visitExpr(o)
+  open fun visitMultiplicativeExpr(node: PklMultiplicativeExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitNewExpr(o: PklNewExpr): R? {
-    return visitExpr(o)
+  open fun visitNewExpr(node: PklNewExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitNonNullExpr(o: PklNonNullExpr): R? {
-    return visitExpr(o)
+  open fun visitNonNullExpr(node: PklNonNullExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitNothingType(o: PklNothingType): R? {
-    return visitType(o)
+  open fun visitNothingType(node: PklNothingType): R? {
+    return visitType(node)
   }
 
-  open fun visitNullCoalesceExpr(o: PklNullCoalesceExpr): R? {
-    return visitExpr(o)
+  open fun visitNullCoalesceExpr(node: PklNullCoalesceExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitNullLiteralExpr(o: PklNullLiteralExpr): R? {
-    return visitExpr(o)
+  open fun visitNullLiteralExpr(node: PklNullLiteralExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitNullableType(o: PklNullableType): R? {
-    return visitType(o)
+  open fun visitNullableType(node: PklNullableType): R? {
+    return visitType(node)
   }
 
-  open fun visitObjectBody(o: PklObjectBody): R? {
-    return visitElement(o)
+  open fun visitObjectBody(node: PklObjectBody): R? {
+    return visitElement(node)
   }
 
-  open fun visitObjectBodyOwner(o: PklObjectBodyOwner): R? {
-    return visitElement(o)
+  open fun visitObjectBodyOwner(node: PklObjectBodyOwner): R? {
+    return visitElement(node)
   }
 
-  open fun visitObjectElement(o: PklObjectElement): R? {
-    return visitObjectMember(o)
+  open fun visitObjectElement(node: PklObjectElement): R? {
+    return visitObjectMember(node)
   }
 
-  open fun visitObjectEntry(o: PklObjectEntry): R? {
-    return visitObjectMember(o)
+  open fun visitObjectEntry(node: PklObjectEntry): R? {
+    return visitObjectMember(node)
   }
 
-  open fun visitObjectMember(o: PklObjectMember): R? {
-    return visitElement(o)
+  open fun visitObjectMember(node: PklObjectMember): R? {
+    return visitElement(node)
   }
 
-  open fun visitObjectMethod(o: PklObjectMethod): R? {
-    return visitObjectMember(o)
+  open fun visitObjectMethod(node: PklObjectMethod): R? {
+    return visitObjectMember(node)
   }
 
-  open fun visitObjectProperty(o: PklObjectProperty): R? {
-    return visitObjectMember(o)
+  open fun visitObjectProperty(node: PklObjectProperty): R? {
+    return visitObjectMember(node)
   }
 
-  open fun visitObjectSpread(o: PklObjectSpread): R? {
-    return visitObjectMember(o)
+  open fun visitObjectSpread(node: PklObjectSpread): R? {
+    return visitObjectMember(node)
   }
 
-  open fun visitOuterExpr(o: PklOuterExpr): R? {
-    return visitExpr(o)
+  open fun visitOuterExpr(node: PklOuterExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitParenthesizedExpr(o: PklParenthesizedExpr): R? {
-    return visitExpr(o)
+  open fun visitParenthesizedExpr(node: PklParenthesizedExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitParenthesizedType(o: PklParenthesizedType): R? {
-    return visitType(o)
+  open fun visitParenthesizedType(node: PklParenthesizedType): R? {
+    return visitType(node)
   }
 
-  open fun visitParameterList(o: PklParameterList): R? {
-    return visitElement(o)
+  open fun visitParameterList(node: PklParameterList): R? {
+    return visitElement(node)
   }
 
-  open fun visitPipeExpr(o: PklPipeExpr): R? {
-    return visitExpr(o)
+  open fun visitPipeExpr(node: PklPipeExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitQualifiedAccessExpr(o: PklQualifiedAccessExpr): R? {
-    return visitAccessExpr(o)
+  open fun visitQualifiedAccessExpr(node: PklQualifiedAccessExpr): R? {
+    return visitAccessExpr(node)
   }
 
-  open fun visitQualifiedIdentifier(o: PklQualifiedIdentifier): R? {
-    return visitElement(o)
+  open fun visitQualifiedIdentifier(node: PklQualifiedIdentifier): R? {
+    return visitElement(node)
   }
 
-  open fun visitReadExpr(o: PklReadExpr): R? {
-    return visitExpr(o)
+  open fun visitReadExpr(node: PklReadExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitSimpleTypeName(o: PklSimpleTypeName): R? {
-    return visitIdentifierOwner(o)
+  open fun visitSimpleTypeName(node: PklSimpleTypeName): R? {
+    return visitIdentifierOwner(node)
   }
 
-  open fun visitModuleName(o: PklModuleName): R? {
-    return visitIdentifierOwner(o)
+  open fun visitModuleName(node: PklModuleName): R? {
+    return visitIdentifierOwner(node)
   }
 
-  open fun visitStringConstant(o: PklStringConstant): R? {
-    return visitElement(o)
+  open fun visitStringConstant(node: PklStringConstant): R? {
+    return visitElement(node)
   }
 
-  open fun visitStringLiteral(o: PklSingleLineStringLiteral): R? {
-    return visitExpr(o)
+  open fun visitStringLiteral(node: PklSingleLineStringLiteral): R? {
+    return visitExpr(node)
   }
 
-  open fun visitStringLiteralType(o: PklStringLiteralType): R? {
-    return visitType(o)
+  open fun visitStringLiteralType(node: PklStringLiteralType): R? {
+    return visitType(node)
   }
 
-  open fun visitSubscriptExpr(o: PklSubscriptExpr): R? {
-    return visitExpr(o)
+  open fun visitSubscriptExpr(node: PklSubscriptExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitSuperAccessExpr(o: PklSuperAccessExpr): R? {
-    return visitAccessExpr(o)
+  open fun visitSuperAccessExpr(node: PklSuperAccessExpr): R? {
+    return visitAccessExpr(node)
   }
 
-  open fun visitSuperSubscriptExpr(o: PklSuperSubscriptExpr): R? {
-    return visitExpr(o)
+  open fun visitSuperSubscriptExpr(node: PklSuperSubscriptExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitTerminal(o: Terminal): R? {
-    return visitElement(o)
+  open fun visitTerminal(node: Terminal): R? {
+    return visitElement(node)
   }
 
-  open fun visitThisExpr(o: PklThisExpr): R? {
-    return visitExpr(o)
+  open fun visitThisExpr(node: PklThisExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitThrowExpr(o: PklThrowExpr): R? {
-    return visitExpr(o)
+  open fun visitThrowExpr(node: PklThrowExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitTraceExpr(o: PklTraceExpr): R? {
-    return visitExpr(o)
+  open fun visitTraceExpr(node: PklTraceExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitTrueLiteralExpr(o: PklTrueLiteralExpr): R? {
-    return visitExpr(o)
+  open fun visitTrueLiteralExpr(node: PklTrueLiteralExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitType(o: PklType): R? {
-    return visitElement(o)
+  open fun visitType(node: PklType): R? {
+    return visitElement(node)
   }
 
-  open fun visitTypeAlias(o: PklTypeAlias): R? {
-    return visitModuleMember(o)
+  open fun visitTypeAlias(node: PklTypeAlias): R? {
+    return visitModuleMember(node)
   }
 
-  open fun visitTypeAnnotation(o: PklTypeAnnotation): R? {
-    return visitElement(o)
+  open fun visitTypeAnnotation(node: PklTypeAnnotation): R? {
+    return visitElement(node)
   }
 
-  open fun visitTypeArgumentList(o: PklTypeArgumentList): R? {
-    return visitElement(o)
+  open fun visitTypeArgumentList(node: PklTypeArgumentList): R? {
+    return visitElement(node)
   }
 
-  open fun visitTypeName(o: PklTypeName): R? {
-    return visitElement(o)
+  open fun visitTypeName(node: PklTypeName): R? {
+    return visitElement(node)
   }
 
-  open fun visitTypeParameter(o: PklTypeParameter): R? {
-    return visitElement(o)
+  open fun visitTypeParameter(node: PklTypeParameter): R? {
+    return visitElement(node)
   }
 
-  open fun visitTypeParameterList(o: PklTypeParameterList): R? {
-    return visitElement(o)
+  open fun visitTypeParameterList(node: PklTypeParameterList): R? {
+    return visitElement(node)
   }
 
-  open fun visitTypeTestExpr(o: PklTypeTestExpr): R? {
-    return visitExpr(o)
+  open fun visitTypeTestExpr(node: PklTypeTestExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitTypeCastExpr(o: PklTypeCastExpr): R? {
-    return visitExpr(o)
+  open fun visitTypeCastExpr(node: PklTypeCastExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitTypedIdentifier(o: PklTypedIdentifier): R? {
-    return visitIdentifierOwner(o)
+  open fun visitTypedIdentifier(node: PklTypedIdentifier): R? {
+    return visitIdentifierOwner(node)
   }
 
-  open fun visitUnaryMinusExpr(o: PklUnaryMinusExpr): R? {
-    return visitExpr(o)
+  open fun visitUnaryMinusExpr(node: PklUnaryMinusExpr): R? {
+    return visitExpr(node)
   }
 
-  open fun visitUnionType(o: PklUnionType): R? {
-    return visitType(o)
+  open fun visitUnionType(node: PklUnionType): R? {
+    return visitType(node)
   }
 
-  open fun visitUnknownType(o: PklUnknownType): R? {
-    return visitType(o)
+  open fun visitUnknownType(node: PklUnknownType): R? {
+    return visitType(node)
   }
 
-  open fun visitUnqualifiedAccessExpr(o: PklUnqualifiedAccessExpr): R? {
-    return visitAccessExpr(o)
+  open fun visitUnqualifiedAccessExpr(node: PklUnqualifiedAccessExpr): R? {
+    return visitAccessExpr(node)
   }
 
-  open fun visitWhenGenerator(o: PklWhenGenerator): R? {
-    return visitObjectMember(o)
+  open fun visitWhenGenerator(node: PklWhenGenerator): R? {
+    return visitObjectMember(node)
   }
 
-  open fun visitDocCommentOwner(o: PklDocCommentOwner): R? {
-    return visitElement(o)
+  open fun visitDocCommentOwner(node: PklDocCommentOwner): R? {
+    return visitElement(node)
   }
 
-  open fun visitLineComment(o: PklLineComment): R? {
+  open fun visitLineComment(node: PklLineComment): R? {
     return null
   }
 
-  open fun visitBlockComment(o: PklBlockComment): R? {
+  open fun visitBlockComment(node: PklBlockComment): R? {
     return null
   }
 
-  open fun visitShebangComment(o: PklShebangComment): R? {
+  open fun visitShebangComment(node: PklShebangComment): R? {
     return null
   }
 }
