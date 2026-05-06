@@ -80,7 +80,7 @@ class ModulepathResolver(project: Project) : Component(project) {
     assert(path.startsWith("/")) { "path is not an absolute path" }
     val roots = modulepaths(context)
     return roots.firstNotNullOfOrNull { root ->
-      project.virtualFileManager.get(root.resolve(path.drop(1)))
+      project.virtualFileManager.get(root.resolve(path.drop(1)).normalize())
     }
   }
 

@@ -440,7 +440,15 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
   ) {
     val sourceFile = sourceModule.virtualFile
     val sourceDir = sourceFile.parent() ?: return
-    val sourceRoot = sourceModule.virtualFile.resolve("/") ?: return
+    val sourceRoot =
+      if (sourceFile.isOnModulePath) {
+        val context = sourceFile.pklProject
+        project.modulepathResolver.paths(context).firstOrNull { root ->
+          sourceFile.path.startsWith(root.path)
+        } ?: return
+      } else {
+        sourceModule.virtualFile.resolve("/") ?: return
+      }
     val isAbsoluteTargetFilePath = targetUri.startsWith('/')
     val relativeTargetFilePath = if (isAbsoluteTargetFilePath) targetUri.drop(1) else targetUri
     if (isGlobImport && targetUri.startsWith("...")) {
