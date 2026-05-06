@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import kotlin.io.path.exists
 
 plugins { id("de.undercouch.download") }
 
+val mirror = "https://zigmirror.com" // from https://ziglang.org/download/community-mirrors.txt
+
 val buildInfo = extensions.create<BuildInfo>("buildInfo", project)
 
 private val downloadFile
@@ -34,7 +36,7 @@ val downloadZig by
     doLast { println("Downloaded Zig to $downloadFile") }
 
     src(
-      "https://ziglang.org/download/${buildInfo.zig.version}/zig-${buildInfo.os.canonicalName}-${buildInfo.arch.cName}-${buildInfo.zig.version}.$extension"
+      "$mirror/zig-${buildInfo.arch.cName}-${buildInfo.os.canonicalName}-${buildInfo.zig.version}.$extension"
     )
     dest(downloadFile)
     overwrite(true)

@@ -17,15 +17,14 @@ spotless = "6.25.0"
 treeSitterRepo = "v0.25.3" # git tag name
 treeSitterPklRepo = "f9405e40597d7dac637a6b49e7d26c4515cb2a34" # TODO: switch to tag once released
 #treeSitterPklRepo = "v0.21.0" # git tag name
-zig = "0.13.0" # used for cross-compiling tree-sitter libs
 
 # Only need checksums for distributions that we might run builds on.
-# Computed with `curl -s <DOWNLOAD_URL> | shasum -a 256`.
-# Download links found here: https://ziglang.org/download/
-zigSha256-macos-aarch64 = "46fae219656545dfaf4dce12fb4e8685cec5b51d721beee9389ab4194d43394c"
-zigSha256-linux-amd64 = "d45312e61ebcc48032b77bc4cf7fd6915c11fa16e4aad116b66c9468211230ea"
-zigSha256-windows-amd64 = "d859994725ef9402381e557c60bb57497215682e355204d754ee3df75ee3c158"
-zigSha256-linux-aarch64 = "041ac42323837eb5624068acd8b00cd5777dac4cf91179e8dad7a7e90dd0c556"
+# Use `../scripts/update_zig.sh <version>` to update these
+zig = "0.16.0" # used for cross-compiling tree-sitter libs
+zigSha256-macos-aarch64 = "b23d70deaa879b5c2d486ed3316f7eaa53e84acf6fc9cc747de152450d401489"
+zigSha256-linux-amd64 = "70e49664a74374b48b51e6f3fdfbf437f6395d42509050588bd49abe52ba3d00"
+zigSha256-windows-amd64 = "68659eb5f1e4eb1437a722f1dd889c5a322c9954607f5edcf337bc3684a75a7e"
+zigSha256-linux-aarch64 = "ea4b09bfb22ec6f6c6ceac57ab63efb6b46e17ab08d21f69f3a48b38e1534f17"
 
 [libraries]
 assertJ = { group = "org.assertj", name = "assertj-core", version.ref = "assertj" }
