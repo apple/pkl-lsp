@@ -1,7 +1,7 @@
 [versions]
 assertj = "3.26.3"
 clikt = "5.1.0"
-downloadTaskPlugin = "5.6.0"
+downloadTaskPlugin = "5.7.0"
 gson = "2.14.0"
 jspecify = "1.0.0"
 jtreesitter = "0.26.0"
