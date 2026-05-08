@@ -91,8 +91,14 @@ class ModulepathResolver(project: Project) : Component(project) {
         path.startsWith("/") -> path
         else -> {
           val roots = modulepaths(file.pklProject)
-          val myRoot = roots.first { file.path.startsWith(it) }
-          val myRelativePath = myRoot.relativize(file.path)
+          val myRelativePath = roots.firstNotNullOf { root ->
+            try {
+              val relativized = root.relativize(file.path)
+              if (relativized.startsWith("..")) null else relativized
+            } catch (_: IllegalArgumentException) {
+              null
+            }
+          }
           "/${myRelativePath.resolve(path)}"
         }
       }
