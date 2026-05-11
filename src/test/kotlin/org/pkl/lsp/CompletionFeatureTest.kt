@@ -92,7 +92,7 @@ class CompletionFeatureTest : LspTestBase() {
     createPklFile(tempDir.resolve("bar.pkl").toString(), "bar = 1")
     createPklFile(tempDir.resolve("foo.pkl").toString(), "import \"/<caret>\"")
     val completions = getCompletions()
-    assertThat(completions.map { it.label }).isEqualTo(listOf("foo.pkl", "bar.pkl"))
+    assertThat(completions.map { it.label }).isEqualTo(listOf("bar.pkl", "foo.pkl"))
   }
 
   @Test

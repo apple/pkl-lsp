@@ -403,7 +403,7 @@ class GoToDefinitionTest : LspTestBase() {
     createPklFile(
       "x/y/Foo.pkl",
       """
-      import "./Bar.pkl"
+      import "Bar.pkl"
 
       bar: Bar
     """
@@ -412,7 +412,7 @@ class GoToDefinitionTest : LspTestBase() {
     createPklFile(
       "x/test.pkl",
       """
-      import("modulepath:/Foo.pkl")
+      import "modulepath:/Foo.pkl"
 
       foo = new Foo {
         bar {
@@ -425,7 +425,7 @@ class GoToDefinitionTest : LspTestBase() {
     val resolved = goToDefinition().single()
     assertThat(resolved).isInstanceOf(PklClassProperty::class.java)
     val uri = resolved.enclosingModule!!.uri
-    val path = Paths.get(uri.path).normalize().toString()
+    val path = Paths.get(uri).normalize().toString()
     assertThat(path).endsWith("/x/z/Bar.pkl")
   }
 

@@ -119,10 +119,13 @@ class ModulepathResolver(project: Project) : Component(project) {
     val root = paths.firstOrNull(path::startsWith) ?: return emptyList()
     val relative = runCatching { root.relativize(path) }.getOrNull() ?: return emptyList()
     return paths
+      .asSequence()
       .flatMap { it.resolve(relative).normalize().listDirectoryEntries() }
       .map { it.toAbsolutePath().normalize() }
       .distinct()
+      .sorted()
       .mapNotNull(::getFile)
+      .toList()
   }
 
   fun isOnModulePath(file: VirtualFile): Boolean {
