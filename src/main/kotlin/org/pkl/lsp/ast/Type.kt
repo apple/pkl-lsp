@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -181,7 +181,7 @@ class PklTypeAliasImpl(project: Project, override val parent: PklNode?, ctx: Nod
   AbstractPklNode(project, parent, ctx), PklTypeAlias {
   override val modifiers: List<Terminal>? by lazy { terminals.filter { it.isModifier } }
   override val identifier: Terminal? by lazy { terminals.find { it.type == TokenType.Identifier } }
-  override val name: String by lazy { identifier!!.text }
+  override val name: String by lazy { identifierName!! }
   override val type: PklType by lazy { children.firstInstanceOf<PklType>()!! }
 
   override fun isRecursive(context: PklProject?): Boolean = isRecursive(mutableSetOf(), context)

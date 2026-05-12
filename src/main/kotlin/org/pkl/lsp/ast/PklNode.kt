@@ -118,6 +118,13 @@ interface PklStringConstant : PklNode {
 interface IdentifierOwner : PklNode {
   val identifier: Terminal?
 
+  val identifierName: String?
+    get() =
+      identifier?.let { node ->
+        val text = node.text
+        if (text.startsWith("`")) text.substring(1, text.length - 1) else text
+      }
+
   fun matches(line: Int, col: Int): Boolean = identifier?.span?.matches(line, col) == true
 }
 

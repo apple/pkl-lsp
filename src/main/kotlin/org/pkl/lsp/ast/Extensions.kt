@@ -95,7 +95,7 @@ fun PklSimpleTypeName.resolve(context: PklProject?): PklNode? {
 
 fun PklModuleName.resolve(context: PklProject?): PklModule? {
   val module = enclosingModule ?: return null
-  val moduleNameText = identifier!!.text
+  val moduleNameText = identifierName!!
   for (import in module.imports) {
     if (import.memberName == moduleNameText) {
       val resolved = import.resolve(context) as? SimpleModuleResolutionResult ?: return null
@@ -174,8 +174,7 @@ fun PklClass.hasCommonSubclassWith(other: PklClass, context: PklProject?): Boole
 
 val PklImport.memberName: String?
   get() =
-    identifier?.text
-      ?: moduleUri?.stringConstant?.escapedText()?.let { inferImportPropertyName(it) }
+    identifierName ?: moduleUri?.stringConstant?.escapedText()?.let { inferImportPropertyName(it) }
 
 fun PklStringConstant.escapedText(): String? = getEscapedTextSl()
 
