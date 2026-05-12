@@ -33,10 +33,10 @@ import org.pkl.lsp.util.ModificationTracker
 
 @Serializable
 data class WorkspaceSettings(
-  var pklCliPath: Path? = null,
-  var grammarVersion: GrammarVersion? = null,
-  var modulepath: List<Path> = emptyList(),
-  var excludedDirectories: List<String> = emptyList(),
+  val pklCliPath: Path? = null,
+  val grammarVersion: GrammarVersion? = null,
+  val modulepath: List<Path> = emptyList(),
+  val excludedDirectories: List<String> = emptyList(),
 )
 
 class SettingsManager(project: Project) : Component(project), ModificationTracker {
@@ -53,6 +53,11 @@ class SettingsManager(project: Project) : Component(project), ModificationTracke
     if (folders != null) {
       workspaceFolders.addAll(folders)
     }
+  }
+
+  fun update(updater: (WorkspaceSettings) -> WorkspaceSettings) {
+    settings = updater(settings)
+    updateCount.incrementAndGet()
   }
 
   override fun initialize(): CompletableFuture<*> = loadSettings().also { initialized = it }
@@ -169,17 +174,17 @@ class SettingsManager(project: Project) : Component(project), ModificationTracke
             append("excludedDirectories = $excludedDirectories")
           }
         )
-        settings.pklCliPath = resolvePklCliPath(cliPath as JsonElement)
-        settings.grammarVersion = resolveGrammarVersion(grammarVersion as JsonElement)
-        settings.modulepath = resolveModulepath(modulepath as JsonElement)
-        settings.excludedDirectories =
-          resolveExcludedDirectories(excludedDirectories as JsonElement)
+        update { settings ->
+          settings.copy(
+            pklCliPath = resolvePklCliPath(cliPath as JsonElement),
+            grammarVersion = resolveGrammarVersion(grammarVersion as JsonElement),
+            modulepath = resolveModulepath(modulepath as JsonElement),
+            excludedDirectories = resolveExcludedDirectories(excludedDirectories as JsonElement),
+          )
+        }
       }
       .exceptionally { logger.error("Failed to fetch settings: ${it.cause}") }
-      .whenComplete { _, _ ->
-        logger.log("Settings changed to $settings")
-        updateCount.incrementAndGet()
-      }
+      .whenComplete { _, _ -> logger.log("Settings changed to $settings") }
   }
 
   private fun findPklCliOnPath(): Path? {

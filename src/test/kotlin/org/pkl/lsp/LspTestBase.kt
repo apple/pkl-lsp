@@ -20,6 +20,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlin.io.path.absolutePathString
 import kotlin.io.path.createParentDirectories
 import kotlin.io.path.name
 import kotlin.io.path.outputStream
@@ -51,7 +52,7 @@ abstract class LspTestBase {
       System.getProperty("pklExecutable")?.let { executablePath ->
         TestLanguageClient.settings["Pkl" to "pkl.cli.path"] = executablePath
         println("pkl is: $executablePath")
-        fakeProject.settingsManager.settings.pklCliPath = Path.of(executablePath)
+        fakeProject.settingsManager.update { it.copy(pklCliPath = Path.of(executablePath)) }
       }
     }
   }
@@ -112,6 +113,9 @@ abstract class LspTestBase {
 
   protected fun createPklFile(contents: String): Path = createPklFile("main.pkl", contents)
 
+  protected fun createPklFile(path: Path, contents: String): Path =
+    createPklFile(path.absolutePathString(), contents)
+
   /**
    * Creates a Pkl file with [contents] in the test project, and also sets the currently active
    * editor to this file's contents.
@@ -142,8 +146,8 @@ abstract class LspTestBase {
   }
 
   /** Creates an archive of Pkl files with contents in the test project. */
-  protected fun createArchive(name: String, entries: Map<String, String>): Path {
-    val file = testProjectDir.resolve(name).also { it.createParentDirectories() }
+  protected fun createArchive(path: Path, entries: Map<String, String>): Path {
+    val file = path.also { it.createParentDirectories() }
     ZipOutputStream(file.outputStream()).use { zip ->
       entries.forEach { (entryName, content) ->
         val zipEntry = ZipEntry(entryName)

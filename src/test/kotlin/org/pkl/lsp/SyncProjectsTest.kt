@@ -20,6 +20,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 import org.pkl.lsp.ast.PklModuleImpl
 import org.pkl.lsp.services.PklWorkspaceState
 
@@ -153,8 +154,10 @@ class SyncProjectsTest : LspTestBase() {
   }
 
   @Test
-  fun `resolve modulepath archive import`() {
-    createArchive("archive.jar", mapOf("dir/target.pkl" to ""))
+  fun `resolve modulepath archive import`(@TempDir tempDir: Path) {
+    val archive = tempDir.resolve("archive.jar")
+    createArchive(archive, mapOf("dir/target.pkl" to ""))
+    fakeProject.settingsManager.update { it.copy(modulepath = listOf(archive)) }
     createPklFile(
       """
       import "modulepath:/dir/target<caret>.pkl"
@@ -170,7 +173,9 @@ class SyncProjectsTest : LspTestBase() {
 
   @Test
   fun `project modulepath is combined with lsp setting`() {
-    fakeProject.settingsManager.settings.modulepath = listOf(testProjectDir.resolve("foo"))
+    fakeProject.settingsManager.update {
+      it.copy(modulepath = listOf(testProjectDir.resolve("foo")))
+    }
     createPklFile("foo/bar.pkl", "")
     createPklFile(
       """
