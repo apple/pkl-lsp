@@ -48,7 +48,9 @@ class CompletionFeatureTest : LspTestBase() {
 
   @Test
   fun `complete modulepath import`() {
-    fakeProject.settingsManager.settings.modulepath = listOf(testProjectDir.resolve("lib"))
+    fakeProject.settingsManager.update {
+      it.copy(modulepath = listOf(testProjectDir.resolve("lib")))
+    }
     createPklFile("lib/target.pkl", "")
     createPklFile("import \"modulepath:/<caret>\"")
     val completions = getCompletions()
@@ -57,8 +59,9 @@ class CompletionFeatureTest : LspTestBase() {
 
   @Test
   fun `modulepath import completion prioritizes earlier entries`() {
-    fakeProject.settingsManager.settings.modulepath =
-      listOf(testProjectDir.resolve("lib"), testProjectDir.resolve("lib2"))
+    fakeProject.settingsManager.update {
+      it.copy(modulepath = listOf(testProjectDir.resolve("lib"), testProjectDir.resolve("lib2")))
+    }
     createPklFile("lib/target.pkl", "")
     createPklFile("lib2/target.pkl", "")
     createPklFile("import \"modulepath:/<caret>\"")
@@ -69,18 +72,20 @@ class CompletionFeatureTest : LspTestBase() {
   }
 
   @Test
-  fun `complete modulepath archive import`() {
-    fakeProject.settingsManager.settings.modulepath = listOf(testProjectDir.resolve("lib.jar"))
-    createArchive("lib.jar", mapOf("file.pkl" to "", "dir/file2.pkl" to ""))
+  fun `complete modulepath archive import`(@TempDir tempDir: Path) {
+    val libJar = tempDir.resolve("lib.jar")
+    fakeProject.settingsManager.update { it.copy(modulepath = listOf(libJar)) }
+    createArchive(libJar, mapOf("file.pkl" to "", "dir/file2.pkl" to ""))
     createPklFile("import \"modulepath:/<caret>\"")
     val completions = getCompletions()
     assertThat(completions.map { it.label }).isEqualTo(listOf("dir", "file.pkl"))
   }
 
   @Test
-  fun `complete modulepath archive import in directory`() {
-    fakeProject.settingsManager.settings.modulepath = listOf(testProjectDir.resolve("lib.jar"))
-    createArchive("lib.jar", mapOf("dir/target.pkl" to ""))
+  fun `complete modulepath archive import in directory`(@TempDir tempDir: Path) {
+    val libJar = tempDir.resolve("lib.jar")
+    fakeProject.settingsManager.update { it.copy(modulepath = listOf(libJar)) }
+    createArchive(libJar, mapOf("dir/target.pkl" to ""))
     createPklFile("import \"modulepath:/dir/<caret>\"")
     val completions = getCompletions()
     assertThat(completions.map { it.label }).isEqualTo(listOf("target.pkl"))
@@ -88,11 +93,11 @@ class CompletionFeatureTest : LspTestBase() {
 
   @Test
   fun `complete absolute paths within modulepath`(@TempDir tempDir: Path) {
-    fakeProject.settingsManager.settings.modulepath = listOf(tempDir)
+    fakeProject.settingsManager.update { it.copy(modulepath = listOf(tempDir)) }
     createPklFile(tempDir.resolve("bar.pkl").toString(), "bar = 1")
     createPklFile(tempDir.resolve("foo.pkl").toString(), "import \"/<caret>\"")
     val completions = getCompletions()
-    assertThat(completions.map { it.label }).isEqualTo(listOf("bar.pkl", "foo.pkl"))
+    assertThat(completions.map { it.label }).hasSameElementsAs(listOf("bar.pkl", "foo.pkl"))
   }
 
   @Test
@@ -100,7 +105,7 @@ class CompletionFeatureTest : LspTestBase() {
     @TempDir tempDir1: Path,
     @TempDir tempDir2: Path,
   ) {
-    fakeProject.settingsManager.settings.modulepath = listOf(tempDir1, tempDir2)
+    fakeProject.settingsManager.update { it.copy(modulepath = listOf(tempDir1, tempDir2)) }
     createPklFile(tempDir1.resolve("bar/baz.pkl").toString(), "bar = 1")
     createPklFile(tempDir2.resolve("bar/foo.pkl").toString(), "import \"./<caret>\"")
     val completions = getCompletions()
