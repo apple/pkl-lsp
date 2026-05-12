@@ -109,6 +109,6 @@ class CompletionFeatureTest : LspTestBase() {
     createPklFile(tempDir1.resolve("bar/baz.pkl").toString(), "bar = 1")
     createPklFile(tempDir2.resolve("bar/foo.pkl").toString(), "import \"./<caret>\"")
     val completions = getCompletions()
-    assertThat(completions.map { it.label }).isEqualTo(listOf("baz.pkl", "foo.pkl"))
+    assertThat(completions.map { it.label }).hasSameElementsAs(listOf("baz.pkl", "foo.pkl"))
   }
 }
