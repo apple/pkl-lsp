@@ -1,7 +1,7 @@
 = Changelog
 
 [[release-0.7.0]]
-== 0.7.0 (2026-05-11)
+== 0.7.0 (2026-05-12)
 
 === Changes
 
@@ -10,6 +10,7 @@
 
 === Fixes
 
+* Fix resolution of quoted identifiers (https://github.com/apple/pkl-lsp/pull/156[#156]).
 * Fix calculation of multiline string literal contents (https://github.com/apple/pkl-lsp/pull/158[#158]).
 
 === Contributors ❤️
