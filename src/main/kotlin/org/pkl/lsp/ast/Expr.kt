@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -171,7 +171,7 @@ class PklUnqualifiedAccessExprImpl(
   override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklUnqualifiedAccessExpr {
   override val identifier: Terminal? by lazy { terminals.find { it.type == TokenType.Identifier } }
-  override val memberNameText: String by lazy { identifier!!.text }
+  override val memberNameText: String by lazy { identifierName!! }
   override val argumentList: PklArgumentList? by lazy {
     children.firstInstanceOf<PklArgumentList>()
   }
@@ -282,7 +282,7 @@ class PklSuperAccessExprImpl(
   override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklSuperAccessExpr {
   override val identifier: Terminal? by lazy { terminals.find { it.type == TokenType.Identifier } }
-  override val memberNameText: String by lazy { identifier!!.text }
+  override val memberNameText: String by lazy { identifierName!! }
   override val isNullSafeAccess: Boolean = false
   override val argumentList: PklArgumentList? by lazy {
     children.firstInstanceOf<PklArgumentList>()
@@ -329,7 +329,7 @@ class PklQualifiedAccessExprImpl(
   override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklQualifiedAccessExpr {
   override val identifier: Terminal? by lazy { terminals.find { it.type == TokenType.Identifier } }
-  override val memberNameText: String by lazy { identifier!!.text }
+  override val memberNameText: String by lazy { identifierName!! }
   override val isNullSafeAccess: Boolean by lazy {
     terminals.find { it.type == TokenType.QDOT } != null
   }

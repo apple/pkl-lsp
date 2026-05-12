@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -202,7 +202,7 @@ object Resolvers {
     if (this == null) return true
 
     for (parameter in typeParameters) {
-      val parameterName = parameter.identifier!!.text
+      val parameterName = parameter.identifierName!!
       if (!visitor.visit(parameterName, parameter, bindings, context)) return false
     }
 

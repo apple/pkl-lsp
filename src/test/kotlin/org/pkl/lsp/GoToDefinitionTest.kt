@@ -537,4 +537,52 @@ class GoToDefinitionTest : LspTestBase() {
     val resolved = goToDefinition()
     assertThat(resolved).isEmpty()
   }
+
+  @Test
+  fun `resolve backtick names -- module keyword`() {
+    val modulePklFile = createPklFile("module.pkl", "")
+    createPklFile(
+      """
+      import "module.pkl"
+      
+      res = `module`<caret>
+      """
+        .trimIndent()
+    )
+    val resolved = goToDefinition()
+    assertThat(resolved[0]).isInstanceOf(PklModule::class.java)
+    val resolvedFile = resolved.first().containingFile
+    assertThat(Path.of(resolvedFile.uri).absolutePathString())
+      .isEqualTo(modulePklFile.absolutePathString())
+  }
+
+  @Test
+  fun `resolve backtick names -- quoted identifiers are same as unquoted`() {
+    createPklFile(
+      """
+      foo = 1
+      
+      res = `foo`<caret>
+    """
+        .trimIndent()
+    )
+
+    val resolved = goToDefinition()
+    assertThat(resolved.first()).isInstanceOf(PklClassProperty::class.java)
+  }
+
+  @Test
+  fun `resolve backtick names -- quoted identifiers are same as unquoted 2`() {
+    createPklFile(
+      """
+      `foo` = 1
+      
+      res = foo<caret>
+    """
+        .trimIndent()
+    )
+
+    val resolved = goToDefinition()
+    assertThat(resolved.first()).isInstanceOf(PklClassProperty::class.java)
+  }
 }

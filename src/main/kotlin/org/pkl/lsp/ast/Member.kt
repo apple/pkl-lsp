@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ class PklClassPropertyImpl(
   // TODO: in tree-sitter this has multiple bodies
   override val objectBody: PklObjectBody? by lazy { getChild(PklObjectBodyImpl::class) }
 
-  override val name: String by lazy { identifier!!.text }
+  override val name: String by lazy { identifierName!! }
 
   override val type: PklType? by lazy { typeAnnotation?.type }
 
@@ -127,7 +127,7 @@ class PklClassMethodImpl(
 
   override val methodHeader: PklMethodHeader by lazy { getChild(PklMethodHeaderImpl::class)!! }
 
-  override val name: String by lazy { methodHeader.identifier!!.text }
+  override val name: String by lazy { methodHeader.identifierName!! }
 
   override val modifiers: List<Terminal>? by lazy { methodHeader.modifiers }
 
@@ -247,7 +247,7 @@ class PklObjectPropertyImpl(
 ) : AbstractPklNode(project, parent, ctx), PklObjectProperty {
   override val identifier: Terminal? by lazy { terminals.find { it.type == TokenType.Identifier } }
   override val modifiers: List<Terminal> by lazy { terminals.filter { it.isModifier } }
-  override val name: String by lazy { identifier!!.text }
+  override val name: String by lazy { identifierName!! }
   override val type: PklType? by lazy { typeAnnotation?.type }
   override val expr: PklExpr? by lazy { children.firstInstanceOf<PklExpr>() }
   override val typeAnnotation: PklTypeAnnotation? by lazy {
@@ -283,7 +283,7 @@ class PklObjectMethodImpl(
   override val methodHeader: PklMethodHeader by lazy { getChild(PklMethodHeaderImpl::class)!! }
   override val modifiers: List<Terminal>? by lazy { methodHeader.modifiers }
   override val body: PklExpr? by lazy { children.firstInstanceOf<PklExpr>() }
-  override val name: String by lazy { methodHeader.identifier!!.text }
+  override val name: String by lazy { methodHeader.identifierName!! }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitObjectMethod(this)
