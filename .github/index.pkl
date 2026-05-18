@@ -331,7 +331,6 @@ workflows {
           `fail-fast` = false
           matrix {
             ["include"] {
-              new { runner = "macos-15-intel"; name = "macos-x64"; executable = "pkl-lsp" }
               new { runner = "macos-15"; name = "macos-arm64"; executable = "pkl-lsp" }
               new { runner = "ubuntu-latest"; name = "linux-x64"; executable = "pkl-lsp" }
               new { runner = "ubuntu-24.04-arm"; name = "linux-arm64"; executable = "pkl-lsp" }
@@ -492,7 +491,6 @@ workflows {
               ```toml
               [tools."http:pkl-lsp".platforms]
               macos-arm64 = { url = "https://github.com/${REPOSITORY}/releases/download/${VERSION}/pkl-lsp-${VERSION}-macos-arm64.tar.gz" }
-              macos-x64 = { url = "https://github.com/${REPOSITORY}/releases/download/${VERSION}/pkl-lsp-${VERSION}-macos-x64.tar.gz" }
               linux-x64 = { url = "https://github.com/${REPOSITORY}/releases/download/${VERSION}/pkl-lsp-${VERSION}-linux-x64.tar.gz" }
               linux-arm64 = { url = "https://github.com/${REPOSITORY}/releases/download/${VERSION}/pkl-lsp-${VERSION}-linux-arm64.tar.gz" }
               windows-x64 = { url = "https://github.com/${REPOSITORY}/releases/download/${VERSION}/pkl-lsp-${VERSION}-windows-x64.tar.gz" }

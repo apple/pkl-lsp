@@ -71,9 +71,6 @@ jobs:
     strategy:
       matrix:
         include:
-        - runner: macos-15-intel
-          name: macos-x64
-          executable: pkl-lsp
         - runner: macos-15
           name: macos-arm64
           executable: pkl-lsp
@@ -214,7 +211,6 @@ jobs:
         ```toml
         [tools."http:pkl-lsp".platforms]
         macos-arm64 = { url = "https://github.com/${REPOSITORY}/releases/download/${VERSION}/pkl-lsp-${VERSION}-macos-arm64.tar.gz" }
-        macos-x64 = { url = "https://github.com/${REPOSITORY}/releases/download/${VERSION}/pkl-lsp-${VERSION}-macos-x64.tar.gz" }
         linux-x64 = { url = "https://github.com/${REPOSITORY}/releases/download/${VERSION}/pkl-lsp-${VERSION}-linux-x64.tar.gz" }
         linux-arm64 = { url = "https://github.com/${REPOSITORY}/releases/download/${VERSION}/pkl-lsp-${VERSION}-linux-arm64.tar.gz" }
         windows-x64 = { url = "https://github.com/${REPOSITORY}/releases/download/${VERSION}/pkl-lsp-${VERSION}-windows-x64.tar.gz" }
