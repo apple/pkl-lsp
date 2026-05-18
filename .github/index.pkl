@@ -240,6 +240,300 @@ release {
   }
 }
 
+workflows {
+  ["workflows/native-release.yml"] {
+    name = "Release Native Binaries"
+    on {
+      push {
+        branches { "main" }
+        `tags-ignore` { "**" }
+        paths {
+          "build.gradle.kts"
+          "buildSrc/**"
+          "gradle/**"
+          "gradle.properties"
+          "settings.gradle.kts"
+          "src/**"
+          ".github/index.pkl"
+        }
+      }
+      workflow_dispatch {}
+    }
+    concurrency {
+      group = "native-release-\(context.github.ref)"
+      `cancel-in-progress` = true
+    }
+    permissions {
+      contents = "read"
+    }
+    jobs {
+      ["generate-version"] {
+        `runs-on` = "ubuntu-latest"
+        outputs {
+          ["version"] = context.steps.outputs("version", "version")
+        }
+        steps {
+          (catalog.`actions/checkout@v6`) {}
+          new {
+            name = "Generate native release version"
+            id = "version"
+            run =
+              """
+              BASE_VERSION="$(grep '^version=' gradle.properties | cut -d= -f2)"
+              DATE="$(date -u +"%Y%m%d")"
+              VERSION="${BASE_VERSION}-native.${DATE}.${GITHUB_RUN_NUMBER}"
+              echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+              echo "Version: ${VERSION}"
+              """
+          }
+        }
+      }
+      ["build-jar"] {
+        needs { "generate-version" }
+        `runs-on` = "ubuntu-latest"
+        steps {
+          (catalog.`actions/checkout@v6`) {
+            with {
+              `fetch-depth` = 0
+            }
+          }
+          (baseSetupJava) {
+            with {
+              cache = "gradle"
+            }
+          }
+          new {
+            name = "Build release jar"
+            env {
+              ["VERSION"] = context.needs.output("generate-version", "version")
+            }
+            run =
+              """
+              ./gradlew --info --stacktrace -DreleaseBuild=true -Pversion="${VERSION}" jar shadowJar verifyShadowJar
+              mkdir -p native-release-input
+              cp "build/libs/pkl-lsp-${VERSION}.jar" native-release-input/
+              """
+          }
+          (catalog.`actions/upload-artifact@v5`) {
+            with {
+              name = "pkl-lsp-release-jar"
+              path = "native-release-input/*.jar"
+              `if-no-files-found` = "error"
+              `retention-days` = 1
+            }
+          }
+        }
+      }
+      ["build-native"] {
+        needs { "generate-version"; "build-jar" }
+        `runs-on` = context.matrix("runner")
+        strategy {
+          `fail-fast` = false
+          matrix {
+            ["include"] {
+              new { runner = "macos-15-intel"; name = "macos-x64"; executable = "pkl-lsp" }
+              new { runner = "macos-15"; name = "macos-arm64"; executable = "pkl-lsp" }
+              new { runner = "ubuntu-latest"; name = "linux-x64"; executable = "pkl-lsp" }
+              new { runner = "ubuntu-24.04-arm"; name = "linux-arm64"; executable = "pkl-lsp" }
+              new { runner = "windows-latest"; name = "windows-x64"; executable = "pkl-lsp.exe" }
+            }
+          }
+        }
+        steps {
+          (catalog.`actions/download-artifact@v6`) {
+            with {
+              name = "pkl-lsp-release-jar"
+              path = "native-release-input"
+            }
+          }
+          new {
+            name = "Set up GraalVM"
+            uses = "graalvm/setup-graalvm@v1"
+            with {
+              ["java-version"] = "25.0.2"
+              ["distribution"] = "graalvm"
+              ["github-token"] = context.github.token
+            }
+          }
+          new {
+            name = "Generate reachability metadata"
+            shell = "bash"
+            env {
+              ["VERSION"] = context.needs.output("generate-version", "version")
+            }
+            run =
+              #"""
+              set -euo pipefail
+              JAR="native-release-input/pkl-lsp-${VERSION}.jar"
+              mkdir -p META-INF/native-image
+              PYTHON_BIN="python3"
+              if ! command -v python3 >/dev/null 2>&1; then
+                PYTHON_BIN="python"
+              fi
+              "${PYTHON_BIN}" - <<'PY' | java -agentlib:native-image-agent=config-output-dir=META-INF/native-image -jar "${JAR}"
+              import json
+              import pathlib
+              import sys
+              import urllib.parse
+
+              root = pathlib.Path.cwd().as_uri()
+              messages = [
+                  {
+                      "jsonrpc": "2.0",
+                      "id": 1,
+                      "method": "initialize",
+                      "params": {
+                          "processId": None,
+                          "rootUri": root,
+                          "workspaceFolders": [{"uri": root, "name": "pkl-lsp"}],
+                          "capabilities": {
+                              "workspace": {
+                                  "workspaceFolders": True,
+                                  "didChangeConfiguration": {"dynamicRegistration": False},
+                              }
+                          },
+                      },
+                  },
+                  {"jsonrpc": "2.0", "method": "initialized", "params": {}},
+                  {"jsonrpc": "2.0", "id": 2, "method": "shutdown", "params": None},
+                  {"jsonrpc": "2.0", "method": "exit", "params": None},
+              ]
+              for message in messages:
+                  body = json.dumps(message, separators=(",", ":"))
+                  sys.stdout.write(f"Content-Length: {len(body)}\r\n\r\n{body}")
+              sys.stdout.flush()
+              PY
+              test -s META-INF/native-image/reachability-metadata.json
+              jar --file "${JAR}" -u META-INF/native-image/reachability-metadata.json
+              """#
+          }
+          new {
+            name = "Build native image"
+            shell = "bash"
+            env {
+              ["VERSION"] = context.needs.output("generate-version", "version")
+              ["TARGET"] = context.matrix("name")
+              ["EXECUTABLE"] = context.matrix("executable")
+            }
+            run =
+              #"""
+              set -euo pipefail
+              JAR="native-release-input/pkl-lsp-${VERSION}.jar"
+              OUT_DIR="dist/pkl-lsp-${TARGET}"
+              mkdir -p "${OUT_DIR}"
+              NATIVE_IMAGE="native-image"
+              if [[ "${RUNNER_OS}" == "Windows" ]]; then
+                NATIVE_IMAGE="native-image.cmd"
+              fi
+              "${NATIVE_IMAGE}" \
+                --no-fallback \
+                -march=compatibility \
+                -H:IncludeResources='.*' \
+                -jar "${JAR}" \
+                -o "${OUT_DIR}/pkl-lsp"
+              if [[ "${RUNNER_OS}" != "Windows" ]]; then
+                chmod +x "${OUT_DIR}/${EXECUTABLE}"
+              fi
+              "${OUT_DIR}/${EXECUTABLE}" --version
+              tar -czf "pkl-lsp-${VERSION}-${TARGET}.tar.gz" -C "${OUT_DIR}" "${EXECUTABLE}"
+              """#
+          }
+          (catalog.`actions/upload-artifact@v5`) {
+            with {
+              name = "pkl-lsp-native-\(context.matrix("name"))"
+              path = "pkl-lsp-*.tar.gz"
+              `if-no-files-found` = "error"
+              `retention-days` = 1
+            }
+          }
+        }
+      }
+      ["publish-release"] {
+        needs { "generate-version"; "build-native" }
+        `runs-on` = "ubuntu-latest"
+        permissions {
+          contents = "write"
+        }
+        steps {
+          (catalog.`actions/download-artifact@v6`) {
+            with {
+              path = "dist"
+              pattern = "pkl-lsp-native-*"
+              `merge-multiple` = true
+            }
+          }
+          new {
+            name = "Generate checksums"
+            run =
+              """
+              cd dist
+              sha256sum pkl-lsp-*.tar.gz > checksums.txt
+              cat checksums.txt
+              """
+          }
+          new {
+            name = "Compose release body"
+            env {
+              ["VERSION"] = context.needs.output("generate-version", "version")
+              ["REPOSITORY"] = context.github.repository
+              ["SHA"] = context.github.sha
+            }
+            run =
+              """
+              cat > dist/release_body.md <<EOF
+              Native pkl-lsp binaries built with GraalVM 25.0.2.
+
+              Built from commit ${SHA}.
+
+              ## Installation with mise
+
+              Add to your `.mise.toml`:
+
+              ```toml
+              [tools."http:pkl-lsp".platforms]
+              macos-arm64 = { url = "https://github.com/${REPOSITORY}/releases/download/${VERSION}/pkl-lsp-${VERSION}-macos-arm64.tar.gz" }
+              macos-x64 = { url = "https://github.com/${REPOSITORY}/releases/download/${VERSION}/pkl-lsp-${VERSION}-macos-x64.tar.gz" }
+              linux-x64 = { url = "https://github.com/${REPOSITORY}/releases/download/${VERSION}/pkl-lsp-${VERSION}-linux-x64.tar.gz" }
+              linux-arm64 = { url = "https://github.com/${REPOSITORY}/releases/download/${VERSION}/pkl-lsp-${VERSION}-linux-arm64.tar.gz" }
+              windows-x64 = { url = "https://github.com/${REPOSITORY}/releases/download/${VERSION}/pkl-lsp-${VERSION}-windows-x64.tar.gz" }
+              ```
+
+              ## Checksums
+
+              ```text
+              EOF
+              cat dist/checksums.txt >> dist/release_body.md
+              echo '```' >> dist/release_body.md
+              """
+          }
+          new {
+            name = "Create GitHub release"
+            env {
+              ["GH_TOKEN"] = context.github.token
+              ["GH_REPO"] = context.github.repository
+              ["VERSION"] = context.needs.output("generate-version", "version")
+              ["SHA"] = context.github.sha
+            }
+            run =
+              #"""
+              if gh release view "${VERSION}" >/dev/null 2>&1; then
+                gh release delete "${VERSION}" --cleanup-tag --yes
+              fi
+              gh release create "${VERSION}" \
+                --target "${SHA}" \
+                --title "Native ${VERSION}" \
+                --notes-file dist/release_body.md \
+                --latest=false \
+                dist/pkl-lsp-*.tar.gz \
+                dist/checksums.txt
+              """#
+          }
+        }
+      }
+    }
+  }
+}
+
 dependabot {
   updates {
     new {
