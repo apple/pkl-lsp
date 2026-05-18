@@ -32,5 +32,7 @@ jobs:
       uses: github/codeql-action/analyze@68bde559dea0fdcac2102bfdf6230c5f70eb485e # v4
     - name: github/codeql-action/init@v4
       uses: github/codeql-action/init@68bde559dea0fdcac2102bfdf6230c5f70eb485e # v4
+    - name: graalvm/setup-graalvm@v1
+      uses: graalvm/setup-graalvm@bef4b0e916c7dd079bf60fb95d49139f67e32c5f # v1
     - name: gradle/actions/dependency-submission@v6
       uses: gradle/actions/dependency-submission@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6
