@@ -206,19 +206,19 @@ jobs:
 
         ## Installation with mise
 
-        Add to your `.mise.toml`:
+        Add to your \`.mise.toml\`:
 
-        ```toml
+        \`\`\`toml
         [tools."http:pkl-lsp".platforms]
         macos-arm64 = { url = "https://github.com/${REPOSITORY}/releases/download/${VERSION}/pkl-lsp-${VERSION}-macos-arm64.tar.gz" }
         linux-x64 = { url = "https://github.com/${REPOSITORY}/releases/download/${VERSION}/pkl-lsp-${VERSION}-linux-x64.tar.gz" }
         linux-arm64 = { url = "https://github.com/${REPOSITORY}/releases/download/${VERSION}/pkl-lsp-${VERSION}-linux-arm64.tar.gz" }
         windows-x64 = { url = "https://github.com/${REPOSITORY}/releases/download/${VERSION}/pkl-lsp-${VERSION}-windows-x64.tar.gz" }
-        ```
+        \`\`\`
 
         ## Checksums
 
-        ```text
+        \`\`\`text
         EOF
         cat dist/checksums.txt >> dist/release_body.md
         echo '```' >> dist/release_body.md
