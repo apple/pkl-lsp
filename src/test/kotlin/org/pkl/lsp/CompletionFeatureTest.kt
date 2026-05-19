@@ -58,17 +58,17 @@ class CompletionFeatureTest : LspTestBase() {
   }
 
   @Test
-  fun `modulepath import completion prioritizes earlier entries`() {
-    fakeProject.settingsManager.update {
-      it.copy(modulepath = listOf(testProjectDir.resolve("lib"), testProjectDir.resolve("lib2")))
-    }
-    createPklFile("lib/target.pkl", "")
-    createPklFile("lib2/target.pkl", "")
+  fun `modulepath import completion prioritizes earlier entries`(
+    @TempDir modulepath1: Path,
+    @TempDir modulepath2: Path,
+  ) {
+    fakeProject.settingsManager.update { it.copy(modulepath = listOf(modulepath1, modulepath2)) }
+    val targetPath = createPklFile(modulepath1.resolve("target.pkl"), "")
+    createPklFile(modulepath2.resolve("target.pkl"), "")
     createPklFile("import \"modulepath:/<caret>\"")
     val completions = getCompletions().map { (it.data as ModuleUriCompletionData).moduleUri }
-    assertThat(completions).hasSize(2)
-    assertThat(completions[0]).endsWith("/lib/target.pkl")
-    assertThat(completions[1]).endsWith("/lib2/target.pkl")
+    assert(completions.size == 1)
+    assert(completions[0] == targetPath.toUri().toString())
   }
 
   @Test

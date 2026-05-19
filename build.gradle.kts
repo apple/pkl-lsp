@@ -28,6 +28,7 @@ plugins {
   signing
   zig
   alias(libs.plugins.kotlin)
+  alias(libs.plugins.kotlinPowerAsserts)
   alias(libs.plugins.kotlinSerialization)
   alias(libs.plugins.shadow)
   alias(libs.plugins.spotless)

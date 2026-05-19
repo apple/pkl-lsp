@@ -39,6 +39,31 @@ jobs:
         name: test-results-xml-build
         path: build/test-results/**/*.xml
         if-no-files-found: ignore
+  test-windows:
+    needs:
+    - build
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      with:
+        persist-credentials: false
+    - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+      with:
+        java-version: '25'
+        distribution: temurin
+        cache: gradle
+    - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+      with:
+        name: pkl-lsp-build-artifacts
+        path: build/libs/
+    - run: ./gradlew --info --stacktrace verifyDistribution
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-xml-test-windows
+        path: build/test-results/**/*.xml
+        if-no-files-found: ignore
   upload-event-file:
     runs-on: ubuntu-latest
     steps:

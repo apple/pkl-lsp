@@ -141,6 +141,7 @@ local baseMavenDeploy: Workflow.Job = new {
 prb {
   jobs {
     ["build"] = buildJob(false)
+    ["test-windows"] = verifyJobs("build")["test-windows"]
   }
 }
 
