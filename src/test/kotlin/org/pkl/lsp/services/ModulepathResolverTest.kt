@@ -35,8 +35,8 @@ class ModulepathResolverTest : LspTestBase() {
     val children =
       fakeProject.modulepathResolver.listChildren(fakeProject.virtualFileManager.get(modulepath1)!!)
     assert(children.size == 3)
-    assert(children[0].path == foo1)
-    assert(children[1].path == bar1)
+    assert(children[0].path == bar1)
+    assert(children[1].path == foo1)
     assert(children[2].path == qaz)
   }
 }
