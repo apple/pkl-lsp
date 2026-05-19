@@ -121,7 +121,11 @@ class ModulepathResolver(project: Project) : Component(project) {
       val myRoot = modulepaths.firstOrNull(path::startsWith) ?: return@buildList
       val myRelativePath = runCatching { myRoot.relativize(path) }.getOrNull() ?: return@buildList
       for (path in modulepaths(file.pklProject)) {
-        for (elem in path.resolve(myRelativePath).normalize().listDirectoryEntries()) {
+        val elems =
+          path.resolve(myRelativePath).normalize().listDirectoryEntries().sortedBy {
+            it.absolutePathString()
+          }
+        for (elem in elems) {
           val relativePath = path.relativize(elem).toString()
           if (!seenPaths.add(relativePath)) {
             continue
