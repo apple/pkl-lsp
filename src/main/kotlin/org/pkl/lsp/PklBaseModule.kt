@@ -41,9 +41,9 @@ class PklBaseModule(project: Project) : Component(project) {
               val typeParameters =
                 member.typeParameterList?.typeParameters
                   ?: listOf(PklNodeFactory.createTypeParameter(project, "Type"))
-              types[className] = Type.Class(member, listOf(), listOf(), typeParameters)
+              types[className] = Type.Class.create(member, listOf(), listOf(), typeParameters)
             }
-            else -> types[className] = Type.Class(member)
+            else -> types[className] = Type.Class.create(member)
           }
         is PklTypeAlias -> types[member.name] = Type.Alias.unchecked(member, listOf(), listOf())
         is PklClassMethod -> methods[member.name] = member
@@ -158,7 +158,7 @@ class PklBaseModule(project: Project) : Component(project) {
   val additiveOperandType: Type by lazy {
     val types =
       mutableListOf(stringType, numberType, durationType, dataSizeType, collectionType, mapType)
-    if (bytesType != null) types += bytesType
+    bytesType?.let(types::add)
     Type.union(types, this, null)
   }
 
@@ -169,7 +169,8 @@ class PklBaseModule(project: Project) : Component(project) {
   val subscriptableType: Type by lazy {
     val types =
       mutableListOf(stringType, collectionType, mapType, listingType, mappingType, dynamicType)
-    if (bytesType != null) types += bytesType
+    bytesType?.let(types::add)
+    project.pklRefModule.referenceType?.let(types::add)
     Type.union(types, this, null)
   }
 

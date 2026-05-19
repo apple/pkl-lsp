@@ -1,0 +1,10 @@
+hidden a: String
+foo = Reference(a) as Reference<String(true)>
+bar = Reference(a) as Reference<String(true) | Int>
+baz = Reference(a) as Reference<Listing<String(true)>>
+qux = Reference(a) as Reference<Alias1?>
+
+typealias Alias1 = Int | Alias2?
+typealias Alias2 = String(length < 5)
+
+xxx: Reference<String(true)> = Reference(a)

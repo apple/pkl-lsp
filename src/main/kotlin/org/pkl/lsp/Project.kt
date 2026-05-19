@@ -29,6 +29,8 @@ class Project(private val server: PklLspServer) {
 
   val pklBaseModule: PklBaseModule by lazy { PklBaseModule(this) }
 
+  val pklRefModule: PklRefModule by lazy { PklRefModule(this) }
+
   val packageManager: PackageManager by lazy { PackageManager(this) }
 
   val pklProjectManager: PklProjectManager by lazy { PklProjectManager(this) }

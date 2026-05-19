@@ -41,6 +41,9 @@ class Stdlib(project: Project) : Component(project) {
   val base: VirtualFile
     get() = files["base"]!!
 
+  val ref: VirtualFile?
+    get() = files["ref"]
+
   val version: Version
     get() = loadVersion()
 

@@ -88,7 +88,7 @@ class PklModuleImpl(override val ctx: Node, override val virtualFile: VirtualFil
       ?: uri.toString().substringAfterLast('/').replace(".pkl", "")
   }
 
-  override val moduleName: String? by lazy {
+  override val moduleName: String by lazy {
     header?.moduleClause?.moduleName ?: uri.toString().substringAfterLast('/').replace(".pkl", "")
   }
 

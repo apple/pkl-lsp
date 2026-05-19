@@ -227,7 +227,7 @@ interface PklModule : PklTypeDefOrModule {
   fun cache(context: PklProject?): ModuleMemberCache
 
   val shortDisplayName: String
-  val moduleName: String?
+  val moduleName: String
 
   /** The package dependencies of this module. */
   fun dependencies(context: PklProject?): Map<String, Dependency>?
@@ -512,7 +512,9 @@ interface PklAmendExpr : PklExpr, PklObjectBodyOwner {
   override val objectBody: PklObjectBody
 }
 
-interface PklSuperSubscriptExpr : PklExpr
+interface PklSuperSubscriptExpr : PklExpr {
+  val expr: PklExpr
+}
 
 interface PklAccessExpr : PklExpr, PklReference, IdentifierOwner {
   val memberNameText: String
@@ -836,6 +838,19 @@ abstract class AbstractPklNode(
       else -> false
     }
   }
+}
+
+abstract class FakePklNode(override val project: Project, override val parent: PklNode? = null) :
+  PklNode {
+  override val span: Span = Span(0, 0, 0, 0)
+  override val children: List<PklNode> = emptyList()
+  override val containingFile: VirtualFile = EphemeralFile("", project)
+  override val enclosingModule: PklModule? = null
+  override val terminals: List<Terminal> = emptyList()
+  override val text: String = ""
+  override val isMissing: Boolean = false
+  override val source: String = ""
+  override var index: Int = 0
 }
 
 class PklErrorImpl(
