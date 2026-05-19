@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,14 +22,14 @@ import org.pkl.lsp.ast.PklTypeName
 import org.pkl.lsp.ast.resolve
 
 class TypeNameAnalyzer(project: Project) : Analyzer(project) {
-  override fun doAnalyze(node: PklNode, holder: DiagnosticsHolder): Boolean =
+  override fun doAnalyze(node: PklNode, diagnosticsHolder: DiagnosticsHolder): Boolean =
     when {
       node is PklTypeName -> {
         val context = node.containingFile.pklProject
         when {
           node.moduleName != null && node.moduleName!!.resolve(context) == null -> {
             node.moduleName!!.identifier?.let {
-              holder.addError(
+              diagnosticsHolder.addError(
                 node.moduleName!!,
                 ErrorMessages.create("unresolvedReference", it.text),
               )
@@ -38,7 +38,7 @@ class TypeNameAnalyzer(project: Project) : Analyzer(project) {
           }
           node.simpleTypeName.resolve(context) == null -> {
             node.simpleTypeName.identifier?.let {
-              holder.addError(
+              diagnosticsHolder.addError(
                 node.simpleTypeName,
                 ErrorMessages.create("unresolvedReference", it.text),
               )

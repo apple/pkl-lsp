@@ -459,7 +459,7 @@ fun PklNode.locationLink(fromSpan: Span): LocationLink {
 }
 
 fun PklNode.getLocationUri(forDocs: Boolean): URI {
-  val useCommandLink = project.clientOptions.renderOpenFileCommandInDocs ?: false
+  val useCommandLink = project.clientOptions.renderOpenFileCommandInDocs
   val span = beginningSpan()
   return when {
     useCommandLink && forDocs -> {
