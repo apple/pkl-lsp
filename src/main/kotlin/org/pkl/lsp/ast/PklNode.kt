@@ -227,7 +227,7 @@ interface PklModule : PklTypeDefOrModule {
   fun cache(context: PklProject?): ModuleMemberCache
 
   val shortDisplayName: String
-  val moduleName: String?
+  val moduleName: String
 
   /** The package dependencies of this module. */
   fun dependencies(context: PklProject?): Map<String, Dependency>?

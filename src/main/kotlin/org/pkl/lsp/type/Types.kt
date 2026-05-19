@@ -542,7 +542,9 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
     constraints: List<ConstraintExpr> = listOf(),
   ) : Class(ctx, specifiedTypeArguments, constraints) {
 
-    private val referent: Type = typeArguments.single()
+    private val domain: Type = typeArguments[0]
+
+    private val referent: Type = typeArguments[1]
 
     private val referencesUnknown = referent is Unknown
 
@@ -568,7 +570,7 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
       fun visit(name: String, type: PklType): Boolean =
         visitor.visit(
           name,
-          PklReferenceQualifiedAccessProxyImpl(ctx.project, name, type),
+          PklReferenceQualifiedAccessProxyImpl(ctx.project, name, domain, type),
           bindings,
           context,
         )
@@ -661,9 +663,33 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
         return@walkCandidates true
       }
 
-      if (isUnknown) return withTypeArguments(Unknown)
+      if (isUnknown) return withTypeArguments(domain, Unknown)
       if (candidates.isEmpty()) return Nothing
-      return union(candidates.toList(), base, context)
+      return withTypeArguments(domain, union(candidates.toList(), base, context))
+    }
+
+    fun validSubscriptKeyType(base: PklBaseModule, context: PklProject?): Type {
+      if (referencesUnknown) return Unknown
+      var isUnknown = false
+      val keyCandidates = mutableSetOf<Type>()
+      walkCandidates(referent, base, context) { type, _ ->
+        if (type !is Class) return@walkCandidates true
+        when {
+          type.classEquals(base.dynamicType) -> {
+            isUnknown = true
+            return@walkCandidates false
+          }
+          (type.classEquals(base.listingType) || type.classEquals(base.listType)) ->
+            keyCandidates.add(base.intType)
+          (type.classEquals(base.mappingType) || type.classEquals(base.mapType)) ->
+            keyCandidates.add(type.typeArguments.first())
+        }
+        return@walkCandidates true
+      }
+
+      if (isUnknown) return Unknown
+      if (keyCandidates.isEmpty()) return Nothing
+      return union(keyCandidates.toList(), base, context)
     }
 
     companion object {
@@ -710,7 +736,7 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
         // have a type parameter even though they currently don't
         typeParameters: List<PklTypeParameter> = ctx.typeParameterList?.typeParameters ?: listOf(),
       ): Class =
-        if (ctx.name == "Reference" && ctx.isInPklBaseModule)
+        if (ctx.name == "Reference" && ctx.isInPklRefModule)
           Reference(ctx, specifiedTypeArguments, constraints)
         else Class(ctx, specifiedTypeArguments, constraints, typeParameters)
     }
@@ -1009,8 +1035,7 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
       visitor: ResolveVisitor<*>,
       context: PklProject?,
     ): Boolean {
-      return ctx.type
-        .toType(base, bindings, context)
+      return aliasedType(base, context)
         .visitMembers(isProperty, allowClasses, base, visitor, context)
     }
 
@@ -1312,7 +1337,7 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
       }
 
       leftType.render(builder, nameRenderer)
-      builder.append('|')
+      builder.append(" | ")
       rightType.render(builder, nameRenderer)
     }
 
