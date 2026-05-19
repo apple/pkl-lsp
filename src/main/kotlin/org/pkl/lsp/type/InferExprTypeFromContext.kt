@@ -190,6 +190,7 @@ private fun PklExpr?.doInferExprTypeFromContext(
           return when (val unaliasedType = subscriptableType.unaliased(base, context)) {
             base.stringType -> base.intType
             base.dynamicType -> Type.Unknown
+            is Type.Reference -> unaliasedType.validSubscriptKeyType(base, context)
             is Type.Class -> {
               when {
                 unaliasedType.classEquals(base.listType) -> base.intType

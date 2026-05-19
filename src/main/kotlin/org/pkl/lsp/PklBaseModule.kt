@@ -106,8 +106,6 @@ class PklBaseModule(project: Project) : Component(project) {
   // Will be `null` for versions < 0.29
   val bytesType: Type.Class? = classTypeOrNull("Bytes")
   val uint8Type: Type.Alias = aliasType("UInt8")
-  // Will be `null` for versions < 0.32
-  val referenceType: Type.Reference? = classTypeOrNull("Reference") as? Type.Reference
 
   val comparableType: Type = aliasType("Comparable")
 
@@ -161,7 +159,7 @@ class PklBaseModule(project: Project) : Component(project) {
   val additiveOperandType: Type by lazy {
     val types =
       mutableListOf(stringType, numberType, durationType, dataSizeType, collectionType, mapType)
-    if (bytesType != null) types += bytesType
+    bytesType?.let(types::add)
     Type.union(types, this, null)
   }
 
@@ -172,8 +170,8 @@ class PklBaseModule(project: Project) : Component(project) {
   val subscriptableType: Type by lazy {
     val types =
       mutableListOf(stringType, collectionType, mapType, listingType, mappingType, dynamicType)
-    if (bytesType != null) types += bytesType
-    if (referenceType != null) types += referenceType
+    bytesType?.let(types::add)
+    project.pklRefModule.referenceType?.let(types::add)
     Type.union(types, this, null)
   }
 

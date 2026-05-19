@@ -169,8 +169,9 @@ object ResolveVisitors {
         val type =
           when (element) {
             is PklReferenceQualifiedAccessProxy ->
-              base.referenceType!!.withTypeArguments(
-                element.referent.toType(base, bindings, context, preserveUnboundTypeVars)
+              element.project.pklRefModule.referenceType!!.withTypeArguments(
+                element.domain,
+                element.referent.toType(base, bindings, context, preserveUnboundTypeVars),
               )
             is PklImport ->
               element

@@ -41,8 +41,9 @@ class TypeAnalyzer(project: Project) : Analyzer(project) {
           )
         }
 
+        val unaliased = type.unaliased(project.pklBaseModule, node.containingFile.pklProject)
         if (
-          type is Type.Reference &&
+          unaliased is Type.Reference &&
             type.containsConstrainedType(project.pklBaseModule, node.containingFile.pklProject)
         ) {
           holder.addError(node, ErrorMessages.create("invalidReferenceTypeWithConstraint"))
