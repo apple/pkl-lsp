@@ -66,23 +66,23 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
           }
         }
 
-        override fun visitQualifiedAccessExpr(element: PklQualifiedAccessExpr) {
-          val receiverType = element.receiverExpr.computeExprType(base, mapOf(), context)
+        override fun visitQualifiedAccessExpr(node: PklQualifiedAccessExpr) {
+          val receiverType = node.receiverExpr.computeExprType(base, mapOf(), context)
           if (
             receiverType == Type.Unknown ||
-              (receiverType == base.dynamicType && element.isPropertyAccess)
+              (receiverType == base.dynamicType && node.isPropertyAccess)
           ) {
             return // don't flag
           }
 
-          val visitor = ResolveVisitors.firstElementNamed(element.memberNameText, base)
-          when (val target = element.resolve(base, receiverType, mapOf(), visitor, context)) {
+          val visitor = ResolveVisitors.firstElementNamed(node.memberNameText, base)
+          when (val target = node.resolve(base, receiverType, mapOf(), visitor, context)) {
             null -> {
-              diagnosticsHolder.addUnresolvedAccessDiagnostic(element, receiverType, base, context)
+              diagnosticsHolder.addUnresolvedAccessDiagnostic(node, receiverType, base, context)
             }
             is PklMethod -> {
-              checkConstQualifiedAccess(element, target, diagnosticsHolder)
-              checkArgumentCount(element, target, base, diagnosticsHolder)
+              checkConstQualifiedAccess(node, target, diagnosticsHolder)
+              checkArgumentCount(node, target, base, diagnosticsHolder)
               when (receiverType) {
                 base.listType -> {
                   when {
@@ -91,7 +91,7 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
                       target == base.listFoldMethod ||
                       target == base.listFoldIndexedMethod -> {
                       checkIsRedundantConversion(
-                        element.receiverExpr,
+                        node.receiverExpr,
                         base.listingToListMethod,
                         base,
                         diagnosticsHolder,
@@ -106,7 +106,7 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
                       target == base.mapGetOrNullMethod ||
                       target == base.mapFoldMethod -> {
                       checkIsRedundantConversion(
-                        element.receiverExpr,
+                        node.receiverExpr,
                         base.mappingToMapMethod,
                         base,
                         diagnosticsHolder,
@@ -119,11 +119,11 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
               }
             }
             is PklProperty -> {
-              checkConstQualifiedAccess(element, target, diagnosticsHolder)
-              if (element.receiverExpr is PklThisExpr) {
+              checkConstQualifiedAccess(node, target, diagnosticsHolder)
+              if (node.receiverExpr is PklThisExpr) {
                 // because `target` is the property *definition*,
                 // this check won't catch all qualified recursive references
-                checkRecursivePropertyReference(element, target, diagnosticsHolder)
+                checkRecursivePropertyReference(node, target, diagnosticsHolder)
               }
               when (receiverType) {
                 base.listType -> {
@@ -132,7 +132,7 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
                       target == base.listLengthProperty ||
                       target == base.listIsDistinctProperty -> {
                       checkIsRedundantConversion(
-                        element.receiverExpr,
+                        node.receiverExpr,
                         base.listingToListMethod,
                         base,
                         diagnosticsHolder,
@@ -147,7 +147,7 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
                       target == base.mapLengthProperty ||
                       target == base.mapKeysProperty -> {
                       checkIsRedundantConversion(
-                        element.receiverExpr,
+                        node.receiverExpr,
                         base.mappingToMapMethod,
                         base,
                         diagnosticsHolder,
@@ -205,7 +205,8 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
   }
 
   private fun PklNode.getConstScope(): Pair<Boolean, Boolean> {
-    @Suppress("MoveVariableDeclarationIntoWhen")
+    // incorrect "redundant suppression" warning
+    @Suppress("MoveVariableDeclarationIntoWhen", "RedundantSuppression")
     val parent = parentOfTypes(PklClassProperty::class, PklMethod::class, PklObjectBody::class)
     return when (parent) {
       is PklModifierListOwner -> parent.isConst to false
@@ -279,8 +280,7 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
             }
           }
         }
-        val message =
-          ErrorMessages.create("cannotAccessConstFromStaticBody", action, name.toString())
+        val message = ErrorMessages.create("cannotAccessConstFromStaticBody", action, name)
         holder.addError(node, message, span = node.identifier!!.span)
       }
     }

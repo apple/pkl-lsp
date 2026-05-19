@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import org.pkl.lsp.type.computeThisType
 
 /** Analyzes object/class members, except for modifiers. */
 class MemberAnalyzer(project: Project) : Analyzer(project) {
-  override fun doAnalyze(node: PklNode, holder: DiagnosticsHolder): Boolean {
+  override fun doAnalyze(node: PklNode, diagnosticsHolder: DiagnosticsHolder): Boolean {
 
     val module = node.enclosingModule ?: return false
     val project = module.project
@@ -52,10 +52,10 @@ class MemberAnalyzer(project: Project) : Analyzer(project) {
 
     when (node) {
       is PklObjectProperty -> {
-        checkUnresolvedProperty(node, memberType, base, holder, context)
+        checkUnresolvedProperty(node, memberType, base, diagnosticsHolder, context)
       }
       is PklClassProperty -> {
-        checkUnresolvedProperty(node, memberType, base, holder, context)
+        checkUnresolvedProperty(node, memberType, base, diagnosticsHolder, context)
       }
     }
     return true

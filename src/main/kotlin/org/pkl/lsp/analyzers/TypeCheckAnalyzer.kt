@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import org.pkl.lsp.type.inferExprTypeFromContext
 import org.pkl.lsp.type.toConstraintExpr
 
 class TypeCheckAnalyzer(project: Project) : Analyzer(project) {
-  override fun doAnalyze(node: PklNode, holder: DiagnosticsHolder): Boolean {
+  override fun doAnalyze(node: PklNode, diagnosticsHolder: DiagnosticsHolder): Boolean {
     if (node !is PklExpr) return true
 
     val module = node.enclosingModule ?: return false
@@ -45,8 +45,8 @@ class TypeCheckAnalyzer(project: Project) : Analyzer(project) {
     if (!isTypeMatch(exprType, exprValue, expectedType, failedConstraints, base, context)) {
       when {
         failedConstraints.isEmpty() ->
-          reportTypeMismatch(node, exprType, expectedType, base, holder, context)
-        else -> reportConstraintMismatch(node, exprValue, failedConstraints, holder)
+          reportTypeMismatch(node, exprType, expectedType, base, diagnosticsHolder, context)
+        else -> reportConstraintMismatch(node, exprValue, failedConstraints, diagnosticsHolder)
       }
     }
     return true

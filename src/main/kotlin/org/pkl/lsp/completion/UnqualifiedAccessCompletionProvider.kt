@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,6 +152,7 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
   ) {
     val unaliasedGenericType = genericType.unaliased(base, context)
 
+    @Suppress("IntroduceWhenSubject")
     when {
       // e.g., `(Key) -> Value` or `Function1<Key, Value>`
       unaliasedGenericType is Type.Class && unaliasedGenericType.isFunctionType -> {
@@ -233,11 +234,11 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
               // won't run out of these because lambda has at most 5 parameters
               (nextIntParam++).toString()
             } else {
-              paramType.ctx.name.decapitalized() ?: "param"
+              paramType.ctx.name.decapitalized()
             }
           is Type.Module -> paramType.referenceName.decapitalized()
-          is Type.Alias -> paramType.ctx.name.decapitalized() ?: "param"
-          is Type.Variable -> paramType.ctx.name.decapitalized() ?: "param"
+          is Type.Alias -> paramType.ctx.name.decapitalized()
+          is Type.Variable -> paramType.ctx.name.decapitalized()
           else -> "param"
         }
       addName(paramName)
