@@ -88,6 +88,11 @@ The language server uses "Pkl" for its scope URI.
 |String Array
 |Workspace-relative directories to exclude when syncing projects.
 |`[]`
+
+|`pkl.modulepath`
+| String Array
+|Workspace-relative directories to resolve `modulepath:` URIs against.
+|`[]`
 |===
 
 == Additional message types
@@ -103,7 +108,7 @@ Method: `pkl/fileContents`
 
 Body: https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocumentIdentifier[`TextDocumentIdentifier`]
 
-Read text contents of the document identified by the specified params..
+Read text contents of the document identified by the specified params.
 
 [[download-package-request]]
 === Download Package Request

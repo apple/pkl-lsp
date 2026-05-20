@@ -1,7 +1,25 @@
 = Changelog
 
 [[release-0.7.0]]
-== 0.7.0 (UNRELEASED)
+== 0.7.0 (2026-05-20)
+
+=== Changes
+
+* Add support for `modulepath` imports (https://github.com/apple/pkl-lsp/pull/141[#141], https://github.com/apple/pkl-lsp/pull/170[#170], https://github.com/apple/pkl-lsp/pull/181[#181], https://github.com/apple/pkl-lsp/pull/182[#182], https://github.com/apple/pkl-lsp/pull/186[#186]).
+* Add support for multi-line string continuations (note: this is for an upcoming change in Pkl's grammar in 0.32) (https://github.com/apple/pkl-lsp/pull/158[#158]).
+
+=== Fixes
+
+* Fix resolution of quoted identifiers (https://github.com/apple/pkl-lsp/pull/156[#156]).
+* Fix calculation of multiline string literal contents (https://github.com/apple/pkl-lsp/pull/158[#158]).
+
+=== Contributors ❤️
+
+Thank you to all of our contributors!
+
+* https://github.com/bioball[@bioball]
+* https://github.com/DrWursterich[@DrWursterich]
+* https://github.com/HT154[@HT154]
 
 === Breaking Changes
 
