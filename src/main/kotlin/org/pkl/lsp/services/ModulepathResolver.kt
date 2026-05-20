@@ -114,18 +114,26 @@ class ModulepathResolver(project: Project) : Component(project) {
     if (!isOnModulePath(file)) {
       return file.path.listDirectoryEntries().mapNotNull { project.virtualFileManager.get(it) }
     }
-    val path = file.path
-    val paths = modulepaths(file.pklProject)
-    val root = paths.firstOrNull(path::startsWith) ?: return emptyList()
-    val relative = runCatching { root.relativize(path) }.getOrNull() ?: return emptyList()
-    return paths
-      .asSequence()
-      .flatMap { it.resolve(relative).normalize().listDirectoryEntries() }
-      .map { it.toAbsolutePath().normalize() }
-      .distinct()
-      .sorted()
-      .mapNotNull(::getFile)
-      .toList()
+    return buildList {
+      val path = file.path
+      val seenPaths = mutableSetOf<String>()
+      val modulepaths = modulepaths(file.pklProject)
+      val myRoot = modulepaths.firstOrNull(path::startsWith) ?: return@buildList
+      val myRelativePath = runCatching { myRoot.relativize(path) }.getOrNull() ?: return@buildList
+      for (path in modulepaths(file.pklProject)) {
+        val elems =
+          path.resolve(myRelativePath).normalize().listDirectoryEntries().sortedBy {
+            it.absolutePathString()
+          }
+        for (elem in elems) {
+          val relativePath = path.relativize(elem).toString()
+          if (!seenPaths.add(relativePath)) {
+            continue
+          }
+          add(getFile(elem)!!)
+        }
+      }
+    }
   }
 
   fun isOnModulePath(file: VirtualFile): Boolean {
