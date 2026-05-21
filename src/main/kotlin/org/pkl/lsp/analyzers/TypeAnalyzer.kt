@@ -46,7 +46,10 @@ class TypeAnalyzer(project: Project) : Analyzer(project) {
           unaliased is Type.Reference &&
             type.containsConstrainedType(project.pklBaseModule, node.containingFile.pklProject)
         ) {
-          holder.addError(node, ErrorMessages.create("invalidReferenceTypeWithConstraint"))
+          diagnosticsHolder.addError(
+            node,
+            ErrorMessages.create("invalidReferenceTypeWithConstraint"),
+          )
         }
 
         false
