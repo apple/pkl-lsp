@@ -250,4 +250,17 @@ class HoverTest : LspTestBase() {
     val hoverText = getHoverText()
     assertThat(hoverText).contains("this is bar")
   }
+
+  @Test
+  fun `getClass() method is properly flow-typed`() {
+    createPklFile(
+      """
+        local foo = 0.getClass()
+        local bar = f<caret>oo
+        """
+        .trimIndent()
+    )
+    val hoverText = getHoverText()
+    assertThat(hoverText).contains("Class<Int>")
+  }
 }
