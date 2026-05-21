@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -162,6 +162,7 @@ private fun renderTypeAnnotation(
     append(name)
     when {
       originalNode !== node && originalNode?.isAncestor(node) == false -> {
+        val thisType = node.computeThisType(node.project.pklBaseModule, mapOf(), context)
         val visitor =
           ResolveVisitors.typeOfFirstElementNamed(
             name,
@@ -169,11 +170,12 @@ private fun renderTypeAnnotation(
             node.project.pklBaseModule,
             isNullSafeAccess = false,
             preserveUnboundTypeVars = false,
+            thisType,
           )
         val computedType =
           Resolvers.resolveUnqualifiedAccess(
             originalNode,
-            node.computeThisType(node.project.pklBaseModule, mapOf(), context),
+            thisType,
             true,
             node.project.pklBaseModule,
             mapOf(),

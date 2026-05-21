@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,7 @@ private fun PklNode.doComputeExprType(
   return RecursionManager.doPreventingRecursion(this, "doComputeExprType", Type.Unknown) {
     when (this) {
       is PklUnqualifiedAccessExpr -> {
+        val thisType = computeThisType(base, bindings, context)
         val visitor =
           ResolveVisitors.typeOfFirstElementNamed(
             memberNameText,
@@ -64,10 +65,12 @@ private fun PklNode.doComputeExprType(
             base,
             isNullSafeAccess,
             false,
+            thisType,
           )
-        resolve(base, null, bindings, visitor, context)
+        resolve(base, thisType, bindings, visitor, context)
       }
       is PklQualifiedAccessExpr -> {
+        val receiverType = receiverExpr.computeExprType(base, bindings, context)
         val visitor =
           ResolveVisitors.typeOfFirstElementNamed(
             memberNameText,
@@ -75,10 +78,12 @@ private fun PklNode.doComputeExprType(
             base,
             isNullSafeAccess,
             false,
+            receiverType,
           )
-        resolve(base, null, bindings, visitor, context)
+        resolve(base, receiverType, bindings, visitor, context)
       }
       is PklSuperAccessExpr -> {
+        val thisType = computeThisType(base, bindings, context)
         val visitor =
           ResolveVisitors.typeOfFirstElementNamed(
             memberNameText,
@@ -86,8 +91,9 @@ private fun PklNode.doComputeExprType(
             base,
             isNullSafeAccess,
             false,
+            thisType,
           )
-        resolve(base, null, bindings, visitor, context)
+        resolve(base, thisType, bindings, visitor, context)
       }
       is PklTrueLiteralExpr,
       is PklFalseLiteralExpr -> base.booleanType
