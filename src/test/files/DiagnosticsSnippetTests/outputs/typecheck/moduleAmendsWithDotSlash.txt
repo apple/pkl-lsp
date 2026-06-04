@@ -1,0 +1,7 @@
+ import ".../inputHelpers/typecheck/Base.pkl"
+ import ".../inputHelpers/typecheck/Impl.pkl"
+ 
+ list: Listing<Base> = new {
+   Impl // should be no diags here
+ }
+ 

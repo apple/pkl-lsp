@@ -23,42 +23,22 @@ class VirtualFileManager(project: Project) : Component(project) {
   private val files: MutableMap<URI, BaseFile> = ConcurrentHashMap()
 
   fun get(path: Path): VirtualFile? {
-    return if (!Files.exists(path)) null else get(path.toUri(), path)
+    val p = path.normalize()
+    return if (!Files.exists(p)) null else get(p.toUri(), p)
   }
 
   fun get(uri: URI, path: Path? = null): VirtualFile? {
-    val effectiveUri = uri.effectiveUri ?: return null
+    val effectiveUri = uri.normalize().effectiveUri ?: return null
     val existing = files[effectiveUri]
     if (existing != null) {
       return existing
     }
-    return create(effectiveUri, path)
+    return create(effectiveUri, path?.normalize())
   }
 
   fun getFsFile(path: Path): FsFile? = get(path) as? FsFile
 
   fun getFsFile(uri: URI): FsFile? = get(uri) as? FsFile
-
-  fun getModulepathFile(path: Path): VirtualFile? {
-    val jarUri = path.toUri()
-    val effectiveUri = jarUri.effectiveUri ?: return null
-    val existing = files[effectiveUri]
-    if (existing != null) {
-      return existing
-    }
-    val file =
-      when (jarUri?.scheme) {
-        "jar" -> {
-          ensureJarFileSystem(effectiveUri)
-          if (jarUri.toString().endsWith("!/")) JarFile(path, jarUri, project)
-          else FsFile(path, project)
-        }
-        else -> {
-          FsFile(path, project)
-        }
-      }
-    return file.also { files[effectiveUri] = file }
-  }
 
   /**
    * Creates a one-off virtual file; this file does not get managed (workspace events do not cause

@@ -20,3 +20,4 @@ libtree-sitter-pkl.*
 src/main/resources/libtree-sitter*
 
 .pkl-lsp
+.vscode
