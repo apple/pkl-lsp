@@ -1,5 +1,18 @@
 = Changelog
 
+[[release-0.7.1]]
+== 0.7.1 (2026-06-08)
+
+=== Fixes
+
+* Fix resolution of path segments (https://github.com/apple/pkl-lsp/pull/199[#199]).
+
+=== Contributors ❤️
+
+Thank you to all of our contributors!
+
+* https://github.com/HT154[@HT154]
+
 [[release-0.7.0]]
 == 0.7.0 (2026-05-20)
 
