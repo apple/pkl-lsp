@@ -1,0 +1,5 @@
+amends "./Base.pkl"
+// the "./" is critical; it ensures that paths are normalized correctly
+// see https://github.com/apple/pkl-lsp/issues/195#issuecomment-4630297452
+
+name = "foo-bar"
