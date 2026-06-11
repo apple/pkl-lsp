@@ -1,0 +1,9 @@
+abstract foo: Int
+
+abstract function foo(): Int
+
+class MyClass {
+  abstract foo: Int
+
+  abstract function foo(): Int
+}
