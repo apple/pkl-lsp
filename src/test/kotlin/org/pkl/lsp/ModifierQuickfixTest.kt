@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ class ModifierQuickfixTest : LspTestBase() {
         """
      amends "pkl:test"
 
-     abstract external foo: String = "Hello"
+     const foo: String = "Hello"
     """
           .trimIndent()
       )
@@ -62,13 +62,12 @@ class ModifierQuickfixTest : LspTestBase() {
     val action = diagnostic.actions.find { it.title == "Add modifier 'local'" }
     assertThat(action).isNotNull
     runAction(action!!.toMessage(diagnostic))
-    // modifier gets inserted in between 'abstract' and 'external'
     assertThat(file.contents)
       .isEqualTo(
         """
      amends "pkl:test"
 
-     abstract local external foo: String = "Hello"
+     local const foo: String = "Hello"
     """
           .trimIndent()
       )

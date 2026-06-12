@@ -82,6 +82,14 @@ interface PklNode {
     val parentNode = parent ?: return null
     return parentNode.children[index - 1]
   }
+
+  fun prevSiblingMatching(filter: (PklNode) -> Boolean): PklNode? {
+    var node = prevSibling()
+    while (node != null && !filter(node)) {
+      node = node.prevSibling()
+    }
+    return node
+  }
 }
 
 sealed interface PklSuppressWarningsTarget : PklNode {

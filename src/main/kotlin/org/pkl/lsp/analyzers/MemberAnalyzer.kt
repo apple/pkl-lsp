@@ -19,10 +19,16 @@ import org.eclipse.lsp4j.DiagnosticSeverity
 import org.pkl.lsp.ErrorMessages
 import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.Project
+import org.pkl.lsp.ast.PklClassMember
+import org.pkl.lsp.ast.PklClassMethod
 import org.pkl.lsp.ast.PklClassProperty
+import org.pkl.lsp.ast.PklExpr
 import org.pkl.lsp.ast.PklNode
 import org.pkl.lsp.ast.PklObjectProperty
 import org.pkl.lsp.ast.PklProperty
+import org.pkl.lsp.ast.Span
+import org.pkl.lsp.ast.Terminal
+import org.pkl.lsp.ast.TokenType
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.resolvers.ResolveVisitors
 import org.pkl.lsp.resolvers.Resolvers
@@ -56,6 +62,10 @@ class MemberAnalyzer(project: Project) : Analyzer(project) {
       }
       is PklClassProperty -> {
         checkUnresolvedProperty(node, memberType, base, diagnosticsHolder, context)
+        checkAbstractMemberWithBody(node, diagnosticsHolder)
+      }
+      is PklClassMethod -> {
+        checkAbstractMemberWithBody(node, diagnosticsHolder)
       }
     }
     return true
@@ -100,4 +110,33 @@ class MemberAnalyzer(project: Project) : Analyzer(project) {
       }
     }
   }
+
+  private fun checkAbstractMemberWithBody(
+    node: PklClassMember,
+    diagnosticsHolder: DiagnosticsHolder,
+  ) {
+    if (!node.isAbstract) return
+    val bodySpan =
+      if (node is PklClassProperty) {
+        node.expr?.spanWithAssign ?: node.objectBody?.span
+      } else {
+        node as PklClassMethod
+        node.body?.spanWithAssign
+      }
+    if (bodySpan != null) {
+      diagnosticsHolder.addDiagnostic(
+        node,
+        "Abstract member cannot have a body",
+        bodySpan,
+        DiagnosticSeverity.Error,
+      )
+    }
+  }
+
+  private val PklExpr.spanWithAssign: Span?
+    get() {
+      val assignNode =
+        this.prevSiblingMatching { it is Terminal && it.type == TokenType.ASSIGN } ?: return null
+      return assignNode.span.endAt(span)
+    }
 }
