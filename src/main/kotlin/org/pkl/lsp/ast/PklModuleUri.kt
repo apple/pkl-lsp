@@ -76,7 +76,7 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
       moduleUriString: String,
       element: PklModuleUri,
       context: PklProject?,
-    ): List<VirtualFile>? =
+    ): GlobResolver.GlobResult? =
       element.project.cachedValuesManager.getCachedValue(
         "PklModuleUri.resolveGlob($targetUriString, $moduleUriString, ${element.containingFile.path}, ${context?.projectDir})",
         lock,
@@ -161,7 +161,7 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
       moduleUriString: String,
       element: PklModuleUri,
       context: PklProject?,
-    ): List<VirtualFile>? {
+    ): GlobResolver.GlobResult? {
       val sourceFile = element.containingFile
       val parentDir = sourceFile.parent() ?: return null
       // triple-dot URI's are not supported

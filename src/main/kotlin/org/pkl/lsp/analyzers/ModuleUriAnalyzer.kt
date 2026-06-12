@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package org.pkl.lsp.analyzers
 
 import java.net.URI
 import java.net.URISyntaxException
+import org.eclipse.lsp4j.DiagnosticSeverity
 import org.pkl.lsp.*
 import org.pkl.lsp.actions.PklDownloadPackageAction
 import org.pkl.lsp.ast.*
@@ -25,6 +26,7 @@ import org.pkl.lsp.packages.dto.Checksums
 import org.pkl.lsp.packages.dto.PackageUri
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.packages.dto.Version
+import org.pkl.lsp.util.GlobResolver
 
 class ModuleUriAnalyzer(project: Project) : Analyzer(project) {
   override fun doAnalyze(node: PklNode, diagnosticsHolder: DiagnosticsHolder): Boolean {
@@ -79,8 +81,16 @@ class ModuleUriAnalyzer(project: Project) : Analyzer(project) {
       holder.addWarning(element.stringConstant, ErrorMessages.create("cannotGlobTripleDots"))
       return
     }
-    val resolved = element.resolveGlob(context)
-    if (resolved.isEmpty()) {
+    val resolved = element.resolveGlob(context) ?: return
+    if (resolved.exceededMaxElements) {
+      holder.addDiagnostic(
+        element.stringConstant,
+        "This glob pattern matches too many modules; only showing the first ${GlobResolver.MAX_GLOB_ELEMENTS}",
+        element.stringConstant.span,
+        DiagnosticSeverity.Hint,
+      )
+    }
+    if (resolved.elements.isEmpty()) {
       holder.addWarning(element.stringConstant, ErrorMessages.create("globPatternHasNoMatches"))
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,21 @@ import kotlin.collections.ArrayList
 import org.pkl.lsp.VirtualFile
 
 object GlobResolver {
+  data class GlobResult(val elements: List<VirtualFile>, val exceededMaxElements: Boolean)
 
   private val cache = Collections.synchronizedMap(WeakHashMap<String, Pattern>())
 
   private const val NULL = 0.toChar()
 
   /**
-   * The maximum number of [VirtualFile.getChildren] calls to be made when resolving a single glob
+   * The maximum number of elements to collect in a glob pattern.
+   *
+   * If we exceed this number, the resulting [GlobResult.exceededMaxElements] will be set to `true`.
+   */
+  const val MAX_GLOB_ELEMENTS = 300
+
+  /**
+   * The maximum number of [VirtualFile.children] calls to be made when resolving a single glob
    * pattern (prevents an expensive glob from halting the CPU and memory, e.g. a long string of `*`
    * and `..`)
    */
@@ -265,6 +273,8 @@ object GlobResolver {
    * @param listElementCallCount The number of times we have listed children
    * @param isPartial Whether [globPatternParts] represents the whole URI
    * @param result The return value
+   * @return a boolean indicating whether the number of elements in the glob exceeded
+   *   [MAX_GLOB_ELEMENTS].
    */
   private fun expandGlob(
     globPatternParts: List<String>,
@@ -274,7 +284,7 @@ object GlobResolver {
     isPartial: Boolean,
     listChildren: (VirtualFile) -> List<VirtualFile>,
     result: MutableList<VirtualFile>,
-  ) {
+  ): Boolean {
     val patternPart = globPatternParts[idx]
     val isLeaf = idx == globPatternParts.size - 1
     // no expanding needed, carry on
@@ -284,13 +294,14 @@ object GlobResolver {
           "." -> currentDir
           ".." -> currentDir.parent()
           else -> listChildren(currentDir).find { it.name == patternPart }
-        } ?: return
+        } ?: return false
       if (isLeaf) {
+        if (result.size == MAX_GLOB_ELEMENTS) return true
         result.add(child)
-        return
+        return false
       }
       if (child.isDirectory) {
-        expandGlob(
+        return expandGlob(
           globPatternParts,
           idx + 1,
           child,
@@ -303,23 +314,27 @@ object GlobResolver {
     } else {
       val expandedFiles =
         expandGlobPart(currentDir, patternPart, listElementCallCount, listChildren, isPartial)
-          ?: return
+          ?: return false
       for (file in expandedFiles) {
         if (isLeaf) {
+          if (result.size == MAX_GLOB_ELEMENTS) return true
           result.add(file)
         } else if (file.isDirectory) {
-          expandGlob(
-            globPatternParts,
-            idx + 1,
-            file,
-            listElementCallCount,
-            isPartial,
-            listChildren,
-            result,
-          )
+          val exceededMaxElements =
+            expandGlob(
+              globPatternParts,
+              idx + 1,
+              file,
+              listElementCallCount,
+              isPartial,
+              listChildren,
+              result,
+            )
+          if (exceededMaxElements) return true
         }
       }
     }
+    return false
   }
 
   fun resolveRelativeGlob(
@@ -327,13 +342,22 @@ object GlobResolver {
     globPattern: String,
     isPartial: Boolean,
     listChildren: (VirtualFile) -> List<VirtualFile>,
-  ): List<VirtualFile> {
-    if (globPattern.isEmpty()) return listOf(enclosingDirectory)
+  ): GlobResult {
+    if (globPattern.isEmpty()) return GlobResult(listOf(enclosingDirectory), false)
     val result = ArrayList<VirtualFile>()
     val globParts = globPattern.split("/")
-    if (globParts.isEmpty()) return emptyList()
-    expandGlob(globParts, 0, enclosingDirectory, AtomicInteger(0), isPartial, listChildren, result)
-    return result
+    if (globParts.isEmpty()) return GlobResult(emptyList(), false)
+    val exceededMaxElements =
+      expandGlob(
+        globParts,
+        0,
+        enclosingDirectory,
+        AtomicInteger(0),
+        isPartial,
+        listChildren,
+        result,
+      )
+    return GlobResult(result, exceededMaxElements)
   }
 
   fun resolveAbsoluteGlob(
@@ -341,12 +365,13 @@ object GlobResolver {
     globPattern: String,
     isPartial: Boolean,
     listChildren: (VirtualFile) -> List<VirtualFile>,
-  ): List<VirtualFile> {
-    if (globPattern == "/") return listOf(rootFile)
+  ): GlobResult {
+    if (globPattern == "/") return GlobResult(listOf(rootFile), false)
     val result = ArrayList<VirtualFile>()
     val globParts = globPattern.split("/").drop(1)
-    if (globParts.isEmpty()) return emptyList()
-    expandGlob(globParts, 0, rootFile, AtomicInteger(0), isPartial, listChildren, result)
-    return result
+    if (globParts.isEmpty()) return GlobResult(emptyList(), false)
+    val exceededMaxElements =
+      expandGlob(globParts, 0, rootFile, AtomicInteger(0), isPartial, listChildren, result)
+    return GlobResult(result, exceededMaxElements)
   }
 }

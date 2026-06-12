@@ -36,6 +36,7 @@ import org.pkl.lsp.type.Type
 import org.pkl.lsp.type.TypeParameterBindings
 import org.pkl.lsp.type.computeResolvedImportType
 import org.pkl.lsp.type.toType
+import org.pkl.lsp.util.GlobResolver
 import org.pkl.lsp.util.ModificationTracker
 
 val PklClass.supertype: PklType?
@@ -302,7 +303,7 @@ inline fun <reified T : PklNode> PklNode.parentOfType(): T? {
 inline fun <reified T : PklNode> PklNode.parentsOfType(): List<T> = parentsOfTypes(T::class)
 
 fun PklImportBase.resolve(context: PklProject?): ModuleResolutionResult =
-  if (isGlob) GlobModuleResolutionResult(moduleUri?.resolveGlob(context) ?: emptyList())
+  if (isGlob) GlobModuleResolutionResult(moduleUri?.resolveGlob(context))
   else SimpleModuleResolutionResult(moduleUri?.resolve(context))
 
 fun PklImportBase.resolveModules(context: PklProject?): List<PklModule> =
@@ -311,18 +312,16 @@ fun PklImportBase.resolveModules(context: PklProject?): List<PklModule> =
       is SimpleModuleResolutionResult -> result.resolved?.let(::listOf) ?: emptyList()
       else -> {
         result as GlobModuleResolutionResult
-        result.resolved
+        if (result.resolved == null || result.resolved.exceededMaxElements) emptyList()
+        else result.resolved.elements.mapNotNull { it.getModule().get() }
       }
     }
   }
 
-fun PklModuleUri.resolveGlob(context: PklProject?): List<PklModule> =
-  this.stringConstant.escapedText()?.let { text ->
-    val futures =
-      resolveGlob(text, text, this, context)?.filter { !it.isDirectory }?.map { it.getModule() }
-        ?: return@let emptyList<PklModule>()
-    futures.sequence().get().filterNotNull()
-  } ?: emptyList()
+fun PklModuleUri.resolveGlob(context: PklProject?): GlobResolver.GlobResult? {
+  val text = this.stringConstant.escapedText() ?: return null
+  return resolveGlob(text, text, this, context)
+}
 
 fun PklModuleUri.resolve(context: PklProject?): PklModule? =
   this.stringConstant.escapedText()?.let { text ->
@@ -349,18 +348,23 @@ class SimpleModuleResolutionResult(val resolved: PklModule?) : ModuleResolutionR
   }
 }
 
-class GlobModuleResolutionResult(val resolved: List<PklModule>) : ModuleResolutionResult() {
+class GlobModuleResolutionResult(val resolved: GlobResolver.GlobResult?) :
+  ModuleResolutionResult() {
   override fun computeResolvedImportType(
     base: PklBaseModule,
     bindings: TypeParameterBindings,
     preserveUnboundedVars: Boolean,
     context: PklProject?,
   ): Type {
-    if (resolved.isEmpty())
+    if (resolved == null) return Type.Unknown
+    if (resolved.exceededMaxElements || resolved.elements.isEmpty())
       return base.mappingType.withTypeArguments(base.stringType, base.moduleType)
     val allTypes =
-      resolved.map {
-        it.computeResolvedImportType(base, bindings, context, preserveUnboundedVars) as Type.Module
+      resolved.elements.mapNotNull { elem ->
+        if (elem.isDirectory) return@mapNotNull null
+        val module = elem.getModule().get() ?: return@mapNotNull null
+        module.computeResolvedImportType(base, bindings, context, preserveUnboundedVars)
+          as Type.Module
       }
     val firstType = allTypes.first()
     val unifiedType =
