@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,6 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
     var abstractModifier: PklNode? = null
     var openModifier: PklNode? = null
     var hiddenModifier: PklNode? = null
-    var fixedModifier: PklNode? = null
     var constModifier: PklNode? = null
 
     for (modifier in node.modifiers!!) {
@@ -62,7 +61,6 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
         ABSTRACT -> abstractModifier = modifier
         OPEN -> openModifier = modifier
         HIDDEN -> hiddenModifier = modifier
-        FIXED -> fixedModifier = modifier
         CONST -> constModifier = modifier
         else -> {}
       }
@@ -102,6 +100,22 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
               return true
             }
           }
+        }
+      }
+    }
+
+    if (abstractModifier != null) {
+      val containingClass =
+        node.parentOfTypes(PklModule::class, PklClass::class, /* stop class */ PklObjectBody::class)
+          as? PklModifierListOwner
+      if (containingClass != null) {
+        val containingClassIsAbstract =
+          containingClass.modifiers?.any { it.type == ABSTRACT } == true
+        if (!containingClassIsAbstract) {
+          val message =
+            if (containingClass is PklModule) "cannotDeclareAbstractInNonAbstractModule"
+            else "cannotDeclareAbstractInNonAbstractClass"
+          diagnosticsHolder.addError(abstractModifier, ErrorMessages.create(message))
         }
       }
     }

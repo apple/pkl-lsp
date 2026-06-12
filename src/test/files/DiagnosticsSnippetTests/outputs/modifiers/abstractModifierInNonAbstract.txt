@@ -1,0 +1,22 @@
+ abstract foo: Int
+ ^^^^^^^^
+| Error: Cannot declare an 'abstract' members in a non-abstract module.
+ 
+ abstract function foo(): Int
+ ^^^^^^^^
+| Error: Cannot declare an 'abstract' members in a non-abstract module.
+ ^^^^^^^^
+| Error: Cannot declare an 'abstract' members in a non-abstract module.
+ 
+ class MyClass {
+   abstract foo: Int
+   ^^^^^^^^
+| Error: Cannot declare an 'abstract' members in a non-abstract class.
+ 
+   abstract function foo(): Int
+   ^^^^^^^^
+| Error: Cannot declare an 'abstract' members in a non-abstract class.
+   ^^^^^^^^
+| Error: Cannot declare an 'abstract' members in a non-abstract class.
+ }
+ 

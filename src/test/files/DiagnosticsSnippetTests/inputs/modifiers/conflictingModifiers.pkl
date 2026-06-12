@@ -1,3 +1,5 @@
+open abstract module MyModule
+
 open abstract class Foo {
 
 }
