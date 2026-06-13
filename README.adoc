@@ -3,6 +3,27 @@
 This is an implementation of the link:https://microsoft.github.io/language-server-protocol/[Language Server Protocol]
 for link:https://pkl-lang.org[Pkl].
 
+== Cached packages and editor-support data
+
+The LSP looks up cached Pkl packages and tree-sitter native libraries under the same OS-appropriate locations that the Pkl CLI uses:
+
+[cols="1,2,2,2",options="header"]
+|===
+| Concern | Unix (Linux/macOS) | Windows | Legacy fallback
+
+| Package cache
+| `~/.cache/pkl`
+| `%LOCALAPPDATA%/pkl/cache`
+| `~/.pkl/cache`
+
+| Tree-sitter native libraries
+| `~/.local/share/pkl/editor-support/native-libs`
+| `%LOCALAPPDATA%/pkl/editor-support/native-libs`
+| `~/.pkl/editor-support/native-libs`
+|===
+
+If a legacy `~/.pkl/...` location already exists, the LSP keeps using it so existing setups don't need to migrate. See the link:https://pkl-lang.org/main/current/release-notes/0.32.html[Pkl 0.32 release notes] for the full mapping.
+
 == Features
 
 * [x] Diagnostics (WIP)

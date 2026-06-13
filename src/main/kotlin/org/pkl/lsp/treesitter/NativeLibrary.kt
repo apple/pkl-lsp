@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,27 @@ import org.pkl.lsp.util.OS
 
 data class NativeLibrary(val name: String, val version: String) {
   companion object {
-    private val nativeLibsDir by lazy { homeDir.resolve(".pkl/editor-support/native-libs") }
+    // Keep in sync with the editor-support location in pkl-intellij. Unix lands native libs under
+    // `~/.local/share/pkl/editor-support/native-libs`; Windows lands them under
+    // `%LOCALAPPDATA%/pkl/editor-support/native-libs`. Existing installs keep using
+    // `~/.pkl/editor-support/native-libs` (so an upgrade doesn't trigger a re-download). The lazy
+    // initialiser is fine here – native libs don't move during a session.
+    private val nativeLibsDir by lazy {
+      val newLocation: Path? =
+        if (OS.isWindows) {
+          System.getenv("LOCALAPPDATA")
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { Path.of(it, "pkl", "editor-support", "native-libs") }
+        } else {
+          homeDir.resolve(".local/share/pkl/editor-support/native-libs")
+        }
+      val legacy = homeDir.resolve(".pkl/editor-support/native-libs")
+      when {
+        newLocation != null && Files.exists(newLocation) -> newLocation
+        Files.exists(legacy) -> legacy
+        else -> newLocation ?: legacy
+      }
+    }
   }
 
   private val systemLibraryName = System.mapLibraryName(name)
