@@ -1,0 +1,14 @@
+ abstract module MyMod
+ 
+ abstract foo = 1
+              ^^^
+| Error: Abstract member cannot have a body
+ 
+ abstract bar {}
+              ^^
+| Error: Abstract member cannot have a body
+ 
+ abstract function foo() = 1
+                         ^^^
+| Error: Abstract member cannot have a body
+ 

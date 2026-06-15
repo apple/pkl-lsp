@@ -1,0 +1,7 @@
+abstract module MyMod
+
+abstract foo = 1
+
+abstract bar {}
+
+abstract function foo() = 1
