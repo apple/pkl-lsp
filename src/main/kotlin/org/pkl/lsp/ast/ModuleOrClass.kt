@@ -50,7 +50,7 @@ class PklModuleImpl(override val ctx: Node, override val virtualFile: VirtualFil
     header?.moduleExtendsAmendsClause?.moduleUri
   }
 
-  private val lock = Object()
+  private val lock = Any()
 
   // This is cached at the VirtualFile level
   override fun supermodule(context: PklProject?): PklModule? =
