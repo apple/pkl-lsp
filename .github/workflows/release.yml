@@ -90,10 +90,188 @@ jobs:
       with:
         name: test-results-xml-test-windows
         path: build/test-results/**/*.xml
+  native-macos-aarch64:
+    if: github.repository_owner == 'apple'
+    runs-on:
+    - self-hosted
+    - macos
+    steps:
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+    - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+      with:
+        java-version: '25'
+        distribution: temurin
+    - name: Build native executable
+      shell: bash
+      run: ./gradlew --info --stacktrace -DreleaseBuild=true buildNative
+    - name: Upload native executable
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: pkl-lsp-native-macos-aarch64
+        path: build/executable/*
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-xml-native-macos-aarch64
+        path: build/test-results/**/*.xml
+  native-macos-amd64:
+    if: github.repository_owner == 'apple'
+    runs-on:
+    - self-hosted
+    - macos
+    steps:
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+    - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+      with:
+        java-version: '25'
+        distribution: temurin
+    - name: Build native executable
+      shell: bash
+      run: ./gradlew --info --stacktrace -DreleaseBuild=true -Dpkl.targetArch=amd64 "-Dpkl.native--native-compiler-path=${GITHUB_WORKSPACE}/.github/scripts/cc_macos_amd64.sh" buildNative
+    - name: Upload native executable
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: pkl-lsp-native-macos-amd64
+        path: build/executable/*
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-xml-native-macos-amd64
+        path: build/test-results/**/*.xml
+  native-linux-amd64:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+    - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+      with:
+        java-version: '25'
+        distribution: temurin
+    - name: Install deps
+      run: dnf install -y git binutils gcc glibc-devel zlib-devel libstdc++-static glibc-langpack-en
+    - name: Build native executable
+      shell: bash
+      run: ./gradlew --info --stacktrace -DreleaseBuild=true buildNative
+    - name: Upload native executable
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: pkl-lsp-native-linux-amd64
+        path: build/executable/*
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-xml-native-linux-amd64
+        path: build/test-results/**/*.xml
+    container:
+      image: redhat/ubi8:8.10
+  native-linux-aarch64:
+    runs-on: ubuntu-24.04-arm
+    steps:
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+    - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+      with:
+        java-version: '25'
+        distribution: temurin
+    - name: Install deps
+      run: dnf install -y git binutils gcc glibc-devel zlib-devel libstdc++-static glibc-langpack-en
+    - name: Build native executable
+      shell: bash
+      run: ./gradlew --info --stacktrace -DreleaseBuild=true buildNative
+    - name: Upload native executable
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: pkl-lsp-native-linux-aarch64
+        path: build/executable/*
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-xml-native-linux-aarch64
+        path: build/test-results/**/*.xml
+    container:
+      image: redhat/ubi8:8.10
+  native-alpine-linux-amd64:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+    - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+      with:
+        java-version: '25'
+        distribution: temurin
+    - name: Install musl and zlib
+      run: "set -e\nmkdir -p ~/staticdeps/\n\nZLIB_VERSION=\"1.2.13\"\nMUSL_VERSION=\"1.2.5\"\n\n# install zlib\nif [[ ! -f ~/staticdeps/include/zlib.h ]]; then\n\t# Download zlib tarball and signature\n\tcurl -Lf \"https://github.com/madler/zlib/releases/download/v${ZLIB_VERSION}/zlib-${ZLIB_VERSION}.tar.gz\" -o /tmp/zlib.tar.gz\n\tcurl -Lf \"https://github.com/madler/zlib/releases/download/v${ZLIB_VERSION}/zlib-${ZLIB_VERSION}.tar.gz.asc\" -o /tmp/zlib.tar.gz.asc\n\n\t# Import zlib GPG key\n\tgpg --batch --keyserver keyserver.ubuntu.com --recv-keys 5ED46A6721D365587791E2AA783FCD8E58BCAFBA\n\n\t# Verify GPG signature\n\techo \"Verifying zlib GPG signature...\"\n\tgpg --verify /tmp/zlib.tar.gz.asc /tmp/zlib.tar.gz\n\n\tmkdir -p \"/tmp/dep_zlib-${ZLIB_VERSION}\"\n\tcd \"/tmp/dep_zlib-${ZLIB_VERSION}\"\n\t# shellcheck disable=SC2002\n\tcat /tmp/zlib.tar.gz | tar --strip-components=1 -xzC .\n\n\techo \"zlib-${ZLIB_VERSION}: configure...\"\n\t./configure --static --prefix=\"$HOME\"/staticdeps >/dev/null\n\n\techo \"zlib-${ZLIB_VERSION}: make...\"\n\tmake -s -j4\n\n\techo \"zlib-${ZLIB_VERSION}: make install...\"\n\tmake -s install\n\n\trm -rf /tmp/dep_zlib-${ZLIB_VERSION}\nfi\n\n# install musl\nif [[ ! -f ~/staticdeps/bin/x86_64-linux-musl-gcc ]]; then\n\t# Download musl tarball and signature\n\tcurl -Lf \"https://musl.libc.org/releases/musl-${MUSL_VERSION}.tar.gz\" -o /tmp/musl.tar.gz\n\tcurl -Lf \"https://musl.libc.org/releases/musl-${MUSL_VERSION}.tar.gz.asc\" -o /tmp/musl.tar.gz.asc\n\n\t# Import musl GPG key\n\tgpg --batch --keyserver keyserver.ubuntu.com --recv-keys 836489290BB6B70F99FFDA0556BCDB593020450F\n\n\t# Verify GPG signature\n\techo \"Verifying musl GPG signature...\"\n\tgpg --verify /tmp/musl.tar.gz.asc /tmp/musl.tar.gz\n\n\tmkdir -p \"/tmp/dep_musl-${MUSL_VERSION}\"\n\tcd \"/tmp/dep_musl-${MUSL_VERSION}\"\n\n\t# shellcheck disable=SC2002\n\tcat /tmp/musl.tar.gz | tar --strip-components=1 -xzC .\n\n\techo \"musl-${MUSL_VERSION}: configure...\"\n\t./configure --disable-shared --prefix=\"$HOME\"/staticdeps >/dev/null\n\n\techo \"musl-${MUSL_VERSION}: make...\"\n\tmake -s -j4\n\n\techo \"musl-${MUSL_VERSION}: make install...\"\n\tmake -s install\n\n\trm -rf \"/tmp/dep_musl-${MUSL_VERSION}\"\n\n\t# native-image expects to find an executable at this path.\n\tln -s ~/staticdeps/bin/musl-gcc ~/staticdeps/bin/x86_64-linux-musl-gcc\nfi\n\necho \"${HOME}/staticdeps/bin\" >>\"$GITHUB_PATH\"\n"
+    - name: Build native executable
+      shell: bash
+      run: ./gradlew --info --stacktrace -DreleaseBuild=true -Dpkl.musl=true buildNative
+    - name: Upload native executable
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: pkl-lsp-native-alpine-linux-amd64
+        path: build/executable/*
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-xml-native-alpine-linux-amd64
+        path: build/test-results/**/*.xml
+  native-windows-amd64:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+    - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+      with:
+        java-version: '25'
+        distribution: temurin
+    - name: Build native executable
+      shell: bash
+      run: ./gradlew --info --stacktrace -DreleaseBuild=true buildNative
+    - name: Upload native executable
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: pkl-lsp-native-windows-amd64
+        path: build/executable/*
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-xml-native-windows-amd64
+        path: build/test-results/**/*.xml
   deploy-github-release:
     needs:
     - test-macos
     - test-windows
+    - native-macos-aarch64
+    - native-macos-amd64
+    - native-linux-amd64
+    - native-linux-aarch64
+    - native-alpine-linux-amd64
+    - native-windows-amd64
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -102,6 +280,11 @@ jobs:
       with:
         name: pkl-lsp-build-artifacts
         path: build/libs/
+    - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+      with:
+        path: native/
+        pattern: pkl-lsp-native-*
+        merge-multiple: true
     - name: Publish release to GitHub
       env:
         GH_TOKEN: ${{ github.token }}
@@ -112,7 +295,7 @@ jobs:
           --title "${VERSION}" \
           --verify-tag \
           --notes "Release notes: https://pkl-lang.org/lsp/current/CHANGELOG.html#release-${VERSION}" \
-          build/libs/*
+          build/libs/* native/*
   deploy-maven-release:
     needs:
     - deploy-github-release
@@ -144,6 +327,12 @@ jobs:
     - build-release
     - test-macos
     - test-windows
+    - native-macos-aarch64
+    - native-macos-amd64
+    - native-linux-amd64
+    - native-linux-aarch64
+    - native-alpine-linux-amd64
+    - native-windows-amd64
     permissions:
       checks: write
     runs-on: ubuntu-latest
