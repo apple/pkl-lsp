@@ -14,17 +14,28 @@ nexusPublishPlugin = "2.0.0"
 pkl = "0.31.1"
 shadowPlugin = "9.4.2"
 spotless = "8.6.0"
-treeSitterRepo = "v0.25.3" # git tag name
+treeSitterRepo = "v0.25.3"                                     # git tag name
 treeSitterPklRepo = "f9405e40597d7dac637a6b49e7d26c4515cb2a34" # TODO: switch to tag once released
 #treeSitterPklRepo = "v0.21.0" # git tag name
 
 # Only need checksums for distributions that we might run builds on.
 # Use `../scripts/update_zig.sh <version>` to update these
-zig = "0.16.0" # used for cross-compiling tree-sitter libs
+zig = "0.16.0"                                                                               # used for cross-compiling tree-sitter libs
 zigSha256-macos-aarch64 = "b23d70deaa879b5c2d486ed3316f7eaa53e84acf6fc9cc747de152450d401489"
 zigSha256-linux-amd64 = "70e49664a74374b48b51e6f3fdfbf437f6395d42509050588bd49abe52ba3d00"
 zigSha256-windows-amd64 = "68659eb5f1e4eb1437a722f1dd889c5a322c9954607f5edcf337bc3684a75a7e"
 zigSha256-linux-aarch64 = "ea4b09bfb22ec6f6c6ceac57ab63efb6b46e17ab08d21f69f3a48b38e1534f17"
+
+# GraalVM for native-image builds
+# 25.0.2 no longer supports macos-x64, so we pin to 25.0.1
+graalVm = "25.0.1"
+graalVmJdkVersion = "25.0.1"
+graalVmSha256-macos-x64 = "a3d895b4cd1c783badbd277ec70409806bd4102fca0d2a60dbaeb0bab41aec30"
+graalVmSha256-macos-aarch64 = "066339f24a8ab5c161548491a9400f7344e7761a1e46f8979e76c7ef11d5bc76"
+graalVmSha256-linux-x64 = "01e39fe1a87f28b842a3e4e3b77be9b544dca3a58fa6e93b924a6106c8bac7fb"
+graalVmSha256-linux-aarch64 = "7aa0b9935a80e67f37c6025678393dbd123bb6f2226811decbc1a13093fc8ae2"
+graalVmSha256-windows-x64 = "fde83c5ceec2c75560c747ccd9f314f90e4cf5c5287416e67c4ce442e344ca27"
+graalVmSha256-windows-aarch64 = "unavailable"
 
 [libraries]
 assertJ = { group = "org.assertj", name = "assertj-core", version.ref = "assertj" }
