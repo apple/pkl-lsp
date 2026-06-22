@@ -21,6 +21,7 @@ import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import org.eclipse.lsp4j.Location
 import org.eclipse.lsp4j.LocationLink
+import org.eclipse.lsp4j.TextEdit
 import org.pkl.lsp.*
 import org.pkl.lsp.FsFile
 import org.pkl.lsp.LspUtil.toRange
@@ -38,6 +39,7 @@ import org.pkl.lsp.type.computeResolvedImportType
 import org.pkl.lsp.type.toType
 import org.pkl.lsp.util.GlobResolver
 import org.pkl.lsp.util.ModificationTracker
+import org.pkl.parser.Lexer
 
 val PklClass.supertype: PklType?
   get() = extends
@@ -48,7 +50,7 @@ fun PklClass.superclass(context: PklProject?): PklClass? {
     is PklModuleType -> null // see PklClass.supermodule
     null ->
       when {
-        isPklBaseAnyClass -> null
+        isPklBaseAnyClass || this == project.pklBaseModule.typedType.ctx -> null
         else -> project.pklBaseModule.typedType.ctx
       }
     else -> unexpectedType(st)
@@ -123,6 +125,10 @@ inline fun PklNode.lastChildMatching(predicate: (PklNode) -> Boolean): PklNode? 
     }
   }
   return null
+}
+
+inline fun <reified T> PklNode.lastChildOfClass(): T? {
+  return lastChildMatching { it is T } as? T
 }
 
 fun PklNode.firstTerminalOfType(type: TokenType): Terminal? {
@@ -431,6 +437,9 @@ fun PklNode.resolveReference(line: Int, col: Int, context: PklProject?): PklNode
             mname.resolve(context)
           } else par.name.resolve(context)
         }
+        is PklClassExtendsClause -> {
+          par.type.resolveReference(line, col, context)
+        }
         else -> this
       }
     else -> this
@@ -659,3 +668,184 @@ fun Appendable.renderParameterList(
 
 fun <T> List<T>.withReplaced(idx: Int, elem: T): List<T> =
   toMutableList().apply { this[idx] = elem }
+
+fun PklTypeDefOrModule.parentTypeDef(context: PklProject?): PklTypeDefOrModule? {
+  return when (this) {
+    is PklClass -> superclass(context) ?: supermodule(context)
+    is PklModule -> supermodule(context)
+    else -> null
+  }
+}
+
+fun PklTypeDefOrModule.methods(context: PklProject?): Map<String, PklClassMethod>? {
+  return when (val def = parentTypeDef(context)) {
+    is PklClass -> def.cache(context).methods
+    is PklModule -> def.cache(context).methods
+    else -> null
+  }
+}
+
+fun PklTypeDefOrModule.effectiveParentProperties(
+  context: PklProject?
+): Map<String, PklClassProperty>? {
+  return when (val def = parentTypeDef(context)) {
+    is PklClass -> def.cache(context).leafProperties
+    is PklModule -> def.cache(context).leafProperties
+    else -> null
+  }
+}
+
+val PklTypeDefOrModule.declaredProperties: List<PklClassProperty>
+  get() =
+    when (this) {
+      is PklClass -> this.properties
+      is PklModule -> this.properties
+      else -> emptyList()
+    }
+
+fun PklTypeDefOrModule.hasDeclaredProperty(name: String): Boolean {
+  for (member in declaredProperties) {
+    if (member.name == name) {
+      return true
+    }
+  }
+  return false
+}
+
+val PklTypeDefOrModule.declaredMethods: List<PklClassMethod>
+  get() =
+    when (this) {
+      is PklClass -> this.methods
+      is PklModule -> this.methods
+      else -> emptyList()
+    }
+
+fun PklTypeDefOrModule.hasDeclaredMethod(name: String?): Boolean {
+  if (name == null) return false
+  for (member in declaredMethods) {
+    if (member.name == name) {
+      return true
+    }
+  }
+  return false
+}
+
+private fun appendNumericSuffix(name: String): String =
+  when (name.last()) {
+    in '0'..'9' -> {
+      val number = name.takeLastWhile { it in '0'..'9' }
+      name.substring(0, name.length - number.length) + (number.toInt() + 1)
+    }
+    else -> name + '2'
+  }
+
+/**
+ * Finds or inserts (in sort order) an import for [module] and returns its member name. Returns
+ * `null` if this operation could not be performed (e.g., due to invalid code).
+ *
+ * Creates dependency-notation URIs, or constructs relative path segments if available.
+ */
+fun PklModule.findOrInsertImport(
+  module: PklModule,
+  imports: MutableList<ImportInfo>,
+  textEdits: MutableList<TextEdit>,
+): String {
+  val defaultImportName = inferImportPropertyName(module.uri.toString()) ?: return "<>"
+  var effectiveImportName: String = defaultImportName
+
+  for (import in imports) {
+    if (import.module == module) return import.presentation.memberName
+
+    if (import.presentation.memberName == effectiveImportName) {
+      effectiveImportName = appendNumericSuffix(effectiveImportName)
+    }
+  }
+
+  val importPath =
+    when {
+      uri.scheme == "package" -> {
+        val myDependency =
+          this.containingFile.pklProject?.myDependencies?.entries?.find {
+            uri.toString().startsWith(it.value.packageUri.toString())
+          }
+        if (myDependency != null) {
+          val pathWithinPackage = uri.fragment
+          "@${myDependency.key}${pathWithinPackage}"
+        } else {
+          // this module comes from is a package, but the originating module doesn't declare this as
+          // a dependency.
+          // bail out and just import the `package://` URI
+          uri.toString()
+        }
+      }
+      else -> this.virtualFile.relativize(module.virtualFile) ?: module.uri.toString()
+    }
+
+  val importText =
+    if (effectiveImportName == defaultImportName) {
+      "import \"${importPath}\""
+    } else {
+      "import \"${importPath}\" as ${Lexer.maybeQuoteIdentifier(effectiveImportName)}"
+    }
+
+  val importPresentation =
+    ImportPresentation(
+      importPath,
+      effectiveImportName,
+      if (effectiveImportName == defaultImportName) null else effectiveImportName,
+    )
+  var newElementAdded = false
+  for (oldImport in imports) {
+    if (importPresentation < oldImport.presentation) {
+      textEdits +=
+        TextEdit().apply {
+          newText = importText + "\n"
+          range = oldImport.span.firstCaret().toRange()
+        }
+      imports += ImportInfo(importPresentation, module, oldImport.span.firstCaret())
+      newElementAdded = true
+      break
+    }
+  }
+
+  if (!newElementAdded) {
+    val insertAfter = this.imports.lastOrNull()?.span ?: this.header?.span
+    if (insertAfter != null) {
+      val span = insertAfter.firstSucceedingCaret()
+      textEdits +=
+        TextEdit().apply {
+          range = span.toRange()
+          newText = "\n" + importText
+        }
+      imports += ImportInfo(importPresentation, module, span)
+    } else {
+      val span = this.span.firstCaret()
+      textEdits +=
+        TextEdit().apply {
+          range = span.toRange()
+          newText = importText + "\n"
+        }
+      imports += ImportInfo(importPresentation, module, span)
+    }
+  }
+
+  return effectiveImportName
+}
+
+fun PklNode.prepend(newText: String): TextEdit {
+  return TextEdit().apply {
+    this.range = span.firstCaret().toRange()
+    this.newText = newText
+  }
+}
+
+fun PklNode.append(newText: String): TextEdit {
+  return TextEdit().apply {
+    this.range = span.firstSucceedingCaret().toRange()
+    this.newText = newText
+  }
+}
+
+fun StringBuilder.appendIdentifier(identifier: String) {
+  append(Lexer.maybeQuoteIdentifier(identifier))
+}

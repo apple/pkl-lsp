@@ -90,6 +90,8 @@ interface VirtualFile : ModificationTracker, CachedValueDataHolder {
 
   fun resolve(path: String): VirtualFile?
 
+  fun relativize(other: VirtualFile): String?
+
   fun getModule(): CompletableFuture<PklModule?>
 
   fun canModify(): Boolean
@@ -171,6 +173,10 @@ class FsFile(override val path: Path, override val project: Project) : BaseFile(
         CachedValue(null, listOf(dependency))
       }
 
+  override fun relativize(other: VirtualFile): String? {
+    return if (other is FsFile) path.parent.relativize(other.path).toString() else null
+  }
+
   override val pklProject: PklProject?
     get() = pklProjectDir?.let { project.pklProjectManager.getPklProject(it) }
 
@@ -238,6 +244,8 @@ class StdlibFile(moduleName: String, override val project: Project) : BaseFile()
       .use { reader -> reader.readText() }
   }
 
+  override fun relativize(other: VirtualFile): String? = null
+
   override fun canModify(): Boolean = false
 }
 
@@ -262,6 +270,10 @@ class HttpsFile(override val uri: URI, override val project: Project) : BaseFile
 
   override fun resolve(path: String): VirtualFile? {
     return project.virtualFileManager.get(uri.resolve(path))
+  }
+
+  override fun relativize(other: VirtualFile): String? {
+    return null
   }
 
   override fun doReadContents(): String {
@@ -335,6 +347,16 @@ class JarFile(override val path: Path, override val uri: URI, override val proje
   override fun canModify(): Boolean = false
 
   private fun getFile(path: Path): VirtualFile? = project.virtualFileManager.get(path)
+
+  override fun relativize(other: VirtualFile): String? {
+    return if (other is JarFile) {
+      try {
+        path.parent.relativize(other.path).toString()
+      } catch (_: IllegalArgumentException) {
+        null
+      }
+    } else null
+  }
 }
 
 class EphemeralFile(private val text: String, override val project: Project) : BaseFile() {
@@ -357,4 +379,6 @@ class EphemeralFile(private val text: String, override val project: Project) : B
   override fun doReadContents(): String = text
 
   override fun canModify(): Boolean = false
+
+  override fun relativize(other: VirtualFile): String? = null
 }

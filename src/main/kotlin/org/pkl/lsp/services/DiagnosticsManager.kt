@@ -42,6 +42,7 @@ class DiagnosticsManager(project: Project) : Component(project) {
       TypeNameAnalyzer(project),
       TypeAnalyzer(project),
       UnusedLocalDefinitionAnalyzer(project),
+      ExtendsClauseAnalyzer(project),
     )
 
   private val openFiles: MutableMap<URI, Boolean> = ConcurrentHashMap()
@@ -64,7 +65,9 @@ class DiagnosticsManager(project: Project) : Component(project) {
         openFiles[event.file] = true
       }
       is TextDocumentEvent.Changed -> {
-        doPublishDiagnostics(event.file)
+        for (file in openFiles.keys) {
+          doPublishDiagnostics(file)
+        }
       }
       is TextDocumentEvent.Closed -> {
         openFiles.remove(event.file)

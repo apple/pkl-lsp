@@ -1,0 +1,10 @@
+ abstract module Foo
+ 
+ abstract class Base {
+   const name: String
+ }
+ 
+ class Child extends Base {}
+             ^^^^^^^^^^^^
+| Error: class Child is not abstract and does not define a default value for property 'name'
+ 

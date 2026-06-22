@@ -106,7 +106,7 @@ private fun PklNode.doRenderMarkdown(originalNode: PklNode?, context: PklProject
           append(it.doRenderMarkdown(originalNode, context))
         }
       }
-    is PklModule -> header?.doRenderMarkdown(originalNode, context) ?: "module $moduleName"
+    is PklModule -> header?.doRenderMarkdown(originalNode, context) ?: "module $name"
     is PklModuleHeader ->
       buildString {
         append(modifiers.render())
@@ -119,8 +119,7 @@ private fun PklNode.doRenderMarkdown(originalNode: PklNode?, context: PklProject
           append(it.moduleUri!!.stringConstant.text)
         }
       }
-    is PklModuleClause ->
-      buildString { append(moduleName ?: enclosingModule?.moduleName ?: "<module>") }
+    is PklModuleClause -> buildString { append(moduleName ?: enclosingModule?.name ?: "<module>") }
     is PklImport ->
       buildString {
         if (isGlob) {
@@ -236,7 +235,7 @@ private fun showDocCommentAndModule(node: PklNode?, text: String, context: PklPr
       append("---")
       appendLine()
       appendLine()
-      append("in [${module.moduleName}](${module.getLocationUri(forDocs = true)})")
+      append("in [${module.name}](${module.getLocationUri(forDocs = true)})")
     }
   }
 }

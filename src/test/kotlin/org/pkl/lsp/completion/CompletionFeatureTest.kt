@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.pkl.lsp
+package org.pkl.lsp.completion
 
 import java.nio.file.Path
-import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import org.pkl.lsp.completion.ModuleUriCompletionProvider.Companion.ModuleUriCompletionData
+import org.pkl.lsp.LspTestBase
 
 class CompletionFeatureTest : LspTestBase() {
   @Test
   fun `complete amends header`() {
     createPklFile("amends \"<caret>\"")
     val completions = getCompletions()
-    assertThat(completions.map { it.label })
+    Assertions.assertThat(completions.map { it.label })
       .isEqualTo(listOf("pkl:", "file:///", "https://", "package://", "modulepath:/", "main.pkl"))
   }
 
@@ -34,7 +34,7 @@ class CompletionFeatureTest : LspTestBase() {
   fun `complete import`() {
     createPklFile("import \"<caret>\"")
     val completions = getCompletions()
-    assertThat(completions.map { it.label })
+    Assertions.assertThat(completions.map { it.label })
       .isEqualTo(listOf("pkl:", "file:///", "https://", "package://", "modulepath:/", "main.pkl"))
   }
 
@@ -42,7 +42,7 @@ class CompletionFeatureTest : LspTestBase() {
   fun `complete import expression`() {
     createPklFile("res = import(\"<caret>\")")
     val completions = getCompletions()
-    assertThat(completions.map { it.label })
+    Assertions.assertThat(completions.map { it.label })
       .isEqualTo(listOf("pkl:", "file:///", "https://", "package://", "modulepath:/", "main.pkl"))
   }
 
@@ -54,7 +54,7 @@ class CompletionFeatureTest : LspTestBase() {
     createPklFile("lib/target.pkl", "")
     createPklFile("import \"modulepath:/<caret>\"")
     val completions = getCompletions()
-    assertThat(completions.map { it.label }).isEqualTo(listOf("target.pkl"))
+    Assertions.assertThat(completions.map { it.label }).isEqualTo(listOf("target.pkl"))
   }
 
   @Test
@@ -66,7 +66,10 @@ class CompletionFeatureTest : LspTestBase() {
     val targetPath = createPklFile(modulepath1.resolve("target.pkl"), "")
     createPklFile(modulepath2.resolve("target.pkl"), "")
     createPklFile("import \"modulepath:/<caret>\"")
-    val completions = getCompletions().map { (it.data as ModuleUriCompletionData).moduleUri }
+    val completions =
+      getCompletions().map {
+        (it.data as ModuleUriCompletionProvider.Companion.ModuleUriCompletionData).moduleUri
+      }
     assert(completions.size == 1)
     assert(completions[0] == targetPath.toUri().toString())
   }
@@ -78,7 +81,7 @@ class CompletionFeatureTest : LspTestBase() {
     createArchive(libJar, mapOf("file.pkl" to "", "dir/file2.pkl" to ""))
     createPklFile("import \"modulepath:/<caret>\"")
     val completions = getCompletions()
-    assertThat(completions.map { it.label }).isEqualTo(listOf("dir", "file.pkl"))
+    Assertions.assertThat(completions.map { it.label }).isEqualTo(listOf("dir", "file.pkl"))
   }
 
   @Test
@@ -88,7 +91,7 @@ class CompletionFeatureTest : LspTestBase() {
     createArchive(libJar, mapOf("dir/target.pkl" to ""))
     createPklFile("import \"modulepath:/dir/<caret>\"")
     val completions = getCompletions()
-    assertThat(completions.map { it.label }).isEqualTo(listOf("target.pkl"))
+    Assertions.assertThat(completions.map { it.label }).isEqualTo(listOf("target.pkl"))
   }
 
   @Test
@@ -97,7 +100,8 @@ class CompletionFeatureTest : LspTestBase() {
     createPklFile(tempDir.resolve("bar.pkl").toString(), "bar = 1")
     createPklFile(tempDir.resolve("foo.pkl").toString(), "import \"/<caret>\"")
     val completions = getCompletions()
-    assertThat(completions.map { it.label }).hasSameElementsAs(listOf("bar.pkl", "foo.pkl"))
+    Assertions.assertThat(completions.map { it.label })
+      .hasSameElementsAs(listOf("bar.pkl", "foo.pkl"))
   }
 
   @Test
@@ -109,7 +113,8 @@ class CompletionFeatureTest : LspTestBase() {
     createPklFile(tempDir1.resolve("bar/baz.pkl").toString(), "bar = 1")
     createPklFile(tempDir2.resolve("bar/foo.pkl").toString(), "import \"./<caret>\"")
     val completions = getCompletions()
-    assertThat(completions.map { it.label }).hasSameElementsAs(listOf("baz.pkl", "foo.pkl"))
+    Assertions.assertThat(completions.map { it.label })
+      .hasSameElementsAs(listOf("baz.pkl", "foo.pkl"))
   }
 
   @Test

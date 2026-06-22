@@ -1,0 +1,7 @@
+abstract module Foo
+
+abstract class Base {
+  abstract function greet(): String
+}
+
+class Child extends Base {}

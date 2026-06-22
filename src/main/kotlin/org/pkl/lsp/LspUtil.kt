@@ -27,6 +27,7 @@ import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.regex.Pattern
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import org.eclipse.lsp4j.MarkupContent
@@ -149,11 +150,12 @@ fun String.getIndex(position: Position): Int {
   var currentIndex = 0
   for ((column, line) in lines().withIndex()) {
     if (column == position.line) {
-      return currentIndex + position.character
+      return min(currentIndex + position.character, lastIndex + 1)
     }
     currentIndex += line.length + 1 // + 1 because newline is also a character
   }
-  throw IllegalArgumentException("Invalid position for contents")
+  // according to LSP spec: in case of overflows, just use the very next index.
+  return lastIndex + 1
 }
 
 /**
