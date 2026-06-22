@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,9 @@ data class Span(val beginLine: Int, val beginCol: Int, val endLine: Int, val end
 
   /** Returns a zero-length span at the first position of this span. */
   fun firstCaret(): Span = Span(beginLine, beginCol, beginLine, beginCol)
+
+  /** Returns a zero-length span at the first position after this. */
+  fun firstSucceedingCaret(): Span = Span(endLine, endCol + 1, endLine, endCol + 1)
 
   fun drop(offset: Int): Span = Span(beginLine, beginCol + offset, endLine, endCol)
 

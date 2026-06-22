@@ -507,7 +507,7 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
     }
 
     fun supermodule(context: PklProject?): Module? =
-      ctx.supermodule(context)?.let { module(it, it.shortDisplayName, context) }
+      ctx.supermodule(context)?.let { module(it, it.name, context) }
 
     // assumes `!this.isSubtypeOf(type)`
     override fun hasCommonSubtypeWith(

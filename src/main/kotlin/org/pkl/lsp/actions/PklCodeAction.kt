@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import org.eclipse.lsp4j.CodeActionDisabled
 import org.eclipse.lsp4j.Command
 import org.eclipse.lsp4j.TextEdit
 import org.eclipse.lsp4j.WorkspaceEdit
-import org.pkl.lsp.LspUtil.toRange
 import org.pkl.lsp.analyzers.PklDiagnostic
 import org.pkl.lsp.ast.PklNode
 import org.pkl.lsp.ast.lspUri
@@ -69,13 +68,6 @@ abstract class PklLocalEditCodeAction(protected open val node: PklNode) : PklCod
         WorkspaceEdit().apply {
           changes = mapOf(node.containingFile.lspUri.toString() to getEdits())
         }
-    }
-  }
-
-  protected fun insertBefore(anchor: PklNode, newText: String): TextEdit {
-    return TextEdit().apply {
-      this.range = anchor.span.firstCaret().toRange()
-      this.newText = newText
     }
   }
 }

@@ -33,7 +33,7 @@ fun PklNode?.computeResolvedImportType(
 
   return RecursionManager.doPreventingRecursion(this, "computeResolvedImportType", Type.Unknown) {
     when (this) {
-      is PklModule -> Type.module(this, shortDisplayName, context)
+      is PklModule -> Type.module(this, name, context)
       is PklClass -> Type.Class(this)
       is PklTypeAlias -> Type.alias(this, context)
       is PklMethod ->

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,13 @@ object Edits {
   }
 
   fun apply(original: String, edits: List<Edit>): String {
+    val sorted =
+      edits.sortedWith(
+        compareByDescending<Edit> { it.range?.start?.line }
+          .thenByDescending { it.range?.start?.character }
+      )
     var result = original
-    for (change in edits) {
+    for (change in sorted) {
       if (change.range == null) {
         result = change.text
       } else {

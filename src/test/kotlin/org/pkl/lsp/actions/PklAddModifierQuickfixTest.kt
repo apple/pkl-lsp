@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.pkl.lsp
+package org.pkl.lsp.actions
 
-import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
+import org.pkl.lsp.LspTestBase
 
-class ModifierQuickfixTest : LspTestBase() {
+class PklAddModifierQuickfixTest : LspTestBase() {
   @Test
   fun `add modifier 'local' - no existing modifiers`() {
     val file =
@@ -31,11 +32,11 @@ class ModifierQuickfixTest : LspTestBase() {
           .trimIndent()
       )
     val diagnostic = getSingleDiagnostic(file)
-    assertThat(diagnostic.message).isEqualTo("Missing modifier 'local'")
+    Assertions.assertThat(diagnostic.message).isEqualTo("Missing modifier 'local'")
     val action = diagnostic.actions.find { it.title == "Add modifier 'local'" }
-    assertThat(action).isNotNull
+    Assertions.assertThat(action).isNotNull
     runAction(action!!.toMessage(diagnostic))
-    assertThat(file.contents)
+    Assertions.assertThat(file.contents)
       .isEqualTo(
         """
      amends "pkl:test"
@@ -58,12 +59,12 @@ class ModifierQuickfixTest : LspTestBase() {
           .trimIndent()
       )
     val diagnostic = getSingleDiagnostic(file)
-    assertThat(diagnostic.message).isEqualTo("Missing modifier 'local'")
+    Assertions.assertThat(diagnostic.message).isEqualTo("Missing modifier 'local'")
     val action = diagnostic.actions.find { it.title == "Add modifier 'local'" }
-    assertThat(action).isNotNull
+    Assertions.assertThat(action).isNotNull
     runAction(action!!.toMessage(diagnostic))
     // modifier gets inserted in between 'abstract' and 'external'
-    assertThat(file.contents)
+    Assertions.assertThat(file.contents)
       .isEqualTo(
         """
      amends "pkl:test"

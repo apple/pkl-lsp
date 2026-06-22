@@ -32,6 +32,12 @@ class PklModuleImpl(override val ctx: Node, override val virtualFile: VirtualFil
 
   override var index: Int = 0
 
+  override val name: String
+    get() {
+      return header?.moduleClause?.shortDisplayName
+        ?: uri.toString().substringAfterLast('/').replace(".pkl", "")
+    }
+
   override val isAmend: Boolean by lazy { header?.moduleExtendsAmendsClause?.isAmend ?: false }
 
   override val header: PklModuleHeader? by lazy { getChild(PklModuleHeaderImpl::class) }
@@ -50,7 +56,7 @@ class PklModuleImpl(override val ctx: Node, override val virtualFile: VirtualFil
     header?.moduleExtendsAmendsClause?.moduleUri
   }
 
-  private val lock = Object()
+  private val lock = Any()
 
   // This is cached at the VirtualFile level
   override fun supermodule(context: PklProject?): PklModule? =
@@ -82,15 +88,6 @@ class PklModuleImpl(override val ctx: Node, override val virtualFile: VirtualFil
   }
 
   override val methods: List<PklClassMethod> by lazy { members.filterIsInstance<PklClassMethod>() }
-
-  override val shortDisplayName: String by lazy {
-    header?.moduleClause?.shortDisplayName
-      ?: uri.toString().substringAfterLast('/').replace(".pkl", "")
-  }
-
-  override val moduleName: String? by lazy {
-    header?.moduleClause?.moduleName ?: uri.toString().substringAfterLast('/').replace(".pkl", "")
-  }
 
   override val minPklVersion: Version? by lazy {
     val annotations = header?.annotations ?: return@lazy null
@@ -236,7 +233,7 @@ class PklClassImpl(
   override val parent: PklNode,
   override val ctx: Node,
 ) : AbstractPklNode(project, parent, ctx), PklClass {
-  override val extends: PklType? by lazy { getChild(PklDeclaredTypeImpl::class) }
+  override val extends: PklType? by lazy { extendsClause?.type }
 
   override val annotations: List<PklAnnotation>? by lazy { getChildren(PklAnnotationImpl::class) }
 
@@ -262,6 +259,10 @@ class PklClassImpl(
   }
 
   override val methods: List<PklClassMethod> by lazy { members.filterIsInstance<PklClassMethod>() }
+
+  override val extendsClause: PklClassExtendsClause? by lazy {
+    getChild(PklClassExtendsClauseImpl::class)
+  }
 
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitClass(this)
@@ -311,4 +312,16 @@ class PklTypeParameterImpl(
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitTypeParameter(this)
   }
+}
+
+class PklClassExtendsClauseImpl(
+  override val project: Project,
+  override val parent: PklNode,
+  override val ctx: Node,
+) : AbstractPklNode(project, parent, ctx), PklClassExtendsClause {
+  override fun <R> accept(visitor: PklVisitor<R>): R? {
+    return visitor.visitClassExtendsClause(this)
+  }
+
+  override val type: PklType = PklDeclaredTypeImpl(project, this, ctx, false)
 }

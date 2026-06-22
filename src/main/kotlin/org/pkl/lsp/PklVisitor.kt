@@ -418,4 +418,8 @@ open class PklVisitor<R> {
   open fun visitShebangComment(node: PklShebangComment): R? {
     return null
   }
+
+  open fun visitClassExtendsClause(node: PklClassExtendsClause): R? {
+    return null
+  }
 }

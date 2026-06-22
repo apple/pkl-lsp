@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,12 @@ import java.util.EnumSet
 import org.eclipse.lsp4j.CodeActionDisabled
 import org.eclipse.lsp4j.CodeActionKind
 import org.eclipse.lsp4j.TextEdit
+import org.pkl.lsp.ast.PklClass
 import org.pkl.lsp.ast.PklModifierListOwner
+import org.pkl.lsp.ast.PklModule
 import org.pkl.lsp.ast.PklNode
 import org.pkl.lsp.ast.TokenType
+import org.pkl.lsp.ast.prepend
 
 class PklAddModifierQuickFix(
   override val node: PklModifierListOwner,
@@ -33,12 +36,21 @@ class PklAddModifierQuickFix(
   }
 
   override fun getEdits(): List<TextEdit> {
-    return listOf(insertBefore(getAnchor(), modifier.sourceCode + " "))
+    // if there's no module clause, create one
+    if (node is PklModule && node.header?.moduleClause == null) {
+      return listOf(node.prepend("${modifier.sourceCode} module ${node.name}\n\n"))
+    }
+    return listOf(getAnchor().prepend(modifier.sourceCode + " "))
   }
 
   private fun getAnchor(): PklNode {
-    val sortOrder = modifier.sortOrder
-    return node.modifiers?.find { it.type.sortOrder >= sortOrder } ?: node.terminals.first()
+    val nextModifier = node.modifiers?.find { it.type.sortOrder >= modifier.sortOrder }
+    if (nextModifier != null) return nextModifier
+    return when {
+      node is PklClass -> node.terminals.find { it.type == TokenType.CLASS }!!
+      node is PklModule -> node.header!!.moduleClause!!
+      else -> node.terminals.first()
+    }
   }
 
   override val kind: String = CodeActionKind.QuickFix

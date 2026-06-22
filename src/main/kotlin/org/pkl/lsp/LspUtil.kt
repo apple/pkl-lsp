@@ -153,7 +153,8 @@ fun String.getIndex(position: Position): Int {
     }
     currentIndex += line.length + 1 // + 1 because newline is also a character
   }
-  throw IllegalArgumentException("Invalid position for contents")
+  // according to LSP spec: in case of overflows, just use the very next index.
+  return lastIndex + 1
 }
 
 /**
