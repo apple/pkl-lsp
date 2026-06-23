@@ -82,10 +82,6 @@ dependencies {
   implementation(libs.jspecify) // used by jtreesitter
   implementation(libs.jtreesitter)
   implementation(libs.pklFormatter)
-  // stdlib files are included from a one-off configuration then bundled into shadow jar (see
-  // shadowJar spec).
-  // declare a regular dependency for testing only.
-  testRuntimeOnly(libs.pklStdlib)
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
   testImplementation(libs.assertJ)
   testImplementation(libs.junitJupiter)
@@ -140,21 +136,19 @@ val verifyShadowJar by
 
       val nestedStdlibJars = entries.filter { it.matches(Regex("pkl-stdlib-.*\\.jar")) }
       if (nestedStdlibJars.isNotEmpty()) {
-        throw GradleException("Shadow jar contains nested pkl-stdlib")
+        throw GradleException("Shadow jar contains nested pkl-stdlib. File: $shadowJarFile")
       }
 
       val pklFiles = entries.filter { it.endsWith(".pkl") }
       if (pklFiles.isEmpty()) {
-        throw GradleException("Shadow jar does not contain any .pkl files")
+        throw GradleException("Shadow jar does not contain any .pkl files. File: $shadowJarFile")
       }
     }
   }
 
 tasks.shadowJar {
   archiveClassifier = null
-  // Ensure stdlib files are extracted into the shadow jar, rather than included as a `.jar` or
-  // `.zip`
-  from(pklStdlibFiles.map { zipTree(it) })
+  dependsOn(tasks.processResources)
   finalizedBy(verifyShadowJar)
 }
 
@@ -383,6 +377,14 @@ tasks.processResources {
         )
     )
   }
+
+  // We can't just declare a dependency on the stdlib, e.g. `implementation(libs.pklStdlib)`,
+  // because the extension is `.zip` and not `.jar`.
+  // This makes the shadowJar task to bundle the zip as a _nested_ file, instead of expanding its
+  // contents into the shadow jar.
+  //
+  // To fix this, we instead copy the stdlib contents into the resources dir at build time.
+  from(pklStdlibFiles.map(::zipTree))
 }
 
 // verify the built distribution in different OSes.

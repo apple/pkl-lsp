@@ -315,6 +315,7 @@ fun editSource(source: String, line: Int, col: Int, edit: String): String {
 //
 // For every new package opened, its file system is never closed and kept on heap.
 fun ensureJarFileSystem(uri: URI) {
+  if (uri.scheme != "jar") return
   val rootUri = URI.create("${uri.toString().substringBeforeLast("!/")}!/")
   try {
     FileSystems.newFileSystem(rootUri, HashMap<String, Any>())
