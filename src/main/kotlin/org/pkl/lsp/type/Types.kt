@@ -591,10 +591,10 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
       visitor: ResolveVisitor<*>,
       context: PklProject?,
     ): Boolean {
-      fun visit(name: String, type: PklType): Boolean =
+      fun visit(name: String, type: PklType, classProperties: List<PklClassProperty>): Boolean =
         visitor.visit(
           name,
-          PklReferenceQualifiedAccessProxyImpl(ctx.project, name, domain, type),
+          PklReferenceQualifiedAccessProxyImpl(ctx.project, name, domain, type, classProperties),
           bindings,
           context,
         )
@@ -602,10 +602,10 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
       return when {
         !isProperty -> super.visitMembers(false, allowClasses, base, visitor, context)
         referencesUnknown && visitor.exactName != null ->
-          visit(visitor.exactName!!, PklFakeUnknownTypeImpl(ctx.project))
+          visit(visitor.exactName!!, PklFakeUnknownTypeImpl(ctx.project), listOf())
         visitor.exactName != null -> {
           var isUnknown = false
-          val candidates = mutableSetOf<PklType>()
+          val candidates = mutableListOf<PklClassProperty>()
 
           walkCandidates(referent, base, context) { type, properties ->
             for (prop in properties) {
@@ -615,38 +615,49 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
                   isUnknown = true
                   return@walkCandidates false
                 }
-                candidates.add(propType)
+                candidates.add(prop)
                 return@walkCandidates true
               }
             }
             return@walkCandidates true
           }
 
-          if (isUnknown) visit(visitor.exactName!!, PklFakeUnknownTypeImpl(ctx.project))
+          if (isUnknown) visit(visitor.exactName!!, PklFakeUnknownTypeImpl(ctx.project), candidates)
           else if (candidates.isNotEmpty())
             visit(
               visitor.exactName!!,
-              PklFakeUnionTypeImpl.create(ctx.project, candidates.toList()),
+              PklFakeUnionTypeImpl.create(
+                ctx.project,
+                candidates.map { it.type ?: PklFakeUnknownTypeImpl(ctx.project) },
+              ),
+              candidates,
             )
           else true
         }
         else -> {
-          val propertyCandidates = mutableMapOf<String, MutableSet<PklType>>()
+          val propertyCandidates = mutableMapOf<String, MutableList<PklClassProperty>>()
           walkCandidates(referent, base, context) { type, properties ->
             for (prop in properties) {
               if (isViable(prop, type, base, context)) {
-                propertyCandidates
-                  .getOrPut(prop.name) { mutableSetOf() }
-                  .add(prop.type ?: PklFakeUnknownTypeImpl(ctx.project))
+                propertyCandidates.getOrPut(prop.name) { mutableListOf() }.add(prop)
               }
             }
             return@walkCandidates true
           }
           for ((propName, candidates) in propertyCandidates) {
             when {
-              candidates.any { it is PklUnknownType } ->
-                visit(propName, PklFakeUnknownTypeImpl(ctx.project))
-              else -> visit(propName, PklFakeUnionTypeImpl.create(ctx.project, candidates.toList()))
+              candidates.any {
+                (it.type ?: PklFakeUnknownTypeImpl(ctx.project)) is PklUnknownType
+              } -> visit(propName, PklFakeUnknownTypeImpl(ctx.project), candidates)
+              else ->
+                visit(
+                  propName,
+                  PklFakeUnionTypeImpl.create(
+                    ctx.project,
+                    candidates.map { it.type ?: PklFakeUnknownTypeImpl(ctx.project) },
+                  ),
+                  candidates,
+                )
             }
           }
           true

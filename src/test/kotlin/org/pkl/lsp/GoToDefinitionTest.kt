@@ -585,4 +585,29 @@ class GoToDefinitionTest : LspTestBase() {
     val resolved = goToDefinition()
     assertThat(resolved.first()).isInstanceOf(PklClassProperty::class.java)
   }
+
+  @Test
+  fun `resolve reference property`() {
+    createPklFile(
+      """
+      import "pkl:ref"
+
+      class Domain extends ref.Domain
+
+      class Bird {
+        name: String
+      }
+
+      r: ref.Reference<Domain, Bird>
+
+      res = r.na<caret>me
+    """
+        .trimIndent()
+    )
+    val resolved = goToDefinition().single()
+    assertThat(resolved).isInstanceOf(PklClassProperty::class.java)
+    resolved as PklClassProperty
+    assertThat(resolved.name).isEqualTo("name")
+    assertThat(resolved.parentOfTypes(PklClass::class)!!.name).isEqualTo("Bird")
+  }
 }

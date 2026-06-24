@@ -263,4 +263,28 @@ class HoverTest : LspTestBase() {
     val hoverText = getHoverText()
     assertThat(hoverText).contains("Class<Int>")
   }
+
+  @Test
+  fun `hover over reference property shows doc comment`() {
+    createPklFile(
+      """
+      import "pkl:ref"
+
+      class Domain extends ref.Domain
+
+      class Bird {
+        /// The name of the bird
+        name: String
+      }
+
+      r: ref.Reference<Domain, Bird>
+
+      res = r.na<caret>me
+    """
+        .trimIndent()
+    )
+    val hoverText = getHoverText()
+    assertThat(hoverText).contains("name: pkl.ref#Reference<main#Domain, String>")
+    assertThat(hoverText).contains("The name of the bird")
+  }
 }
