@@ -33,6 +33,8 @@ plugins {
   alias(libs.plugins.shadow)
   alias(libs.plugins.spotless)
   alias(libs.plugins.nexusPublish)
+  `pklJavaExecutable`
+  `pklNativeExecutable`
 }
 
 val buildInfo = project.extensions.getByType<BuildInfo>()
@@ -109,6 +111,162 @@ tasks.jar {
 }
 
 application { mainClass = "org.pkl.lsp.cli.Main" }
+
+executable {
+  mainClass = "org.pkl.lsp.cli.Main"
+  name = "pkl-lsp"
+  javaName = "pkl-lsp"
+  documentationName = "Pkl LSP"
+  publicationName = "pkl-lsp"
+  javaPublicationName = "pkl-lsp-java"
+  website = "https://github.com/apple/pkl-lsp"
+}
+
+val generateReachabilityMetadata by
+  tasks.registering {
+    dependsOn(tasks.shadowJar)
+    // The native-image-agent requires GraalVM's java, not a regular JDK.
+    val graalVm =
+      if (buildInfo.arch == Architecture.Amd64) buildInfo.graalVmAmd64 else buildInfo.graalVmAarch64
+    dependsOn(
+      if (buildInfo.arch == Architecture.Amd64) ":installGraalVmAmd64" else ":installGraalVmAarch64"
+    )
+    val javaExecutable =
+      graalVm.baseDir
+        .resolve("bin")
+        .resolve(if (buildInfo.os.isWindows) "java.exe" else "java")
+        .absolutePath
+    val jarExecutable =
+      graalVm.baseDir
+        .resolve("bin")
+        .resolve(if (buildInfo.os.isWindows) "jar.exe" else "jar")
+        .absolutePath
+    val shadowJarFile = tasks.shadowJar.flatMap { it.archiveFile }
+    val metadataDir = layout.buildDirectory.dir("native-image-config")
+
+    inputs.files(shadowJarFile)
+    outputs.dir(metadataDir)
+
+    doLast {
+      val dir = metadataDir.get().asFile
+      dir.mkdirs()
+      val configDir = dir.resolve("META-INF/native-image")
+      configDir.mkdirs()
+      val jar = shadowJarFile.get().asFile
+
+      val root = rootDir.toURI().toString()
+      val sampleUri = "${root}tracing-sample.pkl"
+      val samplePkl =
+        """
+        module foo
+
+        import "pkl:base"
+
+        x: Int = 1
+        y: String = "hello"
+        z: List<Int> = [1, 2, 3]
+
+        class Person {
+          name: String
+          age: Int
+        }
+
+        person: Person = new {
+          name = "Alice"
+          age = 30
+        }
+        """
+          .trimIndent()
+      val escapedSamplePkl =
+        samplePkl
+          .replace("\\", "\\\\")
+          .replace("\"", "\\\"")
+          .replace("\n", "\\n")
+          .replace("\r", "\\r")
+          .replace("\t", "\\t")
+
+      val lspMessages = buildString {
+        fun writeMessage(json: String) {
+          val body = json.trim()
+          append("Content-Length: ${body.toByteArray().size}\r\n\r\n$body")
+        }
+        writeMessage(
+          """{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootUri":"$root","workspaceFolders":[{"uri":"$root","name":"pkl-lsp"}],"capabilities":{"workspace":{"workspaceFolders":true,"didChangeConfiguration":{"dynamicRegistration":false}}}}}"""
+        )
+        writeMessage("""{"jsonrpc":"2.0","method":"initialized","params":{}}""")
+        // Open a sample Pkl file to trigger tree-sitter parsing
+        writeMessage(
+          """{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"$sampleUri","languageId":"pkl","version":1,"text":"$escapedSamplePkl"}}}"""
+        )
+        // Request completion to exercise tree walking
+        writeMessage(
+          """{"jsonrpc":"2.0","id":3,"method":"textDocument/completion","params":{"textDocument":{"uri":"$sampleUri"},"position":{"line":4,"character":3}}}"""
+        )
+        // Request hover to exercise node inspection
+        writeMessage(
+          """{"jsonrpc":"2.0","id":4,"method":"textDocument/hover","params":{"textDocument":{"uri":"$sampleUri"},"position":{"line":4,"character":1}}}"""
+        )
+        // Change text to trigger re-parsing
+        writeMessage(
+          """{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"$sampleUri","version":2},"contentChanges":[{"range":{"start":{"line":4,"character":10},"end":{"line":4,"character":11}},"text":"42"}]}}"""
+        )
+        // Close the document
+        writeMessage(
+          """{"jsonrpc":"2.0","method":"textDocument/didClose","params":{"textDocument":{"uri":"$sampleUri"}}}"""
+        )
+        writeMessage("""{"jsonrpc":"2.0","id":2,"method":"shutdown","params":null}""")
+        writeMessage("""{"jsonrpc":"2.0","method":"exit","params":null}""")
+      }
+
+      val process =
+        ProcessBuilder()
+          .command(
+            javaExecutable,
+            "-agentlib:native-image-agent=config-output-dir=${configDir.absolutePath}",
+            "-jar",
+            jar.absolutePath,
+          )
+          .directory(configDir)
+          .start()
+      process.outputStream.use { out ->
+        out.write(lspMessages.toByteArray())
+        out.flush()
+        // Allow time for async LSP processing (diagnostics, parsing) to complete
+        Thread.sleep(3000)
+      }
+      val exitCode = process.waitFor()
+      if (exitCode != 0) {
+        throw GradleException(
+          "Reachability metadata agent exited with code $exitCode.\n${process.errorStream.bufferedReader().readText()}"
+        )
+      }
+
+      val metadataFile = configDir.resolve("reachability-metadata.json")
+      if (!metadataFile.exists() || metadataFile.length() == 0L) {
+        throw GradleException(
+          "reachability-metadata.json was not generated. Agent stderr:\n${process.errorStream.bufferedReader().readText()}"
+        )
+      }
+
+      val jarProcess =
+        ProcessBuilder()
+          .command(
+            jarExecutable,
+            "--file",
+            jar.absolutePath,
+            "-u",
+            "META-INF/native-image/reachability-metadata.json",
+          )
+          .directory(dir)
+          .start()
+      val jarExit = jarProcess.waitFor()
+      if (jarExit != 0) {
+        throw GradleException(
+          "jar update failed with code $jarExit.\n${jarProcess.errorStream.bufferedReader().readText()}"
+        )
+      }
+    }
+  }
 
 tasks.test {
   dependsOn(configurePklCliExecutable)
@@ -401,6 +559,59 @@ val verifyDistribution by
     useJUnitPlatform()
     System.getProperty("testReportsDir")?.let { reportsDir ->
       reports.junitXml.outputLocation.set(file(reportsDir).resolve(project.name).resolve(name))
+    }
+  }
+
+// verify the built native executable by sending LSP messages and checking responses.
+@Suppress("unused")
+val verifyNativeDistribution by
+  tasks.registering {
+    dependsOn("assembleNative")
+    group = "verification"
+
+    doLast {
+      val nativeExecutable = tasks.named("assembleNative").get().outputs.files.singleFile
+      val root = rootDir.toURI().toString()
+
+      val lspMessages = buildString {
+        fun writeMessage(json: String) {
+          val body = json.trim()
+          append("Content-Length: ${body.toByteArray().size}\r\n\r\n$body")
+        }
+        writeMessage(
+          """{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootUri":"$root","workspaceFolders":[{"uri":"$root","name":"pkl-lsp"}],"capabilities":{}}}"""
+        )
+        writeMessage("""{"jsonrpc":"2.0","method":"initialized","params":{}}""")
+        writeMessage("""{"jsonrpc":"2.0","id":2,"method":"shutdown","params":null}""")
+        writeMessage("""{"jsonrpc":"2.0","method":"exit","params":null}""")
+      }
+
+      val process =
+        ProcessBuilder().command(nativeExecutable.absolutePath).redirectErrorStream(true).start()
+
+      // Write messages to stdin in a separate thread to avoid deadlock
+      val writer = Thread {
+        process.outputStream.use { out ->
+          out.write(lspMessages.toByteArray())
+          out.flush()
+          Thread.sleep(2000)
+        }
+      }
+      writer.start()
+
+      val exitCode = process.waitFor()
+      writer.join()
+
+      if (exitCode != 0) {
+        throw GradleException(
+          "Native executable exited with code $exitCode.\n${process.inputStream.bufferedReader().readText()}"
+        )
+      }
+
+      val output = process.inputStream.bufferedReader().readText()
+      if (!output.contains("capabilities")) {
+        throw GradleException("Native executable did not return LSP capabilities. Output: $output")
+      }
     }
   }
 
