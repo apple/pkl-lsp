@@ -142,6 +142,12 @@ private fun PklNode.doRenderMarkdown(originalNode: PklNode?, context: PklProject
         typeParameterList?.let { append(it.doRenderMarkdown(originalNode, context)) }
       }
     is PklType -> render()
+    is PklReferenceQualifiedAccessProxy ->
+      buildString {
+        append(name)
+        append(": ")
+        append(type.doRenderMarkdown(originalNode, context))
+      }
     else -> text
   }
 

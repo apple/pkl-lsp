@@ -274,6 +274,9 @@ private fun PklType?.isRecursive(seen: Set<PklTypeAlias>, context: PklProject?):
 val PklNode.isInPklBaseModule: Boolean
   get() = containingFile === project.stdlib.base
 
+val PklNode.isInPklRefModule: Boolean
+  get() = project.stdlib.ref != null && containingFile === project.stdlib.ref
+
 val PklModuleMember.owner: PklTypeDefOrModule?
   get() = parentOfTypes(PklClass::class, PklModule::class)
 

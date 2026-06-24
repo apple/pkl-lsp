@@ -10,7 +10,7 @@
    ...bar
       ^^^
 | Warning: Nullability mismatch.
-| Required: Collection|Map|Dynamic|Listing|Mapping|IntSeq|Bytes
+| Required: Collection | Map | Dynamic | Listing | Mapping | IntSeq | Bytes
 | Actual: Mapping?
  }
  
@@ -18,7 +18,7 @@
    ...myNum
       ^^^^^
 | Error: Type mismatch.
-| Required: Collection|Map|Dynamic|Listing|Mapping|IntSeq|Bytes
+| Required: Collection | Map | Dynamic | Listing | Mapping | IntSeq | Bytes
 | Actual: Int
  }
  
@@ -30,6 +30,6 @@
    ...Bytes(1, 2, 3)
       ^^^^^^^^^^^^^^
 | Error: Type mismatch.
-| Required: Collection<String>|Listing<String>|Dynamic
+| Required: Collection<String> | Listing<String> | Dynamic
 | Actual: Bytes
  }

@@ -1,2 +1,2 @@
-org.pkl.lsp.ParserSnippetTestEngine
-org.pkl.lsp.DiagnosticsSnippetTestEngine
+org.pkl.lsp.ParserSnippetTestsEngine
+org.pkl.lsp.DiagnosticsSnippetTestsEngine

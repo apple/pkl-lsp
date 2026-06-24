@@ -27,7 +27,7 @@ import org.eclipse.lsp4j.WorkspaceClientCapabilities
 import org.pkl.lsp.analyzers.PklDiagnostic
 import org.pkl.lsp.ast.PklModule
 
-class DiagnosticsSnippetTestEngine : InputOutputTestEngine() {
+class DiagnosticsSnippetTestsEngine : InputOutputTestEngine() {
   override val testClass: KClass<*> = DiagnosticsSnippetTests::class
 
   val server: PklLspServer by lazy { PklLspServer(true).also { it.connect(TestLanguageClient) } }

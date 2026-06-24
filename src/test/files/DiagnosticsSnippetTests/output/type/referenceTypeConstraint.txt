@@ -1,0 +1,30 @@
+ import "pkl:ref"
+ 
+ hidden a: String
+ 
+ class Domain extends ref.Domain {
+   function renderReference(reference: ref.Reference<Domain, Any>) = throw("no impl")
+ }
+ 
+ local domain = new Domain {}
+ 
+ foo: ref.Reference<Domain, String(true)>
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| Error: `pkl.ref#Reference` type annotations may not contain type constraints.
+ bar: ref.Reference<Domain, String(true) | Int>
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| Error: `pkl.ref#Reference` type annotations may not contain type constraints.
+ baz: ref.Reference<Domain, Listing<String(true)>>
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| Error: `pkl.ref#Reference` type annotations may not contain type constraints.
+ qux: ref.Reference<Domain, Alias1?>
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| Error: `pkl.ref#Reference` type annotations may not contain type constraints.
+ 
+ typealias Alias1 = Int | Alias2?
+ typealias Alias2 = String(length < 5)
+ 
+ xxx: ref.Reference<Domain, String(true)>
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| Error: `pkl.ref#Reference` type annotations may not contain type constraints.
+ 

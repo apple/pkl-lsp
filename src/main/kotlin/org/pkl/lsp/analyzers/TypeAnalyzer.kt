@@ -16,9 +16,11 @@
 package org.pkl.lsp.analyzers
 
 import org.pkl.lsp.ErrorMessages
+import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.Project
 import org.pkl.lsp.ast.PklDeclaredType
 import org.pkl.lsp.ast.PklNode
+import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.type.Type
 import org.pkl.lsp.type.toType
 
@@ -27,18 +29,48 @@ class TypeAnalyzer(project: Project) : Analyzer(project) {
     when {
       node is PklDeclaredType && !node.typeArgumentList?.types.isNullOrEmpty() -> {
         val type = node.toType(project.pklBaseModule, emptyMap(), node.containingFile.pklProject)
+
         val argCount = node.typeArgumentList!!.types.size
         val paramCount =
-          if (type is Type.Class) type.typeArguments.size
-          else if (type is Type.Alias) type.typeArguments.size else 0
+          when (type) {
+            is Type.Class -> type.typeArguments.size
+            is Type.Alias -> type.typeArguments.size
+            else -> 0
+          }
         if (paramCount != 0 && paramCount != argCount) {
           diagnosticsHolder.addError(
             node,
             ErrorMessages.create("incorrectTypeArgumentCount", paramCount, argCount),
           )
+          return false
         }
+
+        val unaliased = type.unaliased(project.pklBaseModule, node.containingFile.pklProject)
+        if (
+          unaliased is Type.Reference &&
+            type.containsConstrainedType(project.pklBaseModule, node.containingFile.pklProject)
+        ) {
+          diagnosticsHolder.addError(
+            node,
+            ErrorMessages.create("invalidReferenceTypeWithConstraint"),
+          )
+        }
+
         false
       }
       else -> true
     }
+
+  private fun Type.containsConstrainedType(base: PklBaseModule, context: PklProject?): Boolean =
+    !constraints.isEmpty() ||
+      when (this) {
+        is Type.Class -> typeArguments.any { it.containsConstrainedType(base, context) }
+        is Type.Alias ->
+          typeArguments.any { it.containsConstrainedType(base, context) } ||
+            aliasedType(base, context).containsConstrainedType(base, context)
+        is Type.Union ->
+          leftType.containsConstrainedType(base, context) ||
+            rightType.containsConstrainedType(base, context)
+        else -> false
+      }
 }
