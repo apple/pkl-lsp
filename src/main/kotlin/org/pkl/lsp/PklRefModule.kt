@@ -23,10 +23,12 @@ class PklRefModule(project: Project) : Component(project) {
   val module: PklModule?
     get() = project.stdlib.ref?.getModule()?.get()
 
-  val types: Map<String, Type> = buildMap {
-    for (member in module?.members ?: emptyList()) {
-      if (member is PklClass) {
-        put(member.name, Type.Class.create(member))
+  val types: Map<String, Type> by lazy {
+    buildMap {
+      for (member in module?.members ?: emptyList()) {
+        if (member is PklClass) {
+          put(member.name, Type.Class.create(member))
+        }
       }
     }
   }

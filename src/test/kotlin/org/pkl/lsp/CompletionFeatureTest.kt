@@ -113,7 +113,7 @@ class CompletionFeatureTest : LspTestBase() {
   }
 
   @Test
-  fun `complete reference synthetic members`() {
+  fun `references - complete synthetic members`() {
     createPklFile(
       """
       import "pkl:ref"
@@ -132,5 +132,87 @@ class CompletionFeatureTest : LspTestBase() {
     val completions = getCompletions()
     assert(completions.find { it.label == "name" } != null)
     assert(completions.find { it.label == "age" } != null)
+  }
+
+  @Test
+  fun `reference - does not complete external members`() {
+    createPklFile(
+      """
+      import "pkl:ref"
+
+      class Person {
+        name: String
+        age: Int
+      }
+
+      foo: ref.Reference<ref.Domain, Duration>
+
+      res = foo.<caret>
+    """
+        .trimIndent()
+    )
+    val completions = getCompletions()
+    assert(completions.find { it.label == "ns" } == null)
+    assert(completions.find { it.label == "d" } == null)
+  }
+
+  @Test
+  fun `reference - does not complete Listing default, unparameterized`() {
+    createPklFile(
+      """
+      import "pkl:ref"
+
+      foo: ref.Reference<ref.Domain, Listing>
+
+      res = foo.<caret>
+    """
+        .trimIndent()
+    )
+    val completions = getCompletions()
+    assert(completions.isNotEmpty())
+    assert(completions.find { it.label == "default" } == null)
+  }
+
+  @Test
+  fun `reference - does not complete Listing default, parameterized`() {
+    createPklFile(
+      """
+      import "pkl:ref"
+
+      foo: ref.Reference<ref.Domain, Listing<Int>>
+
+      res = foo.<caret>
+    """
+        .trimIndent()
+    )
+    val completions = getCompletions()
+    assert(completions.isNotEmpty())
+    assert(completions.find { it.label == "default" } == null)
+  }
+
+  @Test
+  fun `reference - does not complete Module output`() {
+    createPklFile(
+      "MyModule.pkl",
+      """
+      name: String
+    """
+        .trimIndent(),
+    )
+    createPklFile(
+      """
+      import "pkl:ref"
+      import "MyModule.pkl"
+
+      foo: ref.Reference<ref.Domain, MyModule>
+
+      res = foo.<caret>
+    """
+        .trimIndent()
+    )
+    val completions = getCompletions()
+    assert(completions.isNotEmpty())
+    assert(completions.find { it.label == "output" } == null)
+    assert(completions.find { it.label == "name" } != null)
   }
 }

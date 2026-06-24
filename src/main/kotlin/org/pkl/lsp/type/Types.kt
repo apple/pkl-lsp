@@ -127,9 +127,11 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
         context,
       )
 
-    fun union(types: List<Type>, base: PklBaseModule, context: PklProject?): Type =
-      if (types.size == 1) types.single()
+    fun union(types: List<Type>, base: PklBaseModule, context: PklProject?): Type {
+      require(types.isNotEmpty())
+      return if (types.size == 1) types.single()
       else types.reduce { t1, t2 -> Union.create(t1, t2, base, context) }
+    }
 
     fun function1(param1Type: Type, returnType: Type, base: PklBaseModule): Type =
       base.function1Type.withTypeArguments(param1Type, returnType)
@@ -575,9 +577,9 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
       !(prop.isExternal ||
         prop.isLocal ||
         (type as? Class)?.let {
-          it == base.listingType ||
-            it == base.mappingType ||
-            (it == base.dynamicType && prop.name == "default") ||
+          it.classEquals(base.listingType) ||
+            it.classEquals(base.mappingType) ||
+            (it.classEquals(base.dynamicType) && prop.name == "default") ||
             it.ctx.isExternal
         } ?: false ||
         (type.isSubtypeOf(base.moduleType, base, context) && prop.name == "output"))
@@ -599,8 +601,8 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
 
       return when {
         !isProperty -> super.visitMembers(false, allowClasses, base, visitor, context)
-        referencesUnknown ->
-          visit(visitor.exactName ?: "UNKNOWN", PklFakeUnknownTypeImpl(ctx.project))
+        referencesUnknown && visitor.exactName != null ->
+          visit(visitor.exactName!!, PklFakeUnknownTypeImpl(ctx.project))
         visitor.exactName != null -> {
           var isUnknown = false
           val candidates = mutableSetOf<PklType>()
@@ -621,7 +623,7 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
           }
 
           if (isUnknown) visit(visitor.exactName!!, PklFakeUnknownTypeImpl(ctx.project))
-          else if (!candidates.isEmpty())
+          else if (candidates.isNotEmpty())
             visit(
               visitor.exactName!!,
               PklFakeUnionTypeImpl.create(ctx.project, candidates.toList()),
@@ -724,9 +726,7 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
         when (root) {
           is Alias -> {
             val aliased = root.aliasedType(base, context)
-            if (root.ctx.isInPklBaseModule && (aliased as? Class)?.ctx?.name == "Int")
-              walkCandidates(root, base, context, visit)
-            else walkCandidates(aliased, base, context, visit)
+            walkCandidates(aliased, base, context, visit)
           }
           is Class -> visit(root, root.ctx.properties)
           is Module -> visit(root, root.ctx.properties)

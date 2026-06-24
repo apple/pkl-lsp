@@ -46,6 +46,8 @@ class PklReferenceQualifiedAccessProxyImpl(
   override val type: PklType =
     DeclaredType(
       project,
+      // referenceType guaranteed to exist, this class is only created if `pkl:ref` is present in
+      // the stdlib
       project.pklRefModule.referenceType!!,
       listOf(DeclaredType(project, domain), referent),
     )
