@@ -29,7 +29,7 @@ import org.junit.jupiter.params.provider.MethodSource
 class RepositoryHygiene {
   @Test
   fun `no remaining snippet test selection`() {
-    assertThat(DiagnosticsSnippetTestEngine().selection).isEqualTo("")
+    assertThat(DiagnosticsSnippetTestsEngine().selection).isEqualTo("")
   }
 
   @ParameterizedTest()

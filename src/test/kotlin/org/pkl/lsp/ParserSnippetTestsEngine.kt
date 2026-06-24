@@ -24,7 +24,7 @@ import org.pkl.lsp.ast.PklModuleImpl
 import org.pkl.lsp.ast.PklNode
 import org.pkl.lsp.ast.Terminal
 
-class ParserSnippetTestEngine : InputOutputTestEngine() {
+class ParserSnippetTestsEngine : InputOutputTestEngine() {
   override val testClass: KClass<*> = ParserSnippetTests::class
 
   override val includedTests: List<Regex> = listOf(Regex(".*"))

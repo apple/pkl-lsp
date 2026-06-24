@@ -1,0 +1,19 @@
+import "pkl:ref"
+
+hidden a: String
+
+class Domain extends ref.Domain {
+  function renderReference(reference: ref.Reference<Domain, Any>) = throw("no impl")
+}
+
+local domain = new Domain {}
+
+foo: ref.Reference<Domain, String(true)>
+bar: ref.Reference<Domain, String(true) | Int>
+baz: ref.Reference<Domain, Listing<String(true)>>
+qux: ref.Reference<Domain, Alias1?>
+
+typealias Alias1 = Int | Alias2?
+typealias Alias2 = String(length < 5)
+
+xxx: ref.Reference<Domain, String(true)>

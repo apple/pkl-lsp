@@ -32,13 +32,17 @@ class TypeAnalyzer(project: Project) : Analyzer(project) {
 
         val argCount = node.typeArgumentList!!.types.size
         val paramCount =
-          if (type is Type.Class) type.typeArguments.size
-          else if (type is Type.Alias) type.typeArguments.size else 0
+          when (type) {
+            is Type.Class -> type.typeArguments.size
+            is Type.Alias -> type.typeArguments.size
+            else -> 0
+          }
         if (paramCount != 0 && paramCount != argCount) {
           diagnosticsHolder.addError(
             node,
             ErrorMessages.create("incorrectTypeArgumentCount", paramCount, argCount),
           )
+          return false
         }
 
         val unaliased = type.unaliased(project.pklBaseModule, node.containingFile.pklProject)

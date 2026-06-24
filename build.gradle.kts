@@ -37,7 +37,10 @@ plugins {
 
 val buildInfo = project.extensions.getByType<BuildInfo>()
 
-repositories { mavenCentral() }
+repositories {
+  maven("https://central.sonatype.com/repository/maven-snapshots/")
+  mavenCentral()
+}
 
 java {
   sourceCompatibility = JavaVersion.toVersion(buildInfo.jdkTargetVersion)
@@ -110,7 +113,7 @@ tasks.test {
   dependsOn(configurePklCliExecutable)
   jvmArgs("--enable-native-access=ALL-UNNAMED")
   systemProperties["pklExecutable"] = pklCli.singleFile.absolutePath
-  useJUnitPlatform { includeEngines("ParserSnippetTestEngine", "DiagnosticsSnippetTestEngine") }
+  useJUnitPlatform { includeEngines("ParserSnippetTestsEngine", "DiagnosticsSnippetTestsEngine") }
   System.getProperty("testReportsDir")?.let { reportsDir ->
     reports.junitXml.outputLocation.set(file(reportsDir).resolve(project.name).resolve(name))
   }

@@ -111,4 +111,26 @@ class CompletionFeatureTest : LspTestBase() {
     val completions = getCompletions()
     assertThat(completions.map { it.label }).hasSameElementsAs(listOf("baz.pkl", "foo.pkl"))
   }
+
+  @Test
+  fun `complete reference synthetic members`() {
+    createPklFile(
+      """
+      import "pkl:ref"
+
+      class Person {
+        name: String
+        age: Int
+      }
+
+      foo: ref.Reference<ref.Domain, Person>
+
+      res = foo.<caret>
+    """
+        .trimIndent()
+    )
+    val completions = getCompletions()
+    assert(completions.find { it.label == "name" } != null)
+    assert(completions.find { it.label == "age" } != null)
+  }
 }
