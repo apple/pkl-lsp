@@ -51,9 +51,9 @@ class DiagnosticsSnippetTestEngine : InputOutputTestEngine() {
   override val includedTests: List<Regex> = listOf(Regex(".*$selection\\.pkl"))
 
   override val inputDir: Path =
-    FileTestUtils.rootProjectDir.resolve("src/test/files/DiagnosticsSnippetTests/inputs")
+    FileTestUtils.rootProjectDir.resolve("src/test/files/DiagnosticsSnippetTests/input")
 
-  private val outputDir: Path = inputDir.resolve("../outputs")
+  private val outputDir: Path = inputDir.resolve("../output")
 
   override val isInputFile: (Path) -> Boolean = { it.isRegularFile() && it.extension == "pkl" }
 
