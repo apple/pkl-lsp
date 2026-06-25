@@ -19,13 +19,15 @@ import org.eclipse.lsp4j.CompletionItem
 import org.eclipse.lsp4j.CompletionItemKind
 import org.pkl.lsp.PklVisitor
 import org.pkl.lsp.Project
+import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.type.Type
 
-interface PklReferenceQualifiedAccessProxy : PklNode {
+interface PklReferenceQualifiedAccessProxy : PklNode, PklDocCommentOwner {
   val name: String
   val domain: Type
   val referent: PklType
   val type: PklType
+  val classProperties: List<PklClassProperty>
 
   fun toCompletionItem(): CompletionItem {
     return CompletionItem(name).apply {
@@ -40,6 +42,7 @@ class PklReferenceQualifiedAccessProxyImpl(
   override val name: String,
   override val domain: Type,
   override val referent: PklType,
+  override val classProperties: List<PklClassProperty> = emptyList(),
 ) : FakePklNode(project), PklReferenceQualifiedAccessProxy {
   override fun <R> accept(visitor: PklVisitor<R>): R? = null
 
@@ -51,6 +54,9 @@ class PklReferenceQualifiedAccessProxyImpl(
       project.pklRefModule.referenceType!!,
       listOf(DeclaredType(project, domain), referent),
     )
+
+  override fun effectiveDocComment(context: PklProject?): String? =
+    classProperties.firstOrNull()?.effectiveDocComment(context)
 
   class DeclaredType(project: Project, type: Type, typeArguments: List<PklType>? = null) :
     FakePklNode(project), PklDeclaredType {

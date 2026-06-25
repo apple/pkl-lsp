@@ -117,6 +117,7 @@ class GoToDefinitionFeature(project: Project) : Component(project) {
           .computeThisType(project.pklBaseModule, mapOf(), context)
           .getNode(project, context)
           ?.let { listOf(it.location) } ?: emptyList()
+      is PklReferenceQualifiedAccessProxy -> node.classProperties.map { it.location }
       else -> if (node !== originalNode) listOf(node.location) else emptyList()
     }
   }
