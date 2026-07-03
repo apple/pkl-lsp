@@ -107,7 +107,7 @@ class TypeAnalyzer(project: Project) : Analyzer(project) {
       diagnosticsHolder.addWarning(
         node,
         ErrorMessages.create("invalidSelfTypeUsage", "module", diagLocation) +
-          " This will be an error in a future release.",
+          ". This will be an error in a future release.",
       )
     }
   }
