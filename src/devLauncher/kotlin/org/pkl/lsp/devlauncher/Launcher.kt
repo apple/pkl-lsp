@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ class Launcher : CliktCommand() {
   private val pklVscodeDir: Path by lazy { projectRootDir.resolve("../pkl-vscode") }
 
   // The target directory to open; configurable with ARGV.
-  private val defaultWorkspace: Path by lazy { projectRootDir.resolve("../pkl-pantry") }
+  private val defaultWorkspace: Path by lazy { projectRootDir.resolve("../pkl") }
 
   private fun prepareUserDataDir(port: Int, pklCliPath: Path) {
     val settingsFile =
