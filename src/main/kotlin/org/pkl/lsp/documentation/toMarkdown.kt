@@ -23,7 +23,7 @@ import org.pkl.lsp.resolvers.Resolvers
 import org.pkl.lsp.type.Type
 import org.pkl.lsp.type.computeExprType
 import org.pkl.lsp.type.computeResolvedImportType
-import org.pkl.lsp.type.computeThisType
+import org.pkl.lsp.type.inferReceiverType
 
 fun PklNode.toMarkdown(originalNode: PklNode?, context: PklProject?): String {
   val markdown = doRenderMarkdown(originalNode, context)
@@ -44,12 +44,16 @@ private fun PklNode.doRenderMarkdown(originalNode: PklNode?, context: PklProject
     is PklProperty ->
       buildString {
         append(modifiers.render())
-        if (isLocal || isFixedOrConst) {
+        if (type != null) {
           append(renderTypeAnnotation(name, type, this@doRenderMarkdown, originalNode, context))
         } else {
           append(name)
           append(": ")
-          append(type?.doRenderMarkdown(originalNode, context) ?: "unknown")
+          if (isLocal || isFixedOrConst) {
+            append(expr?.computeExprType(project.pklBaseModule, mapOf(), context) ?: "unknown")
+          } else {
+            append("unknown")
+          }
         }
       }
     is PklStringLiteralType -> "\"$text\""
@@ -60,21 +64,29 @@ private fun PklNode.doRenderMarkdown(originalNode: PklNode?, context: PklProject
     is PklMethodHeader ->
       buildString {
         append("function ")
-        append(identifier?.text ?: "<method>")
+        val name = identifier?.text ?: "<method>"
+        append(name)
         append(typeParameterList?.doRenderMarkdown(originalNode, context) ?: "")
         append(parameterList?.doRenderMarkdown(originalNode, context) ?: "()")
-        val returnTypeStr =
-          if (returnType != null) {
-            returnType!!.doRenderMarkdown(originalNode, context)
-          } else {
-            val parent = this@doRenderMarkdown.parent
-            if (parent != null && parent is PklMethod) {
-              val type = parent.body.computeExprType(project.pklBaseModule, mapOf(), context)
-              type.render()
-            } else "unknown"
-          }
-        append(": ")
-        append(returnTypeStr)
+        if (returnType != null) {
+          append(
+            renderTypeAnnotation(
+              name,
+              returnType!!,
+              this@doRenderMarkdown,
+              originalNode,
+              context,
+              false,
+            )
+          )
+        } else {
+          append(": ")
+          append(
+            (this@doRenderMarkdown.parent as? PklMethod)
+              ?.body
+              ?.computeExprType(project.pklBaseModule, mapOf(), context) ?: "unknown"
+          )
+        }
       }
     is PklParameterList -> {
       elements.joinToString(", ", prefix = "(", postfix = ")") {
@@ -141,7 +153,9 @@ private fun PklNode.doRenderMarkdown(originalNode: PklNode?, context: PklProject
         append(identifier?.text)
         typeParameterList?.let { append(it.doRenderMarkdown(originalNode, context)) }
       }
-    is PklType -> render()
+    is PklType -> {
+      render(null)
+    }
     is PklReferenceQualifiedAccessProxy ->
       buildString {
         append(name)
@@ -162,13 +176,19 @@ private fun renderTypeAnnotation(
   node: PklNode,
   originalNode: PklNode?,
   context: PklProject?,
+  isProperty: Boolean = true,
 ): String? {
   if (name == null) return null
   return buildString {
-    append(name)
+    if (isProperty) {
+      append(name)
+    }
     when {
       originalNode !== node && originalNode?.isAncestor(node) == false -> {
-        val thisType = node.computeThisType(node.project.pklBaseModule, mapOf(), context)
+        val accessExpr =
+          originalNode as? PklAccessExpr ?: originalNode.parentOfType<PklAccessExpr>()
+        val receiverType =
+          accessExpr?.inferReceiverType(node.project.pklBaseModule, emptyMap(), context)
         val visitor =
           ResolveVisitors.typeOfFirstElementNamed(
             name,
@@ -176,12 +196,12 @@ private fun renderTypeAnnotation(
             node.project.pklBaseModule,
             isNullSafeAccess = false,
             preserveUnboundTypeVars = false,
-            thisType,
+            receiverType ?: Type.Unknown,
           )
         val computedType =
           Resolvers.resolveUnqualifiedAccess(
             originalNode,
-            thisType,
+            receiverType,
             true,
             node.project.pklBaseModule,
             mapOf(),
@@ -190,7 +210,7 @@ private fun renderTypeAnnotation(
           )
         append(": ")
         if (computedType is Type.Unknown && type != null) {
-          append(type.render())
+          append(type.render(receiverType))
         } else {
           computedType.render(this)
         }

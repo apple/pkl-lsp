@@ -80,7 +80,8 @@ object ResolveVisitors {
   fun paramTypesOfFirstMethodNamed(
     expectedName: String,
     base: PklBaseModule,
-    resolveTypeParamsInParamTypes: Boolean = true,
+    resolveTypeParamsInParamTypes: Boolean,
+    receiverType: Type?,
   ): ResolveVisitor<List<Type>?> =
     object : ResolveVisitor<List<Type>?> {
       override fun visit(
@@ -99,7 +100,13 @@ object ResolveVisitors {
               parameters.map {
                 it.typeAnnotation
                   ?.type
-                  .toType(base, effectiveBindings, context, !resolveTypeParamsInParamTypes)
+                  .toType(
+                    base,
+                    effectiveBindings,
+                    context,
+                    !resolveTypeParamsInParamTypes,
+                    receiverType,
+                  )
               }
           }
         }
@@ -147,7 +154,7 @@ object ResolveVisitors {
       ): Boolean {
         if (name != elementName) return true
 
-        val type = pklType.toType(base, bindings, context, preserveUnboundTypeVars)
+        val type = pklType.toType(base, bindings, context, preserveUnboundTypeVars, receiverType)
 
         if (isNegated) {
           excludedTypes.add(type)
@@ -171,23 +178,42 @@ object ResolveVisitors {
             is PklReferenceQualifiedAccessProxy ->
               element.project.pklRefModule.referenceType!!.withTypeArguments(
                 element.domain,
-                element.referent.toType(base, bindings, context, preserveUnboundTypeVars),
+                element.referent.toType(
+                  base,
+                  bindings,
+                  context,
+                  preserveUnboundTypeVars,
+                  receiverType,
+                ),
               )
             is PklImport ->
               element
                 .resolve(context)
-                .computeResolvedImportType(base, bindings, preserveUnboundTypeVars, context)
+                .computeResolvedImportType(
+                  base,
+                  bindings,
+                  preserveUnboundTypeVars,
+                  context,
+                  receiverType = receiverType,
+                )
             is PklTypeParameter -> bindings[element] ?: Type.Unknown
             is PklMethod -> computeMethodReturnType(element, bindings, context, receiverType)
             is PklClass -> base.classType.withTypeArguments(Type.Class.create(element))
             is PklTypeAlias -> base.typeAliasType.withTypeArguments(Type.alias(element, context))
             is PklNavigableElement ->
-              element.computeResolvedImportType(base, bindings, context, preserveUnboundTypeVars)
+              element.computeResolvedImportType(
+                base,
+                bindings,
+                context,
+                preserveUnboundTypeVars,
+                receiverType = receiverType,
+              )
             //            is PklParameter -> {
             //              element.typedIdentifier?.computeResolvedImportType(
             //                base,
             //                bindings,
             //                preserveUnboundTypeVars,
+            //                receiverType = receiverType,
             //              ) ?: unexpectedType(element)
             //            }
             else -> unexpectedType(element)
@@ -287,7 +313,7 @@ object ResolveVisitors {
                   val enhancedBindings = bindings.toMutableMap()
                   val parameterTypes =
                     parameters.map {
-                      it.type?.toType(base, bindings, context, true) ?: Type.Unknown
+                      it.type?.toType(base, bindings, context, true, receiverType) ?: Type.Unknown
                     }
                   val argumentTypes = arguments.map { it.computeExprType(base, bindings, context) }
                   for (i in 0 until min(parameterTypes.size, argumentTypes.size)) {
@@ -296,7 +322,13 @@ object ResolveVisitors {
                   enhancedBindings
                 }
               }
-            method.computeResolvedImportType(base, allBindings, context, preserveUnboundTypeVars)
+            method.computeResolvedImportType(
+              base,
+              allBindings,
+              context,
+              preserveUnboundTypeVars,
+              receiverType = receiverType,
+            )
           }
         }
       }
@@ -441,6 +473,7 @@ object ResolveVisitors {
   fun completionItems(
     base: PklBaseModule,
     forMemberLink: Boolean = false,
+    receiverType: Type? = null,
   ): ResolveVisitor<Set<CompletionItem>> {
     return object : ResolveVisitor<Set<CompletionItem>> {
       override fun visit(
@@ -469,7 +502,7 @@ object ResolveVisitors {
             result.add(element.complete())
           }
           is PklExpr -> {}
-          is PklReferenceQualifiedAccessProxy -> result.add(element.toCompletionItem())
+          is PklReferenceQualifiedAccessProxy -> result.add(element.toCompletionItem(receiverType))
           else -> throw AssertionError("Unexpected type: ${element::class.java.typeName ?: "null"}")
         }
         return true
@@ -479,10 +512,10 @@ object ResolveVisitors {
         return when (this) {
           is PklClassMethod -> toCompletionItem()
           is PklMethod -> toCompletionItem()
-          is PklClassProperty -> toCompletionItem()
+          is PklClassProperty -> toCompletionItem(receiverType)
           is PklClass -> toCompletionItem()
           is PklTypeAlias -> toCompletionItem()
-          is PklObjectProperty -> toCompletionItem()
+          is PklObjectProperty -> toCompletionItem(receiverType)
           is PklTypedIdentifier -> toCompletionItem()
           is PklTypeParameter,
           is PklModule -> throw AssertionError("Unreachable")
@@ -501,8 +534,9 @@ object ResolveVisitors {
             }
             .joinToString(", ")
 
-        val parTypes = pars.joinToString(", ") { it.typeAnnotation?.type?.render() ?: "unknown" }
-        val retType = methodHeader.returnType?.render() ?: "unknown"
+        val parTypes =
+          pars.joinToString(", ") { it.typeAnnotation?.type?.render(receiverType) ?: "unknown" }
+        val retType = methodHeader.returnType?.render(receiverType) ?: "unknown"
 
         item.label = "$name($parTypes)"
         if (forMemberLink) {
@@ -525,7 +559,7 @@ object ResolveVisitors {
         item.kind = CompletionItemKind.Class
         item.detail =
           when (this) {
-            is PklTypeAlias -> type.render()
+            is PklTypeAlias -> type.render(receiverType)
             is PklClass -> render()
           }
         item.documentation = getDoc(this, containingFile.pklProject)
@@ -535,7 +569,7 @@ object ResolveVisitors {
       private fun PklTypedIdentifier.toCompletionItem(): CompletionItem {
         val item = CompletionItem(identifier?.text ?: "<name>")
         item.kind = CompletionItemKind.Variable
-        item.detail = type?.render() ?: Type.Unknown.render()
+        item.detail = type?.render(receiverType) ?: Type.Unknown.render()
         return item
       }
 
@@ -547,7 +581,7 @@ object ResolveVisitors {
           append(identifier?.text ?: "<class>")
           if (extends != null) {
             append(' ')
-            append(extends!!.render())
+            append(extends!!.render(receiverType))
           }
         }
       }

@@ -1,0 +1,4 @@
+ typealias Foo = this
+                 ^^^^
+| Error: Cannot reference `this` type within a type alias body; this will be an error in a future release.
+ 

@@ -343,6 +343,7 @@ sealed class ModuleResolutionResult {
     bindings: TypeParameterBindings,
     preserveUnboundedVars: Boolean,
     context: PklProject?,
+    receiverType: Type? = null,
   ): Type
 }
 
@@ -352,8 +353,15 @@ class SimpleModuleResolutionResult(val resolved: PklModule?) : ModuleResolutionR
     bindings: TypeParameterBindings,
     preserveUnboundedVars: Boolean,
     context: PklProject?,
+    receiverType: Type?,
   ): Type {
-    return resolved.computeResolvedImportType(base, bindings, context, preserveUnboundedVars)
+    return resolved.computeResolvedImportType(
+      base,
+      bindings,
+      context,
+      preserveUnboundedVars,
+      receiverType = receiverType,
+    )
   }
 }
 
@@ -364,6 +372,7 @@ class GlobModuleResolutionResult(val resolved: GlobResolver.GlobResult?) :
     bindings: TypeParameterBindings,
     preserveUnboundedVars: Boolean,
     context: PklProject?,
+    receiverType: Type?,
   ): Type {
     if (resolved == null) return Type.Unknown
     if (resolved.exceededMaxElements || resolved.elements.isEmpty())
@@ -372,8 +381,13 @@ class GlobModuleResolutionResult(val resolved: GlobResolver.GlobResult?) :
       resolved.elements.mapNotNull { elem ->
         if (elem.isDirectory) return@mapNotNull null
         val module = elem.getModule().get() ?: return@mapNotNull null
-        module.computeResolvedImportType(base, bindings, context, preserveUnboundedVars)
-          as Type.Module
+        module.computeResolvedImportType(
+          base,
+          bindings,
+          context,
+          preserveUnboundedVars,
+          receiverType = receiverType,
+        ) as Type.Module
       }
     val firstType = allTypes.first()
     val unifiedType =
@@ -643,6 +657,7 @@ fun Appendable.renderType(
     is PklStringLiteralType -> append(type.stringConstant.text)
     is PklNothingType -> append("nothing")
     is PklModuleType -> append("module")
+    is PklThisType -> append("this")
     is PklUnknownType -> append("unknown")
   }
 

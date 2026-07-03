@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,8 @@ class QualifiedAccessCompletionProvider(private val project: Project) : Completi
       node.enclosingModule?.findBySpan(line, column) as? PklQualifiedAccessExpr ?: return
     val receiverType =
       actualNode.receiverExpr.computeExprType(project.pklBaseModule, mapOf(), context)
-    val visitor = ResolveVisitors.completionItems(project.pklBaseModule)
+    val visitor =
+      ResolveVisitors.completionItems(project.pklBaseModule, receiverType = receiverType)
     Resolvers.resolveQualifiedAccess(receiverType, true, project.pklBaseModule, visitor, context)
     Resolvers.resolveQualifiedAccess(receiverType, false, project.pklBaseModule, visitor, context)
     collector.addAll(visitor.result)

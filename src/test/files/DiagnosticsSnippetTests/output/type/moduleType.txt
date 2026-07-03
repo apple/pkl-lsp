@@ -1,0 +1,56 @@
+ typealias Foo = module
+                 ^^^^^^
+| Warning: Cannot reference `module` type within a type alias body; this will be an error in a future release. This will be an error in a future release.
+ 
+ @Baz { valid = true is module }
+                ^^^^^^^^^^^^^^
+| Warning: Expression is always 'false'
+                        ^^^^^^
+| Warning: Cannot reference `module` type within an annotation body; this will be an error in a future release. This will be an error in a future release.
+ class Bar {
+   baz: module
+        ^^^^^^
+| Warning: Cannot reference `module` type within a class body; this will be an error in a future release. This will be an error in a future release.
+ }
+ 
+ class Baz extends Annotation {
+   valid: Boolean
+   bad: module
+        ^^^^^^
+| Warning: Cannot reference `module` type within a class body; this will be an error in a future release. This will be an error in a future release.
+   const bad2: module
+               ^^^^^^
+| Warning: Cannot reference `module` type within a class body; this will be an error in a future release. This will be an error in a future release.
+ }
+ 
+ const qux = true is module
+             ^^^^^^^^^^^^^^
+| Warning: Expression is always 'false'
+                     ^^^^^^
+| Warning: Cannot reference `module` type from const property `qux`; this will be an error in a future release. This will be an error in a future release.
+ const function quux() = true is module
+                         ^^^^^^^^^^^^^^
+| Warning: Expression is always 'false'
+                                 ^^^^^^
+| Warning: Cannot reference `module` type from const method `quux`; this will be an error in a future release. This will be an error in a future release.
+ 
+ const corge = new {
+   grault {
+     garply = true is module
+              ^^^^^^^^^^^^^^
+| Warning: Expression is always 'false'
+                      ^^^^^^
+| Warning: Cannot reference `module` type from const property `corge`; this will be an error in a future release. This will be an error in a future release.
+   }
+ }
+ 
+ hidden const waldo = (x: module) -> true
+                          ^^^^^^
+| Warning: Cannot reference `module` type from const property `waldo`; this will be an error in a future release. This will be an error in a future release.
+                       ^
+| Hint: Unused parameter
+ 
+ const xxx: module? = null
+            ^^^^^^
+| Warning: Cannot reference `module` type from const property `xxx`; this will be an error in a future release. This will be an error in a future release.
+ 

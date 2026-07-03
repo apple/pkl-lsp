@@ -25,6 +25,7 @@ import org.pkl.lsp.resolvers.withoutShadowedElements
 import org.pkl.lsp.type.Type
 import org.pkl.lsp.type.computeThisType
 import org.pkl.lsp.type.inferExprTypeFromContext
+import org.pkl.lsp.type.inferReceiverType
 import org.pkl.lsp.type.toType
 
 class UnqualifiedAccessCompletionProvider(private val project: Project) : CompletionProvider {
@@ -95,7 +96,9 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
 
     addInferredExprTypeCompletions(node, base, collector, context)
 
-    val visitor = ResolveVisitors.completionItems(base).withoutShadowedElements()
+    val receiverType = actualNode.inferReceiverType(base, emptyMap(), context)
+    val visitor =
+      ResolveVisitors.completionItems(base, receiverType = receiverType).withoutShadowedElements()
 
     val allowClasses = shouldCompleteClassesOrTypeAliases(node, base, context)
     Resolvers.resolveUnqualifiedAccess(
@@ -381,12 +384,13 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
       if (propertyName in alreadyDefinedProperties) continue
       if (property.isFixedOrConst && !isClassOrModule) continue
 
-      val propertyType = property.type.toType(base, thisType.bindings, context)
+      val propertyType =
+        property.type.toType(base, thisType.bindings, context, receiverType = thisType)
       val amendedPropertyType = propertyType.amended(base, context)
       if (amendedPropertyType != Type.Nothing && amendedPropertyType != Type.Unknown) {
-        collector += createPropertyAmendElement(propertyName, property)
+        collector += createPropertyAmendElement(propertyName, property, thisType)
       }
-      collector += createPropertyAssignElement(propertyName, property)
+      collector += createPropertyAssignElement(propertyName, property, thisType)
     }
   }
 
@@ -405,12 +409,12 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
     if (amendedValueType != Type.Nothing && amendedValueType != Type.Unknown) {
       val amendingValueType = valueType.amending(base, context)
       if ("default" !in alreadyDefinedProperties) {
-        collector += createPropertyAmendElement("default", base.mappingDefaultProperty)
+        collector += createPropertyAmendElement("default", base.mappingDefaultProperty, thisType)
       }
       collector += createEntryAmendElement(keyType, amendingValueType, base)
     }
     if ("default" !in alreadyDefinedProperties) {
-      collector += createPropertyAssignElement("default", base.mappingDefaultProperty)
+      collector += createPropertyAssignElement("default", base.mappingDefaultProperty, thisType)
     }
     collector += createEntryAssignElement(keyType, valueType, base)
   }
@@ -429,20 +433,21 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
     if (amendedElementType != Type.Nothing && amendedElementType != Type.Unknown) {
       val amendingElementType = elementType.amending(base, context)
       if ("default" !in alreadyDefinedProperties) {
-        collector += createPropertyAmendElement("default", base.listingDefaultProperty)
+        collector += createPropertyAmendElement("default", base.listingDefaultProperty, thisType)
       }
       collector += createNewAmendElement(amendingElementType)
     }
     if ("default" !in alreadyDefinedProperties) {
-      collector += createPropertyAssignElement("default", base.listingDefaultProperty)
+      collector += createPropertyAssignElement("default", base.listingDefaultProperty, thisType)
     }
   }
 
   private fun createPropertyAmendElement(
     propertyName: String,
     propertyCtx: PklProperty,
+    receiverType: Type?,
   ): CompletionItem {
-    return propertyCtx.toCompletionItem().apply {
+    return propertyCtx.toCompletionItem(receiverType).apply {
       label = "$propertyName {…}"
       insertTextFormat = InsertTextFormat.Snippet
       insertText =
@@ -472,8 +477,9 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
   private fun createPropertyAssignElement(
     propertyName: String,
     propertyCtx: PklProperty,
+    receiverType: Type?,
   ): CompletionItem {
-    return propertyCtx.toCompletionItem().apply {
+    return propertyCtx.toCompletionItem(receiverType).apply {
       label = "$propertyName = "
       insertTextFormat = InsertTextFormat.Snippet
       insertText = "${propertyCtx.modifiersStr}$propertyName = $1"

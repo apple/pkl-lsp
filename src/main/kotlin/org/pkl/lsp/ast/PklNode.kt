@@ -332,10 +332,10 @@ sealed interface PklProperty :
   /** Tells if this element defines a new property instead of just overriding its value. */
   fun isDefinition(context: PklProject?): Boolean
 
-  fun toCompletionItem(): CompletionItem {
+  fun toCompletionItem(receiverType: Type?): CompletionItem {
     return CompletionItem(name).apply {
       kind = CompletionItemKind.Field
-      detail = type?.render() ?: "unknown"
+      detail = type?.render(receiverType) ?: "unknown"
       if (this@PklProperty is PklClassProperty) {
         this.documentation =
           Either.forRight(MarkupContent("markdown", this@PklProperty.docContents ?: ""))
@@ -709,37 +709,43 @@ interface PklArgumentList : PklNode {
 }
 
 sealed interface PklType : PklNode {
-  fun render(): String
+  fun render(receiverType: Type?): String
 }
 
 interface PklUnknownType : PklType {
-  override fun render(): String = "unknown"
+  override fun render(receiverType: Type?): String = "unknown"
 }
 
 interface PklNothingType : PklType {
-  override fun render(): String = "nothing"
+  override fun render(receiverType: Type?): String = "nothing"
 }
 
 interface PklModuleType : PklType {
-  override fun render(): String = "module"
+  override fun render(receiverType: Type?): String = "module"
+}
+
+interface PklThisType : PklType {
+  override fun render(receiverType: Type?): String = receiverType?.render() ?: "this"
 }
 
 interface PklStringLiteralType : PklType {
   val stringConstant: PklStringConstant
 
-  override fun render(): String = stringConstant.text
+  override fun render(receiverType: Type?): String = stringConstant.text
 }
 
 interface PklDeclaredType : PklType {
   val name: PklTypeName
   val typeArgumentList: PklTypeArgumentList?
 
-  override fun render(): String {
+  override fun render(receiverType: Type?): String {
     return buildString {
       append(name.text)
       if (typeArgumentList != null) {
         append(
-          typeArgumentList!!.types.joinToString(", ", prefix = "<", postfix = ">") { it.render() }
+          typeArgumentList!!.types.joinToString(", ", prefix = "<", postfix = ">") {
+            it.render(receiverType)
+          }
         )
       }
     }
@@ -753,10 +759,10 @@ interface PklTypeArgumentList : PklNode {
 interface PklParenthesizedType : PklType {
   val type: PklType
 
-  override fun render(): String {
+  override fun render(receiverType: Type?): String {
     return buildString {
       append('(')
-      append(type.render())
+      append(type.render(receiverType))
       append(')')
     }
   }
@@ -765,8 +771,8 @@ interface PklParenthesizedType : PklType {
 interface PklNullableType : PklType {
   val type: PklType
 
-  override fun render(): String {
-    return "${type.render()}?"
+  override fun render(receiverType: Type?): String {
+    return "${type.render(receiverType)}?"
   }
 }
 
@@ -774,9 +780,9 @@ interface PklConstrainedType : PklType {
   val type: PklType?
   val exprs: List<PklExpr>
 
-  override fun render(): String {
+  override fun render(receiverType: Type?): String {
     return buildString {
-      append(type?.render())
+      append(type?.render(receiverType))
       append('(')
       // TODO: properly render expressions
       append(exprs.joinToString(", ") { it.text })
@@ -790,8 +796,8 @@ interface PklUnionType : PklType {
   val leftType: PklType
   val rightType: PklType
 
-  override fun render(): String {
-    return leftType.render() + " | " + rightType.render()
+  override fun render(receiverType: Type?): String {
+    return leftType.render(receiverType) + " | " + rightType.render(receiverType)
   }
 }
 
@@ -799,11 +805,13 @@ interface PklFunctionType : PklType {
   val parameterList: List<PklType>
   val returnType: PklType
 
-  override fun render(): String {
+  override fun render(receiverType: Type?): String {
     return buildString {
-      append(parameterList.joinToString(", ", prefix = "(", postfix = ")") { it.render() })
+      append(
+        parameterList.joinToString(", ", prefix = "(", postfix = ")") { it.render(receiverType) }
+      )
       append(" -> ")
-      append(returnType.render())
+      append(returnType.render(receiverType))
     }
   }
 }
@@ -811,8 +819,8 @@ interface PklFunctionType : PklType {
 interface PklDefaultUnionType : PklType {
   val type: PklType
 
-  override fun render(): String {
-    return "*" + type.render()
+  override fun render(receiverType: Type?): String {
+    return "*" + type.render(receiverType)
   }
 }
 
@@ -954,6 +962,7 @@ fun Node.toNode(project: Project, parent: PklNode?): PklNode? {
     "unknownType" -> PklUnknownTypeImpl(project, parent!!, this)
     "nothingType" -> PklNothingTypeImpl(project, parent!!, this)
     "moduleType" -> PklModuleTypeImpl(project, parent!!, this)
+    "thisType" -> PklThisTypeImpl(project, parent!!, this)
     "stringLiteralType" -> PklStringLiteralTypeImpl(project, parent!!, this)
     "declaredType" -> PklDeclaredTypeImpl(project, parent!!, this, false)
     "parenthesizedType" -> PklParenthesizedTypeImpl(project, parent!!, this)
