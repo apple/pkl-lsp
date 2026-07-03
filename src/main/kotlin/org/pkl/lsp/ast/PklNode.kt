@@ -724,6 +724,10 @@ interface PklModuleType : PklType {
   override fun render(): String = "module"
 }
 
+interface PklThisType : PklType {
+  override fun render(): String = "this"
+}
+
 interface PklStringLiteralType : PklType {
   val stringConstant: PklStringConstant
 
@@ -954,6 +958,7 @@ fun Node.toNode(project: Project, parent: PklNode?): PklNode? {
     "unknownType" -> PklUnknownTypeImpl(project, parent!!, this)
     "nothingType" -> PklNothingTypeImpl(project, parent!!, this)
     "moduleType" -> PklModuleTypeImpl(project, parent!!, this)
+    "thisType" -> PklThisTypeImpl(project, parent!!, this)
     "stringLiteralType" -> PklStringLiteralTypeImpl(project, parent!!, this)
     "declaredType" -> PklDeclaredTypeImpl(project, parent!!, this, false)
     "parenthesizedType" -> PklParenthesizedTypeImpl(project, parent!!, this)

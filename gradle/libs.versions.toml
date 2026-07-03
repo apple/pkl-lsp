@@ -17,7 +17,8 @@ pkl = "0.32.0"
 shadowPlugin = "9.5.1"
 spotless = "8.8.0"
 treeSitterRepo = "v0.26.8" # git tag name
-treeSitterPklRepo = "v0.21.0" # git tag name
+treeSitterPklRepo = "65f4483b9e8a5960a4d8948421ef3a8992013517" # TODO: switch to tag once released
+#treeSitterPklRepo = "v0.21.0" # git tag name
 
 # Only need checksums for distributions that we might run builds on.
 # used for cross-compiling tree-sitter libs
