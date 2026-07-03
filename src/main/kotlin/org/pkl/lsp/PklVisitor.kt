@@ -195,6 +195,10 @@ open class PklVisitor<R> {
     return visitType(node)
   }
 
+  open fun visitThisType(node: PklThisType): R? {
+    return visitType(node)
+  }
+
   open fun visitModuleUri(node: PklModuleUri): R? {
     return visitElement(node)
   }

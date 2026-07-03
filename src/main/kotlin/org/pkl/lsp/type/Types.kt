@@ -1418,6 +1418,7 @@ fun PklType?.toType(
   bindings: Map<PklTypeParameter, Type>,
   context: PklProject?,
   preserveUnboundTypeVars: Boolean = false,
+  getThisType: () -> Type = { this?.computeThisType(base, bindings, context) ?: Type.Nothing },
 ): Type =
   when (this) {
     null -> Type.Unknown
@@ -1430,7 +1431,7 @@ fun PklType?.toType(
           val typeArguments = this.typeArgumentList?.types ?: listOf()
           Type.Class.create(
             resolved,
-            typeArguments.toTypes(base, bindings, context, preserveUnboundTypeVars),
+            typeArguments.toTypes(base, bindings, context, preserveUnboundTypeVars, getThisType),
           )
         }
         is PklTypeAlias -> {
@@ -1438,7 +1439,7 @@ fun PklType?.toType(
           Type.alias(
             resolved,
             context,
-            typeArguments.toTypes(base, bindings, context, preserveUnboundTypeVars),
+            typeArguments.toTypes(base, bindings, context, preserveUnboundTypeVars, getThisType),
           )
         }
         is PklTypeParameter ->
@@ -1449,14 +1450,16 @@ fun PklType?.toType(
     }
     is PklUnionType ->
       Type.union(
-        leftType.toType(base, bindings, context, preserveUnboundTypeVars),
-        rightType.toType(base, bindings, context, preserveUnboundTypeVars),
+        leftType.toType(base, bindings, context, preserveUnboundTypeVars, getThisType),
+        rightType.toType(base, bindings, context, preserveUnboundTypeVars, getThisType),
         base,
         context,
       )
     is PklFunctionType -> {
-      val parameterTypes = parameterList.toTypes(base, bindings, context, preserveUnboundTypeVars)
-      val returnType = returnType.toType(base, bindings, context, preserveUnboundTypeVars)
+      val parameterTypes =
+        parameterList.toTypes(base, bindings, context, preserveUnboundTypeVars, getThisType)
+      val returnType =
+        returnType.toType(base, bindings, context, preserveUnboundTypeVars, getThisType)
       when (parameterTypes.size) {
         0 -> base.function0Type.withTypeArguments(parameterTypes + returnType)
         1 -> base.function1Type.withTypeArguments(parameterTypes + returnType)
@@ -1470,21 +1473,28 @@ fun PklType?.toType(
           ) // approximation (invalid Pkl code)
       }
     }
-    is PklParenthesizedType -> type.toType(base, bindings, context, preserveUnboundTypeVars)
-    is PklDefaultUnionType -> type.toType(base, bindings, context, preserveUnboundTypeVars)
+    is PklParenthesizedType ->
+      type.toType(base, bindings, context, preserveUnboundTypeVars, getThisType)
+    is PklDefaultUnionType ->
+      type.toType(base, bindings, context, preserveUnboundTypeVars, getThisType)
     is PklConstrainedType -> {
       // TODO: cache `constraintExprs`
       val constraintExprs = exprs.toConstraintExprs(project.pklBaseModule, context)
-      type.toType(base, bindings, context, preserveUnboundTypeVars).withConstraints(constraintExprs)
+      type
+        .toType(base, bindings, context, preserveUnboundTypeVars, getThisType)
+        .withConstraints(constraintExprs)
     }
     is PklNullableType ->
-      type.toType(base, bindings, context, preserveUnboundTypeVars).nullable(base, context)
+      type
+        .toType(base, bindings, context, preserveUnboundTypeVars, getThisType)
+        .nullable(base, context)
     is PklUnknownType -> Type.Unknown
     is PklNothingType -> Type.Nothing
     is PklModuleType -> {
       // TODO: for `open` modules, `module` is a self-type
       enclosingModule?.let { Type.module(it, "module", context) } ?: base.moduleType
     }
+    is PklThisType -> getThisType()
     is PklStringLiteralType ->
       stringConstant.escapedText()?.let { Type.StringLiteral(it) } ?: Type.Unknown
     is PklTypeParameter ->
@@ -1496,4 +1506,5 @@ fun List<PklType>.toTypes(
   bindings: Map<PklTypeParameter, Type>,
   context: PklProject?,
   preserveTypeVariables: Boolean = false,
-): List<Type> = map { it.toType(base, bindings, context, preserveTypeVariables) }
+  getThisType: () -> Type,
+): List<Type> = map { it.toType(base, bindings, context, preserveTypeVariables, getThisType) }

@@ -381,7 +381,7 @@ class UnqualifiedAccessCompletionProvider(private val project: Project) : Comple
       if (propertyName in alreadyDefinedProperties) continue
       if (property.isFixedOrConst && !isClassOrModule) continue
 
-      val propertyType = property.type.toType(base, thisType.bindings, context)
+      val propertyType = property.type.toType(base, thisType.bindings, context) { thisType }
       val amendedPropertyType = propertyType.amended(base, context)
       if (amendedPropertyType != Type.Nothing && amendedPropertyType != Type.Unknown) {
         collector += createPropertyAmendElement(propertyName, property)

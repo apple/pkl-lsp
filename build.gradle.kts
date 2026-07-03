@@ -174,14 +174,27 @@ fun configureRepo(
   simpleRepoName: String,
   gitTagOrCommit: Provider<String>,
   repoDir: Provider<Directory>,
+  additionalRemoteUrl: String? = null,
 ): TaskProvider<Task> {
   val taskSuffix = simpleRepoName.capitalized() + "Repo"
 
   val cloneTask =
     tasks.register("clone$taskSuffix", Exec::class) {
+      inputs.property("additionalRemoteUrl", additionalRemoteUrl ?: "<none>")
       outputs.dir(repoDir)
       onlyIf { !repoDir.get().asFile.resolve(".git").exists() }
       commandLine("git", "clone", repo, repoDir.get().asFile)
+      doLast {
+        if (additionalRemoteUrl != null) {
+          providers
+            .exec {
+              workingDir = repoDir.get().asFile
+              commandLine("git", "remote", "add", "additional", additionalRemoteUrl)
+            }
+            .result
+            .get()
+        }
+      }
     }
 
   val updateTask =
@@ -189,6 +202,7 @@ fun configureRepo(
       outputs.dir(repoDir)
       dependsOn(cloneTask)
       inputs.property("gitTagOrCommit", gitTagOrCommit)
+      inputs.property("additionalRemoteUrl", additionalRemoteUrl ?: "<none>")
       doLast {
         providers
           .exec {
@@ -197,6 +211,22 @@ fun configureRepo(
           }
           .result
           .get()
+        if (additionalRemoteUrl != null) {
+          providers
+            .exec {
+              workingDir = repoDir.get().asFile
+              commandLine("git", "remote", "set-url", "additional", additionalRemoteUrl)
+            }
+            .result
+            .get()
+          providers
+            .exec {
+              workingDir = repoDir.get().asFile
+              commandLine("git", "fetch", "--tags", "additional")
+            }
+            .result
+            .get()
+        }
         providers
           .exec {
             workingDir = repoDir.get().asFile
@@ -227,6 +257,7 @@ val setupTreeSitterPklRepo =
     "treeSitterPkl",
     libs.versions.treeSitterPklRepo,
     treeSitterPklRepoDir,
+    System.getenv("PKL_TREE_SITTER_PKL_ADDITIONAL_REMOTE_URL"),
   )
 
 val oses by lazy {
