@@ -15,6 +15,8 @@
  */
 package org.pkl.lsp.resolvers
 
+import kotlin.io.resolve
+import kotlin.text.get
 import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.packages.dto.PklProject
@@ -22,6 +24,7 @@ import org.pkl.lsp.type.Type
 import org.pkl.lsp.type.TypeParameterBindings
 import org.pkl.lsp.type.computeThisType
 import org.pkl.lsp.type.inferExprTypeFromContext
+import org.pkl.lsp.unescapedIdentifier
 
 object Resolvers {
   enum class LookupMode {
@@ -378,6 +381,74 @@ object Resolvers {
     myThisType.visitMembers(isProperty = true, allowClasses, base, visitor, context)
 
     return visitor.result to LookupMode.IMPLICIT_THIS
+  }
+
+  fun <R> resolveQualifiedDocCommentMemberLink(
+    linkText: String,
+    position: PklNode,
+    isProperty: Boolean,
+    base: PklBaseModule,
+    visitor: ResolveVisitor<R>,
+    context: PklProject?,
+  ) {
+    val parts = linkText.split('.').map { unescapedIdentifier(it) }
+    val enclosingModule = position.enclosingModule
+    when (parts.size) {
+      2 -> {
+        // Class.property, Class.method()
+        // module.Class, module.TypeAlias, module.property, module.method()
+        val classOrModuleName = parts[0]
+        val resolveResult =
+          enclosingModule?.imports?.find { it.memberName == classOrModuleName }?.resolve(context)
+            as? SimpleModuleResolutionResult
+        resolveResult?.resolved?.cache(context)?.let { cache ->
+          if (isProperty) {
+            for ((name, def) in cache.typeDefsAndProperties) {
+              visitor.visit(name, def, mapOf(), context)
+            }
+          } else {
+            for ((methodName, method) in cache.methods) {
+              visitor.visit(methodName, method, mapOf(), context)
+            }
+          }
+          return
+        }
+
+        val typeNameVisitor = ResolveVisitors.firstElementNamed(classOrModuleName, base)
+        val clazz =
+          resolveUnqualifiedTypeName(position, base, mapOf(), typeNameVisitor, context) as? PklClass
+            ?: return
+        visitClass(clazz, isProperty, visitor, context)
+      }
+      3 -> {
+        // module.Class.property, module.Class.method()
+        val moduleName = parts[0]
+        val className = parts[1]
+        val module =
+          enclosingModule?.imports?.find { it.memberName == moduleName }?.resolve(context)
+            as? SimpleModuleResolutionResult ?: return
+        val clazz = module.resolved?.cache(context)?.types?.get(className) as? PklClass ?: return
+        visitClass(clazz, isProperty, visitor, context)
+      }
+    }
+  }
+
+  private fun <R> visitClass(
+    clazz: PklClass,
+    isProperty: Boolean,
+    visitor: ResolveVisitor<R>,
+    context: PklProject?,
+  ) {
+    if (isProperty) {
+      for (property in clazz.properties) {
+        visitor.visit(property.name, property, mapOf(), context)
+      }
+    } else {
+      for (method in clazz.methods) {
+        val name = method.name
+        visitor.visit(name, method, mapOf(), context)
+      }
+    }
   }
 
   /** Propagates flow typing information from a satisfied boolean expression. */

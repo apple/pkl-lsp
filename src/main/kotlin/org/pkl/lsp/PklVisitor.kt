@@ -422,4 +422,8 @@ open class PklVisitor<R> {
   open fun visitClassExtendsClause(node: PklClassExtendsClause): R? {
     return null
   }
+
+  open fun visitDocComment(node: PklDocComment): R? {
+    return null
+  }
 }

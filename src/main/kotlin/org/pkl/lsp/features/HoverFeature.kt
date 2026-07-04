@@ -90,6 +90,11 @@ class HoverFeature(project: Project) : Component(project) {
       is PklThisExpr -> node.computeThisType(base, mapOf(), context).toMarkdown(project, context)
       is PklModuleExpr -> node.enclosingModule?.toMarkdown(originalNode, context)
       is PklReferenceQualifiedAccessProxy -> node.toMarkdown(originalNode, context)
+      is PklReferencesOwner ->
+        node.references
+          .find { it.span.matches(line, col) }
+          ?.resolve(context)
+          ?.toMarkdown(null, context)
       else -> null
     }
   }

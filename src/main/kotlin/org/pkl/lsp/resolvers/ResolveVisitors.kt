@@ -438,7 +438,10 @@ object ResolveVisitors {
         get() = expectedName
     }
 
-  fun completionItems(base: PklBaseModule): ResolveVisitor<Set<CompletionItem>> {
+  fun completionItems(
+    base: PklBaseModule,
+    forMemberLink: Boolean = false,
+  ): ResolveVisitor<Set<CompletionItem>> {
     return object : ResolveVisitor<Set<CompletionItem>> {
       override fun visit(
         name: String,
@@ -493,7 +496,8 @@ object ResolveVisitors {
           pars
             .mapIndexed { index, par ->
               val name = par.identifier?.text ?: "par"
-              "\${${index + 1}:$name}"
+              // ktfmt 0.53 doesn't support this yet
+              @Suppress("CanConvertToMultiDollarString") "\${${index + 1}:$name}"
             }
             .joinToString(", ")
 
@@ -501,8 +505,16 @@ object ResolveVisitors {
         val retType = methodHeader.returnType?.render() ?: "unknown"
 
         item.label = "$name($parTypes)"
-        item.insertText = "$name($strPars)"
-        item.insertTextFormat = InsertTextFormat.Snippet
+        if (forMemberLink) {
+          item.insertText = "$name()"
+        } else {
+          item.insertText = "$name($strPars)"
+        }
+        if (forMemberLink) {
+          item.insertTextFormat = InsertTextFormat.Snippet
+        } else {
+          item.insertTextFormat = InsertTextFormat.PlainText
+        }
         item.kind = CompletionItemKind.Method
         item.detail = retType
         if (this is PklClassMethod) {

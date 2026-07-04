@@ -32,6 +32,7 @@ class CompletionFeature(project: Project) : Component(project) {
       UnqualifiedAccessCompletionProvider(project),
       StringLiteralTypeCompletionProvider(project),
       ImplementMethodCompletionProvider(project),
+      DocCommentMemberLinkCompletionProvider(project),
     )
 
   fun onCompletion(

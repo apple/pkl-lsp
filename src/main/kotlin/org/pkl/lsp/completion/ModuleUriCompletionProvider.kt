@@ -311,7 +311,7 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
       val completion =
         CompletionItem().apply {
           label = pkgName
-          documentation = Either.forLeft(pkg)
+          this.documentation = Either.forLeft(pkg)
           insertText = completionText
           insertTextFormat = InsertTextFormat.PlainText
         }

@@ -100,16 +100,16 @@ class PklClassPropertyImpl(
 
   @Suppress("DuplicatedCode")
   override fun effectiveDocComment(context: PklProject?): String? {
-    if (parsedComment != null) return parsedComment
+    if (myDocumentation != null) return myDocumentation
     val clazz = parentOfType<PklClass>() ?: return null
     clazz.eachSuperclassOrModule(context) { typeDef ->
       when (typeDef) {
         is PklClass ->
-          typeDef.cache(context).properties[name]?.parsedComment?.let {
+          typeDef.cache(context).properties[name]?.myDocumentation?.let {
             return it
           }
         is PklModule ->
-          typeDef.cache(context).properties[name]?.parsedComment?.let {
+          typeDef.cache(context).properties[name]?.myDocumentation?.let {
             return it
           }
         else -> {}
@@ -144,16 +144,16 @@ class PklClassMethodImpl(
 
   @Suppress("DuplicatedCode")
   override fun effectiveDocComment(context: PklProject?): String? {
-    if (parsedComment != null) return parsedComment
+    if (myDocumentation != null) return myDocumentation
     val clazz = parentOfType<PklClass>() ?: return null
     clazz.eachSuperclassOrModule(context) { typeDef ->
       when (typeDef) {
         is PklClass ->
-          typeDef.cache(context).methods[name]?.parsedComment?.let {
+          typeDef.cache(context).methods[name]?.myDocumentation?.let {
             return it
           }
         is PklModule ->
-          typeDef.cache(context).methods[name]?.parsedComment?.let {
+          typeDef.cache(context).methods[name]?.myDocumentation?.let {
             return it
           }
         else -> {}

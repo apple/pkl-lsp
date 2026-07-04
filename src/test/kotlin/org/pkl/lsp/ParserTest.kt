@@ -143,7 +143,7 @@ class ParserTest {
     val prop = mod.children[0]
     assertThat(prop).isInstanceOf(PklClassProperty::class.java)
     prop as PklClassProperty
-    assertThat(prop.parsedComment).isEqualTo("A doc\ncomment")
+    assertThat(prop.myDocumentation).isEqualTo("A doc\ncomment")
   }
 
   @Test

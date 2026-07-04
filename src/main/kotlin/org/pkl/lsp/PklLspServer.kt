@@ -25,6 +25,7 @@ import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.*
+import org.pkl.lsp.features.SemanticTokenFeature
 import org.pkl.lsp.packages.dto.PackageUri
 
 class PklLspServer(val verbose: Boolean) : LanguageServer {
@@ -56,7 +57,7 @@ class PklLspServer(val verbose: Boolean) : LanguageServer {
         capabilities.setHoverProvider(true)
         // go to definition capability
         capabilities.definitionProvider = Either.forLeft(true)
-        // auto completion capability
+        // auto-completion capability
         capabilities.completionProvider =
           CompletionOptions(
             true,
@@ -71,6 +72,12 @@ class PklLspServer(val verbose: Boolean) : LanguageServer {
               WorkspaceFoldersOptions().apply { changeNotifications = Either.forRight(true) }
           }
         capabilities.documentFormattingProvider = Either.forLeft(true)
+        capabilities.semanticTokensProvider =
+          SemanticTokensWithRegistrationOptions().apply {
+            legend = SemanticTokenFeature.legend
+            setRange(false)
+            setFull(true)
+          }
       }
     return CompletableFuture.supplyAsync { res }
   }

@@ -16,7 +16,9 @@
 package org.pkl.lsp.ast
 
 import io.github.treesitter.jtreesitter.Range
+import org.eclipse.lsp4j.Position
 
+/** Position in a text document expressed, 1-indexed */
 data class Span(val beginLine: Int, val beginCol: Int, val endLine: Int, val endCol: Int) {
   override fun toString(): String {
     return "($beginLine:$beginCol - $endLine:$endCol)"
@@ -25,12 +27,16 @@ data class Span(val beginLine: Int, val beginCol: Int, val endLine: Int, val end
   /** True if the given line and column are inside this span. */
   fun matches(line: Int, col: Int): Boolean =
     when {
-      line < beginLine || line > endLine -> false
+      line !in beginLine..endLine -> false
       beginLine == endLine -> col in beginCol..endCol
       line == beginLine -> col >= beginCol
       line == endLine -> col <= endCol
       else -> true
     }
+
+  fun matches(position: Position): Boolean {
+    return matches(position.line + 1, position.character + 1)
+  }
 
   /** Returns a zero-length span at the first position of this span. */
   fun firstCaret(): Span = Span(beginLine, beginCol, beginLine, beginCol)

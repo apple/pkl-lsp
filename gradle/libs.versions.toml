@@ -1,6 +1,7 @@
 [versions]
 assertj = "3.27.7"
 clikt = "5.1.0"
+flexmarx = "0.64.8"
 downloadTaskPlugin = "5.7.0"
 gson = "2.14.0"
 jspecify = "1.0.0"
@@ -28,6 +29,7 @@ zigSha256-linux-aarch64 = "ea4b09bfb22ec6f6c6ceac57ab63efb6b46e17ab08d21f69f3a48
 [libraries]
 assertJ = { group = "org.assertj", name = "assertj-core", version.ref = "assertj" }
 clikt = { group = "com.github.ajalt.clikt", name = "clikt", version.ref = "clikt" }
+flexmarxJava = { group = "com.vladsch.flexmark", name = "flexmark-all", version.ref = "flexmarx" }
 downloadTaskPlugin = { group = "de.undercouch", name = "gradle-download-task", version.ref = "downloadTaskPlugin" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 jspecify = { group = "org.jspecify", name = "jspecify", version.ref = "jspecify" }

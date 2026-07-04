@@ -16,6 +16,7 @@
 package org.pkl.lsp.resolvers
 
 import org.pkl.lsp.PklBaseModule
+import org.pkl.lsp.ast.PklDocComment
 import org.pkl.lsp.ast.PklImport
 import org.pkl.lsp.ast.PklModule
 import org.pkl.lsp.ast.PklModuleMember
@@ -90,13 +91,20 @@ fun visitUsedLocalDefinitions(module: PklModule, base: PklBaseModule, visitor: (
         }
       }
 
-      //      override fun visitDocComment(o: PklDocComment) {
-      //        for (reference in o.references.mapTo(mutableSetOf()) { it.fullText }) {
-      //          // note: this is not necessarily a module name
-      //          val simpleName = reference.split(".").first()
-      //          module.imports.find { it.memberName == simpleName }?.let { visitor(it) }
-      //        }
-      //      }
+      override fun visitDocComment(node: PklDocComment) {
+        // assertion: references are always in order, and `distinctBy` will always give us the first
+        // reference of a link
+        // (e.g. `foo` within `foo.bar.baz`)
+        for (reference in node.references.distinctBy { it.fullText }) {
+          DocCommentResolvers.resolveLink(
+              module.project,
+              reference.link,
+              node,
+              resolveImports = false,
+            )
+            ?.let { visitor(it) }
+        }
+      }
     }
   )
 }
