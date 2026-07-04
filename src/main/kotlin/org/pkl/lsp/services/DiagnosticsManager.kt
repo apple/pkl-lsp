@@ -41,6 +41,7 @@ class DiagnosticsManager(project: Project) : Component(project) {
       ExprAnalyzer(project),
       TypeNameAnalyzer(project),
       TypeAnalyzer(project),
+      UnusedLocalDefinitionAnalyzer(project),
     )
 
   private val openFiles: MutableMap<URI, Boolean> = ConcurrentHashMap()

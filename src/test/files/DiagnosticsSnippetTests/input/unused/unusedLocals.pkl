@@ -1,0 +1,36 @@
+import "../expr/alwaysTrueOrFalse.pkl"
+
+local foo: String = "hi"
+
+typealias MyType<T> = Int
+
+local function bar() = 1
+
+local typealias MyTypeAlias = Int
+
+prop =
+  let (foo = 1)
+    "hi"
+
+function myFunc(prop: Int) = 1
+
+function myFunc2(_) = 1
+
+myFunc3 = (prop: Int) -> 1
+
+myObj { prop ->
+  foo = 1
+}
+
+forGenerator {
+  for (key, value in List()) {
+    "hi"
+  }
+}
+
+forGenerator2 {
+  for (value in List()) {
+    "hi"
+  }
+}
+
