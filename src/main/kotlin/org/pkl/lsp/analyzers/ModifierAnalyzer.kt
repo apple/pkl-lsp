@@ -115,7 +115,7 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
           val message =
             if (containingClass is PklModule) "cannotDeclareAbstractInNonAbstractModule"
             else "cannotDeclareAbstractInNonAbstractClass"
-          diagnosticsHolder.addError(abstractModifier, ErrorMessages.create(message))
+          diagnosticsHolder.addWarning(abstractModifier, ErrorMessages.create(message))
         }
       }
     }

@@ -1,22 +1,22 @@
  abstract foo: Int
  ^^^^^^^^
-| Error: Cannot declare an 'abstract' members in a non-abstract module.
+| Warning: Abstract member declared in a non-abstract module. This will be an error in the future.
  
  abstract function foo(): Int
  ^^^^^^^^
-| Error: Cannot declare an 'abstract' members in a non-abstract module.
+| Warning: Abstract member declared in a non-abstract module. This will be an error in the future.
  ^^^^^^^^
-| Error: Cannot declare an 'abstract' members in a non-abstract module.
+| Warning: Abstract member declared in a non-abstract module. This will be an error in the future.
  
  class MyClass {
    abstract foo: Int
    ^^^^^^^^
-| Error: Cannot declare an 'abstract' members in a non-abstract class.
+| Warning: Abstract member declared in a non-abstract class. This will be an error in the future.
  
    abstract function foo(): Int
    ^^^^^^^^
-| Error: Cannot declare an 'abstract' members in a non-abstract class.
+| Warning: Abstract member declared in a non-abstract class. This will be an error in the future.
    ^^^^^^^^
-| Error: Cannot declare an 'abstract' members in a non-abstract class.
+| Warning: Abstract member declared in a non-abstract class. This will be an error in the future.
  }
  
