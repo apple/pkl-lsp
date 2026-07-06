@@ -1,0 +1,61 @@
+ import "../expr/alwaysTrueOrFalse.pkl"
+ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| Hint: Unused import
+ 
+ local foo: String = "hi"
+       ^^^
+| Hint: Unused property
+ 
+ typealias MyType<T> = Int
+                  ^
+| Hint: Unused variable
+ 
+ local function bar() = 1
+                ^^^
+| Hint: Unused method
+ 
+ local typealias MyTypeAlias = Int
+                 ^^^^^^^^^^^
+| Hint: Unused type alias
+ 
+ prop =
+   let (foo = 1)
+        ^^^
+| Hint: Unused variable
+     "hi"
+ 
+ function myFunc(prop: Int) = 1
+                 ^^^^
+| Hint: Unused parameter
+ 
+ function myFunc2(_) = 1
+ 
+ myFunc3 = (prop: Int) -> 1
+            ^^^^
+| Hint: Unused parameter
+ 
+ myObj { prop ->
+         ^^^^
+| Hint: Unused parameter
+   foo = 1
+ }
+ 
+ forGenerator {
+   for (key, value in List()) {
+        ^^^
+| Hint: Unused variable
+             ^^^^^
+| Hint: Unused variable
+     "hi"
+   }
+ }
+ 
+ forGenerator2 {
+   for (value in List()) {
+        ^^^^^
+| Hint: Unused variable
+     "hi"
+   }
+ }
+ 
+ 

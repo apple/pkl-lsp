@@ -3,10 +3,8 @@
  hidden a: String
  
  class Domain extends ref.Domain {
-   function renderReference(reference: ref.Reference<Domain, Any>) = throw("no impl")
+   function renderReference(_) = throw("no impl")
  }
- 
- local domain = new Domain {}
  
  foo: ref.Reference<Domain, String(true)>
       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

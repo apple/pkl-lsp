@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package org.pkl.lsp.analyzers
 
 import org.eclipse.lsp4j.DiagnosticSeverity
+import org.eclipse.lsp4j.DiagnosticTag
 import org.pkl.lsp.ast.PklNode
 import org.pkl.lsp.ast.Span
 
@@ -47,6 +48,18 @@ class DiagnosticsHolder {
   ) {
     val diag = PklDiagnostic(span, message, severity).also { action(it) }
     doAddDiagnostic(node, diag)
+  }
+
+  fun addUnused(
+    node: PklNode,
+    message: String,
+    span: Span = node.span,
+    action: PklDiagnostic.() -> Unit = {},
+  ) {
+    addDiagnostic(node, message, span, DiagnosticSeverity.Hint) {
+      tags = listOf(DiagnosticTag.Unnecessary)
+      action(this)
+    }
   }
 
   private fun doAddDiagnostic(node: PklNode, diagnostic: PklDiagnostic) {
