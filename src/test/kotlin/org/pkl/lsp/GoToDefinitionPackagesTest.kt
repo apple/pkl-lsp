@@ -72,7 +72,7 @@ class GoToDefinitionPackagesTest : LspTestBase() {
     )
     val resolved = goToDefinition().single()
     assertThat(resolved).isInstanceOf(PklClassProperty::class.java)
-    assertThat(resolved.enclosingModule!!.name).isEqualTo("k8s.api.apps.v1.Deployment")
+    assertThat(resolved.enclosingModule!!.moduleName).isEqualTo("k8s.api.apps.v1.Deployment")
   }
 
   @Test

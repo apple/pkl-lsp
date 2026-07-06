@@ -89,11 +89,6 @@ class PklModuleImpl(override val ctx: Node, override val virtualFile: VirtualFil
 
   override val methods: List<PklClassMethod> by lazy { members.filterIsInstance<PklClassMethod>() }
 
-  override val shortDisplayName: String by lazy {
-    header?.moduleClause?.shortDisplayName
-      ?: uri.toString().substringAfterLast('/').replace(".pkl", "")
-  }
-
   override val moduleName: String by lazy {
     header?.moduleClause?.moduleName ?: uri.toString().substringAfterLast('/').replace(".pkl", "")
   }

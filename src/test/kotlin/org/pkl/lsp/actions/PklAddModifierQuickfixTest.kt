@@ -63,7 +63,7 @@ class PklAddModifierQuickfixTest : LspTestBase() {
     val action = diagnostic.actions.find { it.title == "Add modifier 'local'" }
     Assertions.assertThat(action).isNotNull
     runAction(action!!.toMessage(diagnostic))
-    assertThat(file.contents)
+    Assertions.assertThat(file.contents)
       .isEqualTo(
         """
         amends "pkl:test"
