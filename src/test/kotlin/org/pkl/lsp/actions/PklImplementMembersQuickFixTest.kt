@@ -252,6 +252,7 @@ class PklImplementMembersQuickFixTest : LspTestBase() {
       extends "foo.pkl"
 
       bar: Int = TODO()
+
       """
         .trimIndent()
     )
@@ -457,6 +458,115 @@ class PklImplementMembersQuickFixTest : LspTestBase() {
 
       class Child extends foo.Base {
         foo: Bar = TODO()
+      }
+      """
+        .trimIndent()
+    )
+  }
+
+  @Test
+  fun `class with existing member`() {
+    checkQuickFix(
+      before =
+        """
+        abstract module Foo
+        abstract class Base {
+          abstract name: String
+        }
+        class Child extends Base {
+          bar: Int = 5
+        }
+        """
+          .trimIndent(),
+      after =
+        """
+        abstract module Foo
+        abstract class Base {
+          abstract name: String
+        }
+        class Child extends Base {
+          bar: Int = 5
+
+          name: String = TODO()
+        }
+        """
+          .trimIndent(),
+    )
+  }
+
+  @Test
+  fun `quickfix does not reimplement fixed property that has an inherited default`() {
+    checkQuickFix(
+      before =
+        """
+        abstract module Foo
+
+        abstract class Base {
+          fixed name: String = "default"
+          abstract function greet(): String
+        }
+
+        class Child extends Base {}
+        """
+          .trimIndent(),
+      after =
+        """
+        abstract module Foo
+
+        abstract class Base {
+          fixed name: String = "default"
+          abstract function greet(): String
+        }
+
+        class Child extends Base {
+          function greet(): String = TODO()
+        }
+        """
+          .trimIndent(),
+    )
+  }
+
+  @Test
+  fun `import type in different module, with chained alias conflicts`() {
+    createPklFile(
+      "foo.pkl",
+      """
+      abstract module foo
+      import "bar.pkl"
+
+      abstract class Base {
+        abstract bar: bar.Qux
+      }
+      """
+        .trimIndent(),
+    )
+    createPklFile(
+      "bar.pkl",
+      """
+      class Qux
+      """
+        .trimIndent(),
+    )
+    createPklFile(
+      "test.pkl",
+      """
+      import "aaa.pkl" as bar2
+      import "foo.pkl"
+      import "other.pkl" as bar
+
+      class Child extends foo.Base
+      """
+        .trimIndent(),
+    )
+    implementMembersAndAssertResultEqualTo(
+      """
+      import "aaa.pkl" as bar2
+      import "bar.pkl" as bar3
+      import "foo.pkl"
+      import "other.pkl" as bar
+
+      class Child extends foo.Base {
+        bar: bar3.Qux = TODO()
       }
       """
         .trimIndent()

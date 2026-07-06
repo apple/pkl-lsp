@@ -28,10 +28,11 @@ import org.pkl.lsp.analyzers.PklDiagnostic
 import org.pkl.lsp.ast.PklClass
 import org.pkl.lsp.ast.PklClassMember
 import org.pkl.lsp.ast.PklModule
+import org.pkl.lsp.ast.PklModuleMember
 import org.pkl.lsp.ast.PklTypeDefOrModule
 import org.pkl.lsp.ast.effectiveParentProperties
 import org.pkl.lsp.ast.hasDeclaredMethod
-import org.pkl.lsp.ast.hasDeclaredProperty
+import org.pkl.lsp.ast.hasDefault
 import org.pkl.lsp.ast.lastChildOfClass
 import org.pkl.lsp.ast.lspUri
 import org.pkl.lsp.ast.methods
@@ -41,9 +42,18 @@ class PklImplementMembersQuickFix(override val node: PklTypeDefOrModule) :
   override fun getEdits(): List<TextEdit> {
     val myModule = node.enclosingModule ?: return emptyList()
     val context = myModule.containingFile.pklProject
+    val base = node.project.pklBaseModule
     val parentProperties =
-      node.effectiveParentProperties(context)?.values?.filterNot {
-        node.hasDeclaredProperty(it.name) || !it.isFixedOrConstOrAbstract
+      node.effectiveParentProperties(context)?.values?.let { properties ->
+        buildList {
+          for (prop in properties) {
+            if (prop.isAbstract) {
+              add(prop)
+            } else if (prop.isFixedOrConst && !prop.hasDefault(base, context)) {
+              add(prop)
+            }
+          }
+        }
       }
     val parentMethods =
       node.methods(context)?.values?.filterNot { node.hasDeclaredMethod(it.name) || !it.isAbstract }
@@ -64,7 +74,11 @@ class PklImplementMembersQuickFix(override val node: PklTypeDefOrModule) :
     val hasNoClassBody = this is PklClass && this.classBody == null
     val hasNoOrEmptyClassBody =
       this is PklClass && this.classBody.let { it == null || it.members.isEmpty() }
-    val lastMember = lastChildOfClass<PklClassMember>()
+    val lastMember =
+      when (this) {
+        is PklClass -> classBody?.lastChildOfClass<PklClassMember>()
+        else -> lastChildOfClass<PklModuleMember>()
+      }
     val membersText = buildString {
       var isFirst = true
       if (hasNoClassBody) {
@@ -73,7 +87,10 @@ class PklImplementMembersQuickFix(override val node: PklTypeDefOrModule) :
       if (hasNoOrEmptyClassBody) {
         append("{\n")
       }
-      if (isModule || lastMember != null) {
+      if (lastMember != null) {
+        append("\n")
+      } else if (isModule) {
+        // amends header followed by no module members.
         append("\n\n")
       }
       for (parentMember in parentMembers) {
@@ -95,8 +112,9 @@ class PklImplementMembersQuickFix(override val node: PklTypeDefOrModule) :
         }
         append(memberText)
       }
+      append("\n")
       if (hasNoOrEmptyClassBody) {
-        append("\n}")
+        append("}")
       }
     }
     // extends clause guaranteed to exist; quickfix only fires on extending classes/modules

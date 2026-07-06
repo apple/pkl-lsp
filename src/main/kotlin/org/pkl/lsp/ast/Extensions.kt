@@ -752,13 +752,12 @@ fun PklModule.findOrInsertImport(
 ): String {
   val defaultImportName = inferImportPropertyName(module.uri.toString()) ?: return "<>"
   var effectiveImportName: String = defaultImportName
-
   for (import in imports) {
     if (import.module == module) return import.presentation.memberName
-
-    if (import.presentation.memberName == effectiveImportName) {
-      effectiveImportName = appendNumericSuffix(effectiveImportName)
-    }
+  }
+  val existingImportNames = imports.mapTo(mutableSetOf()) { it.presentation.memberName }
+  while (existingImportNames.contains(effectiveImportName)) {
+    effectiveImportName = appendNumericSuffix(effectiveImportName)
   }
 
   val importPath =
@@ -844,6 +843,10 @@ fun PklNode.append(newText: String): TextEdit {
     this.range = span.firstSucceedingCaret().toRange()
     this.newText = newText
   }
+}
+
+fun PklClassProperty.hasDefault(base: PklBaseModule, context: PklProject?): Boolean {
+  return expr != null || type.toType(base, mapOf(), context).hasDefault(base, context)
 }
 
 fun StringBuilder.appendIdentifier(identifier: String) {

@@ -36,11 +36,11 @@ import org.pkl.lsp.ast.TokenType
 import org.pkl.lsp.ast.declaredMethods
 import org.pkl.lsp.ast.declaredProperties
 import org.pkl.lsp.ast.effectiveParentProperties
+import org.pkl.lsp.ast.hasDefault
 import org.pkl.lsp.ast.isInStdlib
 import org.pkl.lsp.ast.methods
 import org.pkl.lsp.ast.resolve
 import org.pkl.lsp.packages.dto.PklProject
-import org.pkl.lsp.type.toType
 
 class ExtendsClauseAnalyzer(project: Project) : Analyzer(project) {
   override fun doAnalyze(node: PklNode, diagnosticsHolder: DiagnosticsHolder): Boolean {
@@ -189,8 +189,7 @@ class ExtendsClauseAnalyzer(project: Project) : Analyzer(project) {
       if (member !is PklClassProperty || !member.isFixedOrConst) continue
       val definedProperty = def.declaredProperties.find { it.name == member.name }
       if (definedProperty != null) continue
-      if (member.expr != null) continue
-      if (member.type.toType(base, mapOf(), context).hasDefault(base, context)) continue
+      if (member.hasDefault(base, context)) continue
 
       // copy Java/Kotlin error message and provide information about just the first missing
       // property.
