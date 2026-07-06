@@ -31,33 +31,33 @@ import org.pkl.lsp.ast.memberName
 fun visitLocalDefinitions(module: PklModule, visitor: (PklNode) -> Unit) {
   module.accept(
     object : PklRecursiveVisitor<Unit>() {
-      override fun visitImport(o: PklImport) {
-        super.visitImport(o)
-        visitor(o)
+      override fun visitImport(node: PklImport) {
+        super.visitImport(node)
+        visitor(node)
       }
 
-      override fun visitModuleMember(o: PklModuleMember) {
-        super.visitModuleMember(o)
-        if (o.isLocal) visitor(o)
+      override fun visitModuleMember(node: PklModuleMember) {
+        super.visitModuleMember(node)
+        if (node.isLocal) visitor(node)
       }
 
-      override fun visitObjectProperty(o: PklObjectProperty) {
-        super.visitObjectProperty(o)
-        if (o.isLocal) visitor(o)
+      override fun visitObjectProperty(node: PklObjectProperty) {
+        super.visitObjectProperty(node)
+        if (node.isLocal) visitor(node)
       }
 
-      override fun visitObjectMethod(o: PklObjectMethod) {
-        super.visitObjectMethod(o)
-        if (o.isLocal) visitor(o)
+      override fun visitObjectMethod(node: PklObjectMethod) {
+        super.visitObjectMethod(node)
+        if (node.isLocal) visitor(node)
       }
 
-      override fun visitTypedIdentifier(o: PklTypedIdentifier) {
-        super.visitTypedIdentifier(o)
-        visitor(o)
+      override fun visitTypedIdentifier(node: PklTypedIdentifier) {
+        super.visitTypedIdentifier(node)
+        visitor(node)
       }
 
-      override fun visitTypeParameter(o: PklTypeParameter) {
-        visitor(o)
+      override fun visitTypeParameter(node: PklTypeParameter) {
+        visitor(node)
       }
     }
   )
@@ -68,20 +68,20 @@ fun visitUsedLocalDefinitions(module: PklModule, base: PklBaseModule, visitor: (
   val context = module.containingFile.pklProject
   module.accept(
     object : PklRecursiveVisitor<Unit>() {
-      override fun visitUnqualifiedAccessExpr(expr: PklUnqualifiedAccessExpr) {
-        super.visitUnqualifiedAccessExpr(expr)
+      override fun visitUnqualifiedAccessExpr(node: PklUnqualifiedAccessExpr) {
+        super.visitUnqualifiedAccessExpr(node)
         val resolveVisitor =
-          ResolveVisitors.firstElementNamed(expr.memberNameText, base, resolveImports = false)
-        expr.resolve(base, null, mapOf(), resolveVisitor, context)?.let { visitor(it) }
+          ResolveVisitors.firstElementNamed(node.memberNameText, base, resolveImports = false)
+        node.resolve(base, null, mapOf(), resolveVisitor, context)?.let { visitor(it) }
       }
 
-      override fun visitTypeName(typeName: PklTypeName) {
-        when (val moduleName = typeName.moduleName?.identifier?.text) {
+      override fun visitTypeName(node: PklTypeName) {
+        when (val moduleName = node.moduleName?.identifier?.text) {
           null -> {
-            val simpleName = typeName.simpleTypeName.identifier?.text ?: return
+            val simpleName = node.simpleTypeName.identifier?.text ?: return
             val resolveVisitor =
               ResolveVisitors.firstElementNamed(simpleName, base, resolveImports = false)
-            Resolvers.resolveUnqualifiedTypeName(typeName, base, mapOf(), resolveVisitor, context)
+            Resolvers.resolveUnqualifiedTypeName(node, base, mapOf(), resolveVisitor, context)
               ?.let { visitor(it) }
           }
           else -> {

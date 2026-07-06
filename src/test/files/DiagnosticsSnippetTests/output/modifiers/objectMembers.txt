@@ -6,5 +6,7 @@
    open local function myFunc(): Int = 2
    ^^^^
 | Error: Modifier 'open' is not applicable to object methods
+ 
+   res = myFunc()
  }
  
