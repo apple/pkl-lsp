@@ -4,7 +4,7 @@ clikt = "5.1.0"
 downloadTaskPlugin = "5.7.0"
 gson = "2.14.0"
 jspecify = "1.0.0"
-jtreesitter = "0.25.6"
+jtreesitter = "0.26.1"
 junit = "6.1.0"
 kotlin = "2.3.21"
 kotlinx = "1.11.0"
@@ -14,9 +14,8 @@ nexusPublishPlugin = "2.0.0"
 pkl = "0.32.0-SNAPSHOT"
 shadowPlugin = "9.4.2"
 spotless = "8.7.0"
-treeSitterRepo = "v0.25.3" # git tag name
-treeSitterPklRepo = "f9405e40597d7dac637a6b49e7d26c4515cb2a34" # TODO: switch to tag once released
-#treeSitterPklRepo = "v0.21.0" # git tag name
+treeSitterRepo = "v0.26.8" # git tag name
+treeSitterPklRepo = "v0.21.0" # git tag name
 
 # Only need checksums for distributions that we might run builds on.
 # Use `../scripts/update_zig.sh <version>` to update these
