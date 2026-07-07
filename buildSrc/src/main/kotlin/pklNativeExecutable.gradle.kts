@@ -19,7 +19,6 @@ import kotlin.io.path.writeText
 import org.gradle.api.Task
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.TaskProvider
-import org.gradle.kotlin.dsl.registering
 
 plugins {
   id("pklGraalVm")
@@ -30,16 +29,10 @@ plugins {
 val executableSpec = project.extensions.getByType<ExecutableSpec>()
 val buildInfo = project.extensions.getByType<BuildInfo>()
 
-val nativeImageClasspath by
-  configurations.creating { extendsFrom(project.configurations.getByName("runtimeClasspath")) }
-
-/**
- * Task provided by `build.gradle.kts` that generates reachability metadata and injects it into the
- * shadow JAR. NativeImageBuild tasks depend on it.
- */
-val generateReachabilityMetadata: TaskProvider<Task> by lazy {
-  project.tasks.named("generateReachabilityMetadata")
-}
+val nativeImageClasspath =
+  configurations.create("nativeImageClasspath") {
+    extendsFrom(project.configurations.getByName("runtimeClasspath"))
+  }
 
 private fun NativeImageBuild.amd64() {
   arch = GraalVmArchitecture.AMD64
@@ -56,35 +49,34 @@ private fun NativeImageBuild.setClasspath() {
     project.extensions.getByType<JavaPluginExtension>().sourceSets.getByName("main")
   classpath.from(mainSourceSet.output)
   classpath.from(nativeImageClasspath)
-  dependsOn(generateReachabilityMetadata)
 }
 
-val macExecutableAmd64 by
-  tasks.registering(NativeImageBuild::class) {
+val macExecutableAmd64 =
+  tasks.register<NativeImageBuild>("macExecutableAmd64") {
     imageName = executableSpec.name.map { "$it-macos-amd64" }
     mainClass = executableSpec.mainClass
     amd64()
     setClasspath()
   }
 
-val macExecutableAarch64 by
-  tasks.registering(NativeImageBuild::class) {
+val macExecutableAarch64 =
+  tasks.register<NativeImageBuild>("macExecutableAarch64") {
     imageName = executableSpec.name.map { "$it-macos-aarch64" }
     mainClass = executableSpec.mainClass
     aarch64()
     setClasspath()
   }
 
-val linuxExecutableAmd64 by
-  tasks.registering(NativeImageBuild::class) {
+val linuxExecutableAmd64 =
+  tasks.register<NativeImageBuild>("linuxExecutableAmd64") {
     imageName = executableSpec.name.map { "$it-linux-amd64" }
     mainClass = executableSpec.mainClass
     amd64()
     setClasspath()
   }
 
-val linuxExecutableAarch64 by
-  tasks.registering(NativeImageBuild::class) {
+val linuxExecutableAarch64 =
+  tasks.register<NativeImageBuild>("linuxExecutableAarch64") {
     imageName = executableSpec.name.map { "$it-linux-aarch64" }
     mainClass = executableSpec.mainClass
     aarch64()
@@ -92,8 +84,8 @@ val linuxExecutableAarch64 by
     extraNativeImageArgs.add("-H:PageSize=65536")
   }
 
-val alpineExecutableAmd64 by
-  tasks.registering(NativeImageBuild::class) {
+val alpineExecutableAmd64 =
+  tasks.register<NativeImageBuild>("alpineExecutableAmd64") {
     imageName = executableSpec.name.map { "$it-alpine-linux-amd64" }
     mainClass = executableSpec.mainClass
     amd64()
@@ -101,8 +93,8 @@ val alpineExecutableAmd64 by
     extraNativeImageArgs.addAll(listOf("--static", "--libc=musl"))
   }
 
-val windowsExecutableAmd64 by
-  tasks.registering(NativeImageBuild::class) {
+val windowsExecutableAmd64 =
+  tasks.register<NativeImageBuild>("windowsExecutableAmd64") {
     imageName = executableSpec.name.map { "$it-windows-amd64" }
     mainClass = executableSpec.mainClass
     amd64()
@@ -128,8 +120,8 @@ project.tasks.named("assembleNativeWindowsAmd64") { wraps(windowsExecutableAmd64
 
 val assembleNative = project.tasks.named("assembleNative")
 
-val testStartNativeExecutable by
-  tasks.registering {
+val testStartNativeExecutable =
+  tasks.register("testStartNativeExecutable") {
     dependsOn(assembleNative)
 
     // dummy file for up-to-date checking
@@ -157,8 +149,8 @@ val testStartNativeExecutable by
 
 val requiredGlibcVersion: Version = Version.parse("2.17")
 
-val checkGlibc by
-  tasks.registering {
+val checkGlibc =
+  tasks.register("checkGlibc") {
     enabled = buildInfo.os.isLinux && !buildInfo.musl
     dependsOn(assembleNative)
     doLast {
@@ -188,6 +180,4 @@ val checkGlibc by
     }
   }
 
-project.tasks.named("testNative") {
-  dependsOn(testStartNativeExecutable, checkGlibc, "verifyNativeDistribution")
-}
+project.tasks.named("testNative") { dependsOn(testStartNativeExecutable, checkGlibc) }

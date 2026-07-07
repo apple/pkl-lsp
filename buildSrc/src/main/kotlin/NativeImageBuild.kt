@@ -30,6 +30,10 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.registerIfAbsent
 import org.gradle.kotlin.dsl.withNormalizer
 import org.gradle.process.ExecOperations
+import java.nio.file.Path
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.createParentDirectories
+import kotlin.io.path.writeText
 
 enum class GraalVmArchitecture {
   AMD64,
@@ -67,7 +71,7 @@ abstract class NativeImageBuild : DefaultTask() {
   private val nativeImageCommandName =
     if (buildInfo.os.isWindows) "native-image.cmd" else "native-image"
 
-  private val nativeImageExecutable = graalVm.map { "${it.baseDir}/bin/$nativeImageCommandName" }
+  private val nativeImageExecutable = graalVm.map { it.baseDir.resolve("bin/${nativeImageCommandName}") }
 
   private val extraArgsFromProperties by lazy {
     System.getProperties()
@@ -99,18 +103,34 @@ abstract class NativeImageBuild : DefaultTask() {
       .withPathSensitivity(PathSensitivity.ABSOLUTE)
   }
 
+  private fun createClasspathArgFile(): Path {
+    val classpathArgFileContents = buildString {
+      append("--class-path ")
+      // native-image rejects non-existing class path entries -> filter
+      val pathInput = classpath.filter { it.exists() }
+      append(pathInput.asPath)
+    }
+    val buildDirectory = project.layout.buildDirectory.get().asFile.toPath()
+    val tmpFile = buildDirectory.resolve("tmp/nativeImageBuild/${name}/args.txt")
+    tmpFile.createParentDirectories()
+    tmpFile.writeText(classpathArgFileContents)
+    return tmpFile
+  }
+
   @TaskAction
-  @Suppress("unused")
   protected fun run() {
-    execOperations.exec {
-      executable = nativeImageExecutable.get()
+    val argFile = createClasspathArgFile()
+    val execResult = execOperations.exec {
+      executable = nativeImageExecutable.get().absolutePath
       workingDir(outputDir)
 
       args = buildList {
         // must be emitted before any experimental options are used
         add("-H:+UnlockExperimentalVMOptions")
-        // initialize everything at build time (matching apple/pkl convention)
-        add("--initialize-at-build-time=")
+        // required for treesitter parsing
+        add("-H:+ForeignAPISupport")
+        add("-H:+SharedArenaSupport")
+        add("--enable-native-access=ALL-UNNAMED")
         add("--no-fallback")
         // tree-sitter native libraries bundled as resources
         add("-H:IncludeResources=NATIVE/.*")
@@ -136,10 +156,8 @@ abstract class NativeImageBuild : DefaultTask() {
         } else {
           add("-march=compatibility")
         }
-        // native-image rejects non-existing class path entries -> filter
-        add("--class-path")
-        val pathInput = classpath.filter { it.exists() }
-        add(pathInput.asPath)
+        // add classpath args via argfile to avoid "The command line is too long" on Windows
+        add("@${argFile.absolutePathString()}")
         // limit CPU usage on non-CI macOS
         val processors =
           Runtime.getRuntime().availableProcessors() /

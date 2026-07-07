@@ -1,0 +1,4 @@
+/// This points to [bar<caret>]
+foo: String
+
+bar: Int
