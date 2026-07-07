@@ -33,8 +33,8 @@ plugins {
   alias(libs.plugins.shadow)
   alias(libs.plugins.spotless)
   alias(libs.plugins.nexusPublish)
-  `pklJavaExecutable`
-  `pklNativeExecutable`
+  pklJavaExecutable
+  pklNativeExecutable
 }
 
 val buildInfo = project.extensions.getByType<BuildInfo>()
@@ -63,10 +63,12 @@ val pklStdlibFiles: Configuration = configurations.create("pklStdlibFiles")
 val nativeLibDir = layout.buildDirectory.dir("generated/libs/native/")
 val treeSitterPklRepoDir = layout.buildDirectory.dir("repos/tree-sitter-pkl")
 val treeSitterRepoDir = layout.buildDirectory.dir("repos/tree-sitter")
+val reachabilityMetadataDir = layout.buildDirectory.dir("generated/reachability-metadata")
 
 val dummy: SourceSet = sourceSets.create("dummy")
 
-@Suppress("unused")
+val commons: SourceSet = sourceSets.create("commons")
+
 val devLauncher: SourceSet =
   sourceSets.create("devLauncher") {
     // use test {compile,runtime}Classpath because it has the pkl stdlib
@@ -75,6 +77,22 @@ val devLauncher: SourceSet =
     runtimeClasspath =
       output + sourceSets.main.get().output + sourceSets.test.get().runtimeClasspath
   }
+
+val generateNativeImageMetadata: SourceSet by
+  sourceSets.creating {
+    compileClasspath += sourceSets.main.get().output
+    compileClasspath += commons.output
+    compileClasspath += sourceSets.main.get().compileClasspath
+
+    compileClasspath += sourceSets.main.get().output
+    runtimeClasspath += commons.output
+    runtimeClasspath += sourceSets.main.get().runtimeClasspath
+  }
+
+sourceSets.test {
+  compileClasspath += commons.output
+  runtimeClasspath += commons.output
+}
 
 dependencies {
   implementation(kotlin("reflect"))
@@ -95,7 +113,12 @@ dependencies {
   pklCli(
     "org.pkl-lang:pkl-cli-${buildInfo.os.canonicalName}-${buildInfo.arch.name}:${libs.versions.pkl.get()}"
   )
+  nativeImageClasspath(files(reachabilityMetadataDir))
+
+  add("commonsApi", libs.lsp4j)
+
   constraints { implementation(libs.gson) }
+  constraints { add("commonsApi", libs.gson) }
 }
 
 val configurePklCliExecutable =
@@ -119,149 +142,59 @@ executable {
   website = "https://github.com/apple/pkl-lsp"
 }
 
+// note: we can ignore warnings around "Error processing trace entry"
 val generateReachabilityMetadata by
-  tasks.registering {
-    dependsOn(tasks.shadowJar)
+  tasks.registering(JavaExec::class) {
     // The native-image-agent requires GraalVM's java, not a regular JDK.
     val graalVm =
       if (buildInfo.arch == Architecture.Amd64) buildInfo.graalVmAmd64 else buildInfo.graalVmAarch64
     dependsOn(
       if (buildInfo.arch == Architecture.Amd64) ":installGraalVmAmd64" else ":installGraalVmAarch64"
     )
-    val javaExecutable =
+
+    executable(
       graalVm.baseDir
         .resolve("bin")
         .resolve(if (buildInfo.os.isWindows) "java.exe" else "java")
         .absolutePath
-    val jarExecutable =
-      graalVm.baseDir
-        .resolve("bin")
-        .resolve(if (buildInfo.os.isWindows) "jar.exe" else "jar")
-        .absolutePath
-    val shadowJarFile = tasks.shadowJar.flatMap { it.archiveFile }
-    val metadataDir = layout.buildDirectory.dir("native-image-config")
+    )
 
-    inputs.files(shadowJarFile)
-    outputs.dir(metadataDir)
+    classpath = generateNativeImageMetadata.runtimeClasspath
+    outputs.dir(reachabilityMetadataDir)
+    mainClass = "org.pkl.lsp.generatenativeimagemetadata.Main"
+
+    jvmArgumentProviders.add(
+      CommandLineArgumentProvider {
+        val configDir = reachabilityMetadataDir.get().asFile.resolve("META-INF/native-image")
+        buildList {
+          add("-agentlib:native-image-agent=config-output-dir=${configDir.absolutePath}")
+          add("--enable-native-access=ALL-UNNAMED")
+        }
+      }
+    )
+
+    argumentProviders.add(
+      CommandLineArgumentProvider {
+        buildList {
+          add(
+            layout.buildDirectory
+              .dir("tmp/generateReachabilityMetadata")
+              .get()
+              .asFile
+              .toURI()
+              .toString()
+          )
+        }
+      }
+    )
 
     doLast {
-      val dir = metadataDir.get().asFile
-      dir.mkdirs()
-      val configDir = dir.resolve("META-INF/native-image")
-      configDir.mkdirs()
-      val jar = shadowJarFile.get().asFile
-
-      val root = rootDir.toURI().toString()
-      val sampleUri = "${root}tracing-sample.pkl"
-      val samplePkl =
-        """
-        module foo
-
-        import "pkl:base"
-
-        x: Int = 1
-        y: String = "hello"
-        z: List<Int> = [1, 2, 3]
-
-        class Person {
-          name: String
-          age: Int
-        }
-
-        person: Person = new {
-          name = "Alice"
-          age = 30
-        }
-        """
-          .trimIndent()
-      val escapedSamplePkl =
-        samplePkl
-          .replace("\\", "\\\\")
-          .replace("\"", "\\\"")
-          .replace("\n", "\\n")
-          .replace("\r", "\\r")
-          .replace("\t", "\\t")
-
-      val lspMessages = buildString {
-        fun writeMessage(json: String) {
-          val body = json.trim()
-          append("Content-Length: ${body.toByteArray().size}\r\n\r\n$body")
-        }
-        writeMessage(
-          """{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootUri":"$root","workspaceFolders":[{"uri":"$root","name":"pkl-lsp"}],"capabilities":{"workspace":{"workspaceFolders":true,"didChangeConfiguration":{"dynamicRegistration":false}}}}}"""
-        )
-        writeMessage("""{"jsonrpc":"2.0","method":"initialized","params":{}}""")
-        // Open a sample Pkl file to trigger tree-sitter parsing
-        writeMessage(
-          """{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"$sampleUri","languageId":"pkl","version":1,"text":"$escapedSamplePkl"}}}"""
-        )
-        // Request completion to exercise tree walking
-        writeMessage(
-          """{"jsonrpc":"2.0","id":3,"method":"textDocument/completion","params":{"textDocument":{"uri":"$sampleUri"},"position":{"line":4,"character":3}}}"""
-        )
-        // Request hover to exercise node inspection
-        writeMessage(
-          """{"jsonrpc":"2.0","id":4,"method":"textDocument/hover","params":{"textDocument":{"uri":"$sampleUri"},"position":{"line":4,"character":1}}}"""
-        )
-        // Change text to trigger re-parsing
-        writeMessage(
-          """{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"$sampleUri","version":2},"contentChanges":[{"range":{"start":{"line":4,"character":10},"end":{"line":4,"character":11}},"text":"42"}]}}"""
-        )
-        // Close the document
-        writeMessage(
-          """{"jsonrpc":"2.0","method":"textDocument/didClose","params":{"textDocument":{"uri":"$sampleUri"}}}"""
-        )
-        writeMessage("""{"jsonrpc":"2.0","id":2,"method":"shutdown","params":null}""")
-        writeMessage("""{"jsonrpc":"2.0","method":"exit","params":null}""")
-      }
-
-      val process =
-        ProcessBuilder()
-          .command(
-            javaExecutable,
-            "-agentlib:native-image-agent=config-output-dir=${configDir.absolutePath}",
-            "-jar",
-            jar.absolutePath,
-          )
-          .directory(configDir)
-          .start()
-      process.outputStream.use { out ->
-        out.write(lspMessages.toByteArray())
-        out.flush()
-        // Allow time for async LSP processing (diagnostics, parsing) to complete
-        Thread.sleep(3000)
-      }
-      val exitCode = process.waitFor()
-      if (exitCode != 0) {
-        throw GradleException(
-          "Reachability metadata agent exited with code $exitCode.\n${process.errorStream.bufferedReader().readText()}"
-        )
-      }
-
-      val metadataFile = configDir.resolve("reachability-metadata.json")
-      if (!metadataFile.exists() || metadataFile.length() == 0L) {
-        throw GradleException(
-          "reachability-metadata.json was not generated. Agent stderr:\n${process.errorStream.bufferedReader().readText()}"
-        )
-      }
-
-      val jarProcess =
-        ProcessBuilder()
-          .command(
-            jarExecutable,
-            "--file",
-            jar.absolutePath,
-            "-u",
-            "META-INF/native-image/reachability-metadata.json",
-          )
-          .directory(dir)
-          .start()
-      val jarExit = jarProcess.waitFor()
-      if (jarExit != 0) {
-        throw GradleException(
-          "jar update failed with code $jarExit.\n${jarProcess.errorStream.bufferedReader().readText()}"
-        )
-      }
+      val file =
+        reachabilityMetadataDir
+          .get()
+          .asFile
+          .resolve("META-INF/native-image/reachability-metadata.json")
+      require(file.exists()) { "Did not create $file" }
     }
   }
 
@@ -565,58 +498,48 @@ val verifyDistribution =
     }
   }
 
-// verify the built native executable by sending LSP messages and checking responses.
-@Suppress("unused")
-val verifyNativeDistribution by
-  tasks.registering {
-    dependsOn("assembleNative")
-    group = "verification"
+fun Test.configureNativeTest(engineName: String) {
+  inputs
+    .dir("src/test/files/DiagnosticsSnippetTests/input")
+    .withPropertyName("input")
+    .withPathSensitivity(PathSensitivity.RELATIVE)
+  inputs
+    .dir("src/test/files/DiagnosticsSnippetTests/output")
+    .withPropertyName("output")
+    .withPathSensitivity(PathSensitivity.RELATIVE)
+  testClassesDirs = files(tasks.test.get().testClassesDirs)
+  classpath = tasks.test.get().classpath
+  useJUnitPlatform { includeEngines(engineName) }
+}
 
-    doLast {
-      val nativeExecutable = tasks.named("assembleNative").get().outputs.files.singleFile
-      val root = rootDir.toURI().toString()
+val testNativeExecutableMacOS by
+  tasks.registering(Test::class) { configureNativeTest("MacDiagnosticsSnippetTestsEngine") }
 
-      val lspMessages = buildString {
-        fun writeMessage(json: String) {
-          val body = json.trim()
-          append("Content-Length: ${body.toByteArray().size}\r\n\r\n$body")
-        }
-        writeMessage(
-          """{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootUri":"$root","workspaceFolders":[{"uri":"$root","name":"pkl-lsp"}],"capabilities":{}}}"""
-        )
-        writeMessage("""{"jsonrpc":"2.0","method":"initialized","params":{}}""")
-        writeMessage("""{"jsonrpc":"2.0","id":2,"method":"shutdown","params":null}""")
-        writeMessage("""{"jsonrpc":"2.0","method":"exit","params":null}""")
-      }
+val testNativeExecutableLinuxAmd64 by
+  tasks.registering(Test::class) { configureNativeTest("LinuxAmd64DiagnosticsSnippetTestsEngine") }
 
-      val process =
-        ProcessBuilder().command(nativeExecutable.absolutePath).redirectErrorStream(true).start()
-
-      // Write messages to stdin in a separate thread to avoid deadlock
-      val writer = Thread {
-        process.outputStream.use { out ->
-          out.write(lspMessages.toByteArray())
-          out.flush()
-          Thread.sleep(2000)
-        }
-      }
-      writer.start()
-
-      val exitCode = process.waitFor()
-      writer.join()
-
-      if (exitCode != 0) {
-        throw GradleException(
-          "Native executable exited with code $exitCode.\n${process.inputStream.bufferedReader().readText()}"
-        )
-      }
-
-      val output = process.inputStream.bufferedReader().readText()
-      if (!output.contains("capabilities")) {
-        throw GradleException("Native executable did not return LSP capabilities. Output: $output")
-      }
-    }
+val testNativeExecutableLinuxAarch64 by
+  tasks.registering(Test::class) {
+    configureNativeTest("LinuxAarch64DiagnosticsSnippetTestsEngine")
   }
+
+val testNativeExecutableWindows by
+  tasks.registering(Test::class) { configureNativeTest("WindowsDiagnosticsSnippetTestsEngine") }
+
+val testNativeExecutable by
+  tasks.registering(Test::class) {
+    testClassesDirs = files(tasks.test.get().testClassesDirs)
+    classpath = tasks.test.get().classpath
+    useJUnitPlatform { includeEngines("") }
+  }
+
+tasks.testNativeMacOsAarch64 { dependsOn(testNativeExecutableMacOS) }
+
+tasks.testNativeLinuxAmd64 { dependsOn(testNativeExecutableLinuxAmd64) }
+
+tasks.testNativeLinuxAarch64 { dependsOn(testNativeExecutableLinuxAarch64) }
+
+tasks.testNativeWindowsAmd64 { dependsOn(testNativeExecutableWindows) }
 
 sourceSets { main { resources { srcDirs(nativeLibDir) } } }
 

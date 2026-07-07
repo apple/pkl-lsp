@@ -33,14 +33,6 @@ val buildInfo = project.extensions.getByType<BuildInfo>()
 val nativeImageClasspath by
   configurations.creating { extendsFrom(project.configurations.getByName("runtimeClasspath")) }
 
-/**
- * Task provided by `build.gradle.kts` that generates reachability metadata and injects it into the
- * shadow JAR. NativeImageBuild tasks depend on it.
- */
-val generateReachabilityMetadata: TaskProvider<Task> by lazy {
-  project.tasks.named("generateReachabilityMetadata")
-}
-
 private fun NativeImageBuild.amd64() {
   arch = GraalVmArchitecture.AMD64
   dependsOn(":installGraalVmAmd64")
@@ -56,7 +48,6 @@ private fun NativeImageBuild.setClasspath() {
     project.extensions.getByType<JavaPluginExtension>().sourceSets.getByName("main")
   classpath.from(mainSourceSet.output)
   classpath.from(nativeImageClasspath)
-  dependsOn(generateReachabilityMetadata)
 }
 
 val macExecutableAmd64 by
@@ -188,6 +179,4 @@ val checkGlibc by
     }
   }
 
-project.tasks.named("testNative") {
-  dependsOn(testStartNativeExecutable, checkGlibc, "verifyNativeDistribution")
-}
+project.tasks.named("testNative") { dependsOn(testStartNativeExecutable, checkGlibc) }

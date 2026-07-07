@@ -100,7 +100,6 @@ abstract class NativeImageBuild : DefaultTask() {
   }
 
   @TaskAction
-  @Suppress("unused")
   protected fun run() {
     execOperations.exec {
       executable = nativeImageExecutable.get()
@@ -109,8 +108,10 @@ abstract class NativeImageBuild : DefaultTask() {
       args = buildList {
         // must be emitted before any experimental options are used
         add("-H:+UnlockExperimentalVMOptions")
-        // initialize everything at build time (matching apple/pkl convention)
-        add("--initialize-at-build-time=")
+        // required for treesitter parsing
+        add("-H:+ForeignAPISupport")
+        add("-H:+SharedArenaSupport")
+        add("--enable-native-access=ALL-UNNAMED")
         add("--no-fallback")
         // tree-sitter native libraries bundled as resources
         add("-H:IncludeResources=NATIVE/.*")
