@@ -4,30 +4,9 @@ Pkl Language Server is a low-level tool that is meant to be integrated with edit
 
 The documentation below is intended for plugin implementors.
 
-== Distribution
+== Installing Pkl Language Server
 
-Pkl Language Server is published to https://central.sonatype.com/artifact/org.pkl-lang/pkl-lsp[Maven Central], and also as releases on https://github.com/apple/pkl-lsp/releases[GitHub].
-
-It is recommended that the jar file be bundled into an editor plugin's package contents.
-
-== Running Pkl Language Server
-
-To run the server, provide the jar as an argument to Java.
-For example:
-
-[source,shell]
-----
-java -jar path/to/pkl-lsp.jar
-----
-
-Pkl Language Server requires Java 23 or higher.
-
-[NOTE]
-====
-We plan on providing native binaries in the future.
-
-Follow https://github.com/apple/pkl-lsp/issues/60[#60] to stay updated on its progress.
-====
+For installation instructions, see xref:installation.adoc[].
 
 == `pkl-lsp` URI scheme
 
@@ -40,7 +19,6 @@ For example, the `pkl:base` standard library module is surfaced to editors as UR
 When starting the server, additional client options can be provided to configure the behavior of the language server.
 
 These options are provided in the `initializationOptions` section of the link:https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#initializeParams[Initialize Request].
-
 
 === `renderOpenFileCommandInDocs`
 

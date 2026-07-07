@@ -131,26 +131,30 @@ open class BuildInfo(val project: Project) {
       else -> throw RuntimeException("Unsupported OS for GraalVM: ${os.canonicalName}")
     }
     val version = libs.findVersion("graalVm").get().toString()
-    return GraalVm(osName, arch, version)
+    val graalJdkVersion = libs.findVersion("graalVmJdkVersion").get().toString()
+    return GraalVm(osName, arch, version, graalJdkVersion)
   }
 
   inner class GraalVm(
     val osName: String,
     val arch: String,
     val version: String,
+    val graalJdkVersion: String,
   ) {
-    val graalVmJdkVersion: String = version
 
     val homeDir: File by lazy {
       File(System.getProperty("user.home"), ".graalvm")
     }
-    val baseName: String by lazy { "graalvm-community-jdk-$graalVmJdkVersion-$osName-$arch" }
+
+    val baseName: String by lazy { "graalvm-community-jdk-$version-$osName-$arch" }
+
+    val graalMajorVersion: String = graalJdkVersion.split(".").first()
 
     /** Download URL from GraalVM CE GitHub releases. */
     val downloadUrl: String by lazy {
       val ext = if (os.isWindows) "zip" else "tar.gz"
       val platformArch = if (arch == "amd64") "x64" else arch
-      "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-$version/graalvm-community-jdk-${version}_${osName}-${platformArch}_bin.$ext"
+      "https://github.com/graalvm/graalvm-ce-builds/releases/download/graal-$version/graalvm-community-jdk-${graalMajorVersion}i1-${graalJdkVersion}_${osName}-${platformArch}_bin.$ext"
     }
 
     val downloadFile: File by lazy {

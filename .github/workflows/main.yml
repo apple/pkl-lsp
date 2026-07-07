@@ -29,13 +29,21 @@ jobs:
         git remote add upstream https://github.com/apple/pkl-lsp.git
         git fetch upstream main
         echo 'PKL_ORIGINAL_REMOTE_NAME=upstream' > "$GITHUB_ENV"
-    - run: ./gradlew --info --stacktrace check shadowJar verifyDistribution
+    - name: Set DEBUG_ARGS env var
+      env:
+        RUNNER_DEBUG: ${{ runner.debug }}
+      shell: bash
+      run: |-
+        if [[ "$RUNNER_DEBUG" -eq 1 ]]; then
+          echo "DEBUG_ARGS=--info --stacktrace" >> $GITHUB_ENV
+        fi
+    - run: ./gradlew $DEBUG_ARGS check shadowJar verifyDistribution
     - name: Upload build artifacts
       if: '!cancelled()'
       uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
       with:
         name: pkl-lsp-build-artifacts
-        path: build/libs/
+        path: build*/libs/
     - name: Upload Test Result XML
       if: '!cancelled()'
       uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
@@ -60,9 +68,17 @@ jobs:
         cache: gradle
     - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
       with:
-        name: pkl-lsp-build-artifacts
+        name: build-jar
         path: build/libs/
-    - run: ./gradlew --info --stacktrace verifyDistribution
+    - name: Set DEBUG_ARGS env var
+      env:
+        RUNNER_DEBUG: ${{ runner.debug }}
+      shell: bash
+      run: |-
+        if [[ "$RUNNER_DEBUG" -eq 1 ]]; then
+          echo "DEBUG_ARGS=--info --stacktrace" >> $GITHUB_ENV
+        fi
+    - run: ./gradlew "$DEBUG_ARGS" verifyDistribution
     - name: Upload Test Result XML
       if: '!cancelled()'
       uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
@@ -84,9 +100,17 @@ jobs:
         cache: gradle
     - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
       with:
-        name: pkl-lsp-build-artifacts
+        name: build-jar
         path: build/libs/
-    - run: ./gradlew --info --stacktrace verifyDistribution
+    - name: Set DEBUG_ARGS env var
+      env:
+        RUNNER_DEBUG: ${{ runner.debug }}
+      shell: bash
+      run: |-
+        if [[ "$RUNNER_DEBUG" -eq 1 ]]; then
+          echo "DEBUG_ARGS=--info --stacktrace" >> $GITHUB_ENV
+        fi
+    - run: ./gradlew "$DEBUG_ARGS" verifyDistribution
     - name: Upload Test Result XML
       if: '!cancelled()'
       uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5

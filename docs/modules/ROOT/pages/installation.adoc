@@ -1,0 +1,200 @@
+= Installation
+
+:pkl-lsp-version: {page-component-version}
+:uri-homebrew: https://brew.sh
+:github-releases-base: https://github.com/apple/pkl-lsp/releases
+:github-releases: {github-releases-base}/download/{page-component-version}
+:uri-pkl-lsp-macos-aarch64-download: {github-releases}/pkl-lsp-macos-aarch64
+:uri-pkl-lsp-linux-amd64-download: {github-releases}/pkl-lsp-linux-amd64
+:uri-pkl-lsp-linux-aarch64-download: {github-releases}/pkl-lsp-linux-aarch64
+:uri-pkl-lsp-alpine-download: {github-releases}/pkl-lsp-alpine-linux-amd64
+:uri-pkl-lsp-windows-download: {github-releases}/pkl-lsp-windows-amd64.exe
+:uri-pkl-lsp-java-download: {github-releases}/pkl-lsp-java
+:uri-maven-repo: https://repo1.maven.org/maven2
+:uri-pkl-lsp-java-jar-download: {uri-maven-repo}/org/pkl-lang/pkl-lsp/{pkl-lsp-version}/pkl-lsp-{pkl-lsp-version}.jar
+
+Pkl Language Server is distributed both as a CLI and as a JAR, and comes in several flavors:
+
+* Native macOS executable for aarch64
+* Native Linux executable for amd64
+* Native Linux executable for aarch64
+* Native Windows executable for amd64
+* Java executable
+* Java JAR
+
+The Java executable works on multiple platforms and has a smaller binary size than the native executables.
+However, it requires a Java 23 or higher runtime on the system path.
+
+[[homebrew]]
+== Homebrew
+
+On macOS and Linux, release versions can be installed with {uri-homebrew}[Homebrew].
+
+To install pkl-lsp, run:
+
+[source,shell]
+----
+brew install pkl-lsp
+----
+
+To update pkl-lsp, run:
+
+[source,shell]
+----
+brew update
+brew upgrade pkl-lsp   # or just `brew upgrade`
+----
+
+== Download
+
+Pkl Language Server can be downloaded and installed manually.
+
+=== macOS Executable
+
+The macOS executable
+
+[source,shell]
+[subs="+attributes"]
+----
+curl -L -o pkl-lsp '{uri-pkl-lsp-macos-aarch64-download}'
+chmod +x pkl-lsp
+./pkl-lsp --version
+----
+
+This should print something similar to:
+
+[source]
+[subs="+attributes"]
+----
+pkl-lsp version {pkl-lsp-version}
+----
+
+NOTE: We do not publish a native executable for macOS/amd64.
+
+=== Linux Executable
+
+The Linux executable is dynamically linked against _glibc_ and _libstdc{plus}{plus}_ for the amd64 and aarch64 architectures.
+
+On aarch64:
+
+[source,shell]
+[subs="+attributes"]
+----
+curl -L -o pkl-lsp '{uri-pkl-lsp-linux-aarch64-download}'
+chmod +x pkl-lsp
+./pkl-lsp --version
+----
+
+On amd64:
+
+[source,shell]
+[subs="+attributes"]
+----
+curl -L -o pkl-lsp '{uri-pkl-lsp-linux-amd64-download}'
+chmod +x pkl-lsp
+./pkl-lsp --version
+----
+
+This should print something similar to:
+
+[source]
+[subs="+attributes"]
+----
+pkl-lsp version {pkl-lsp-version}
+----
+
+=== Windows Executable
+
+[source,PowerShell]
+[subs="+attributes"]
+----
+Invoke-WebRequest '{uri-pkl-lsp-windows-download}' -OutFile pkl-lsp.exe
+.\pkl-lsp --version
+----
+
+This should print something similar to:
+
+[source]
+[subs="+attributes"]
+----
+pkl-lsp version {pkl-lsp-version}
+----
+
+NOTE: We currently do not support the aarch64 architecture for Windows.
+
+=== Java Executable
+
+The Java executable is a jar that can be executed directly on macOS, Linux, and Windows.
+
+It requires `java` to be installed, and available on `$PATH`.
+
+[tabs]
+====
+macOS/Linux::
++
+[source,shell]
+[subs="+attributes"]
+----
+curl -L -o pkl-lsp '{uri-pkl-lsp-java-download}'
+chmod +x pkl-lsp
+./jpkl-lsp --version
+----
+
+Windows::
++
+[source,PowerShell]
+[subs="+attributes"]
+----
+Invoke-WebRequest '{uri-pkl-lsp-java-download}' -OutFile jpkl-lsp.bat
+.\jpkl-lsp --version
+----
+====
+
+This should print something similar to:
+
+[source,shell]
+[subs="+attributes"]
+----
+pkl-lsp version {pkl-lsp-version}
+----
+
+=== Java JAR
+
+Pkl Language Server is published as a regular JAR to Maven Central.
+
+It can be downloaded and executed directly using `java -jar`.
+
+[tabs]
+====
+macOS/Linux::
++
+[source,shell]
+[subs="+attributes"]
+----
+curl -L -o pkl-lsp.jar '{uri-pkl-lsp-java-jar-download}'
+java -jar pkl-lsp.jar --version
+----
+
+Windows::
++
+[source,PowerShell]
+[subs="+attributes"]
+----
+Invoke-WebRequest '{uri-pkl-lsp-java-jar-download}' -OutFile pkl-lsp.jar
+java -jar pkl-lsp.jar --version
+----
+====
+
+This should print something similar to:
+
+[source,shell]
+[subs="+attributes"]
+----
+pkl-lsp version {pkl-lsp-version}
+----
+
+[NOTE]
+====
+The Java Executable and the Java JAR are very similar.
+The only difference between these two are that the Java Executable contains a script preamble to be interpreted by `/bin/sh` on macOS/Linux, and as a batch file on Windows.
+====

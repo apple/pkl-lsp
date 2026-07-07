@@ -1,2 +1,3 @@
+* xref:ROOT:installation.adoc[Installation]
 * xref:ROOT:integration.adoc[Integrating with Pkl Language Server]
 * xref:ROOT:CHANGELOG.adoc[Changelog]

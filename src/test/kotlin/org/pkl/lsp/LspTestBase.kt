@@ -126,9 +126,7 @@ abstract class LspTestBase {
    * If this method is called multiple times, the last call determines the active editor.
    */
   protected fun createPklFile(name: String, contents: String): Path {
-    val caret = contents.indexOf("<caret>")
-    val effectiveContents =
-      if (caret == -1) contents else contents.replaceRange(caret, caret + 7, "")
+    val (effectiveContents, position) = normalizeContentsAndCaretPosition(contents)
     val file =
       testProjectDir
         .resolve(name)
@@ -138,8 +136,8 @@ abstract class LspTestBase {
     server.textDocumentService.didOpen(
       DidOpenTextDocumentParams(file.toTextDocument(effectiveContents))
     )
-    if (caret > -1) {
-      caretPosition = getPosition(effectiveContents, caret)
+    if (position != null) {
+      caretPosition = position
     }
     fileInFocus = file
     return file
@@ -276,17 +274,4 @@ abstract class LspTestBase {
 
   private fun Path.toTextDocument(effectiveContents: String): TextDocumentItem =
     TextDocumentItem(toUri().toString(), "pkl", 0, effectiveContents)
-
-  private fun getPosition(contents: String, index: Int): Position {
-    var currentPos = 0
-    for ((column, line) in contents.lines().withIndex()) {
-      val nextPos = currentPos + line.length + 1 // + 1 because newline is also a character
-      if (nextPos >= index) {
-        val character = index - currentPos
-        return Position(column, character)
-      }
-      currentPos = nextPos
-    }
-    throw IllegalArgumentException("Invalid index for contents")
-  }
 }

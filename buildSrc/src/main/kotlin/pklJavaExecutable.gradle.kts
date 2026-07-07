@@ -29,8 +29,8 @@ val buildInfo = project.extensions.getByType<BuildInfo>()
 
 val shadowJarTask = project.tasks.named("shadowJar")
 
-val javaExecutable by
-  tasks.registering(ExecutableJar::class) {
+val javaExecutable =
+  tasks.register<ExecutableJar>("javaExecutable") {
     group = "build"
     dependsOn(project.tasks.named("jar"))
     inJar = shadowJarTask.flatMap { (it as AbstractArchiveTask).archiveFile }
@@ -77,7 +77,8 @@ fun Task.setupTestStartJavaExecutable(launcher: Provider<JavaLauncher>? = null) 
   }
 }
 
-val testStartJavaExecutable by tasks.registering { setupTestStartJavaExecutable() }
+val testStartJavaExecutable =
+  tasks.register("testStartJavaExecutable") { setupTestStartJavaExecutable() }
 
 project.tasks.named("assemble") { dependsOn(javaExecutable) }
 
