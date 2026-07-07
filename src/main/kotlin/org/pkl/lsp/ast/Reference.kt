@@ -119,4 +119,27 @@ class PklReferenceQualifiedAccessProxyImpl(
     override val text: String = name
     override val type: TokenType = TokenType.Identifier
   }
+
+  class ClassProperty(project: Project, override val name: String, myType: Type) :
+    FakePklNode(project), PklClassProperty {
+    override fun <R> accept(visitor: PklVisitor<R>): R? = visitor.visitClassProperty(this)
+
+    override val annotations: List<PklAnnotation> = emptyList()
+    override val objectBody: PklObjectBody? = null
+    override val typeAnnotation: PklTypeAnnotation =
+      object : FakePklNode(project), PklTypeAnnotation {
+        override fun <R> accept(visitor: PklVisitor<R>): R? = visitor.visitTypeAnnotation(this)
+
+        override val type: PklType = DeclaredType(project, myType)
+      }
+    override val type: PklType? = typeAnnotation.type
+    override val expr: PklExpr? = null
+
+    override fun isDefinition(context: PklProject?): Boolean = true
+
+    override fun resolve(context: PklProject?): PklNode = this
+
+    override val modifiers: List<Terminal>? = null
+    override val identifier: Terminal = Identifier(project, name)
+  }
 }

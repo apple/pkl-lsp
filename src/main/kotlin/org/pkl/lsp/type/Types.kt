@@ -605,38 +605,57 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
           visit(visitor.exactName!!, PklFakeUnknownTypeImpl(ctx.project), listOf())
         visitor.exactName != null -> {
           var isUnknown = false
+          var isInvalid = false
           val candidates = mutableListOf<PklClassProperty>()
 
           walkCandidates(referent, base, context) { type, properties ->
+            if (type is Class && type.classEquals(base.nullType)) {
+              candidates.add(
+                PklReferenceQualifiedAccessProxyImpl.ClassProperty(
+                  ctx.project,
+                  visitor.exactName!!,
+                  base.nullType,
+                )
+              )
+              return@walkCandidates true
+            }
             for (prop in properties) {
-              if (isViable(prop, type, base, context) && prop.name == visitor.exactName) {
-                val propType = prop.type ?: PklFakeUnknownTypeImpl(ctx.project)
-                if (propType is PklUnknownType) {
-                  isUnknown = true
-                  return@walkCandidates false
-                }
+              if (prop.name == visitor.exactName && isViable(prop, type, base, context)) {
                 candidates.add(prop)
+                if (prop.type == null || prop.type is PklUnknownType) isUnknown = true
                 return@walkCandidates true
               }
             }
-            return@walkCandidates true
+            isInvalid = true
+            return@walkCandidates false
           }
 
-          if (isUnknown) visit(visitor.exactName!!, PklFakeUnknownTypeImpl(ctx.project), candidates)
-          else if (candidates.isNotEmpty())
-            visit(
-              visitor.exactName!!,
-              PklFakeUnionTypeImpl.create(
-                ctx.project,
-                candidates.map { it.type ?: PklFakeUnknownTypeImpl(ctx.project) },
-              ),
-              candidates,
-            )
-          else true
+          when {
+            isInvalid -> true
+            isUnknown -> visit(visitor.exactName!!, PklFakeUnknownTypeImpl(ctx.project), candidates)
+            !candidates.isEmpty() ->
+              visit(
+                visitor.exactName!!,
+                PklFakeUnionTypeImpl.create(
+                  ctx.project,
+                  candidates.map { it.type ?: PklFakeUnknownTypeImpl(ctx.project) },
+                ),
+                candidates,
+              )
+            else -> true
+          }
         }
         else -> {
+          // to be included, each property must have the same number of candidates as there are
+          // candidate types
+          var candidateCount = 0
           val propertyCandidates = mutableMapOf<String, MutableList<PklClassProperty>>()
           walkCandidates(referent, base, context) { type, properties ->
+            if (type is Class && type.classEquals(base.nullType)) {
+              // don't count null as a candidate as it is accessible using any property name
+              return@walkCandidates true
+            }
+            candidateCount += 1
             for (prop in properties) {
               if (isViable(prop, type, base, context)) {
                 propertyCandidates.getOrPut(prop.name) { mutableListOf() }.add(prop)
@@ -646,6 +665,7 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
           }
           for ((propName, candidates) in propertyCandidates) {
             when {
+              candidates.size != candidateCount -> continue
               candidates.any {
                 (it.type ?: PklFakeUnknownTypeImpl(ctx.project)) is PklUnknownType
               } -> visit(propName, PklFakeUnknownTypeImpl(ctx.project), candidates)
@@ -672,35 +692,37 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
     ): Type {
       if (referencesUnknown) return this
       val keyClass = keyType.toClassType(base, context)
+      var isInvalid = false
       var isUnknown = false
       val candidates = mutableSetOf<Type>()
       walkCandidates(referent, base, context) { type, _ ->
         if (type !is Class) return@walkCandidates true
         when {
-          type.classEquals(base.dynamicType) -> {
-            isUnknown = true
-            return@walkCandidates false
-          }
+          type.classEquals(base.dynamicType) -> isUnknown = true
           (type.classEquals(base.listingType) || type.classEquals(base.listType)) &&
             (keyType is Unknown || keyClass?.classEquals(base.intType) == true) ->
-            if (type.typeArguments.single() is Unknown) {
-              isUnknown = true
-              return@walkCandidates false
-            } else candidates.add(type.typeArguments.single())
+            if (type.typeArguments.single() is Unknown) isUnknown = true
+            else candidates.add(type.typeArguments.single())
           (type.classEquals(base.mappingType) || type.classEquals(base.mapType)) &&
             (type.typeArguments.first() is Unknown ||
               keyClass?.isSubtypeOf(type.typeArguments.first(), base, context) == true) ->
-            if (type.typeArguments.last() is Unknown) {
-              isUnknown = true
-              return@walkCandidates false
-            } else candidates.add(type.typeArguments.last())
+            if (type.typeArguments.last() is Unknown) isUnknown = true
+            else candidates.add(type.typeArguments.last())
+          type.classEquals(base.nullType) -> candidates.add(base.nullType)
+          else -> {
+            isInvalid = true
+            return@walkCandidates false
+          }
         }
         return@walkCandidates true
       }
 
-      if (isUnknown) return withTypeArguments(domain, Unknown)
-      if (candidates.isEmpty()) return Nothing
-      return withTypeArguments(domain, union(candidates.toList(), base, context))
+      return when {
+        isInvalid -> Nothing
+        isUnknown -> withTypeArguments(domain, Unknown)
+        candidates.isEmpty() -> Nothing
+        else -> withTypeArguments(domain, union(candidates.toList(), base, context))
+      }
     }
 
     fun validSubscriptKeyType(base: PklBaseModule, context: PklProject?): Type {
