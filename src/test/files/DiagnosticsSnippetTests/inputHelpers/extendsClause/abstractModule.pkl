@@ -1,0 +1,3 @@
+abstract module abstractModule
+
+abstract function bar(): Int

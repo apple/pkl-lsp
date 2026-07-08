@@ -1,0 +1,5 @@
+abstract class Base {
+  abstract function bar(): Int
+}
+
+class MyClass extends Base

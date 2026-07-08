@@ -1,0 +1,5 @@
+abstract class Base {
+  const bar: Int
+}
+
+class MyClass extends Base

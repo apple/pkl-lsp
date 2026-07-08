@@ -1,0 +1,4 @@
+ extends "../../inputHelpers/extendsClause/abstractModule.pkl"
+ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| Warning: module abstractModuleMemberNotImplemented is not abstract and does not implement method 'bar'
+ 

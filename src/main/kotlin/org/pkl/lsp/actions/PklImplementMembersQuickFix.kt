@@ -32,6 +32,7 @@ import org.pkl.lsp.ast.PklModuleMember
 import org.pkl.lsp.ast.PklTypeDefOrModule
 import org.pkl.lsp.ast.effectiveParentProperties
 import org.pkl.lsp.ast.hasDeclaredMethod
+import org.pkl.lsp.ast.hasDeclaredProperty
 import org.pkl.lsp.ast.hasDefault
 import org.pkl.lsp.ast.lastChildOfClass
 import org.pkl.lsp.ast.lspUri
@@ -47,6 +48,7 @@ class PklImplementMembersQuickFix(override val node: PklTypeDefOrModule) :
       node.effectiveParentProperties(context)?.values?.let { properties ->
         buildList {
           for (prop in properties) {
+            if (node.hasDeclaredProperty(prop.name)) continue
             if (prop.isAbstract) {
               add(prop)
             } else if (prop.isFixedOrConst && !prop.hasDefault(base, context)) {

@@ -572,4 +572,36 @@ class PklImplementMembersQuickFixTest : LspTestBase() {
         .trimIndent()
     )
   }
+
+  @Test
+  fun `quickfix only implements members not already declared`() {
+    checkQuickFix(
+      before =
+        """
+        abstract module Foo
+        abstract class Base {
+          abstract name: String
+          abstract age: Int
+        }
+        class Child extends Base {
+          name: String = "Bob"
+        }
+        """
+          .trimIndent(),
+      after =
+        """
+        abstract module Foo
+        abstract class Base {
+          abstract name: String
+          abstract age: Int
+        }
+        class Child extends Base {
+          name: String = "Bob"
+
+          age: Int = TODO()
+        }
+        """
+          .trimIndent(),
+    )
+  }
 }

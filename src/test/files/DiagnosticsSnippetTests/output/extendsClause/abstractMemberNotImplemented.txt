@@ -1,0 +1,8 @@
+ abstract class Base {
+   abstract function bar(): Int
+ }
+ 
+ class MyClass extends Base
+               ^^^^^^^^^^^^
+| Warning: class MyClass is not abstract and does not implement method 'bar'
+ 

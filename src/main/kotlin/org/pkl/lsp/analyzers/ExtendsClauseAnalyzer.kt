@@ -244,7 +244,7 @@ class ExtendsClauseAnalyzer(project: Project) : Analyzer(project) {
           memberEntityName,
           parentName,
         )
-      holder.addError(element, message) {
+      holder.addWarning(element, message) {
         actions +=
           PklAddModifierQuickFix(
             def,
