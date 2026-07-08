@@ -55,21 +55,21 @@ tasks.withType<JavaCompile>().configureEach { options.release = buildInfo.jdkTar
 
 configurations { all { resolutionStrategy { failOnDynamicVersions() } } }
 
-val pklCli: Configuration by configurations.creating
+val pklCli: Configuration = configurations.create("pklCli")
 
-val stagedShadowJar: Configuration by configurations.creating
+val stagedShadowJar: Configuration = configurations.create("stagedShadowJar")
 
-val pklStdlibFiles: Configuration by configurations.creating
+val pklStdlibFiles: Configuration = configurations.create("pklStdlibFiles")
 
 val nativeLibDir = layout.buildDirectory.dir("generated/libs/native/")
 val treeSitterPklRepoDir = layout.buildDirectory.dir("repos/tree-sitter-pkl")
 val treeSitterRepoDir = layout.buildDirectory.dir("repos/tree-sitter")
 
-val dummy: SourceSet by sourceSets.creating
+val dummy: SourceSet = sourceSets.create("dummy")
 
 @Suppress("unused")
-val devLauncher: SourceSet by
-  sourceSets.creating {
+val devLauncher: SourceSet =
+  sourceSets.create("devLauncher") {
     // use test {compile,runtime}Classpath because it has the pkl stdlib
     // important that main output is first because of monkey-patched jtreesitter
     compileClasspath = sourceSets.main.get().output + sourceSets.test.get().compileClasspath
@@ -98,8 +98,8 @@ dependencies {
   constraints { implementation(libs.gson) }
 }
 
-val configurePklCliExecutable by
-  tasks.registering { doLast { pklCli.singleFile.setExecutable(true) } }
+val configurePklCliExecutable =
+  tasks.register("configurePklCliExecutable") { doLast { pklCli.singleFile.setExecutable(true) } }
 
 tasks.jar {
   manifest {
@@ -127,8 +127,8 @@ tasks.named("startScripts") { dependsOn(tasks.shadowJar) }
 
 tasks.named("startShadowScripts") { dependsOn(tasks.jar) }
 
-val verifyShadowJar by
-  tasks.registering {
+val verifyShadowJar =
+  tasks.register("verifyShadowJar") {
     dependsOn(tasks.jar)
     dependsOn(tasks.shadowJar)
     inputs.files(tasks.shadowJar)
@@ -155,18 +155,18 @@ tasks.shadowJar {
   finalizedBy(verifyShadowJar)
 }
 
-val javadocDummy by tasks.registering(Javadoc::class) { source = dummy.allJava }
+val javadocDummy = tasks.register<Javadoc>("javadocDummy") { source = dummy.allJava }
 
 // create a dummy javadoc jar to make maven central happy
-val javadocJar by
-  tasks.registering(Jar::class) {
+val javadocJar =
+  tasks.register<Jar>("javadocJar") {
     dependsOn(javadocDummy)
     archiveClassifier = "javadoc"
     from(javadocDummy.map { it.destinationDir })
   }
 
-val sourcesJar by
-  tasks.registering(Jar::class) {
+val sourcesJar =
+  tasks.register<Jar>("sourcesJar") {
     from(sourceSets.main.get().allSource)
     archiveClassifier = "sources"
   }
@@ -275,8 +275,8 @@ val makeTreeSitterTasks: List<TaskProvider<*>> = buildList {
   }
 }
 
-val makeTreeSitter by
-  tasks.registering {
+val makeTreeSitter =
+  tasks.register("makeTreeSitter") {
     group = "build"
     dependsOn(makeTreeSitterTasks)
   }
@@ -305,8 +305,8 @@ val makeTreeSitterPklTasks: List<TaskProvider<*>> = buildList {
   }
 }
 
-val makeTreeSitterPkl by
-  tasks.registering {
+val makeTreeSitterPkl =
+  tasks.register("makeTreeSitterPkl") {
     group = "build"
     dependsOn(makeTreeSitterPklTasks)
   }
@@ -392,8 +392,8 @@ tasks.processResources {
 
 // verify the built distribution in different OSes.
 @Suppress("unused")
-val verifyDistribution by
-  tasks.registering(Test::class) {
+val verifyDistribution =
+  tasks.register<Test>("verifyDistribution") {
     dependsOn(configurePklCliExecutable)
 
     testClassesDirs = tasks.test.get().testClassesDirs
