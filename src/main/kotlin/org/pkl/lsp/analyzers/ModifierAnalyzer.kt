@@ -104,7 +104,8 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
       }
     }
 
-    if (abstractModifier != null) {
+    // okay to declare abstract class in non-abstract module
+    if (abstractModifier != null && node !is PklClass) {
       val containingClass =
         node.parentOfTypes(PklModule::class, PklClass::class, /* stop class */ PklObjectBody::class)
           as? PklModifierListOwner
