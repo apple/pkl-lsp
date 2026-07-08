@@ -30,8 +30,8 @@ private val downloadFile
 private val extension: String
   get() = if (buildInfo.os.isWindows) "zip" else "tar.xz"
 
-val downloadZig by
-  tasks.registering(Download::class) {
+val downloadZig =
+  tasks.register<Download>("downloadZig") {
     onlyIf { !buildInfo.zig.executable.exists() }
     doLast { println("Downloaded Zig to $downloadFile") }
 
@@ -42,8 +42,8 @@ val downloadZig by
     overwrite(true)
   }
 
-val verifyZig by
-  tasks.registering(Verify::class) {
+val verifyZig =
+  tasks.register<Verify>("verifyZig") {
     dependsOn(downloadZig)
     src(downloadFile)
     onlyIf { !buildInfo.zig.executable.exists() }
@@ -56,8 +56,8 @@ val verifyZig by
     algorithm("SHA-256")
   }
 
-val installZig by
-  tasks.registering {
+val installZig =
+  tasks.register("installZig") {
     onlyIf { !buildInfo.zig.executable.exists() }
     dependsOn(verifyZig)
 
