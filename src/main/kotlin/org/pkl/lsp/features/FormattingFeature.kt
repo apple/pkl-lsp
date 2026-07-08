@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2025-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,6 @@ import org.pkl.lsp.Component
 import org.pkl.lsp.Project
 
 class FormattingFeature(project: Project) : Component(project) {
-  private val formatter = Formatter()
-
   private val maxRange = Range(Position(0, 0), Position(Int.MAX_VALUE, Int.MAX_VALUE))
 
   fun onFormat(params: DocumentFormattingParams): CompletableFuture<List<TextEdit>> {
@@ -36,7 +34,7 @@ class FormattingFeature(project: Project) : Component(project) {
     val file =
       project.virtualFileManager.get(uri) ?: return CompletableFuture.completedFuture(emptyList())
     val grammarVersion = project.settingsManager.settings.grammarVersion ?: GrammarVersion.latest()
-    val formatted = formatter.format(file.contents, grammarVersion)
+    val formatted = Formatter(grammarVersion).format(file.contents)
     val edit =
       TextEdit().apply {
         this.newText = formatted

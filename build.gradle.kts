@@ -37,10 +37,7 @@ plugins {
 
 val buildInfo = project.extensions.getByType<BuildInfo>()
 
-repositories {
-  maven("https://central.sonatype.com/repository/maven-snapshots/")
-  mavenCentral()
-}
+repositories { mavenCentral() }
 
 java {
   sourceCompatibility = JavaVersion.toVersion(buildInfo.jdkTargetVersion)

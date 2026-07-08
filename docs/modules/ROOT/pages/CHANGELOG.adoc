@@ -1,5 +1,29 @@
 = Changelog
 
+[[release-0.8.0]]
+== 0.8.0 (2026-07-08)
+
+=== Changes
+
+* Update to Pkl 0.32 (pr:https://github.com/apple/pkl-lsp/pull/229[]).
+* Add support for `pkl.ref#Reference` (pr:https://github.com/apple/pkl-lsp/pull/157[], pr:https://github.com/apple/pkl-lsp/pull/214[], pr:https://github.com/apple/pkl-lsp/pull/224[]).
+* Add diagnostics for abstract members declared in non-abstract classes/modules (pr:https://github.com/apple/pkl-lsp/pull/202[], pr:https://github.com/apple/pkl-lsp/pull/222[], pr:https://github.com/apple/pkl-lsp/pull/227[]).
+* Add diagnostic for abstract members with bodies (pr:https://github.com/apple/pkl-lsp/pull/207[]).
+* Add diagnostics for unused locals (pr:https://github.com/apple/pkl-lsp/pull/223[]).
+* Add analysis for module and class `extends` clauses and unimplemented abstract members (pr:https://github.com/apple/pkl-lsp/pull/211[]).
+* Gracefully handle glob patterns that match large result sets (pr:https://github.com/apple/pkl-lsp/pull/206[]).
+
+=== Fixes
+
+* Fix bundling stdlib files in the shadow jar artifact (pr:https://github.com/apple/pkl-lsp/pull/212[]).
+
+=== Contributors ❤️
+
+Thank you to all of our contributors!
+
+* https://github.com/bioball[@bioball]
+* https://github.com/HT154[@HT154]
+
 [[release-0.7.1]]
 == 0.7.1 (2026-06-08)
 
