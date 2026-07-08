@@ -140,12 +140,7 @@ local baseMavenDeploy: Workflow.Job = new {
 
 // --- Native executable build jobs ---
 
-local function nativeBuildJob(
-  os: String,
-  arch: String,
-  isMusl: Boolean,
-  isRelease: Boolean,
-): Workflow.Job = new {
+local function nativeBuildJob(os: String, arch: String, isRelease: Boolean): Workflow.Job = new {
   `runs-on` =
     if (os == "linux" && arch == "amd64")
       "ubuntu-latest"
@@ -160,7 +155,7 @@ local function nativeBuildJob(
     `if` = "github.repository_owner == 'apple'"
   }
 
-  when (os == "linux" && !isMusl) {
+  when (os == "linux") {
     container {
       image = "redhat/ubi8:8.10"
     }
@@ -177,17 +172,11 @@ local function nativeBuildJob(
         cache = if (isRelease) null else "gradle"
       }
     }
-    when (os == "linux" && !isMusl) {
+    when (os == "linux") {
       new {
         name = "Install deps"
         run =
           "dnf install -y git binutils gcc glibc-devel zlib-devel libstdc++-static glibc-langpack-en"
-      }
-    }
-    when (isMusl) {
-      new {
-        name = "Install musl and zlib"
-        run = read("scripts/install_musl.sh").text
       }
     }
     new {
@@ -198,9 +187,6 @@ local function nativeBuildJob(
         "--stacktrace"
         when (isRelease) {
           "-DreleaseBuild=true"
-        }
-        when (isMusl) {
-          "-Dpkl.musl=true"
         }
         when (os == "macos" && arch == "amd64") {
           "-Dpkl.targetArch=amd64"
@@ -213,11 +199,7 @@ local function nativeBuildJob(
       name = "Upload native executable"
       `if` = "!cancelled()"
       with {
-        name =
-          if (isMusl)
-            "pkl-lsp-native-alpine-linux-\(arch)"
-          else
-            "pkl-lsp-native-\(os)-\(arch)"
+        name = "pkl-lsp-native-\(os)-\(arch)"
         path = "build/executable/*"
       }
     }
@@ -226,59 +208,46 @@ local function nativeBuildJob(
 
 local nativeJobNames: Listing<String> = new {
   "native-macos-aarch64"
-  "native-macos-amd64"
   "native-linux-amd64"
   "native-linux-aarch64"
-  "native-alpine-linux-amd64"
   "native-windows-amd64"
 }
 
 local nativeReleaseJobs: Mapping<String, Workflow.Job> = new {
-  ["native-macos-aarch64"] = nativeBuildJob("macos", "aarch64", false, true)
-  ["native-macos-amd64"] = nativeBuildJob("macos", "amd64", false, true)
-  ["native-linux-amd64"] = nativeBuildJob("linux", "amd64", false, true)
-  ["native-linux-aarch64"] = nativeBuildJob("linux", "aarch64", false, true)
-  ["native-alpine-linux-amd64"] = nativeBuildJob("linux", "amd64", true, true)
-  ["native-windows-amd64"] = nativeBuildJob("windows", "amd64", false, true)
+  ["native-macos-aarch64"] = nativeBuildJob("macos", "aarch64", false)
+  ["native-linux-amd64"] = nativeBuildJob("linux", "amd64", false)
+  ["native-linux-aarch64"] = nativeBuildJob("linux", "aarch64", false)
+  ["native-windows-amd64"] = nativeBuildJob("windows", "amd64", false)
 }
 
-local function nativePrbTags(os: String, arch: String, isMusl: Boolean): String =
+local function nativePrbTags(os: String, arch: String): String =
   new Listing {
     "[native]"
     "[native-\(os)]"
     "[native-\(os)-\(arch)]"
-    when (isMusl) {
-      "[native-alpine-linux-\(arch)]"
-    }
   }
     .toList()
     .map((tag) -> "contains(github.event.pull_request.body, '\(tag)')")
     .join(" || ")
 
-local function nativePrbIf(os: String, arch: String, isMusl: Boolean): String =
+local function nativePrbIf(os: String, arch: String): String =
   if (os == "macos")
-    "(\(nativePrbTags(os, arch, isMusl))) && github.repository_owner == 'apple'"
+    "(\(nativePrbTags(os, arch))) && github.repository_owner == 'apple'"
   else
-    nativePrbTags(os, arch, isMusl)
+    nativePrbTags(os, arch)
 
 local nativePrbJobs: Mapping<String, Workflow.Job> = new {
-  ["native-macos-aarch64"] = (nativeBuildJob("macos", "aarch64", false, false)) {
-    `if` = nativePrbIf("macos", "aarch64", false)
+  ["native-macos-aarch64"] = (nativeBuildJob("macos", "aarch64", false)) {
+    `if` = nativePrbIf("macos", "aarch64")
   }
-  ["native-macos-amd64"] = (nativeBuildJob("macos", "amd64", false, false)) {
-    `if` = nativePrbIf("macos", "amd64", false)
+  ["native-linux-amd64"] = (nativeBuildJob("linux", "amd64", false)) {
+    `if` = nativePrbIf("linux", "amd64")
   }
-  ["native-linux-amd64"] = (nativeBuildJob("linux", "amd64", false, false)) {
-    `if` = nativePrbIf("linux", "amd64", false)
+  ["native-linux-aarch64"] = (nativeBuildJob("linux", "aarch64", false)) {
+    `if` = nativePrbIf("linux", "aarch64")
   }
-  ["native-linux-aarch64"] = (nativeBuildJob("linux", "aarch64", false, false)) {
-    `if` = nativePrbIf("linux", "aarch64", false)
-  }
-  ["native-alpine-linux-amd64"] = (nativeBuildJob("linux", "amd64", true, false)) {
-    `if` = nativePrbIf("linux", "amd64", true)
-  }
-  ["native-windows-amd64"] = (nativeBuildJob("windows", "amd64", false, false)) {
-    `if` = nativePrbIf("windows", "amd64", false)
+  ["native-windows-amd64"] = (nativeBuildJob("windows", "amd64", false)) {
+    `if` = nativePrbIf("windows", "amd64")
   }
 }
 

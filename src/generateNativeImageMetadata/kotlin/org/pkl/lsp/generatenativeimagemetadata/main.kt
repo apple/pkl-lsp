@@ -44,13 +44,13 @@ private val SAMPLE_PKL =
     .trimIndent()
 
 /**
- * Run PklLsp in-process and have it parse a module and provide a diagnostic.
+ * Run pkl-lsp in-process and have it parse a module and provide a diagnostic.
  *
- * This is used to generate GraalVM reachability metadata.
- * This main function executed with GraalVM's tracing agent enabled, which inspects reflection, foreign calls,
- * resources, etc.
+ * This is used to generate GraalVM reachability metadata. This main function executed with
+ * GraalVM's tracing agent enabled, which inspects reflection, foreign calls, resources, etc.
  *
- * For reference, see [Collect Metadata with the Tracing Agent](https://www.graalvm.org/latest/reference-manual/native-image/metadata/AutomaticMetadataCollection/)
+ * For reference, see
+ * [Collect Metadata with the Tracing Agent](https://www.graalvm.org/latest/reference-manual/native-image/metadata/AutomaticMetadataCollection/)
  */
 fun main(args: Array<String>) {
   require(args.size == 1) { "Usage: <rootUri>" }
@@ -82,7 +82,6 @@ fun main(args: Array<String>) {
             workspace =
               WorkspaceClientCapabilities().apply {
                 workspaceFolders = true
-                didChangeConfiguration = DidChangeConfigurationCapabilities(false)
               }
           }
       }
@@ -99,7 +98,8 @@ fun main(args: Array<String>) {
   try {
     val diag = client.getNextDiagnostic()
     assert(diag.diagnostics.size == 1)
-    val message = diag.diagnostics.first().message.let { if (it.isLeft) it.left else it.right.value }
+    val message =
+      diag.diagnostics.first().message.let { if (it.isLeft) it.left else it.right.value }
     assert(message.contains("Type mismatch"))
   } finally {
     server.shutdown().get()
