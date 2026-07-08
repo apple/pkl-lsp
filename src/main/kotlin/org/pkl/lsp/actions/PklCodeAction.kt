@@ -20,7 +20,6 @@ import org.eclipse.lsp4j.CodeActionDisabled
 import org.eclipse.lsp4j.Command
 import org.eclipse.lsp4j.TextEdit
 import org.eclipse.lsp4j.WorkspaceEdit
-import org.pkl.lsp.LspUtil.toRange
 import org.pkl.lsp.analyzers.PklDiagnostic
 import org.pkl.lsp.ast.PklNode
 import org.pkl.lsp.ast.lspUri
@@ -70,13 +69,6 @@ abstract class PklLocalEditCodeAction(protected open val node: PklNode) : PklCod
           changes = mapOf(node.containingFile.lspUri.toString() to getEdits())
         }
       isPreferred = true
-    }
-  }
-
-  protected fun insertBefore(anchor: PklNode, newText: String): TextEdit {
-    return TextEdit().apply {
-      this.range = anchor.span.firstCaret().toRange()
-      this.newText = newText
     }
   }
 }

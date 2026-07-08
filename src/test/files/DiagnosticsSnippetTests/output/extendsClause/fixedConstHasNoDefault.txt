@@ -1,0 +1,8 @@
+ abstract class Base {
+   const bar: Int
+ }
+ 
+ class MyClass extends Base
+               ^^^^^^^^^^^^
+| Error: class MyClass is not abstract and does not define a default value for property 'bar'
+ 

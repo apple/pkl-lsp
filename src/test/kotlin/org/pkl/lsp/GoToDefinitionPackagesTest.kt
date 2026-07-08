@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,8 +46,8 @@ class GoToDefinitionPackagesTest : LspTestBase() {
   fun `resolve package asset uri`() {
     createPklFile(
       """
-    amends "package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.appEnvCluster@1.0.2#/AppEnvCluster.pkl<caret>"
-    """
+      amends "package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.appEnvCluster@1.0.2#/AppEnvCluster.pkl<caret>"
+      """
         .trimIndent()
     )
     val resolved = goToDefinition().single()
@@ -60,14 +60,14 @@ class GoToDefinitionPackagesTest : LspTestBase() {
   fun `resolve package dependency`() {
     createPklFile(
       """
-    amends "package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.appEnvCluster@1.0.2#/AppEnvCluster.pkl"
-    
-    deployments {
-      ["foo"] {
-        spec<caret> {}
+      amends "package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.appEnvCluster@1.0.2#/AppEnvCluster.pkl"
+
+      deployments {
+        ["foo"] {
+          spec<caret> {}
+        }
       }
-    }
-    """
+      """
         .trimIndent()
     )
     val resolved = goToDefinition().single()
@@ -80,7 +80,7 @@ class GoToDefinitionPackagesTest : LspTestBase() {
     createPklFile(
       """
       import* "package://pkg.pkl-lang.org/pkl-pantry/k8s.contrib.appEnvCluster@1.0.2#/*.pkl<caret>"
-    """
+      """
         .trimIndent()
     )
 

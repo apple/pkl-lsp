@@ -167,6 +167,9 @@ interface PklModifierListOwner : PklNode {
   val isFixedOrConst: Boolean
     get() = hasAnyModifier(TokenType.CONST, TokenType.FIXED)
 
+  val isFixedOrConstOrAbstract: Boolean
+    get() = hasAnyModifier(TokenType.CONST, TokenType.FIXED, TokenType.ABSTRACT)
+
   val isAbstractOrOpen: Boolean
     get() = hasAnyModifier(TokenType.ABSTRACT, TokenType.OPEN)
 
@@ -212,7 +215,8 @@ interface PklDocCommentOwner : PklNode {
 
 sealed interface PklNavigableElement : PklNode
 
-sealed interface PklTypeDefOrModule : PklNavigableElement, PklModifierListOwner, PklDocCommentOwner
+sealed interface PklTypeDefOrModule :
+  PklNavigableElement, PklModifierListOwner, PklDocCommentOwner, PklNamedNode
 
 interface PklModule : PklTypeDefOrModule {
   val uri: URI
@@ -234,7 +238,6 @@ interface PklModule : PklTypeDefOrModule {
 
   fun cache(context: PklProject?): ModuleMemberCache
 
-  val shortDisplayName: String
   val moduleName: String
 
   /** The package dependencies of this module. */
@@ -295,8 +298,13 @@ interface PklClass : PklTypeDef, IdentifierOwner, PklNamedNode {
   val members: List<PklClassMember>
   val properties: List<PklClassProperty>
   val methods: List<PklClassMethod>
+  val extendsClause: PklClassExtendsClause?
 
   fun cache(context: PklProject?): ClassMemberCache
+}
+
+interface PklClassExtendsClause : PklNode {
+  val type: PklType
 }
 
 interface PklClassBody : PklNode {
@@ -887,7 +895,7 @@ fun Node.toNode(project: Project, parent: PklNode?): PklNode? {
     "clazz" -> PklClassImpl(project, parent!!, this)
     "classBody" -> PklClassBodyImpl(project, parent!!, this)
     // This is kinda of a hack but works because they have the same children
-    "classExtendsClause" -> PklDeclaredTypeImpl(project, parent!!, this, false)
+    "classExtendsClause" -> PklClassExtendsClauseImpl(project, parent!!, this)
     "classProperty" -> PklClassPropertyImpl(project, parent!!, this)
     "methodHeader" -> PklMethodHeaderImpl(project, parent!!, this)
     "classMethod" -> PklClassMethodImpl(project, parent!!, this)

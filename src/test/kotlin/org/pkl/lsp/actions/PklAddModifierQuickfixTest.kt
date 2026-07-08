@@ -13,35 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.pkl.lsp
+package org.pkl.lsp.actions
 
-import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
+import org.pkl.lsp.LspTestBase
 
-class ModifierQuickfixTest : LspTestBase() {
+class PklAddModifierQuickfixTest : LspTestBase() {
   @Test
   fun `add modifier 'local' - no existing modifiers`() {
     val file =
       createPklVirtualFile(
         """
-     amends "pkl:test"
+        amends "pkl:test"
 
-     foo: String = "Hello"
-    """
+        foo: String = "Hello"
+        """
           .trimIndent()
       )
     val diagnostic = getSingleDiagnostic(file)
-    assertThat(diagnostic.message).isEqualTo("Missing modifier 'local'")
+    Assertions.assertThat(diagnostic.message).isEqualTo("Missing modifier 'local'")
     val action = diagnostic.actions.find { it.title == "Add modifier 'local'" }
-    assertThat(action).isNotNull
+    Assertions.assertThat(action).isNotNull
     runAction(action!!.toMessage(diagnostic))
-    assertThat(file.contents)
+    Assertions.assertThat(file.contents)
       .isEqualTo(
         """
-     amends "pkl:test"
+        amends "pkl:test"
 
-     local foo: String = "Hello"
-    """
+        local foo: String = "Hello"
+        """
           .trimIndent()
       )
   }
@@ -51,24 +52,24 @@ class ModifierQuickfixTest : LspTestBase() {
     val file =
       createPklVirtualFile(
         """
-     amends "pkl:test"
+        amends "pkl:test"
 
-     const foo: String = "Hello"
-    """
+        const foo: String = "Hello"
+        """
           .trimIndent()
       )
     val diagnostic = getSingleDiagnostic(file)
-    assertThat(diagnostic.message).isEqualTo("Missing modifier 'local'")
+    Assertions.assertThat(diagnostic.message).isEqualTo("Missing modifier 'local'")
     val action = diagnostic.actions.find { it.title == "Add modifier 'local'" }
-    assertThat(action).isNotNull
+    Assertions.assertThat(action).isNotNull
     runAction(action!!.toMessage(diagnostic))
-    assertThat(file.contents)
+    Assertions.assertThat(file.contents)
       .isEqualTo(
         """
-     amends "pkl:test"
+        amends "pkl:test"
 
-     local const foo: String = "Hello"
-    """
+        local const foo: String = "Hello"
+        """
           .trimIndent()
       )
   }

@@ -1,0 +1,7 @@
+abstract module Foo
+
+abstract class Base {
+  fixed name: String
+}
+
+class Child extends Base {}

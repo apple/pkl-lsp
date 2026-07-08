@@ -31,6 +31,7 @@ class CompletionFeature(project: Project) : Component(project) {
       QualifiedAccessCompletionProvider(project),
       UnqualifiedAccessCompletionProvider(project),
       StringLiteralTypeCompletionProvider(project),
+      ImplementMethodCompletionProvider(project),
     )
 
   fun onCompletion(

@@ -33,7 +33,7 @@ fun PklNode?.computeResolvedImportType(
 
   return RecursionManager.doPreventingRecursion(this, "computeResolvedImportType", Type.Unknown) {
     when (this) {
-      is PklModule -> Type.module(this, shortDisplayName, context)
+      is PklModule -> Type.module(this, name, context)
       is PklClass -> Type.Class.create(this)
       is PklTypeAlias -> Type.alias(this, context)
       is PklMethod ->
@@ -171,7 +171,6 @@ fun PklNode?.computeResolvedImportType(
                         getFunctionParameterType(this, identifierOwner, functionType, base, context)
                       }
                       is PklObjectBodyOwner -> {
-                        @Suppress("BooleanLiteralArgument")
                         val functionType =
                           objectBodyOwner.computeResolvedImportType(
                             base,

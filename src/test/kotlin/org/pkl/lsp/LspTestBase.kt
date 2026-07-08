@@ -61,7 +61,7 @@ abstract class LspTestBase {
 
   private var caretPosition: Position? = null
 
-  private var fileInFocus: Path? = null
+  protected var fileInFocus: Path? = null
 
   private val modules: MutableMap<URI, PklModule> = HashMap()
 

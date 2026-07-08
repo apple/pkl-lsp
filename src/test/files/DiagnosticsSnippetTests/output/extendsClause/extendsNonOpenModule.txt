@@ -1,0 +1,4 @@
+ extends "../../inputHelpers/extendsClause/closedModule.pkl"
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| Error: Cannot extend module 'closedModule'
+ 
