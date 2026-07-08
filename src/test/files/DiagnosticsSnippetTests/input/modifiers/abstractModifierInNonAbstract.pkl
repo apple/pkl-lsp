@@ -7,3 +7,6 @@ class MyClass {
 
   abstract function foo(): Int
 }
+
+// abstract class is okay
+abstract class MyAbstractClass

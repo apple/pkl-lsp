@@ -20,3 +20,6 @@
 | Warning: Abstract member declared in a non-abstract class. This will be an error in the future.
  }
  
+ // abstract class is okay
+ abstract class MyAbstractClass
+ 
