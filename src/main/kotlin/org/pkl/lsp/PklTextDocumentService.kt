@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.pkl.lsp.features.CompletionFeature
 import org.pkl.lsp.features.FormattingFeature
 import org.pkl.lsp.features.GoToDefinitionFeature
 import org.pkl.lsp.features.HoverFeature
+import org.pkl.lsp.features.SemanticTokenFeature
 import org.pkl.lsp.services.Topic
 import org.pkl.lsp.util.Edits
 
@@ -50,6 +51,7 @@ class PklTextDocumentService(project: Project) : Component(project), TextDocumen
   private val completion = CompletionFeature(project)
   private val codeAction = CodeActionFeature(project)
   private val formatting = FormattingFeature(project)
+  private val tokens = SemanticTokenFeature(project)
 
   override fun didOpen(params: DidOpenTextDocumentParams) {
     val uri = URI(params.textDocument.uri)
@@ -111,5 +113,9 @@ class PklTextDocumentService(project: Project) : Component(project), TextDocumen
 
   override fun formatting(params: DocumentFormattingParams): CompletableFuture<List<TextEdit>> {
     return formatting.onFormat(params)
+  }
+
+  override fun semanticTokensFull(params: SemanticTokensParams): CompletableFuture<SemanticTokens> {
+    return tokens.onSemanticToken(params)
   }
 }

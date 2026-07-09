@@ -442,6 +442,9 @@ fun PklNode.resolveReference(line: Int, col: Int, context: PklProject?): PklNode
         }
         else -> this
       }
+    is PklReferencesOwner -> {
+      references.find { it.span.matches(line, col) }?.resolve(context)
+    }
     else -> this
   }
 }

@@ -24,8 +24,8 @@ import org.eclipse.lsp4j.CompletionItemKind
 import org.eclipse.lsp4j.MarkupContent
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.pkl.lsp.*
+import org.pkl.lsp.LspUtil.firstInstanceOf
 import org.pkl.lsp.VirtualFile
-import org.pkl.lsp.documentation.DocCommentMemberLinkProcessor
 import org.pkl.lsp.packages.Dependency
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.packages.dto.Version
@@ -110,7 +110,9 @@ sealed interface PklSuppressWarningsTarget : PklNode {
 /** Represents an error node in tree-sitter */
 interface PklError : PklNode
 
-interface PklReference : PklNode {
+interface PklReference {
+  val span: Span
+
   fun resolve(context: PklProject?): PklNode?
 }
 
@@ -187,30 +189,18 @@ interface PklModifierListOwner : PklNode {
 }
 
 interface PklDocCommentOwner : PklNode {
-  // assertion: DocComment is always the first node
-  val docComment: Terminal?
-    get() {
-      val terminal = children.firstOrNull() as? Terminal ?: return null
-      return if (terminal.type == TokenType.DocComment) terminal else null
-    }
+  val docComment: PklDocComment?
+    get() = children.firstInstanceOf<PklDocComment>()
 
-  private val rawComment: String?
-    get() {
-      val doc = docComment?.text?.trim() ?: return null
-      return doc.lines().joinToString("\n") { it.trimStart().removePrefix("///") }.trimIndent()
-    }
-
-  val parsedComment: String?
-    get() {
-      return rawComment?.let { DocCommentMemberLinkProcessor.process(it, this) }
-    }
+  val docContents: String?
+    get() = docComment?.processedContents
 
   /**
    * Returns the documentation comment of this member. For properties and methods, if this member
    * does not have a documentation comment, returns the documentation comment of the nearest
    * documented ancestor, if any.
    */
-  fun effectiveDocComment(context: PklProject?): String? = parsedComment
+  fun effectiveDocComment(context: PklProject?): String? = docContents
 }
 
 sealed interface PklNavigableElement : PklNode
@@ -347,7 +337,8 @@ sealed interface PklProperty :
       kind = CompletionItemKind.Field
       detail = type?.render() ?: "unknown"
       if (this@PklProperty is PklClassProperty) {
-        documentation = Either.forRight(MarkupContent("markdown", parsedComment ?: ""))
+        this.documentation =
+          Either.forRight(MarkupContent("markdown", this@PklProperty.docContents ?: ""))
       }
     }
   }
@@ -462,6 +453,61 @@ interface PklLineComment : PklNode, PklWhiteSpace
 interface PklBlockComment : PklNode, PklWhiteSpace
 
 interface PklShebangComment : PklNode, PklWhiteSpace
+
+interface PklDocComment : PklNode, PklReferencesOwner {
+  val contents: String
+
+  /** The doc comments contents, except with member link references replaced with LSP URIs. */
+  val processedContents: String
+
+  val memberLinks: List<PklDocCommentMemberLink>
+
+  override val references: List<PklDocCommentReference>
+}
+
+// not a `PklNode` because it's not part of the tree-sitter parse tree.
+data class PklDocCommentMemberLink(
+  val span: Span,
+  /**
+   * The text portion of the link; `foo` within:
+   * ```
+   * [foo][link.to.foo]
+   * ```
+   *
+   * In the case of short member links, it's the same as [reference].
+   */
+  val text: String,
+  /**
+   * The reference portion of the link; `link.to.foo` within:
+   * ```
+   * [foo][link.to.foo]
+   * ```
+   */
+  val reference: String,
+  val offsetWithinContents: Int,
+  val length: Int,
+)
+
+interface PklReferencesOwner {
+  val references: List<PklReference>
+}
+
+interface PklDocCommentReference : PklReference {
+  /** The (qualified) link of this reference. E.g. `foo.bar` within `foo.bar.baz` */
+  val link: String
+
+  /** The text of this reference. E.g. `bar` within `foo.bar.baz` */
+  val text: String
+
+  /** The complete member link text */
+  val fullText: String
+
+  /**
+   * The span of the entire member link (a single reference might be `foo` within `foo.bar.baz`;
+   * full span represents the whole `foo.bar.baz`)
+   */
+  val fullSpan: Span
+}
 
 interface Terminal : PklNode {
   val type: TokenType
@@ -978,7 +1024,7 @@ fun Node.toNode(project: Project, parent: PklNode?): PklNode? {
     // treat modifiers as terminals; matches how we do it in pkl-intellij
     "modifier" -> children[0].toTerminal(parent!!)
     "identifier" -> toTerminal(parent!!)
-    "docComment" -> toTerminal(parent!!)
+    "docComment" -> PklDocCommentImpl(project, parent!!, this)
     "escapeSequence" -> toTerminal(parent!!)
     "mlStringContinuation" -> toTerminal(parent!!)
     // just becomes an expression

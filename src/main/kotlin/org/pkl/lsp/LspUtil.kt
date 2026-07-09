@@ -329,3 +329,8 @@ fun ensureJarFileSystem(uri: URI) {
 fun getDoc(node: PklDocCommentOwner, context: PklProject?): Either<String, MarkupContent> {
   return Either.forRight(MarkupContent("markdown", node.effectiveDocComment(context) ?: ""))
 }
+
+val memberLinkKeywords = setOf("null", "true", "false", "this", "unknown", "nothing")
+
+fun unescapedIdentifier(identifier: String) =
+  if (identifier.startsWith("`")) identifier.substring(1, identifier.length - 1) else identifier

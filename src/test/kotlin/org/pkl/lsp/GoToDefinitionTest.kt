@@ -610,4 +610,142 @@ class GoToDefinitionTest : LspTestBase() {
     assertThat(resolved.name).isEqualTo("name")
     assertThat(resolved.parentOfTypes(PklClass::class)!!.name).isEqualTo("Bird")
   }
+
+  @Test
+  fun `resolve unqualified member link`() {
+    createPklFile(
+      """
+      /// This is [prop2<caret>]
+      prop1: String
+      
+      prop2: String
+    """
+        .trimIndent()
+    )
+    val resolved = goToDefinition().single()
+    assertThat(resolved).isInstanceOf(PklClassProperty::class.java)
+    resolved as PklClassProperty
+    assertThat(resolved.name).isEqualTo("prop2")
+  }
+
+  @Test
+  fun `resolve qualified member link`() {
+    createPklFile(
+      """
+      /// This is [Person.name<caret>]
+      prop1: String
+      
+      class Person {
+        name: String
+      }
+    """
+        .trimIndent()
+    )
+    val resolved = goToDefinition().single()
+    assertThat(resolved).isInstanceOf(PklClassProperty::class.java)
+    resolved as PklClassProperty
+    assertThat(resolved.name).isEqualTo("name")
+  }
+
+  @Test
+  fun `resolve qualified member link 2`() {
+    createPklFile(
+      """
+      /// This is [Person<caret>.name]
+      prop1: String
+      
+      class Person {
+        name: String
+      }
+    """
+        .trimIndent()
+    )
+    val resolved = goToDefinition().single()
+    assertThat(resolved).isInstanceOf(PklClass::class.java)
+    resolved as PklClass
+    assertThat(resolved.name).isEqualTo("Person")
+  }
+
+  @Test
+  fun `resolve member link - this keyword`() {
+    createPklFile(
+      """
+      module MyModule
+
+      /// This is [this<caret>]
+      prop1: String
+    """
+        .trimIndent()
+    )
+    val resolved = goToDefinition().single()
+    assertThat(resolved).isInstanceOf(PklModuleClause::class.java)
+  }
+
+  @Test
+  fun `resolve member link - this keyword 2`() {
+    createPklFile(
+      """
+      /// This is [this<caret>]
+      class MyClass
+    """
+        .trimIndent()
+    )
+    val resolved = goToDefinition().single()
+    assertThat(resolved).isInstanceOf(PklClass::class.java)
+  }
+
+  @Test
+  fun `resolve member link - module keyword`() {
+    createPklFile(
+      """
+      module MyModule
+
+      /// This is like [module<caret>]
+      class MyClass
+    """
+        .trimIndent()
+    )
+    val resolved = goToDefinition().single()
+    assertThat(resolved).isInstanceOf(PklModuleClause::class.java)
+  }
+
+  @Test
+  fun `resolve qualified member link - module keyword`() {
+    createPklFile(
+      """
+      module MyModule
+
+      /// This is like [module.MyClass<caret>]
+      class MyClass
+    """
+        .trimIndent()
+    )
+    val resolved = goToDefinition().single()
+    assertThat(resolved).isInstanceOf(PklClass::class.java)
+    resolved as PklClass
+    assertThat(resolved.name).isEqualTo("MyClass")
+  }
+
+  @Test
+  fun `resolve qualified member link - this keyword`() {
+    createPklFile(
+      """
+      module MyModule
+
+      /// The name on MyModule
+      name: String
+
+      /// This is like [this.name<caret>]
+      class MyClass {
+        /// The name inside MyClass
+        name: String
+      }
+    """
+        .trimIndent()
+    )
+    val resolved = goToDefinition().single()
+    assertThat(resolved).isInstanceOf(PklClassProperty::class.java)
+    resolved as PklClassProperty
+    assertThat(resolved.docContents).isEqualTo("The name inside MyClass")
+  }
 }

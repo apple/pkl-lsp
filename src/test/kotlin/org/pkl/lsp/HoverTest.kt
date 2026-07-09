@@ -287,4 +287,44 @@ class HoverTest : LspTestBase() {
     assertThat(hoverText).contains("name: pkl.ref#Reference<main#Domain, String>")
     assertThat(hoverText).contains("The name of the bird")
   }
+
+  @Test
+  fun `hover over doc comment member link - full reference`() {
+    createPklFile(
+      """
+      /// This is a person with a cool [name][Person.name]
+      class Person<caret> {
+        name: String
+      }
+    """
+        .trimIndent()
+    )
+    val hoverText = getHoverText()
+    val expectedDocs =
+      """
+      This is a person with a cool [`name`](${testProjectDir.toUri()}main.pkl#L3,C3)
+      """
+        .trimIndent()
+    assertThat(hoverText).contains(expectedDocs)
+  }
+
+  @Test
+  fun `hover over doc comment member link - short reference`() {
+    createPklFile(
+      """
+      /// This is a person with a cool [Person.name]
+      class Person<caret> {
+        name: String
+      }
+    """
+        .trimIndent()
+    )
+    val hoverText = getHoverText()
+    val expectedDocs =
+      """
+      This is a person with a cool [`Person.name`](${testProjectDir.toUri()}main.pkl#L3,C3)
+      """
+        .trimIndent()
+    assertThat(hoverText).contains(expectedDocs)
+  }
 }

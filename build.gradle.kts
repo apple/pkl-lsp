@@ -82,6 +82,7 @@ dependencies {
   implementation(libs.jspecify) // used by jtreesitter
   implementation(libs.jtreesitter)
   implementation(libs.pklFormatter)
+  implementation(libs.flexmarxJava)
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
   testImplementation(libs.assertJ)
   testImplementation(libs.junitJupiter)

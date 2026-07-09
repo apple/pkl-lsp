@@ -1,0 +1,108 @@
+/*
+ * Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.pkl.lsp.completion
+
+import org.eclipse.lsp4j.CompletionItem
+import org.eclipse.lsp4j.CompletionParams
+import org.pkl.lsp.Component
+import org.pkl.lsp.Project
+import org.pkl.lsp.ast.PklDocComment
+import org.pkl.lsp.ast.PklDocCommentReference
+import org.pkl.lsp.ast.PklNode
+import org.pkl.lsp.memberLinkKeywords
+import org.pkl.lsp.resolvers.ResolveVisitors
+import org.pkl.lsp.resolvers.Resolvers
+import org.pkl.lsp.resolvers.withoutShadowedElements
+
+class DocCommentMemberLinkCompletionProvider(project: Project) :
+  Component(project), CompletionProvider {
+  private val memberLinkKeywordItems =
+    memberLinkKeywords.map { CompletionItem().apply { this.label = it } }
+
+  override fun getCompletions(
+    node: PklNode,
+    params: CompletionParams,
+    collector: MutableList<CompletionItem>,
+  ) {
+    if (node !is PklDocComment) return
+    val reference = node.references.find { it.span.matches(params.position) } ?: return
+    if (reference.fullText.contains(".")) {
+      completeQualifiedMemberLink(reference, node, collector)
+    } else {
+      collector.addAll(memberLinkKeywordItems)
+      completeUnqualifiedMemberLink(node, collector)
+    }
+  }
+
+  private fun completeUnqualifiedMemberLink(
+    docComment: PklDocComment,
+    collector: MutableList<CompletionItem>,
+  ) {
+    val base = docComment.project.pklBaseModule
+    val context = docComment.containingFile.pklProject
+    val visitor =
+      ResolveVisitors.completionItems(base, forMemberLink = true).withoutShadowedElements()
+    Resolvers.resolveUnqualifiedAccess(
+      docComment,
+      null,
+      isProperty = true,
+      base,
+      mapOf(),
+      visitor,
+      context,
+    )
+    Resolvers.resolveUnqualifiedAccess(
+      docComment,
+      null,
+      isProperty = false,
+      base,
+      mapOf(),
+      visitor,
+      context,
+    )
+    Resolvers.resolveUnqualifiedTypeName(docComment, base, mapOf(), visitor, context)
+    collector.addAll(visitor.result)
+  }
+
+  private fun completeQualifiedMemberLink(
+    reference: PklDocCommentReference,
+    docComment: PklDocComment,
+    collector: MutableList<CompletionItem>,
+  ) {
+    val project = docComment.project
+    val context = docComment.containingFile.pklProject
+    val visitor =
+      ResolveVisitors.completionItems(project.pklBaseModule, forMemberLink = true)
+        .withoutShadowedElements()
+    Resolvers.resolveQualifiedDocCommentMemberLink(
+      reference.fullText,
+      docComment,
+      true,
+      project.pklBaseModule,
+      visitor,
+      context,
+    )
+    Resolvers.resolveQualifiedDocCommentMemberLink(
+      reference.fullText,
+      docComment,
+      false,
+      project.pklBaseModule,
+      visitor,
+      context,
+    )
+    collector.addAll(visitor.result)
+  }
+}
