@@ -14,7 +14,7 @@ lsp4j = "1.0.0"
 nexusPublishPlugin = "2.0.0"
 pkl = "0.32.0"
 shadowPlugin = "9.4.2"
-spotless = "8.7.0"
+spotless = "8.8.0"
 treeSitterRepo = "v0.26.8" # git tag name
 treeSitterPklRepo = "v0.21.0" # git tag name
 
