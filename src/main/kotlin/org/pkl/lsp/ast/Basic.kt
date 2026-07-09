@@ -94,6 +94,8 @@ class PklDocCommentImpl(project: Project, parent: PklNode, override val ctx: Nod
   override val processedContents: String
     get() {
       var myContents = contents
+      // replace these spans starting from the end so we don't need to track how replacements affect
+      // offsets
       for (link in
         memberLinks.sortedWith(
           Comparator.comparing<PklDocCommentMemberLink, Int> { -it.span.beginCol }
@@ -101,7 +103,7 @@ class PklDocCommentImpl(project: Project, parent: PklNode, override val ctx: Nod
         )) {
         val replacement =
           when (
-            val resolved = DocCommentResolvers.resolveLink(project, link.text, parent!!, true)
+            val resolved = DocCommentResolvers.resolveLink(project, link.reference, parent!!, true)
           ) {
             is PklNode -> {
               buildString {
@@ -111,13 +113,13 @@ class PklDocCommentImpl(project: Project, parent: PklNode, override val ctx: Nod
               }
             }
             else -> {
-              "`${link.text}`"
+              "`${link.reference}`"
             }
           }
         myContents =
           myContents.replaceRange(
             link.offsetWithinContents,
-            link.offsetWithinContents + link.text.length + 2,
+            link.offsetWithinContents + link.length,
             replacement,
           )
       }
@@ -140,8 +142,10 @@ class PklDocCommentImpl(project: Project, parent: PklNode, override val ctx: Nod
                 add(
                   PklDocCommentMemberLink(
                     getSpan(ref.reference),
+                    if (ref.text.isEmpty()) ref.reference.toString() else ref.text.toString(),
                     ref.reference.toString(),
                     ref.startOffset,
+                    ref.endOffset - ref.startOffset,
                   )
                 )
               }
@@ -161,7 +165,7 @@ class PklDocCommentImpl(project: Project, parent: PklNode, override val ctx: Nod
             val line = memberLink.span.beginLine
             var offset = memberLink.span.beginCol
             val linkText = StringBuilder()
-            val segments = memberLink.text.split('.')
+            val segments = memberLink.reference.split('.')
             for (segment in segments) {
               if (linkText.isNotEmpty()) {
                 linkText.append('.')
@@ -175,7 +179,7 @@ class PklDocCommentImpl(project: Project, parent: PklNode, override val ctx: Nod
                   fullSpan = memberLink.span,
                   link = linkText.toString(),
                   text = segment,
-                  fullText = memberLink.text,
+                  fullText = memberLink.reference,
                 )
               )
               offset += segment.length + 1
@@ -233,7 +237,7 @@ class PklDocCommentReferenceImpl(
 ) : PklDocCommentReference {
 
   override fun resolve(context: PklProject?): PklNode? {
-    if (fullText in memberLinkKeywords) return null
+    if (fullText in memberLinkKeywords && fullText != "module" && fullText != "this") return null
     return DocCommentResolvers.resolveLink(docComment.project, link, docComment.parent!!, true)
   }
 }

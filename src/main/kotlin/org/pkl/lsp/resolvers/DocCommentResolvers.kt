@@ -18,6 +18,8 @@ package org.pkl.lsp.resolvers
 import org.pkl.lsp.Project
 import org.pkl.lsp.ast.PklNode
 import org.pkl.lsp.packages.dto.PklProject
+import org.pkl.lsp.resolvers.Resolvers.resolveDocCommentModuleOrThisKeyword
+import org.pkl.lsp.type.computeThisType
 import org.pkl.lsp.unescapedIdentifier
 
 object DocCommentResolvers {
@@ -69,10 +71,14 @@ object DocCommentResolvers {
     val isProperty = !link.endsWith("()")
     val memberName = unescapedIdentifier(if (isProperty) link else link.dropLast(2))
     val base = project.pklBaseModule
+    resolveDocCommentModuleOrThisKeyword(link, position)?.let {
+      return it
+    }
+    val thisType = position.computeThisType(base, mapOf(), context)
     val visitor = ResolveVisitors.firstElementNamed(memberName, base, resolveImports)
     return Resolvers.resolveUnqualifiedAccess(
       position,
-      null,
+      thisType,
       isProperty,
       base,
       mapOf(),

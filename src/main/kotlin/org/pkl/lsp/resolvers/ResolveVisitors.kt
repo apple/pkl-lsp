@@ -507,12 +507,9 @@ object ResolveVisitors {
         item.label = "$name($parTypes)"
         if (forMemberLink) {
           item.insertText = "$name()"
-        } else {
-          item.insertText = "$name($strPars)"
-        }
-        if (forMemberLink) {
           item.insertTextFormat = InsertTextFormat.Snippet
         } else {
+          item.insertText = "$name($strPars)"
           item.insertTextFormat = InsertTextFormat.PlainText
         }
         item.kind = CompletionItemKind.Method

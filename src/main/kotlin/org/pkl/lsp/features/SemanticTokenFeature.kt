@@ -79,7 +79,7 @@ class SemanticTokenFeature(project: Project) : Component(project) {
                   link.span.endLine,
                   link.span.endCol + 1,
                 )
-              tokens.addSpan(link.text.length + 2, prevSpan, span, Color.DocCommentMemberLink)
+              tokens.addSpan(link.reference.length + 2, prevSpan, span, Color.DocCommentMemberLink)
               prevSpan = span
             }
           }

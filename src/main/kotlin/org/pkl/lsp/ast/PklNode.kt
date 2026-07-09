@@ -192,7 +192,7 @@ interface PklDocCommentOwner : PklNode {
   val docComment: PklDocComment?
     get() = children.firstInstanceOf<PklDocComment>()
 
-  val myDocumentation: String?
+  val docContents: String?
     get() = docComment?.processedContents
 
   /**
@@ -200,7 +200,7 @@ interface PklDocCommentOwner : PklNode {
    * does not have a documentation comment, returns the documentation comment of the nearest
    * documented ancestor, if any.
    */
-  fun effectiveDocComment(context: PklProject?): String? = myDocumentation
+  fun effectiveDocComment(context: PklProject?): String? = docContents
 }
 
 sealed interface PklNavigableElement : PklNode
@@ -338,7 +338,7 @@ sealed interface PklProperty :
       detail = type?.render() ?: "unknown"
       if (this@PklProperty is PklClassProperty) {
         this.documentation =
-          Either.forRight(MarkupContent("markdown", this@PklProperty.myDocumentation ?: ""))
+          Either.forRight(MarkupContent("markdown", this@PklProperty.docContents ?: ""))
       }
     }
   }
@@ -466,7 +466,27 @@ interface PklDocComment : PklNode, PklReferencesOwner {
 }
 
 // not a `PklNode` because it's not part of the tree-sitter parse tree.
-data class PklDocCommentMemberLink(val span: Span, val text: String, val offsetWithinContents: Int)
+data class PklDocCommentMemberLink(
+  val span: Span,
+  /**
+   * The text portion of the link; `foo` within:
+   * ```
+   * [foo][link.to.foo]
+   * ```
+   *
+   * In the case of short member links, it's the same as [reference].
+   */
+  val text: String,
+  /**
+   * The reference portion of the link; `link.to.foo` within:
+   * ```
+   * [foo][link.to.foo]
+   * ```
+   */
+  val reference: String,
+  val offsetWithinContents: Int,
+  val length: Int,
+)
 
 interface PklReferencesOwner {
   val references: List<PklReference>

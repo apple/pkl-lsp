@@ -15,8 +15,6 @@
  */
 package org.pkl.lsp.resolvers
 
-import kotlin.io.resolve
-import kotlin.text.get
 import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.packages.dto.PklProject
@@ -383,6 +381,14 @@ object Resolvers {
     return visitor.result to LookupMode.IMPLICIT_THIS
   }
 
+  fun resolveDocCommentModuleOrThisKeyword(link: String, position: PklNode): PklTypeDefOrModule? {
+    return when (link) {
+      "module" -> position.enclosingModule
+      "this" -> position as? PklClass ?: position.parentOfTypes(PklClass::class, PklModule::class)
+      else -> null
+    }
+  }
+
   fun <R> resolveQualifiedDocCommentMemberLink(
     linkText: String,
     position: PklNode,
@@ -397,20 +403,18 @@ object Resolvers {
       2 -> {
         // Class.property, Class.method()
         // module.Class, module.TypeAlias, module.property, module.method()
+        // or "module" or "this" explicitly
         val classOrModuleName = parts[0]
+        resolveDocCommentModuleOrThisKeyword(classOrModuleName, position)?.let { node ->
+          visitDocCommentClassOrModuleMembersForDocComment(node, isProperty, visitor, context)
+          return
+        }
+
         val resolveResult =
           enclosingModule?.imports?.find { it.memberName == classOrModuleName }?.resolve(context)
             as? SimpleModuleResolutionResult
-        resolveResult?.resolved?.cache(context)?.let { cache ->
-          if (isProperty) {
-            for ((name, def) in cache.typeDefsAndProperties) {
-              visitor.visit(name, def, mapOf(), context)
-            }
-          } else {
-            for ((methodName, method) in cache.methods) {
-              visitor.visit(methodName, method, mapOf(), context)
-            }
-          }
+        resolveResult?.resolved?.let { module ->
+          visitDocCommentClassOrModuleMembersForDocComment(module, isProperty, visitor, context)
           return
         }
 
@@ -418,35 +422,59 @@ object Resolvers {
         val clazz =
           resolveUnqualifiedTypeName(position, base, mapOf(), typeNameVisitor, context) as? PklClass
             ?: return
-        visitClass(clazz, isProperty, visitor, context)
+        visitDocCommentClassOrModuleMembersForDocComment(clazz, isProperty, visitor, context)
       }
       3 -> {
         // module.Class.property, module.Class.method()
         val moduleName = parts[0]
+
+        resolveDocCommentModuleOrThisKeyword(moduleName, position)?.let { node ->
+          visitDocCommentClassOrModuleMembersForDocComment(node, isProperty, visitor, context)
+          return
+        }
+
         val className = parts[1]
         val module =
           enclosingModule?.imports?.find { it.memberName == moduleName }?.resolve(context)
             as? SimpleModuleResolutionResult ?: return
         val clazz = module.resolved?.cache(context)?.types?.get(className) as? PklClass ?: return
-        visitClass(clazz, isProperty, visitor, context)
+        visitDocCommentClassOrModuleMembersForDocComment(clazz, isProperty, visitor, context)
       }
     }
   }
 
-  private fun <R> visitClass(
-    clazz: PklClass,
+  @Suppress("DuplicatedCode")
+  private fun <R> visitDocCommentClassOrModuleMembersForDocComment(
+    node: PklTypeDefOrModule,
     isProperty: Boolean,
     visitor: ResolveVisitor<R>,
     context: PklProject?,
   ) {
-    if (isProperty) {
-      for (property in clazz.properties) {
-        visitor.visit(property.name, property, mapOf(), context)
+    when (node) {
+      is PklModule -> {
+        val cache = node.cache(context)
+        if (isProperty) {
+          for ((name, def) in cache.typeDefsAndProperties) {
+            visitor.visit(name, def, mapOf(), context)
+          }
+        } else {
+          for ((methodName, method) in cache.methods) {
+            visitor.visit(methodName, method, mapOf(), context)
+          }
+        }
       }
-    } else {
-      for (method in clazz.methods) {
-        val name = method.name
-        visitor.visit(name, method, mapOf(), context)
+      else -> {
+        node as PklClass
+        val cache = node.cache(context)
+        if (isProperty) {
+          for ((name, property) in cache.properties) {
+            visitor.visit(name, property, mapOf(), context)
+          }
+        } else {
+          for ((name, method) in cache.methods) {
+            visitor.visit(name, method, mapOf(), context)
+          }
+        }
       }
     }
   }
