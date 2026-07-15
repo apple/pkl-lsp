@@ -16,7 +16,8 @@ pkl = "0.32.0"
 shadowPlugin = "9.5.1"
 spotless = "8.8.0"
 treeSitterRepo = "v0.26.8" # git tag name
-treeSitterPklRepo = "v0.21.0" # git tag name
+treeSitterPklRepo = "e8bc74c94511ae306a454a897f3828a54f990625" # TODO: switch to tag once released
+#treeSitterPklRepo = "v0.21.0" # git tag name
 
 # Only need checksums for distributions that we might run builds on.
 # Use `../scripts/update_zig.sh <version>` to update these
