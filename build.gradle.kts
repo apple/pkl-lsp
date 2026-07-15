@@ -19,6 +19,7 @@ import kotlin.io.path.absolutePathString
 import org.apache.tools.ant.filters.ReplaceTokens
 import org.gradle.internal.extensions.stdlib.capitalized
 import org.gradle.internal.os.OperatingSystem
+import org.gradle.kotlin.dsl.support.serviceOf
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -33,6 +34,8 @@ plugins {
   alias(libs.plugins.shadow)
   alias(libs.plugins.spotless)
   alias(libs.plugins.nexusPublish)
+  pklJavaExecutable
+  pklNativeExecutable
 }
 
 val buildInfo = project.extensions.getByType<BuildInfo>()
@@ -61,10 +64,12 @@ val pklStdlibFiles: Configuration = configurations.create("pklStdlibFiles")
 val nativeLibDir = layout.buildDirectory.dir("generated/libs/native/")
 val treeSitterPklRepoDir = layout.buildDirectory.dir("repos/tree-sitter-pkl")
 val treeSitterRepoDir = layout.buildDirectory.dir("repos/tree-sitter")
+val reachabilityMetadataDir = layout.buildDirectory.dir("generated/reachability-metadata")
 
 val dummy: SourceSet = sourceSets.create("dummy")
 
-@Suppress("unused")
+val commons: SourceSet = sourceSets.create("commons")
+
 val devLauncher: SourceSet =
   sourceSets.create("devLauncher") {
     // use test {compile,runtime}Classpath because it has the pkl stdlib
@@ -73,6 +78,31 @@ val devLauncher: SourceSet =
     runtimeClasspath =
       output + sourceSets.main.get().output + sourceSets.test.get().runtimeClasspath
   }
+
+val simpleClientRunner: SourceSet =
+  sourceSets.create("simpleClientRunner") {
+    compileClasspath += sourceSets.main.get().output
+    compileClasspath += commons.output
+    compileClasspath += sourceSets.main.get().compileClasspath
+
+    compileClasspath += sourceSets.main.get().output
+    runtimeClasspath += commons.output
+    runtimeClasspath += sourceSets.main.get().runtimeClasspath
+  }
+
+val reflectionMetadataGenerator: SourceSet =
+  sourceSets.create("reflectionMetadataGenerator") {
+    compileClasspath += sourceSets.main.get().output
+    compileClasspath += sourceSets.main.get().compileClasspath
+
+    compileClasspath += sourceSets.main.get().output
+    runtimeClasspath += sourceSets.main.get().runtimeClasspath
+  }
+
+sourceSets.test {
+  compileClasspath += commons.output
+  runtimeClasspath += commons.output
+}
 
 dependencies {
   implementation(kotlin("reflect"))
@@ -88,16 +118,30 @@ dependencies {
   testImplementation(libs.junitJupiter)
   testImplementation(libs.junitEngine)
   pklStdlibFiles(libs.pklStdlib)
-  // comes from the attached workspace in CircleCI
+  // comes from the attached workspace in GitHub Actions
   stagedShadowJar(tasks.shadowJar.get().outputs.files)
   pklCli(
     "org.pkl-lang:pkl-cli-${buildInfo.os.canonicalName}-${buildInfo.arch.name}:${libs.versions.pkl.get()}"
   )
+  nativeImageClasspath(files(reachabilityMetadataDir))
+  add("reflectionMetadataGeneratorImplementation", libs.classgraph)
+  add("commonsApi", libs.lsp4j)
+
   constraints { implementation(libs.gson) }
+  constraints { add("commonsApi", libs.gson) }
 }
 
 val configurePklCliExecutable =
-  tasks.register("configurePklCliExecutable") { doLast { pklCli.singleFile.setExecutable(true) } }
+  tasks.register("configurePklCliExecutable") {
+    // declare output file for up-to-date checking
+    val outputFile = layout.buildDirectory.file("configurePklCliExecutable/output.txt")
+    outputs.file(outputFile)
+
+    doLast {
+      pklCli.singleFile.setExecutable(true)
+      outputFile.get().asFile.writeText("OK")
+    }
+  }
 
 tasks.jar {
   manifest {
@@ -107,15 +151,118 @@ tasks.jar {
 
 application { mainClass = "org.pkl.lsp.cli.Main" }
 
+executable {
+  mainClass = "org.pkl.lsp.cli.Main"
+  name = "pkl-lsp"
+  javaName = "pkl-lsp"
+  documentationName = "Pkl LSP"
+  publicationName = "pkl-lsp"
+  javaPublicationName = "pkl-lsp-java"
+  website = "https://pkl-lang.org/lsp/current/index.html"
+}
+
+val generateReachabilityMetadataUsingTracingAgent =
+  tasks.register<JavaExec>("generateReachabilityMetadataUsingTracingAgent") {
+    group = "build"
+
+    // The native-image-agent requires GraalVM's java, not a regular JDK.
+    val graalVm =
+      if (buildInfo.arch == Architecture.Amd64) buildInfo.graalVmAmd64 else buildInfo.graalVmAarch64
+    dependsOn(
+      if (buildInfo.arch == Architecture.Amd64) ":installGraalVmAmd64" else ":installGraalVmAarch64"
+    )
+
+    executable(
+      graalVm.baseDir
+        .resolve("bin")
+        .resolve(if (buildInfo.os.isWindows) "java.exe" else "java")
+        .absolutePath
+    )
+    val outputDir = layout.buildDirectory.file("generateReachabilityMetadataUsingTracingAgent")
+    val outputFile = outputDir.map { it.asFile.resolve("reachability-metadata.json") }
+    outputs.file(outputFile)
+
+    classpath = simpleClientRunner.runtimeClasspath
+    mainClass = "org.pkl.lsp.simpleclientrunner.Main"
+
+    jvmArgumentProviders.add(
+      CommandLineArgumentProvider {
+        buildList {
+          add(
+            "-agentlib:native-image-agent=config-output-dir=${outputDir.get().asFile.absolutePath}"
+          )
+          add("--enable-native-access=ALL-UNNAMED")
+        }
+      }
+    )
+
+    argumentProviders.add(
+      CommandLineArgumentProvider {
+        buildList {
+          add(
+            layout.buildDirectory.dir("tmp/generateReachabilityMetadata").get().asFile.absolutePath
+          )
+        }
+      }
+    )
+
+    doLast {
+      if (!outputFile.get().exists()) {
+        throw GradleException("Did not create expected file: ${outputFile.get()}")
+      }
+    }
+  }
+
+val generateLsp4jReflectionMetadata =
+  tasks.register<JavaExec>("generateLsp4jReflectionMetadata") {
+    dependsOn(generateReachabilityMetadataUsingTracingAgent)
+    group = "build"
+
+    classpath = reflectionMetadataGenerator.runtimeClasspath
+    mainClass = "org.pkl.lsp.reflectionmetadatagenerator.Main"
+    val outputFile =
+      reachabilityMetadataDir.map { it.file("META-INF/native-image/reachability-metadata.json") }
+    outputs.file(outputFile)
+    argumentProviders.add(
+      CommandLineArgumentProvider {
+        val metadataFileFromTracingAgent =
+          generateReachabilityMetadataUsingTracingAgent.get().outputs.files.singleFile
+        listOf(outputFile.get().asFile.absolutePath, metadataFileFromTracingAgent.absolutePath)
+      }
+    )
+  }
+
+/**
+ * Generating traceability metadata is a two-step process:
+ * 1. Run pkl-lsp using GraalVM's tracing agent to generate resources, foreign FFI metadata, and
+ *    some baseline reflection metadata.
+ * 2. Use classgraph to discover all DTO classes of LSP4J and write additional reflection metadata.
+ *
+ * We need to do step 2 because [generateReachabilityMetadataUsingTracingAgent] doesn't execute all
+ * LSP endpoints, and so we can't be sure that we've added all necessary classes to the reflection
+ * metadata yet.
+ */
+val generateReachabilityMetadata =
+  tasks.register("generateReachabilityMetadata") {
+    dependsOn(generateReachabilityMetadataUsingTracingAgent)
+    dependsOn(generateLsp4jReflectionMetadata)
+  }
+
+tasks.withType<Test>().configureEach { jvmArgs("--enable-native-access=ALL-UNNAMED") }
+
 tasks.test {
   dependsOn(configurePklCliExecutable)
-  jvmArgs("--enable-native-access=ALL-UNNAMED")
   systemProperties["pklExecutable"] = pklCli.singleFile.absolutePath
-  useJUnitPlatform { includeEngines("ParserSnippetTestsEngine", "DiagnosticsSnippetTestsEngine") }
-  System.getProperty("testReportsDir")?.let { reportsDir ->
-    reports.junitXml.outputLocation.set(file(reportsDir).resolve(project.name).resolve(name))
+  useJUnitPlatform {
+    includeEngines(
+      "ParserSnippetTestsEngine",
+      "DiagnosticsSnippetTestsEngine",
+      "HoverSnippetTestsEngine",
+    )
   }
 }
+
+tasks.withType<NativeImageBuild> { dependsOn(generateReachabilityMetadata) }
 
 tasks.distZip { dependsOn(tasks.shadowJar) }
 
@@ -130,7 +277,13 @@ val verifyShadowJar =
     dependsOn(tasks.jar)
     dependsOn(tasks.shadowJar)
     inputs.files(tasks.shadowJar)
+
+    // declare output file for up-to-date checking
+    val outputFile = layout.buildDirectory.file("verifyShadowJar/output.txt")
+    outputs.files(outputFile)
+
     group = "verification"
+
     doLast {
       val shadowJarFile = tasks.shadowJar.get().archiveFile.get().asFile
       val entries = zipTree(shadowJarFile).files.map { it.name }
@@ -144,8 +297,11 @@ val verifyShadowJar =
       if (pklFiles.isEmpty()) {
         throw GradleException("Shadow jar does not contain any .pkl files. File: $shadowJarFile")
       }
+      outputFile.get().asFile.writeText("OK")
     }
   }
+
+tasks.jar { archiveClassifier = "base" }
 
 tasks.shadowJar {
   archiveClassifier = null
@@ -169,6 +325,8 @@ val sourcesJar =
     archiveClassifier = "sources"
   }
 
+val execOps = project.serviceOf<ExecOperations>()
+
 fun configureRepo(
   repo: String,
   simpleRepoName: String,
@@ -178,32 +336,42 @@ fun configureRepo(
   val taskSuffix = simpleRepoName.capitalized() + "Repo"
 
   val cloneTask =
-    tasks.register("clone$taskSuffix", Exec::class) {
-      outputs.dir(repoDir)
+    tasks.register<Exec>("clone$taskSuffix") {
       onlyIf { !repoDir.get().asFile.resolve(".git").exists() }
       commandLine("git", "clone", repo, repoDir.get().asFile)
+      outputs.upToDateWhen { repoDir.get().asFile.resolve(".git").exists() }
     }
 
   val updateTask =
     tasks.register("update$taskSuffix") {
-      outputs.dir(repoDir)
       dependsOn(cloneTask)
       inputs.property("gitTagOrCommit", gitTagOrCommit)
+      outputs.upToDateWhen {
+        try {
+          val headCommit =
+            runCommand(
+              workingDir = repoDir.get().asFile,
+              command = listOf("git", "rev-parse", "HEAD"),
+            )
+          val targetCommit =
+            runCommand(
+              workingDir = repoDir.get().asFile,
+              command = listOf("git", "rev-parse", "${gitTagOrCommit.get()}^{}"),
+            )
+          headCommit == targetCommit
+        } catch (_: Throwable) {
+          false
+        }
+      }
       doLast {
-        providers
-          .exec {
-            workingDir = repoDir.get().asFile
-            commandLine("git", "fetch", "--tags", "origin")
-          }
-          .result
-          .get()
-        providers
-          .exec {
-            workingDir = repoDir.get().asFile
-            commandLine("git", "checkout", "-f", gitTagOrCommit.get())
-          }
-          .result
-          .get()
+        runCommand(
+          workingDir = repoDir.get().asFile,
+          command = listOf("git", "fetch", "--tags", "origin"),
+        )
+        runCommand(
+          workingDir = repoDir.get().asFile,
+          command = listOf("git", "checkout", "-f", gitTagOrCommit.get()),
+        )
       }
     }
 
@@ -242,9 +410,8 @@ val makeTreeSitterTasks: List<TaskProvider<*>> = buildList {
   for (os in oses) {
     for (arch in architectures) {
       val task =
-        tasks.register(
-          "makeTreeSitter${os.canonicalName.capitalized()}${arch.name.capitalized()}",
-          Exec::class.java,
+        tasks.register<Exec>(
+          "makeTreeSitter${os.canonicalName.capitalized()}${arch.name.capitalized()}"
         ) {
           workingDir = treeSitterRepoDir.get().asFile
           dependsOn(setupTreeSitterRepo)
@@ -283,9 +450,8 @@ val makeTreeSitterPklTasks: List<TaskProvider<*>> = buildList {
   for (os in oses) {
     for (arch in architectures) {
       val task =
-        tasks.register(
-          "makeTreeSitterPkl${os.canonicalName.capitalized()}${arch.name.capitalized()}",
-          Exec::class.java,
+        tasks.register<Exec>(
+          "makeTreeSitterPkl${os.canonicalName.capitalized()}${arch.name.capitalized()}"
         ) {
           dependsOn(setupTreeSitterPklRepo)
           workingDir = treeSitterPklRepoDir.get().asFile
@@ -323,7 +489,7 @@ private fun Exec.configureCompile(
 ) {
   group = "build"
 
-  dependsOn(tasks.named("installZig"))
+  dependsOn(tasks.installZig)
 
   val outputFile = nativeLibDir.map { it.file(resourceLibraryPath(os, arch, libraryName)) }
   outputs.file(outputFile)
@@ -395,17 +561,74 @@ val verifyDistribution =
     dependsOn(configurePklCliExecutable)
 
     testClassesDirs = tasks.test.get().testClassesDirs
+
     classpath =
       sourceSets.test.get().output +
+        commons.output +
         stagedShadowJar +
         (configurations.testRuntimeClasspath.get() - configurations.runtimeClasspath.get())
 
     systemProperties["pklExecutable"] = pklCli.singleFile.absolutePath
-    useJUnitPlatform()
-    System.getProperty("testReportsDir")?.let { reportsDir ->
-      reports.junitXml.outputLocation.set(file(reportsDir).resolve(project.name).resolve(name))
-    }
+    useJUnitPlatform { includeEngines("ParserSnippetTestsEngine", "DiagnosticsSnippetTestsEngine") }
   }
+
+fun Test.configureNativeTest(vararg includeEngines: String) {
+  inputs
+    .dir("src/test/files/DiagnosticsSnippetTests/input")
+    .withPropertyName("input")
+    .withPathSensitivity(PathSensitivity.RELATIVE)
+  inputs
+    .dir("src/test/files/DiagnosticsSnippetTests/output")
+    .withPropertyName("output")
+    .withPathSensitivity(PathSensitivity.RELATIVE)
+  testClassesDirs = files(tasks.test.get().testClassesDirs)
+  classpath = tasks.test.get().classpath
+  useJUnitPlatform { includeEngines(*includeEngines) }
+}
+
+val testNativeExecutableMacOS =
+  tasks.register<Test>("testNativeExecutableMacOS") {
+    dependsOn(tasks.assembleNativeMacOsAarch64)
+    configureNativeTest(
+      "MacAarch64DiagnosticsSnippetTestsEngine",
+      "MacAarch64HoverSnippetTestsEngine",
+    )
+  }
+
+val testNativeExecutableLinuxAmd64 =
+  tasks.register<Test>("testNativeExecutableLinuxAmd64") {
+    dependsOn(tasks.assembleNativeLinuxAmd64)
+    configureNativeTest(
+      "LinuxAmd64DiagnosticsSnippetTestsEngine",
+      "LinuxAmd64HoverSnippetTestsEngine",
+    )
+  }
+
+val testNativeExecutableLinuxAarch64 =
+  tasks.register<Test>("testNativeExecutableLinuxAarch64") {
+    dependsOn(tasks.assembleNativeLinuxAarch64)
+    configureNativeTest(
+      "LinuxAarch64DiagnosticsSnippetTestsEngine",
+      "LinuxAarch64HoverSnippetTestsEngine",
+    )
+  }
+
+val testNativeExecutableWindows =
+  tasks.register<Test>("testNativeExecutableWindows") {
+    dependsOn(tasks.assembleNativeWindowsAmd64)
+    configureNativeTest(
+      "WindowsAmd64DiagnosticsSnippetTestsEngine",
+      "WindowsAmd64HoverSnippetTestsEngine",
+    )
+  }
+
+tasks.testNativeMacOsAarch64 { dependsOn(testNativeExecutableMacOS) }
+
+tasks.testNativeLinuxAmd64 { dependsOn(testNativeExecutableLinuxAmd64) }
+
+tasks.testNativeLinuxAarch64 { dependsOn(testNativeExecutableLinuxAarch64) }
+
+tasks.testNativeWindowsAmd64 { dependsOn(testNativeExecutableWindows) }
 
 sourceSets { main { resources { srcDirs(nativeLibDir) } } }
 

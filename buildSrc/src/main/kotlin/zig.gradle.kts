@@ -64,14 +64,10 @@ val installZig =
     doLast {
       buildInfo.zig.installDir.createDirectories()
       println("Extracting $downloadFile into ${buildInfo.zig.installDir}")
-      // faster and more reliable than Gradle's `copy { from tarTree() }`
-      providers
-        .exec {
-          workingDir = file(buildInfo.zig.installDir)
-          executable = "tar"
-          args("--strip-components=1", "-xf", downloadFile)
-        }
-        .result
-        .get()
+      // Gradle's `copy { from(tarTree()) }` doesn't support xz-compression
+      runCommand(
+        workingDir = file(buildInfo.zig.installDir),
+        command = listOf("tar", "--strip-components=1", "-xf", downloadFile.absolutePath),
+      )
     }
   }

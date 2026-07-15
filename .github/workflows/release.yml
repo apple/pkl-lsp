@@ -28,13 +28,21 @@ jobs:
         git remote add upstream https://github.com/apple/pkl-lsp.git
         git fetch upstream main
         echo 'PKL_ORIGINAL_REMOTE_NAME=upstream' > "$GITHUB_ENV"
-    - run: ./gradlew --info --stacktrace -DreleaseBuild=true check shadowJar verifyDistribution
+    - name: Set DEBUG_ARGS env var
+      env:
+        RUNNER_DEBUG: ${{ runner.debug }}
+      shell: bash
+      run: |-
+        if [[ "$RUNNER_DEBUG" -eq 1 ]]; then
+          echo "DEBUG_ARGS=--info --stacktrace" >> $GITHUB_ENV
+        fi
+    - run: ./gradlew $DEBUG_ARGS -DreleaseBuild=true check shadowJar verifyDistribution
     - name: Upload build artifacts
       if: '!cancelled()'
       uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
       with:
         name: pkl-lsp-build-artifacts
-        path: build/libs/
+        path: build*/libs/
     - name: Upload Test Result XML
       if: '!cancelled()'
       uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
@@ -58,9 +66,17 @@ jobs:
         distribution: temurin
     - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
       with:
-        name: pkl-lsp-build-artifacts
+        name: build-jar
         path: build/libs/
-    - run: ./gradlew --info --stacktrace verifyDistribution
+    - name: Set DEBUG_ARGS env var
+      env:
+        RUNNER_DEBUG: ${{ runner.debug }}
+      shell: bash
+      run: |-
+        if [[ "$RUNNER_DEBUG" -eq 1 ]]; then
+          echo "DEBUG_ARGS=--info --stacktrace" >> $GITHUB_ENV
+        fi
+    - run: ./gradlew "$DEBUG_ARGS" verifyDistribution
     - name: Upload Test Result XML
       if: '!cancelled()'
       uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
@@ -81,38 +97,204 @@ jobs:
         distribution: temurin
     - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
       with:
-        name: pkl-lsp-build-artifacts
+        name: build-jar
         path: build/libs/
-    - run: ./gradlew --info --stacktrace verifyDistribution
+    - name: Set DEBUG_ARGS env var
+      env:
+        RUNNER_DEBUG: ${{ runner.debug }}
+      shell: bash
+      run: |-
+        if [[ "$RUNNER_DEBUG" -eq 1 ]]; then
+          echo "DEBUG_ARGS=--info --stacktrace" >> $GITHUB_ENV
+        fi
+    - run: ./gradlew "$DEBUG_ARGS" verifyDistribution
     - name: Upload Test Result XML
       if: '!cancelled()'
       uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
       with:
         name: test-results-xml-test-windows
         path: build/test-results/**/*.xml
+  native-macos-aarch64:
+    if: github.repository_owner == 'apple'
+    runs-on:
+    - self-hosted
+    - macos
+    steps:
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+    - uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 # v5
+      with:
+        java-version: '25'
+        distribution: temurin
+        cache: gradle
+    - name: Set DEBUG_ARGS env var
+      env:
+        RUNNER_DEBUG: ${{ runner.debug }}
+      shell: bash
+      run: |-
+        if [[ "$RUNNER_DEBUG" -eq 1 ]]; then
+          echo "DEBUG_ARGS=--info --stacktrace" >> $GITHUB_ENV
+        fi
+    - name: Build native executable
+      shell: bash
+      run: ./gradlew $DEBUG_ARGS buildNative
+    - name: Upload native executable
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: build-native-macos-aarch64
+        path: build*/executable/*
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-xml-native-macos-aarch64
+        path: build/test-results/**/*.xml
+  native-linux-amd64:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+    - uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 # v5
+      with:
+        java-version: '25'
+        distribution: temurin
+        cache: gradle
+    - name: Install deps
+      run: dnf install -y git binutils gcc glibc-devel zlib-devel libstdc++-static glibc-langpack-en xz
+    - name: Set DEBUG_ARGS env var
+      env:
+        RUNNER_DEBUG: ${{ runner.debug }}
+      shell: bash
+      run: |-
+        if [[ "$RUNNER_DEBUG" -eq 1 ]]; then
+          echo "DEBUG_ARGS=--info --stacktrace" >> $GITHUB_ENV
+        fi
+    - name: Build native executable
+      shell: bash
+      run: ./gradlew $DEBUG_ARGS buildNative
+    - name: Upload native executable
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: build-native-linux-amd64
+        path: build*/executable/*
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-xml-native-linux-amd64
+        path: build/test-results/**/*.xml
+    container:
+      image: redhat/ubi8:8.10
+  native-linux-aarch64:
+    runs-on: ubuntu-24.04-arm
+    steps:
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+    - uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 # v5
+      with:
+        java-version: '25'
+        distribution: temurin
+        cache: gradle
+    - name: Install deps
+      run: dnf install -y git binutils gcc glibc-devel zlib-devel libstdc++-static glibc-langpack-en xz
+    - name: Set DEBUG_ARGS env var
+      env:
+        RUNNER_DEBUG: ${{ runner.debug }}
+      shell: bash
+      run: |-
+        if [[ "$RUNNER_DEBUG" -eq 1 ]]; then
+          echo "DEBUG_ARGS=--info --stacktrace" >> $GITHUB_ENV
+        fi
+    - name: Build native executable
+      shell: bash
+      run: ./gradlew $DEBUG_ARGS buildNative
+    - name: Upload native executable
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: build-native-linux-aarch64
+        path: build*/executable/*
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-xml-native-linux-aarch64
+        path: build/test-results/**/*.xml
+    container:
+      image: redhat/ubi8:8.10
+  native-windows-amd64:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+    - uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 # v5
+      with:
+        java-version: '25'
+        distribution: temurin
+        cache: gradle
+    - name: Set DEBUG_ARGS env var
+      env:
+        RUNNER_DEBUG: ${{ runner.debug }}
+      shell: bash
+      run: |-
+        if [[ "$RUNNER_DEBUG" -eq 1 ]]; then
+          echo "DEBUG_ARGS=--info --stacktrace" >> $GITHUB_ENV
+        fi
+    - name: Build native executable
+      shell: bash
+      run: ./gradlew $DEBUG_ARGS buildNative
+    - name: Upload native executable
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: build-native-windows-amd64
+        path: build*/executable/*
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-xml-native-windows-amd64
+        path: build/test-results/**/*.xml
   deploy-github-release:
     needs:
     - test-macos
     - test-windows
+    - native-macos-aarch64
+    - native-linux-amd64
+    - native-linux-aarch64
+    - native-windows-amd64
     permissions:
       contents: write
     runs-on: ubuntu-latest
     steps:
     - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
       with:
-        name: pkl-lsp-build-artifacts
-        path: build/libs/
+        pattern: build-**
+        merge-multiple: true
     - name: Publish release to GitHub
       env:
         GH_TOKEN: ${{ github.token }}
         GH_REPO: ${{ github.repository }}
         VERSION: ${{ github.ref_name }}
       run: |-
+        # exclude build_artifacts.txt from publish
+        rm -f */build/executable/*.build_artifacts.txt
+        find */build/executable/* -type d | xargs rm -rf
         gh release create "${VERSION}" \
           --title "${VERSION}" \
           --verify-tag \
           --notes "Release notes: https://pkl-lang.org/lsp/current/CHANGELOG.html#release-${VERSION}" \
-          build/libs/*
+          build/libs/* build/executable/*
   deploy-maven-release:
     needs:
     - deploy-github-release
@@ -144,6 +326,10 @@ jobs:
     - build-release
     - test-macos
     - test-windows
+    - native-macos-aarch64
+    - native-linux-amd64
+    - native-linux-aarch64
+    - native-windows-amd64
     permissions:
       checks: write
     runs-on: ubuntu-latest
