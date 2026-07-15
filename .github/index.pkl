@@ -247,9 +247,12 @@ dependabot {
       directory = "/"
       cooldown {
         `default-days` = 7
+        exclude {
+          "org.pkl-lang"
+        }
       }
       schedule {
-        interval = "weekly"
+        interval = "quarterly"
       }
     }
   }
