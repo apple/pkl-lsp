@@ -37,6 +37,7 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.pkl.lsp.ast.PklDocCommentOwner
 import org.pkl.lsp.ast.Span
 import org.pkl.lsp.packages.dto.PklProject
+import org.pkl.lsp.util.OS
 
 private const val SIGNIFICAND_MASK = 0x000fffffffffffffL
 
@@ -208,7 +209,33 @@ data class Package1CacheDir(override val file: Path) : CacheDir {
 val homeDir: Path
   get() = Path.of(System.getProperty("user.home") ?: throw AssertionError("Cannot find home dir"))
 
-val pklCacheDir: Path = homeDir.resolve(".pkl/cache")
+/**
+ * The default Pkl package cache directory. Prefers the OS-appropriate location – `~/.cache/pkl` on
+ * Unix, `%LOCALAPPDATA%/pkl/cache` on Windows – falling back to the legacy `~/.pkl/cache` when it
+ * already exists. New setups land in the new location; existing setups keep working without
+ * migration.
+ *
+ * Re-evaluates per access so the CLI can create the cache after the LSP starts.
+ *
+ * Keep in sync with `org.pkl.core.util.IoUtils#getDefaultModuleCacheDir`.
+ */
+val pklCacheDir: Path
+  get() {
+    val newLocation: Path? =
+      if (OS.isWindows) {
+        System.getenv("LOCALAPPDATA")
+          ?.takeIf { it.isNotEmpty() }
+          ?.let { Path.of(it, "pkl", "cache") }
+      } else {
+        homeDir.resolve(".cache/pkl")
+      }
+    val legacy = homeDir.resolve(".pkl/cache")
+    return when {
+      newLocation != null && Files.exists(newLocation) -> newLocation
+      Files.exists(legacy) -> legacy
+      else -> newLocation ?: legacy
+    }
+  }
 
 val packages2CacheDir: CacheDir
   get() = Package2CacheDir(pklCacheDir.resolve("package-2"))

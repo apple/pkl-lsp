@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,4 +47,8 @@ object OS {
         else -> osArchProperty
       }
     }
+
+  /** Convenience boolean for sites that branch only on Windows vs. Unix. */
+  val isWindows: Boolean
+    get() = osNameProperty.contains("windows")
 }
