@@ -90,10 +90,133 @@ jobs:
       with:
         name: test-results-xml-test-windows
         path: build/test-results/**/*.xml
+  native-macos-aarch64:
+    if: github.repository_owner == 'apple'
+    runs-on:
+    - self-hosted
+    - macos
+    steps:
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+    - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+      with:
+        java-version: '25'
+        distribution: temurin
+        cache: gradle
+    - name: Build native executable
+      shell: bash
+      run: ./gradlew --info --stacktrace buildNative
+    - name: Upload native executable
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: pkl-lsp-native-macos-aarch64
+        path: build/executable/*
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-xml-native-macos-aarch64
+        path: build/test-results/**/*.xml
+  native-linux-amd64:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+    - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+      with:
+        java-version: '25'
+        distribution: temurin
+        cache: gradle
+    - name: Install deps
+      run: dnf install -y git binutils gcc glibc-devel zlib-devel libstdc++-static glibc-langpack-en
+    - name: Build native executable
+      shell: bash
+      run: ./gradlew --info --stacktrace buildNative
+    - name: Upload native executable
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: pkl-lsp-native-linux-amd64
+        path: build/executable/*
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-xml-native-linux-amd64
+        path: build/test-results/**/*.xml
+    container:
+      image: redhat/ubi8:8.10
+  native-linux-aarch64:
+    runs-on: ubuntu-24.04-arm
+    steps:
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+    - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+      with:
+        java-version: '25'
+        distribution: temurin
+        cache: gradle
+    - name: Install deps
+      run: dnf install -y git binutils gcc glibc-devel zlib-devel libstdc++-static glibc-langpack-en
+    - name: Build native executable
+      shell: bash
+      run: ./gradlew --info --stacktrace buildNative
+    - name: Upload native executable
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: pkl-lsp-native-linux-aarch64
+        path: build/executable/*
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-xml-native-linux-aarch64
+        path: build/test-results/**/*.xml
+    container:
+      image: redhat/ubi8:8.10
+  native-windows-amd64:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+    - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+      with:
+        java-version: '25'
+        distribution: temurin
+        cache: gradle
+    - name: Build native executable
+      shell: bash
+      run: ./gradlew --info --stacktrace buildNative
+    - name: Upload native executable
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: pkl-lsp-native-windows-amd64
+        path: build/executable/*
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-xml-native-windows-amd64
+        path: build/test-results/**/*.xml
   deploy-github-release:
     needs:
     - test-macos
     - test-windows
+    - native-macos-aarch64
+    - native-linux-amd64
+    - native-linux-aarch64
+    - native-windows-amd64
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -102,6 +225,11 @@ jobs:
       with:
         name: pkl-lsp-build-artifacts
         path: build/libs/
+    - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+      with:
+        path: native/
+        pattern: pkl-lsp-native-*
+        merge-multiple: true
     - name: Publish release to GitHub
       env:
         GH_TOKEN: ${{ github.token }}
@@ -112,7 +240,7 @@ jobs:
           --title "${VERSION}" \
           --verify-tag \
           --notes "Release notes: https://pkl-lang.org/lsp/current/CHANGELOG.html#release-${VERSION}" \
-          build/libs/*
+          build/libs/* native/*
   deploy-maven-release:
     needs:
     - deploy-github-release
@@ -144,6 +272,10 @@ jobs:
     - build-release
     - test-macos
     - test-windows
+    - native-macos-aarch64
+    - native-linux-amd64
+    - native-linux-aarch64
+    - native-windows-amd64
     permissions:
       checks: write
     runs-on: ubuntu-latest

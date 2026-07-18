@@ -39,11 +39,141 @@ jobs:
         name: test-results-xml-build
         path: build/test-results/**/*.xml
         if-no-files-found: ignore
+  native-macos-aarch64:
+    if: (contains(github.event.pull_request.body, '[native]') || contains(github.event.pull_request.body, '[native-macos]') || contains(github.event.pull_request.body, '[native-macos-aarch64]')) && github.repository_owner == 'apple'
+    runs-on:
+    - self-hosted
+    - macos
+    steps:
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+    - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+      with:
+        java-version: '25'
+        distribution: temurin
+        cache: gradle
+    - name: Build native executable
+      shell: bash
+      run: ./gradlew --info --stacktrace buildNative
+    - name: Upload native executable
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: pkl-lsp-native-macos-aarch64
+        path: build/executable/*
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-xml-native-macos-aarch64
+        path: build/test-results/**/*.xml
+        if-no-files-found: ignore
+  native-linux-amd64:
+    if: contains(github.event.pull_request.body, '[native]') || contains(github.event.pull_request.body, '[native-linux]') || contains(github.event.pull_request.body, '[native-linux-amd64]')
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+    - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+      with:
+        java-version: '25'
+        distribution: temurin
+        cache: gradle
+    - name: Install deps
+      run: dnf install -y git binutils gcc glibc-devel zlib-devel libstdc++-static glibc-langpack-en
+    - name: Build native executable
+      shell: bash
+      run: ./gradlew --info --stacktrace buildNative
+    - name: Upload native executable
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: pkl-lsp-native-linux-amd64
+        path: build/executable/*
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-xml-native-linux-amd64
+        path: build/test-results/**/*.xml
+        if-no-files-found: ignore
+    container:
+      image: redhat/ubi8:8.10
+  native-linux-aarch64:
+    if: contains(github.event.pull_request.body, '[native]') || contains(github.event.pull_request.body, '[native-linux]') || contains(github.event.pull_request.body, '[native-linux-aarch64]')
+    runs-on: ubuntu-24.04-arm
+    steps:
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+    - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+      with:
+        java-version: '25'
+        distribution: temurin
+        cache: gradle
+    - name: Install deps
+      run: dnf install -y git binutils gcc glibc-devel zlib-devel libstdc++-static glibc-langpack-en
+    - name: Build native executable
+      shell: bash
+      run: ./gradlew --info --stacktrace buildNative
+    - name: Upload native executable
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: pkl-lsp-native-linux-aarch64
+        path: build/executable/*
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-xml-native-linux-aarch64
+        path: build/test-results/**/*.xml
+        if-no-files-found: ignore
+    container:
+      image: redhat/ubi8:8.10
+  native-windows-amd64:
+    if: contains(github.event.pull_request.body, '[native]') || contains(github.event.pull_request.body, '[native-windows]') || contains(github.event.pull_request.body, '[native-windows-amd64]')
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+    - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+      with:
+        java-version: '25'
+        distribution: temurin
+        cache: gradle
+    - name: Build native executable
+      shell: bash
+      run: ./gradlew --info --stacktrace buildNative
+    - name: Upload native executable
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: pkl-lsp-native-windows-amd64
+        path: build/executable/*
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-xml-native-windows-amd64
+        path: build/test-results/**/*.xml
+        if-no-files-found: ignore
   verdict:
     if: always()
     needs:
     - check-pkl-github-actions
     - build
+    - native-macos-aarch64
+    - native-linux-amd64
+    - native-linux-aarch64
+    - native-windows-amd64
     runs-on: ubuntu-latest
     steps:
     - name: Failure verdict

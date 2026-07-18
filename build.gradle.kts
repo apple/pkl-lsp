@@ -33,6 +33,8 @@ plugins {
   alias(libs.plugins.shadow)
   alias(libs.plugins.spotless)
   alias(libs.plugins.nexusPublish)
+  pklJavaExecutable
+  pklNativeExecutable
 }
 
 val buildInfo = project.extensions.getByType<BuildInfo>()
@@ -61,10 +63,12 @@ val pklStdlibFiles: Configuration = configurations.create("pklStdlibFiles")
 val nativeLibDir = layout.buildDirectory.dir("generated/libs/native/")
 val treeSitterPklRepoDir = layout.buildDirectory.dir("repos/tree-sitter-pkl")
 val treeSitterRepoDir = layout.buildDirectory.dir("repos/tree-sitter")
+val reachabilityMetadataDir = layout.buildDirectory.dir("generated/reachability-metadata")
 
 val dummy: SourceSet = sourceSets.create("dummy")
 
-@Suppress("unused")
+val commons: SourceSet = sourceSets.create("commons")
+
 val devLauncher: SourceSet =
   sourceSets.create("devLauncher") {
     // use test {compile,runtime}Classpath because it has the pkl stdlib
@@ -73,6 +77,22 @@ val devLauncher: SourceSet =
     runtimeClasspath =
       output + sourceSets.main.get().output + sourceSets.test.get().runtimeClasspath
   }
+
+val generateNativeImageMetadata: SourceSet by
+  sourceSets.creating {
+    compileClasspath += sourceSets.main.get().output
+    compileClasspath += commons.output
+    compileClasspath += sourceSets.main.get().compileClasspath
+
+    compileClasspath += sourceSets.main.get().output
+    runtimeClasspath += commons.output
+    runtimeClasspath += sourceSets.main.get().runtimeClasspath
+  }
+
+sourceSets.test {
+  compileClasspath += commons.output
+  runtimeClasspath += commons.output
+}
 
 dependencies {
   implementation(kotlin("reflect"))
@@ -93,7 +113,12 @@ dependencies {
   pklCli(
     "org.pkl-lang:pkl-cli-${buildInfo.os.canonicalName}-${buildInfo.arch.name}:${libs.versions.pkl.get()}"
   )
+  nativeImageClasspath(files(reachabilityMetadataDir))
+
+  add("commonsApi", libs.lsp4j)
+
   constraints { implementation(libs.gson) }
+  constraints { add("commonsApi", libs.gson) }
 }
 
 val configurePklCliExecutable =
@@ -106,6 +131,72 @@ tasks.jar {
 }
 
 application { mainClass = "org.pkl.lsp.cli.Main" }
+
+executable {
+  mainClass = "org.pkl.lsp.cli.Main"
+  name = "pkl-lsp"
+  javaName = "pkl-lsp"
+  documentationName = "Pkl LSP"
+  publicationName = "pkl-lsp"
+  javaPublicationName = "pkl-lsp-java"
+  website = "https://github.com/apple/pkl-lsp"
+}
+
+// note: we can ignore warnings around "Error processing trace entry"
+val generateReachabilityMetadata by
+  tasks.registering(JavaExec::class) {
+    // The native-image-agent requires GraalVM's java, not a regular JDK.
+    val graalVm =
+      if (buildInfo.arch == Architecture.Amd64) buildInfo.graalVmAmd64 else buildInfo.graalVmAarch64
+    dependsOn(
+      if (buildInfo.arch == Architecture.Amd64) ":installGraalVmAmd64" else ":installGraalVmAarch64"
+    )
+
+    executable(
+      graalVm.baseDir
+        .resolve("bin")
+        .resolve(if (buildInfo.os.isWindows) "java.exe" else "java")
+        .absolutePath
+    )
+
+    classpath = generateNativeImageMetadata.runtimeClasspath
+    outputs.dir(reachabilityMetadataDir)
+    mainClass = "org.pkl.lsp.generatenativeimagemetadata.Main"
+
+    jvmArgumentProviders.add(
+      CommandLineArgumentProvider {
+        val configDir = reachabilityMetadataDir.get().asFile.resolve("META-INF/native-image")
+        buildList {
+          add("-agentlib:native-image-agent=config-output-dir=${configDir.absolutePath}")
+          add("--enable-native-access=ALL-UNNAMED")
+        }
+      }
+    )
+
+    argumentProviders.add(
+      CommandLineArgumentProvider {
+        buildList {
+          add(
+            layout.buildDirectory
+              .dir("tmp/generateReachabilityMetadata")
+              .get()
+              .asFile
+              .toURI()
+              .toString()
+          )
+        }
+      }
+    )
+
+    doLast {
+      val file =
+        reachabilityMetadataDir
+          .get()
+          .asFile
+          .resolve("META-INF/native-image/reachability-metadata.json")
+      require(file.exists()) { "Did not create $file" }
+    }
+  }
 
 tasks.test {
   dependsOn(configurePklCliExecutable)
@@ -406,6 +497,49 @@ val verifyDistribution =
       reports.junitXml.outputLocation.set(file(reportsDir).resolve(project.name).resolve(name))
     }
   }
+
+fun Test.configureNativeTest(engineName: String) {
+  inputs
+    .dir("src/test/files/DiagnosticsSnippetTests/input")
+    .withPropertyName("input")
+    .withPathSensitivity(PathSensitivity.RELATIVE)
+  inputs
+    .dir("src/test/files/DiagnosticsSnippetTests/output")
+    .withPropertyName("output")
+    .withPathSensitivity(PathSensitivity.RELATIVE)
+  testClassesDirs = files(tasks.test.get().testClassesDirs)
+  classpath = tasks.test.get().classpath
+  useJUnitPlatform { includeEngines(engineName) }
+}
+
+val testNativeExecutableMacOS by
+  tasks.registering(Test::class) { configureNativeTest("MacDiagnosticsSnippetTestsEngine") }
+
+val testNativeExecutableLinuxAmd64 by
+  tasks.registering(Test::class) { configureNativeTest("LinuxAmd64DiagnosticsSnippetTestsEngine") }
+
+val testNativeExecutableLinuxAarch64 by
+  tasks.registering(Test::class) {
+    configureNativeTest("LinuxAarch64DiagnosticsSnippetTestsEngine")
+  }
+
+val testNativeExecutableWindows by
+  tasks.registering(Test::class) { configureNativeTest("WindowsDiagnosticsSnippetTestsEngine") }
+
+val testNativeExecutable by
+  tasks.registering(Test::class) {
+    testClassesDirs = files(tasks.test.get().testClassesDirs)
+    classpath = tasks.test.get().classpath
+    useJUnitPlatform { includeEngines("") }
+  }
+
+tasks.testNativeMacOsAarch64 { dependsOn(testNativeExecutableMacOS) }
+
+tasks.testNativeLinuxAmd64 { dependsOn(testNativeExecutableLinuxAmd64) }
+
+tasks.testNativeLinuxAarch64 { dependsOn(testNativeExecutableLinuxAarch64) }
+
+tasks.testNativeWindowsAmd64 { dependsOn(testNativeExecutableWindows) }
 
 sourceSets { main { resources { srcDirs(nativeLibDir) } } }
 

@@ -1,2 +1,6 @@
 org.pkl.lsp.ParserSnippetTestsEngine
 org.pkl.lsp.DiagnosticsSnippetTestsEngine
+org.pkl.lsp.MacAarch64DiagnosticsSnippetTestsEngine
+org.pkl.lsp.LinuxAarch64DiagnosticsSnippetTestsEngine
+org.pkl.lsp.LinuxAmd64DiagnosticsSnippetTestsEngine
+org.pkl.lsp.WindowsAmd64DiagnosticsSnippetTestsEngine
