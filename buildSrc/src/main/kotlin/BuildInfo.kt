@@ -17,7 +17,6 @@
 
 import java.io.File
 import java.nio.file.Path
-import kotlin.io.path.exists
 import org.gradle.api.Project
 import org.gradle.api.artifacts.VersionCatalog
 import org.gradle.api.artifacts.VersionCatalogsExtension
@@ -132,14 +131,16 @@ open class BuildInfo(val project: Project) {
     }
     val version = libs.findVersion("graalVm").get().toString()
     val graalJdkVersion = libs.findVersion("graalVmJdkVersion").get().toString()
-    return GraalVm(osName, arch, version, graalJdkVersion)
+    val graalVmInnovation = libs.findVersion("graalVmInnovation").get().toString()
+    return GraalVm(osName, arch, version, graalJdkVersion,graalVmInnovation)
   }
 
   inner class GraalVm(
     val osName: String,
     val arch: String,
     val version: String,
-    val graalJdkVersion: String,
+    val graalVmJdkVersion: String,
+    val graalVmInnovation: String,
   ) {
 
     val homeDir: File by lazy {
@@ -148,13 +149,13 @@ open class BuildInfo(val project: Project) {
 
     val baseName: String by lazy { "graalvm-community-jdk-$version-$osName-$arch" }
 
-    val graalMajorVersion: String = graalJdkVersion.split(".").first()
+    val graalMajorVersion: String = graalVmJdkVersion.split(".").first()
 
     /** Download URL from GraalVM CE GitHub releases. */
     val downloadUrl: String by lazy {
       val ext = if (os.isWindows) "zip" else "tar.gz"
       val platformArch = if (arch == "amd64") "x64" else arch
-      "https://github.com/graalvm/graalvm-ce-builds/releases/download/graal-$version/graalvm-community-jdk-${graalMajorVersion}i1-${graalJdkVersion}_${osName}-${platformArch}_bin.$ext"
+      "https://github.com/graalvm/graalvm-ce-builds/releases/download/graal-$version/graalvm-community-jdk-${graalMajorVersion}i${graalVmInnovation}-${graalVmJdkVersion}_${osName}-${platformArch}_bin.$ext"
     }
 
     val downloadFile: File by lazy {
