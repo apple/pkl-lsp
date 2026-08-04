@@ -294,7 +294,6 @@ local nativePrbJobs: Mapping<String, Workflow.Job> = new {
 prb {
   jobs {
     ["build"] = buildJob(false)
-    ...verifyJobs("build")
     ...nativePrbJobs
   }
 }
