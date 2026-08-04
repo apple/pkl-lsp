@@ -47,6 +47,75 @@ jobs:
         name: test-results-xml-build
         path: build/test-results/**/*.xml
         if-no-files-found: ignore
+  test-macos:
+    if: github.repository_owner == 'apple'
+    needs:
+    - build
+    runs-on:
+    - self-hosted
+    - macos
+    steps:
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      with:
+        persist-credentials: false
+    - uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5
+      with:
+        java-version: '25'
+        distribution: temurin
+        cache: gradle
+    - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+      with:
+        name: pkl-lsp-build-artifacts
+        path: build/libs/
+    - name: Set DEBUG_ARGS env var
+      env:
+        RUNNER_DEBUG: ${{ runner.debug }}
+      shell: bash
+      run: |-
+        if [[ "$RUNNER_DEBUG" -eq 1 ]]; then
+          echo "DEBUG_ARGS=--info --stacktrace" >> $GITHUB_ENV
+        fi
+    - run: ./gradlew "$DEBUG_ARGS" verifyDistribution
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-xml-test-macos
+        path: build/test-results/**/*.xml
+        if-no-files-found: ignore
+  test-windows:
+    needs:
+    - build
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      with:
+        persist-credentials: false
+    - uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5
+      with:
+        java-version: '25'
+        distribution: temurin
+        cache: gradle
+    - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+      with:
+        name: pkl-lsp-build-artifacts
+        path: build/libs/
+    - name: Set DEBUG_ARGS env var
+      env:
+        RUNNER_DEBUG: ${{ runner.debug }}
+      shell: bash
+      run: |-
+        if [[ "$RUNNER_DEBUG" -eq 1 ]]; then
+          echo "DEBUG_ARGS=--info --stacktrace" >> $GITHUB_ENV
+        fi
+    - run: ./gradlew "$DEBUG_ARGS" verifyDistribution
+    - name: Upload Test Result XML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-xml-test-windows
+        path: build/test-results/**/*.xml
+        if-no-files-found: ignore
   native-macos-aarch64:
     if: (contains(github.event.pull_request.body, '[native]') || contains(github.event.pull_request.body, '[native-macos]') || contains(github.event.pull_request.body, '[native-macos-aarch64]')) && github.repository_owner == 'apple'
     runs-on:
@@ -209,7 +278,8 @@ jobs:
     if: always()
     needs:
     - check-pkl-github-actions
-    - build
+    - test-macos
+    - test-windows
     - native-macos-aarch64
     - native-linux-amd64
     - native-linux-aarch64
