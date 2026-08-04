@@ -115,7 +115,7 @@ local function verifyJobs(requiresJob: String): Mapping<String, Workflow.Job> = 
       }
       (catalog.`actions/download-artifact@v6`) {
         with {
-          name = "build-jar"
+          name = "pkl-lsp-build-artifacts"
           path = "build/libs/"
         }
       }
