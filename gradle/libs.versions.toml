@@ -1,6 +1,7 @@
 [versions]
 assertj = "3.27.7"
 clikt = "5.1.0"
+classgraph = "4.8.184"
 flexmarx = "0.64.8"
 downloadTaskPlugin = "5.7.0"
 gson = "2.14.0"
@@ -19,15 +20,28 @@ treeSitterRepo = "v0.26.8" # git tag name
 treeSitterPklRepo = "v0.21.0" # git tag name
 
 # Only need checksums for distributions that we might run builds on.
+# used for cross-compiling tree-sitter libs
 # Use `../scripts/update_zig.sh <version>` to update these
-zig = "0.16.0" # used for cross-compiling tree-sitter libs
+zig = "0.16.0"
 zigSha256-macos-aarch64 = "b23d70deaa879b5c2d486ed3316f7eaa53e84acf6fc9cc747de152450d401489"
 zigSha256-linux-amd64 = "70e49664a74374b48b51e6f3fdfbf437f6395d42509050588bd49abe52ba3d00"
 zigSha256-windows-amd64 = "68659eb5f1e4eb1437a722f1dd889c5a322c9954607f5edcf337bc3684a75a7e"
 zigSha256-linux-aarch64 = "ea4b09bfb22ec6f6c6ceac57ab63efb6b46e17ab08d21f69f3a48b38e1534f17"
 
+# GraalVM for native-image builds
+graalVm = "25.2.4"
+graalVmInnovation = "2"
+graalVmJdkVersion = "25.0.4"
+graalVmSha256-macos-x64 = "unavailable"
+graalVmSha256-macos-aarch64 = "507330fff8907de51b8621c95a21a491fa9b0d8c240de184594f40f83add3bfa"
+graalVmSha256-linux-x64 = "3f4a89de8eaa96f2ed677f09957c7e872cd8467aad3537f8b5394c1b8c4b942e"
+graalVmSha256-linux-aarch64 = "22286f7ecd21b9aedb3226b9bf797469e1bd3eefc491e12ef3dd49b452d230b7"
+graalVmSha256-windows-x64 = "789d2af1c06c3c24f402d2d4a711bdbb19b36f7d8c74afe6a959492fd121ef33"
+graalVmSha256-windows-aarch64 = "unavailable"
+
 [libraries]
 assertJ = { group = "org.assertj", name = "assertj-core", version.ref = "assertj" }
+classgraph = { group = "io.github.classgraph", name = "classgraph", version.ref = "classgraph" }
 clikt = { group = "com.github.ajalt.clikt", name = "clikt", version.ref = "clikt" }
 flexmarxJava = { group = "com.vladsch.flexmark", name = "flexmark-all", version.ref = "flexmarx" }
 downloadTaskPlugin = { group = "de.undercouch", name = "gradle-download-task", version.ref = "downloadTaskPlugin" }

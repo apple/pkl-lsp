@@ -1,0 +1,12 @@
+ /// This points to [bar]
+                       ^
+| ```pkl
+| bar: Int
+| ```
+| 
+| ---
+| 
+| in [memberLink]($snippetsDir/docComments/memberLink.pkl#L1,C1) foo: String
+ 
+ bar: Int
+ 

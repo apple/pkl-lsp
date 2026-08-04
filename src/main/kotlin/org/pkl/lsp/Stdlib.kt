@@ -16,6 +16,7 @@
 package org.pkl.lsp
 
 import java.net.URI
+import java.nio.file.FileSystems
 import java.nio.file.Path
 import kotlin.io.path.extension
 import kotlin.io.path.listDirectoryEntries
@@ -54,6 +55,13 @@ class Stdlib(project: Project) : Component(project) {
     initilizedVersion = false
     if (folders != null) {
       workspaceFolders.addAll(folders)
+    }
+  }
+
+  init {
+    val isInNativeImage = System.getProperty("org.graalvm.nativeimage.imagecode") != null
+    if (isInNativeImage) {
+      FileSystems.newFileSystem(URI.create("resource:/"), mapOf("create" to "true"))
     }
   }
 

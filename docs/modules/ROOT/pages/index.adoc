@@ -2,4 +2,6 @@
 
 Pkl Language Server provides language services for various editor plugins, following the https://microsoft.github.io/language-server-protocol/[Language Server Protocol].
 
-It is a low-level tool, and not meant to be used directly by end users.
+To install, see xref:installation.adoc[].
+
+For integrating into an editor, see xref:integration.adoc[].
