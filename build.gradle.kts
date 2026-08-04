@@ -118,7 +118,7 @@ dependencies {
   testImplementation(libs.junitJupiter)
   testImplementation(libs.junitEngine)
   pklStdlibFiles(libs.pklStdlib)
-  // comes from the attached workspace in GitHub Actions
+  // comes from the downloaded artifact in GitHub Actions
   stagedShadowJar(tasks.shadowJar.get().outputs.files)
   pklCli(
     "org.pkl-lang:pkl-cli-${buildInfo.os.canonicalName}-${buildInfo.arch.name}:${libs.versions.pkl.get()}"
