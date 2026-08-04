@@ -78,7 +78,7 @@ jobs:
         if [[ "$RUNNER_DEBUG" -eq 1 ]]; then
           echo "DEBUG_ARGS=--info --stacktrace" >> $GITHUB_ENV
         fi
-    - run: ./gradlew "$DEBUG_ARGS" verifyDistribution
+    - run: ./gradlew $DEBUG_ARGS verifyDistribution
     - name: Upload Test Result XML
       if: '!cancelled()'
       uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
@@ -110,7 +110,7 @@ jobs:
         if [[ "$RUNNER_DEBUG" -eq 1 ]]; then
           echo "DEBUG_ARGS=--info --stacktrace" >> $GITHUB_ENV
         fi
-    - run: ./gradlew "$DEBUG_ARGS" verifyDistribution
+    - run: ./gradlew $DEBUG_ARGS verifyDistribution
     - name: Upload Test Result XML
       if: '!cancelled()'
       uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5

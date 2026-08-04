@@ -136,7 +136,7 @@ local function verifyJobs(requiresJob: String): Mapping<String, Workflow.Job> = 
       new {
         run =
           """
-          ./gradlew "$DEBUG_ARGS" verifyDistribution
+          ./gradlew $DEBUG_ARGS verifyDistribution
           """
       }
     }
