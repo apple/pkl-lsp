@@ -26,6 +26,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.name
+import kotlin.io.path.writeText
 import org.eclipse.lsp4j.*
 import org.pkl.lsp.*
 import org.pkl.lsp.FsFile
@@ -46,6 +47,8 @@ class PklProjectManager(project: Project) : Component(project) {
     const val PKL_PROJECT_FILENAME = "PklProject"
     const val PKL_PROJECT_DEPS_FILENAME = "PklProject.deps.json"
     const val PKL_PROJECT_STATE_FILENAME = "projects.json"
+    const val GITIGNORE_FILENAME = ".gitignore"
+    const val GITIGNORE_CONTENTS = "*\n"
     const val PKL_LSP_DIR = ".pkl-lsp"
 
     private const val DEPENDENCIES_EXPR =
@@ -303,6 +306,15 @@ class PklProjectManager(project: Project) : Component(project) {
     return Regex("^$regexPattern(/.*)?$").matches(path)
   }
 
+  private fun ensureGitignore(workspace: Path) {
+    // if .pkl-lsp/.gitignore doesn't exist, create it; do not edit if one already exists
+    val lspDir = workspace.resolve(PKL_LSP_DIR)
+    if (!Files.exists(lspDir)) return
+    val gitignore = lspDir.resolve(GITIGNORE_FILENAME)
+    if (Files.exists(gitignore)) return
+    gitignore.writeText(GITIGNORE_CONTENTS)
+  }
+
   private fun persistState() {
     val projectsByWorkspaceDir =
       pklProjects.values.groupBy { pklProject ->
@@ -317,10 +329,12 @@ class PklProjectManager(project: Project) : Component(project) {
       val lspDir = workspace.resolve(PKL_LSP_DIR)
       Files.createDirectories(lspDir)
       state.dump(lspDir.resolve(PKL_PROJECT_STATE_FILENAME))
+      ensureGitignore(workspace)
     }
   }
 
   private fun loadWorkspaceState(workspace: Path) {
+    ensureGitignore(workspace)
     val stateFile = workspace.resolve(PKL_LSP_DIR).resolve(PKL_PROJECT_STATE_FILENAME)
     if (!Files.exists(stateFile)) {
       return
