@@ -145,7 +145,7 @@ class DiagnosticsSnippetTestsEngine : AbstractDiagnosticsSnippetTestEngine() {
   private val fakeProject by lazy {
     val project = server.project
     System.getProperty("pklExecutable")?.let { executablePath ->
-      TestLanguageClient.settings["Pkl" to "pkl.cli.path"] = executablePath
+      TestLanguageClient.settings["pkl.cli.path"] = executablePath
       project.settingsManager.update { it.copy(pklCliPath = Path.of(executablePath)) }
     }
     project

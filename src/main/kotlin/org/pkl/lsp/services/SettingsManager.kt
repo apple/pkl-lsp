@@ -144,22 +144,10 @@ class SettingsManager(project: Project) : Component(project), ModificationTracke
     val params =
       ConfigurationParams(
         listOf(
-          ConfigurationItem().apply {
-            scopeUri = "Pkl"
-            section = "pkl.cli.path"
-          },
-          ConfigurationItem().apply {
-            scopeUri = "Pkl"
-            section = "pkl.formatter.grammarVersion"
-          },
-          ConfigurationItem().apply {
-            scopeUri = "Pkl"
-            section = "pkl.modulepath"
-          },
-          ConfigurationItem().apply {
-            scopeUri = "Pkl"
-            section = "pkl.projects.excludedDirectories"
-          },
+          ConfigurationItem().apply { section = "pkl.cli.path" },
+          ConfigurationItem().apply { section = "pkl.formatter.grammarVersion" },
+          ConfigurationItem().apply { section = "pkl.modulepath" },
+          ConfigurationItem().apply { section = "pkl.projects.excludedDirectories" },
         )
       )
     return project.languageClient

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ object TestLanguageClient : PklLanguageClient {
 
   val actionableNotifications: MutableList<ActionableNotification> = mutableListOf()
 
-  val settings: MutableMap<Pair<String, String>, String> = mutableMapOf()
+  val settings: MutableMap<String, String> = mutableMapOf()
 
   fun reset() {
     actionableNotifications.clear()
@@ -73,7 +73,7 @@ object TestLanguageClient : PklLanguageClient {
   ): CompletableFuture<List<Any>> {
     return CompletableFuture.completedFuture(
       configurationParams.items.map { item ->
-        settings[item.scopeUri to item.section]?.let { JsonPrimitive(it) } ?: JsonNull.INSTANCE
+        settings[item.section]?.let { JsonPrimitive(it) } ?: JsonNull.INSTANCE
       }
     )
   }

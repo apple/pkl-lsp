@@ -50,7 +50,7 @@ abstract class LspTestBase {
       server = PklLspServer(true).also { it.connect(TestLanguageClient) }
       fakeProject = server.project
       System.getProperty("pklExecutable")?.let { executablePath ->
-        TestLanguageClient.settings["Pkl" to "pkl.cli.path"] = executablePath
+        TestLanguageClient.settings["pkl.cli.path"] = executablePath
         println("pkl is: $executablePath")
         fakeProject.settingsManager.update { it.copy(pklCliPath = Path.of(executablePath)) }
       }
