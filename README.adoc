@@ -5,18 +5,18 @@ for link:https://pkl-lang.org[Pkl].
 
 == Features
 
-* [x] Diagnostics (WIP)
+* [x] Diagnostics
 * [x] Hover
 * [x] Go to definition
-* [x] Auto complete (WIP: definition level access still needed)
+* [x] Auto complete
 * [x] Project syncing
 * [x] Package downloading
 * [ ] Rename
 * [ ] Find references
 * [ ] Code lens
-* [ ] Formatting
+* [x] Formatting
 * [x] Type checking
-* [ ] Quick fixes
+* [x] Quick fixes
 
 == Development
 
