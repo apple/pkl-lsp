@@ -283,6 +283,10 @@ open class PklVisitor<R> {
     return visitExpr(node)
   }
 
+  open fun visitMethodTypeArguments(node: PklMethodTypeArguments): R? {
+    return visitElement(node)
+  }
+
   open fun visitQualifiedAccessExpr(node: PklQualifiedAccessExpr): R? {
     return visitAccessExpr(node)
   }

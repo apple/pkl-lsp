@@ -165,6 +165,18 @@ class PklReadExprImpl(
   private val firstToken by lazy { children.first() as Terminal }
 }
 
+class PklMethodTypeArgumentsImpl(
+  override val project: Project,
+  override val parent: PklNode,
+  override val ctx: Node,
+) : AbstractPklNode(project, parent, ctx), PklMethodTypeArguments {
+  override val typeArgumentList: PklTypeArgumentList? by lazy {
+    getChild(PklTypeArgumentListImpl::class)
+  }
+
+  override fun <R> accept(visitor: PklVisitor<R>): R? = visitor.visitMethodTypeArguments(this)
+}
+
 class PklUnqualifiedAccessExprImpl(
   override val project: Project,
   override val parent: PklNode,
