@@ -578,6 +578,10 @@ interface PklSuperSubscriptExpr : PklExpr {
   val expr: PklExpr
 }
 
+interface PklMethodTypeArguments : PklNode {
+  val typeArgumentList: PklTypeArgumentList?
+}
+
 interface PklAccessExpr : PklExpr, PklReference, IdentifierOwner {
   val memberNameText: String
   val isNullSafeAccess: Boolean
@@ -981,6 +985,7 @@ fun Node.toNode(project: Project, parent: PklNode?): PklNode? {
     "traceExpr" -> PklTraceExprImpl(project, parent!!, this)
     "importExpr" -> PklImportExprImpl(project, parent!!, this)
     "readExpr" -> PklReadExprImpl(project, parent!!, this)
+    "methodTypeArguments" -> PklMethodTypeArgumentsImpl(project, parent!!, this)
     "unqualifiedAccessExpr" -> PklUnqualifiedAccessExprImpl(project, parent!!, this)
     "qualifiedAccessExpr" -> PklQualifiedAccessExprImpl(project, parent!!, this)
     "slStringLiteralExpr" -> PklSingleLineStringLiteralImpl(project, parent!!, this)

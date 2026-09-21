@@ -332,7 +332,6 @@ fun configureRepo(
   simpleRepoName: String,
   gitTagOrCommit: Provider<String>,
   repoDir: Provider<Directory>,
-  additionalRemoteUrl: String? = null,
 ): TaskProvider<Task> {
   val taskSuffix = simpleRepoName.capitalized() + "Repo"
 
@@ -396,7 +395,6 @@ val setupTreeSitterPklRepo =
     "treeSitterPkl",
     libs.versions.treeSitterPklRepo,
     treeSitterPklRepoDir,
-    System.getenv("PKL_TREE_SITTER_PKL_ADDITIONAL_REMOTE_URL"),
   )
 
 val oses by lazy {
