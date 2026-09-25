@@ -28,6 +28,7 @@ fun PklNode?.computeResolvedImportType(
   context: PklProject?,
   preserveUnboundTypeVars: Boolean = false,
   canInferExprBody: Boolean = true,
+  receiverType: Type? = null,
 ): Type {
   if (this == null) return Type.Unknown
 
@@ -39,7 +40,13 @@ fun PklNode?.computeResolvedImportType(
       is PklMethod ->
         when {
           methodHeader.returnType != null ->
-            methodHeader.returnType.toType(base, bindings, context, preserveUnboundTypeVars)
+            methodHeader.returnType.toType(
+              base,
+              bindings,
+              context,
+              preserveUnboundTypeVars,
+              receiverType,
+            )
           else ->
             when {
               canInferExprBody && !isOverridable -> body.computeExprType(base, bindings, context)
@@ -48,7 +55,8 @@ fun PklNode?.computeResolvedImportType(
         }
       is PklProperty ->
         when {
-          type != null -> type.toType(base, bindings, context, preserveUnboundTypeVars)
+          type != null ->
+            type.toType(base, bindings, context, preserveUnboundTypeVars, receiverType)
           else ->
             when {
               canInferExprBody && isLocalOrConstOrFixed ->
@@ -110,7 +118,8 @@ fun PklNode?.computeResolvedImportType(
       }
       is PklTypedIdentifier ->
         when {
-          type != null -> type.toType(base, bindings, context, preserveUnboundTypeVars)
+          type != null ->
+            type.toType(base, bindings, context, preserveUnboundTypeVars, receiverType)
           else -> { // try to infer identifier type
             when (val identifierOwner = parent) {
               is PklLetExpr -> identifierOwner.varExpr.computeExprType(base, bindings, context)

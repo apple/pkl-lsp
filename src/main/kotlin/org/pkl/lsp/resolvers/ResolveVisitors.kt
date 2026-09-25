@@ -147,7 +147,7 @@ object ResolveVisitors {
       ): Boolean {
         if (name != elementName) return true
 
-        val type = pklType.toType(base, bindings, context, preserveUnboundTypeVars)
+        val type = pklType.toType(base, bindings, context, preserveUnboundTypeVars, receiverType)
 
         if (isNegated) {
           excludedTypes.add(type)
@@ -171,23 +171,42 @@ object ResolveVisitors {
             is PklReferenceQualifiedAccessProxy ->
               element.project.pklRefModule.referenceType!!.withTypeArguments(
                 element.domain,
-                element.referent.toType(base, bindings, context, preserveUnboundTypeVars),
+                element.referent.toType(
+                  base,
+                  bindings,
+                  context,
+                  preserveUnboundTypeVars,
+                  receiverType,
+                ),
               )
             is PklImport ->
               element
                 .resolve(context)
-                .computeResolvedImportType(base, bindings, preserveUnboundTypeVars, context)
+                .computeResolvedImportType(
+                  base,
+                  bindings,
+                  preserveUnboundTypeVars,
+                  context,
+                  receiverType = receiverType,
+                )
             is PklTypeParameter -> bindings[element] ?: Type.Unknown
             is PklMethod -> computeMethodReturnType(element, bindings, context, receiverType)
             is PklClass -> base.classType.withTypeArguments(Type.Class.create(element))
             is PklTypeAlias -> base.typeAliasType.withTypeArguments(Type.alias(element, context))
             is PklNavigableElement ->
-              element.computeResolvedImportType(base, bindings, context, preserveUnboundTypeVars)
+              element.computeResolvedImportType(
+                base,
+                bindings,
+                context,
+                preserveUnboundTypeVars,
+                receiverType = receiverType,
+              )
             //            is PklParameter -> {
             //              element.typedIdentifier?.computeResolvedImportType(
             //                base,
             //                bindings,
             //                preserveUnboundTypeVars,
+            //                receiverType = receiverType,
             //              ) ?: unexpectedType(element)
             //            }
             else -> unexpectedType(element)
@@ -287,7 +306,7 @@ object ResolveVisitors {
                   val enhancedBindings = bindings.toMutableMap()
                   val parameterTypes =
                     parameters.map {
-                      it.type?.toType(base, bindings, context, true) ?: Type.Unknown
+                      it.type?.toType(base, bindings, context, true, receiverType) ?: Type.Unknown
                     }
                   val argumentTypes = arguments.map { it.computeExprType(base, bindings, context) }
                   for (i in 0 until min(parameterTypes.size, argumentTypes.size)) {
@@ -296,7 +315,13 @@ object ResolveVisitors {
                   enhancedBindings
                 }
               }
-            method.computeResolvedImportType(base, allBindings, context, preserveUnboundTypeVars)
+            method.computeResolvedImportType(
+              base,
+              allBindings,
+              context,
+              preserveUnboundTypeVars,
+              receiverType = receiverType,
+            )
           }
         }
       }
