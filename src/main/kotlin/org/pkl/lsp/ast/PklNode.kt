@@ -83,6 +83,22 @@ interface PklNode {
     return parentNode.children[index - 1]
   }
 
+  fun nextSibling(): PklNode? {
+    val parentNode = parent ?: return null
+    if (index == parentNode.children.size - 1) return null
+    return parentNode.children[index + 1]
+  }
+
+  fun nextSiblingTotal(): PklNode? {
+    var node: PklNode? = this
+    while (node != null) {
+      val next = node.nextSibling()
+      if (next != null) return next
+      node = node.parent
+    }
+    return null
+  }
+
   fun prevSiblingMatching(filter: (PklNode) -> Boolean): PklNode? {
     var node = prevSibling()
     while (node != null && !filter(node)) {

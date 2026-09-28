@@ -1,23 +1,19 @@
  abstract foo: Int
  ^^^^^^^^
-| Warning: Abstract member declared in a non-abstract module. This will be an error in the future.
+| Hint: Abstract modifier is ignored for properties
  
  abstract function foo(): Int
  ^^^^^^^^
-| Warning: Abstract member declared in a non-abstract module. This will be an error in the future.
- ^^^^^^^^
-| Warning: Abstract member declared in a non-abstract module. This will be an error in the future.
+| Error: Abstract method declared in a non-abstract module
  
  class MyClass {
    abstract foo: Int
    ^^^^^^^^
-| Warning: Abstract member declared in a non-abstract class. This will be an error in the future.
+| Hint: Abstract modifier is ignored for properties
  
    abstract function foo(): Int
    ^^^^^^^^
-| Warning: Abstract member declared in a non-abstract class. This will be an error in the future.
-   ^^^^^^^^
-| Warning: Abstract member declared in a non-abstract class. This will be an error in the future.
+| Error: Abstract method declared in a non-abstract class
  }
  
  // abstract class is okay
