@@ -1,0 +1,7 @@
+abstract module foo
+
+abstract bar: Int
+
+abstract class Baz {
+  abstract quz: Int
+}

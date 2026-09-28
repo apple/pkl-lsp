@@ -19,10 +19,11 @@ import org.eclipse.lsp4j.DiagnosticSeverity
 import org.pkl.lsp.ErrorMessages
 import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.Project
-import org.pkl.lsp.ast.PklClassMember
+import org.pkl.lsp.actions.PklRemoveRemoveNodeQuickFix
 import org.pkl.lsp.ast.PklClassMethod
 import org.pkl.lsp.ast.PklClassProperty
 import org.pkl.lsp.ast.PklExpr
+import org.pkl.lsp.ast.PklModifierListOwner
 import org.pkl.lsp.ast.PklNode
 import org.pkl.lsp.ast.PklObjectProperty
 import org.pkl.lsp.ast.PklProperty
@@ -62,10 +63,10 @@ class MemberAnalyzer(project: Project) : Analyzer(project) {
       }
       is PklClassProperty -> {
         checkUnresolvedProperty(node, memberType, base, diagnosticsHolder, context)
-        checkAbstractMemberWithBody(node, diagnosticsHolder)
+        checkAbstractProperty(node, diagnosticsHolder)
       }
       is PklClassMethod -> {
-        checkAbstractMemberWithBody(node, diagnosticsHolder)
+        checkAbstractMethodWithBody(node, diagnosticsHolder)
       }
     }
     return true
@@ -111,23 +112,39 @@ class MemberAnalyzer(project: Project) : Analyzer(project) {
     }
   }
 
-  private fun checkAbstractMemberWithBody(
-    node: PklClassMember,
+  private fun PklModifierListOwner.getAbstractModifier(): PklNode? {
+    val elements = modifiers ?: return null
+    for (elem in elements) {
+      if (elem.type == TokenType.ABSTRACT) {
+        return elem
+      }
+    }
+    return null
+  }
+
+  private fun checkAbstractProperty(node: PklClassProperty, diagnosticsHolder: DiagnosticsHolder) {
+    val abstractModifier = node.getAbstractModifier() ?: return
+    diagnosticsHolder.addUnused(
+      node,
+      "Abstract modifier is ignored for properties",
+      abstractModifier.span,
+    ) {
+      if (node.enclosingModule?.virtualFile?.canModify() == true) {
+        actions += PklRemoveRemoveNodeQuickFix("Remove abstract modifier", abstractModifier)
+      }
+    }
+  }
+
+  private fun checkAbstractMethodWithBody(
+    node: PklClassMethod,
     diagnosticsHolder: DiagnosticsHolder,
   ) {
     if (!node.isAbstract) return
-    val bodySpan =
-      if (node is PklClassProperty) {
-        node.expr?.spanWithAssign ?: node.objectBody?.span
-      } else {
-        node as PklClassMethod
-        node.body?.spanWithAssign
-      }
-    if (bodySpan != null) {
+    node.body?.spanWithAssign?.let {
       diagnosticsHolder.addDiagnostic(
         node,
-        "Abstract member cannot have a body",
-        bodySpan,
+        "Abstract method cannot have a body",
+        it,
         DiagnosticSeverity.Error,
       )
     }

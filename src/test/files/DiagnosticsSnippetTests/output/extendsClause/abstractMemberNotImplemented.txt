@@ -4,5 +4,5 @@
  
  class MyClass extends Base
                ^^^^^^^^^^^^
-| Warning: class MyClass is not abstract and does not implement method 'bar'
+| Error: class MyClass is not abstract and does not implement method 'bar'
  
