@@ -35,6 +35,7 @@ plugins {
   alias(libs.plugins.nexusPublish)
   pklJavaExecutable
   pklNativeExecutable
+  pklSourceBundle
 }
 
 val buildInfo = project.extensions.getByType<BuildInfo>()
