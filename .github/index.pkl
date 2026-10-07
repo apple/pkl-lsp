@@ -243,6 +243,14 @@ local function nativeBuildJob(os: String, arch: String, isRelease: Boolean): Wor
         path = "build*/executable/*"
       }
     }
+    (catalog.`actions/upload-artifact@v5`) {
+      name = "Upload compiled classes list"
+      `if` = "!cancelled()"
+      with {
+        name = "compiled-classes-\(os)-\(arch)"
+        path = "build/compiled-classes/*"
+      }
+    }
   }
 }
 

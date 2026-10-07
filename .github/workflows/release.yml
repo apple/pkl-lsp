@@ -146,6 +146,12 @@ jobs:
       with:
         name: build-native-macos-aarch64
         path: build*/executable/*
+    - name: Upload compiled classes list
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: compiled-classes-macos-aarch64
+        path: build/compiled-classes/*
     - name: Upload Test Result XML
       if: '!cancelled()'
       uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
@@ -183,6 +189,12 @@ jobs:
       with:
         name: build-native-linux-amd64
         path: build*/executable/*
+    - name: Upload compiled classes list
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: compiled-classes-linux-amd64
+        path: build/compiled-classes/*
     - name: Upload Test Result XML
       if: '!cancelled()'
       uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
@@ -222,6 +234,12 @@ jobs:
       with:
         name: build-native-linux-aarch64
         path: build*/executable/*
+    - name: Upload compiled classes list
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: compiled-classes-linux-aarch64
+        path: build/compiled-classes/*
     - name: Upload Test Result XML
       if: '!cancelled()'
       uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
@@ -259,6 +277,12 @@ jobs:
       with:
         name: build-native-windows-amd64
         path: build*/executable/*
+    - name: Upload compiled classes list
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: compiled-classes-windows-amd64
+        path: build/compiled-classes/*
     - name: Upload Test Result XML
       if: '!cancelled()'
       uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5

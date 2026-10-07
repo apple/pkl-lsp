@@ -36,7 +36,7 @@ val downloadZig =
     doLast { println("Downloaded Zig to $downloadFile") }
 
     src(
-      "$mirror/zig-${buildInfo.arch.cName}-${buildInfo.os.canonicalName}-${buildInfo.zig.version}.$extension"
+      "$mirror/zig-${buildInfo.arch.zigName}-${buildInfo.os.simpleName}-${buildInfo.zig.version}.$extension"
     )
     dest(downloadFile)
     overwrite(true)
@@ -49,7 +49,7 @@ val verifyZig =
     onlyIf { !buildInfo.zig.executable.exists() }
     checksum(
       buildInfo.libs
-        .findVersion("zigSha256-${buildInfo.os.canonicalName}-${buildInfo.arch.name}")
+        .findVersion("zigSha256-${buildInfo.os.simpleName}-${buildInfo.arch.simpleName}")
         .get()
         .toString()
     )

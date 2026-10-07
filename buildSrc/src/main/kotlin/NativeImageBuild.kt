@@ -15,7 +15,9 @@
  */
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
@@ -24,6 +26,7 @@ import org.gradle.api.services.BuildServiceParameters
 import org.gradle.api.tasks.ClasspathNormalizer
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
@@ -31,8 +34,10 @@ import org.gradle.kotlin.dsl.registerIfAbsent
 import org.gradle.kotlin.dsl.withNormalizer
 import org.gradle.process.ExecOperations
 import java.nio.file.Path
+import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.createParentDirectories
+import kotlin.io.path.deleteRecursively
 import kotlin.io.path.writeText
 
 enum class GraalVmArchitecture {
@@ -56,6 +61,8 @@ abstract class NativeImageBuild : DefaultTask() {
   private val outputDir = project.layout.buildDirectory.dir("executable")
 
   @get:OutputFile val outputFile = outputDir.flatMap { it.file(imageName) }
+
+  @get:Internal abstract val compiledClassesFile: RegularFileProperty
 
   @get:Inject protected abstract val execOperations: ExecOperations
 
@@ -117,9 +124,18 @@ abstract class NativeImageBuild : DefaultTask() {
     return tmpFile
   }
 
+  @OptIn(ExperimentalPathApi::class)
   @TaskAction
   protected fun run() {
     val argFile = createClasspathArgFile()
+
+    val reportsDir = outputDir.get().asFile.toPath().resolve("reports")
+    // reports are timestamped and never cleaned up by native-image; make sure we read a fresh one
+    reportsDir
+      .toFile()
+      .listFiles { f -> f.name.startsWith(COMPILATION_REPORT_PREFIX) }
+      ?.forEach { it.delete() }
+
     val execResult = execOperations.exec {
       executable = nativeImageExecutable.get().absolutePath
       workingDir(outputDir)
@@ -127,6 +143,8 @@ abstract class NativeImageBuild : DefaultTask() {
       args = buildList {
         // must be emitted before any experimental options are used
         add("-H:+UnlockExperimentalVMOptions")
+        // emit `reports/universe_compilation_*.txt`, listing all compiled methods
+        add("-H:+PrintUniverse")
         // required for treesitter parsing
         add("-H:+ForeignAPISupport")
         add("-H:+SharedArenaSupport")
@@ -161,7 +179,7 @@ abstract class NativeImageBuild : DefaultTask() {
         // limit CPU usage on non-CI macOS
         val processors =
           Runtime.getRuntime().availableProcessors() /
-            if (buildInfo.os.isMacOsX && !buildInfo.isCiBuild) 4 else 1
+            if (buildInfo.os.isMacOS && !buildInfo.isCiBuild) 4 else 1
         add("-J-XX:ActiveProcessorCount=${processors}")
         // Pass through all `HOMEBREW_` prefixed environment variables
         addAll(environment.keys.filter { it.startsWith("HOMEBREW_") }.map { "-E$it" })
@@ -169,5 +187,37 @@ abstract class NativeImageBuild : DefaultTask() {
         addAll(extraArgsFromProperties)
       }
     }
+    writeCompiledClasses(reportsDir.toFile())
+    // delete the reports dir so that the output dir only contains the executable.
+    reportsDir.deleteRecursively()
+  }
+
+  private fun writeCompiledClasses(reportsDir: java.io.File) {
+    val report =
+      reportsDir
+        .listFiles { f -> f.name.startsWith(COMPILATION_REPORT_PREFIX) }
+        ?.maxByOrNull { it.lastModified() }
+        ?: throw GradleException("Expected to find $COMPILATION_REPORT_PREFIX*.txt in $reportsDir")
+    // Method lines look like `336 2232 apple.security.AppleProvider$Service.newInstance(...): ...`
+    // (offset, size, qualified method name, signature).
+    val methodLine = Regex("""^\s*\d+\s+\d+\s+([^\s(]+)\(""")
+    val classNames = sortedSetOf<String>()
+    report.useLines { lines ->
+      for (line in lines) {
+        val method = methodLine.find(line)?.groupValues?.get(1) ?: continue
+        // Nested, hidden, and lambda classes all live in their top-level class' source file.
+        classNames.add(method.substringBeforeLast('.').substringBefore('$').substringBefore('/'))
+      }
+    }
+    if (classNames.isEmpty()) {
+      throw GradleException("Found no compiled methods in $report")
+    }
+    val file = compiledClassesFile.get().asFile
+    file.parentFile.mkdirs()
+    file.writeText(classNames.joinToString("\n", postfix = "\n"))
+  }
+
+  private companion object {
+    const val COMPILATION_REPORT_PREFIX = "universe_compilation_"
   }
 }

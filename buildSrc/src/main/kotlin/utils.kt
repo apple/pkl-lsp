@@ -22,13 +22,6 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.charset.StandardCharsets
 
-val OperatingSystem.canonicalName get() = when {
-  isMacOsX -> "macos"
-  isWindows -> "windows"
-  isLinux -> "linux"
-  else -> throw RuntimeException("Unsupported OS: $name")
-}
-
 fun Project.runCommand(workingDir: File, command: List<String>): String {
   val execOps = serviceOf<ExecOperations>()
   val errorStream = ByteArrayOutputStream()
