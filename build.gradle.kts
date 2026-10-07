@@ -18,7 +18,6 @@ import java.util.*
 import kotlin.io.path.absolutePathString
 import org.apache.tools.ant.filters.ReplaceTokens
 import org.gradle.internal.extensions.stdlib.capitalized
-import org.gradle.internal.os.OperatingSystem
 import org.gradle.kotlin.dsl.support.serviceOf
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -121,7 +120,7 @@ dependencies {
   // comes from the downloaded artifact in GitHub Actions
   stagedShadowJar(tasks.shadowJar.get().outputs.files)
   pklCli(
-    "org.pkl-lang:pkl-cli-${buildInfo.os.canonicalName}-${buildInfo.arch.name}:${libs.versions.pkl.get()}"
+    "org.pkl-lang:pkl-cli-${buildInfo.os.simpleName}-${buildInfo.arch.simpleName}:${libs.versions.pkl.get()}"
   )
   nativeImageClasspath(files(reachabilityMetadataDir))
   add("reflectionMetadataGeneratorImplementation", libs.classgraph)
@@ -167,9 +166,10 @@ val generateReachabilityMetadataUsingTracingAgent =
 
     // The native-image-agent requires GraalVM's java, not a regular JDK.
     val graalVm =
-      if (buildInfo.arch == Architecture.Amd64) buildInfo.graalVmAmd64 else buildInfo.graalVmAarch64
+      if (buildInfo.arch == Target.Arch.AMD64) buildInfo.graalVmAmd64 else buildInfo.graalVmAarch64
     dependsOn(
-      if (buildInfo.arch == Architecture.Amd64) ":installGraalVmAmd64" else ":installGraalVmAarch64"
+      if (buildInfo.arch == Target.Arch.AARCH64) ":installGraalVmAarch64"
+      else ":installGraalVmAmd64"
     )
 
     executable(
@@ -397,46 +397,35 @@ val setupTreeSitterPklRepo =
     treeSitterPklRepoDir,
   )
 
-val oses by lazy {
-  val macos = OperatingSystem.forName("osx")
-  val linux = OperatingSystem.forName("linux")
-  val windows = OperatingSystem.forName("windows")
-  listOf(macos, linux, windows)
-}
-
-val architectures = listOf(Architecture.Amd64, Architecture.Aarch64)
-
 val makeTreeSitterTasks: List<TaskProvider<*>> = buildList {
-  for (os in oses) {
-    for (arch in architectures) {
-      val task =
-        tasks.register<Exec>(
-          "makeTreeSitter${os.canonicalName.capitalized()}${arch.name.capitalized()}"
-        ) {
-          workingDir = treeSitterRepoDir.get().asFile
-          dependsOn(setupTreeSitterRepo)
-          configureCompile(
-            os = os,
-            arch = arch,
-            libraryName = "tree-sitter",
-            // flags taken from
-            // https://github.com/tree-sitter/tree-sitter/blob/2a835ee029dca1c325e6f1c01dbce40396f6123e/Makefile#L28-L31
-            includes = listOf("lib/include", "lib/src", "lib/src/wasm"),
-            sources = listOf("lib/src/lib.c"),
-            extraArgs =
-              listOf(
-                "-fvisibility=hidden",
-                "-Wall",
-                "-Wextra",
-                "-Wpedantic",
-                "-Werror=incompatible-pointer-types",
-                "-D_POSIX_C_SOURCE=200112L",
-                "-D_DEFAULT_SOURCE",
-              ),
-          )
-        }
-      add(task)
-    }
+  for (target in Target.entries) {
+    if (target.musl) continue
+    val task =
+      tasks.register<Exec>(
+        "makeTreeSitter${target.os.simpleName.capitalized()}${target.arch.simpleName.capitalized()}"
+      ) {
+        workingDir = treeSitterRepoDir.get().asFile
+        dependsOn(setupTreeSitterRepo)
+        configureCompile(
+          target = target,
+          libraryName = "tree-sitter",
+          // flags taken from
+          // https://github.com/tree-sitter/tree-sitter/blob/2a835ee029dca1c325e6f1c01dbce40396f6123e/Makefile#L28-L31
+          includes = listOf("lib/include", "lib/src", "lib/src/wasm"),
+          sources = listOf("lib/src/lib.c"),
+          extraArgs =
+            listOf(
+              "-fvisibility=hidden",
+              "-Wall",
+              "-Wextra",
+              "-Wpedantic",
+              "-Werror=incompatible-pointer-types",
+              "-D_POSIX_C_SOURCE=200112L",
+              "-D_DEFAULT_SOURCE",
+            ),
+        )
+      }
+    add(task)
   }
 }
 
@@ -447,25 +436,23 @@ val makeTreeSitter =
   }
 
 val makeTreeSitterPklTasks: List<TaskProvider<*>> = buildList {
-  for (os in oses) {
-    for (arch in architectures) {
-      val task =
-        tasks.register<Exec>(
-          "makeTreeSitterPkl${os.canonicalName.capitalized()}${arch.name.capitalized()}"
-        ) {
-          dependsOn(setupTreeSitterPklRepo)
-          workingDir = treeSitterPklRepoDir.get().asFile
+  for (target in Target.entries) {
+    if (target.musl) continue
+    val task =
+      tasks.register<Exec>(
+        "makeTreeSitterPkl${target.os.simpleName.capitalized()}${target.arch.simpleName.capitalized()}"
+      ) {
+        dependsOn(setupTreeSitterPklRepo)
+        workingDir = treeSitterPklRepoDir.get().asFile
 
-          configureCompile(
-            os = os,
-            arch = arch,
-            libraryName = "tree-sitter-pkl",
-            includes = listOf("src"),
-            sources = listOf("src/parser.c", "src/scanner.c"),
-          )
-        }
-      add(task)
-    }
+        configureCompile(
+          target = target,
+          libraryName = "tree-sitter-pkl",
+          includes = listOf("src"),
+          sources = listOf("src/parser.c", "src/scanner.c"),
+        )
+      }
+    add(task)
   }
 }
 
@@ -476,12 +463,13 @@ val makeTreeSitterPkl =
   }
 
 // Keep in sync with `org.pkl.lsp.treesitter.NativeLibrary.getResourcePath`
-private fun resourceLibraryPath(os: OperatingSystem, arch: Architecture, libraryName: String) =
-  "NATIVE/org/pkl/lsp/treesitter/${os.canonicalName}-${arch.name}/${os.getSharedLibraryName(libraryName)}"
+private fun resourceLibraryPath(target: Target, libraryName: String): String {
+  val libraryName = target.os.getSharedLibraryName(libraryName)
+  return "NATIVE/org/pkl/lsp/treesitter/${target.os.simpleName}-${target.arch.simpleName}/${libraryName}"
+}
 
 private fun Exec.configureCompile(
-  os: OperatingSystem,
-  arch: Architecture,
+  target: Target,
   libraryName: String,
   includes: List<String>,
   sources: List<String>,
@@ -491,7 +479,7 @@ private fun Exec.configureCompile(
 
   dependsOn(tasks.installZig)
 
-  val outputFile = nativeLibDir.map { it.file(resourceLibraryPath(os, arch, libraryName)) }
+  val outputFile = nativeLibDir.map { it.file(resourceLibraryPath(target, libraryName)) }
   outputs.file(outputFile)
   for (dir in includes) {
     inputs.dir(workingDir.resolve(dir))
@@ -507,7 +495,8 @@ private fun Exec.configureCompile(
         add("cc")
         add("-target")
         val targetFlagValue =
-          if (os.isLinux) "${arch.cName}-linux-gnu" else "${arch.cName}-${os.canonicalName}"
+          if (target.os.isLinux) "${target.arch.zigName}-linux-gnu"
+          else "${target.arch.zigName}-${target.os.simpleName}"
         add(targetFlagValue)
         for (include in includes) {
           add("-I./$include")

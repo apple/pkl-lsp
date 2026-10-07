@@ -15,6 +15,10 @@
  */
 @file:Suppress("MemberVisibilityCanBePrivate")
 
+import Target.Arch
+import Target.Arch.Companion.fromName
+import Target.OS
+import org.gradle.api.GradleException
 import java.io.File
 import java.nio.file.Path
 import org.gradle.api.Project
@@ -22,6 +26,7 @@ import org.gradle.api.artifacts.VersionCatalog
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.internal.os.OperatingSystem
 import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.provideDelegate
 
 // `buildInfo` in main build scripts
 // `project.extensions.getByType<BuildInfo>()` in precompiled script plugins
@@ -30,8 +35,14 @@ open class BuildInfo(val project: Project) {
 
   val isReleaseBuild: Boolean by lazy { java.lang.Boolean.getBoolean("releaseBuild") }
 
-  val os: OperatingSystem by lazy {
-    OperatingSystem.current()
+  val os: OS by lazy {
+    val currentOs = OperatingSystem.current()
+    when {
+      currentOs.isMacOsX -> OS.MacOS
+      currentOs.isLinux -> OS.Linux
+      currentOs.isWindows -> OS.Windows
+      else -> throw GradleException("Cannot build on ${currentOs.name}")
+    }
   }
 
   /** The JDK version used to build the language server. */
@@ -42,21 +53,25 @@ open class BuildInfo(val project: Project) {
 
   val jvmTarget: Int = 23
 
-  val arch: Architecture
-    get() {
-      return when (val arch = System.getProperty("os.arch")) {
-        "x86_64", "amd64" -> Architecture.Amd64
-        "aarch64", "arm64" -> Architecture.Aarch64
-        else -> throw RuntimeException("Unsupported architecture: $arch")
-      }
+  val arch: Arch by lazy {
+    when (val arch = System.getProperty("os.arch")) {
+      "x86_64",
+      "amd64" -> Arch.AMD64
+
+      "aarch64" -> Arch.AARCH64
+      else -> throw GradleException("Cannot build Pkl on arch: $arch")
     }
+  }
 
-  /** The target architecture for cross-compilation. */
-  val targetArch: String by lazy { System.getProperty("pkl.targetArch", arch.name) }
+  /** The target machine to build, defaulting to the host system machine. */
+  val targetMachine: Target by lazy { Target.from(os = os, arch = targetArch, musl = musl) }
 
-  val isCrossArch: Boolean by lazy { targetArch != arch.name }
+  /** The target architecture to build, defaulting to the system architecture. */
+  val targetArch: Arch by lazy { System.getProperty("pkl.targetArch")?.let(Arch::fromName) ?: arch }
 
-  val isCrossArchSupported: Boolean by lazy { os.isMacOsX }
+  val isCrossArch: Boolean by lazy { arch != targetArch }
+
+  val isCrossArchSupported: Boolean by lazy { os.isMacOS }
 
   /** Whether to use musl libc for static linking (Alpine Linux). */
   val musl: Boolean by lazy { java.lang.Boolean.getBoolean("pkl.musl") }
@@ -112,7 +127,8 @@ open class BuildInfo(val project: Project) {
   inner class Zig {
     val version: String get() = libs.findVersion("zig").get().toString()
 
-    val installDir: Path get() = project.projectDir.toPath().resolve(".gradle/zig/zig-${os.canonicalName}-${arch.name}-$version")
+    val installDir: Path
+      get() = project.projectDir.toPath().resolve(".gradle/zig/zig-${os.simpleName}-${arch.simpleName}-$version")
 
     val executable: Path get() = installDir.resolve(if (os.isWindows) "zig.exe" else "zig")
   }
@@ -123,16 +139,10 @@ open class BuildInfo(val project: Project) {
   val graalVmAarch64: GraalVm by lazy { createGraalVm("aarch64") }
 
   private fun createGraalVm(arch: String): GraalVm {
-    val osName = when {
-      os.isMacOsX -> "macos"
-      os.isLinux -> "linux"
-      os.isWindows -> "windows"
-      else -> throw RuntimeException("Unsupported OS for GraalVM: ${os.canonicalName}")
-    }
     val version = libs.findVersion("graalVm").get().toString()
     val graalJdkVersion = libs.findVersion("graalVmJdkVersion").get().toString()
     val graalVmInnovation = libs.findVersion("graalVmInnovation").get().toString()
-    return GraalVm(osName, arch, version, graalJdkVersion,graalVmInnovation)
+    return GraalVm(os.simpleName, arch, version, graalJdkVersion, graalVmInnovation)
   }
 
   inner class GraalVm(
@@ -167,7 +177,7 @@ open class BuildInfo(val project: Project) {
     }
 
     val baseDir: File by lazy {
-      if (os.isMacOsX) installDir.toPath().resolve("Contents/Home").toFile()
+      if (os.isMacOS) installDir.toPath().resolve("Contents/Home").toFile()
       else installDir
     }
   }
