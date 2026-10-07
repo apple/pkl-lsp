@@ -61,6 +61,45 @@ class GoToDefinitionTest : LspTestBase() {
   }
 
   @Test
+  fun `resolve annotation type`() {
+    createPklFile(
+      """
+      class MyAnnotation extends Annotation {
+        name: String
+      }
+
+      @MyAnnot<caret>ation { name = "Bob" }
+      value: String
+    """
+        .trimIndent()
+    )
+    val resolved = goToDefinition().single()
+    assertThat(resolved).isInstanceOf(PklClass::class.java)
+    resolved as PklClass
+    assertThat(resolved.name).isEqualTo("MyAnnotation")
+  }
+
+  @Test
+  fun `resolve annotation property`() {
+    createPklFile(
+      """
+      class MyAnnotation extends Annotation {
+        name: String
+      }
+
+      @MyAnnotation { na<caret>me = "Bob" }
+      value: String
+    """
+        .trimIndent()
+    )
+    val resolved = goToDefinition().single()
+    assertThat(resolved).isInstanceOf(PklClassProperty::class.java)
+    resolved as PklClassProperty
+    assertThat(resolved.name).isEqualTo("name")
+    assertThat(resolved.parentOfTypes(PklClass::class)!!.name).isEqualTo("MyAnnotation")
+  }
+
+  @Test
   fun `resolve function name`() {
     createPklFile(
       """

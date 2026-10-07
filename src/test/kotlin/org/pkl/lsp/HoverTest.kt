@@ -44,6 +44,26 @@ class HoverTest : LspTestBase() {
   }
 
   @Test
+  fun `annotation property`() {
+    createPklFile(
+      """
+      class MyAnnotation extends Annotation {
+        /// The name.
+        name: String
+      }
+
+      @MyAnnotation { na<caret>me = "Bob" }
+      value: String
+    """
+        .trimIndent()
+    )
+    val hoverText = getHoverText()
+    assertThat(hoverText).contains("name: String")
+    assertThat(hoverText).contains("The name.")
+    assertThat(hoverText).doesNotContain("class MyAnnotation")
+  }
+
+  @Test
   fun `member links get rendered`() {
     createPklFile(
       """
