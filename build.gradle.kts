@@ -255,6 +255,7 @@ tasks.test {
   systemProperties["pklExecutable"] = pklCli.singleFile.absolutePath
   useJUnitPlatform {
     includeEngines(
+      "junit-jupiter",
       "ParserSnippetTestsEngine",
       "DiagnosticsSnippetTestsEngine",
       "HoverSnippetTestsEngine",
