@@ -86,6 +86,10 @@ class PklDeclaredTypeImpl(
         if (filterChildren) elems.filter { it is PklTypeName || it is Terminal } else elems
       }
 
+  // Within a PklAnnotation, [ctx] spans the object body, too. Without narrowing the span to the
+  // type name, nodes within the object body would resolve to this type.
+  override val span: Span by lazy { if (filterChildren) name.span else super.span }
+
   override val name: PklTypeName by lazy {
     toTypeName(super.children[qualifiedIdentifierIdx] as PklQualifiedIdentifier)
   }
