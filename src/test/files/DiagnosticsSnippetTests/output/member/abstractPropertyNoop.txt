@@ -1,0 +1,12 @@
+ abstract module foo
+ 
+ abstract bar: Int
+ ^^^^^^^^
+| Hint: Abstract modifier is ignored for properties
+ 
+ abstract class Baz {
+   abstract quz: Int
+   ^^^^^^^^
+| Hint: Abstract modifier is ignored for properties
+ }
+ 

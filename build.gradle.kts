@@ -368,7 +368,8 @@ fun configureRepo(
       doLast {
         runCommand(
           workingDir = repoDir.get().asFile,
-          command = listOf("git", "fetch", "--tags", "origin"),
+          // need force because tree-sitter has floating `nightly` tag
+          command = listOf("git", "fetch", "--tags", "origin", "--force"),
         )
         runCommand(
           workingDir = repoDir.get().asFile,

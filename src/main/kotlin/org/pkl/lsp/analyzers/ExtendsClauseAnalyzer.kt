@@ -23,6 +23,7 @@ import org.pkl.lsp.actions.PklImplementMembersQuickFix
 import org.pkl.lsp.ast.PklClass
 import org.pkl.lsp.ast.PklClassExtendsClause
 import org.pkl.lsp.ast.PklClassMember
+import org.pkl.lsp.ast.PklClassMethod
 import org.pkl.lsp.ast.PklClassProperty
 import org.pkl.lsp.ast.PklDeclaredType
 import org.pkl.lsp.ast.PklModule
@@ -215,36 +216,29 @@ class ExtendsClauseAnalyzer(project: Project) : Analyzer(project) {
     }
   }
 
-  private fun checkAbstractMembers(
+  private fun checkAbstractMethods(
     element: PklNode,
     def: PklTypeDefOrModule,
-    parentMembers: Collection<PklClassMember>,
+    parentMethods: Collection<PklClassMethod>,
     holder: DiagnosticsHolder,
   ): Boolean {
-    for (parentMember in parentMembers) {
-      if (!parentMember.isAbstract) continue
-      val parentName = parentMember.name
-      val definedMember =
-        when (parentMember) {
-          is PklClassProperty -> def.declaredProperties.find { it.name == parentName }
-          else -> def.declaredMethods.find { it.name == parentName }
-        }
-      if (definedMember != null) continue
+    for (parentMethod in parentMethods) {
+      if (!parentMethod.isAbstract) continue
+      val parentName = parentMethod.name
+      if (def.declaredMethods.any { it.name == parentName }) continue
 
       // copy Java/Kotlin error message and provide information about just the first missing
       // method/property.
       val entityName = if (def is PklModule) "module" else "class"
       val classOrModuleName = def.name
-      val memberEntityName = if (parentMember is PklClassProperty) "property" else "method"
       val message =
         ErrorMessages.create(
-          "entityDoesNotImplementMember",
+          "entityDoesNotImplementMethod",
           entityName,
           classOrModuleName,
-          memberEntityName,
           parentName,
         )
-      holder.addWarning(element, message) {
+      holder.addError(element, message) {
         actions +=
           PklAddModifierQuickFix(
             def,
@@ -270,7 +264,7 @@ class ExtendsClauseAnalyzer(project: Project) : Analyzer(project) {
     val parentMethods = def.methods(context)?.values ?: emptyList()
     val parentMembers = parentProperties + parentMethods
     if (parentMembers.isEmpty()) return
-    if (checkAbstractMembers(element, def, parentMembers, holder)) return
+    if (checkAbstractMethods(element, def, parentMethods, holder)) return
     checkFixedOrConstMembers(element, def, parentMembers, holder, base, context)
   }
 }
