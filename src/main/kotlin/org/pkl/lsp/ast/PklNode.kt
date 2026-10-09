@@ -578,6 +578,10 @@ interface PklSuperSubscriptExpr : PklExpr {
   val expr: PklExpr
 }
 
+interface PklMethodTypeArguments : PklNode {
+  val typeArgumentList: PklTypeArgumentList?
+}
+
 interface PklAccessExpr : PklExpr, PklReference, IdentifierOwner {
   val memberNameText: String
   val isNullSafeAccess: Boolean
@@ -722,6 +726,10 @@ interface PklNothingType : PklType {
 
 interface PklModuleType : PklType {
   override fun render(): String = "module"
+}
+
+interface PklThisType : PklType {
+  override fun render(): String = "this"
 }
 
 interface PklStringLiteralType : PklType {
@@ -954,6 +962,7 @@ fun Node.toNode(project: Project, parent: PklNode?): PklNode? {
     "unknownType" -> PklUnknownTypeImpl(project, parent!!, this)
     "nothingType" -> PklNothingTypeImpl(project, parent!!, this)
     "moduleType" -> PklModuleTypeImpl(project, parent!!, this)
+    "thisType" -> PklThisTypeImpl(project, parent!!, this)
     "stringLiteralType" -> PklStringLiteralTypeImpl(project, parent!!, this)
     "declaredType" -> PklDeclaredTypeImpl(project, parent!!, this, false)
     "parenthesizedType" -> PklParenthesizedTypeImpl(project, parent!!, this)
@@ -976,6 +985,7 @@ fun Node.toNode(project: Project, parent: PklNode?): PklNode? {
     "traceExpr" -> PklTraceExprImpl(project, parent!!, this)
     "importExpr" -> PklImportExprImpl(project, parent!!, this)
     "readExpr" -> PklReadExprImpl(project, parent!!, this)
+    "methodTypeArguments" -> PklMethodTypeArgumentsImpl(project, parent!!, this)
     "unqualifiedAccessExpr" -> PklUnqualifiedAccessExprImpl(project, parent!!, this)
     "qualifiedAccessExpr" -> PklQualifiedAccessExprImpl(project, parent!!, this)
     "slStringLiteralExpr" -> PklSingleLineStringLiteralImpl(project, parent!!, this)
