@@ -55,6 +55,13 @@ class PklModuleTypeImpl(project: Project, override val parent: PklNode, ctx: Nod
   }
 }
 
+class PklThisTypeImpl(project: Project, override val parent: PklNode, ctx: Node) :
+  AbstractPklNode(project, parent, ctx), PklThisType {
+  override fun <R> accept(visitor: PklVisitor<R>): R? {
+    return visitor.visitThisType(this)
+  }
+}
+
 class PklStringLiteralTypeImpl(project: Project, override val parent: PklNode, ctx: Node) :
   AbstractPklNode(project, parent, ctx), PklStringLiteralType {
   // TODO: check if `stringConstant` is a child
