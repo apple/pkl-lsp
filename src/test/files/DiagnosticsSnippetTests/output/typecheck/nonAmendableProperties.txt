@@ -1,0 +1,32 @@
+ class A {
+   string: String
+   integer: Int
+   boolean: Boolean
+   list: List<String>
+   map: Map<String, Int>
+   set: Set<String>
+ }
+ 
+ a: A = new A {}
+ 
+ b = (a) {
+   string {}
+          ^
+| Error: Cannot amend value of type String
+   integer {}
+           ^
+| Error: Cannot amend value of type Int
+   boolean {}
+           ^
+| Error: Cannot amend value of type Boolean
+   list {}
+        ^
+| Error: Cannot amend value of type List<String>
+   map {}
+       ^
+| Error: Cannot amend value of type Map<String, Int>
+   set {}
+       ^
+| Error: Cannot amend value of type Set<String>
+ }
+ 

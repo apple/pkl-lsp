@@ -24,6 +24,7 @@ import org.pkl.lsp.ast.PklClassMethod
 import org.pkl.lsp.ast.PklClassProperty
 import org.pkl.lsp.ast.PklExpr
 import org.pkl.lsp.ast.PklNode
+import org.pkl.lsp.ast.PklObjectBody
 import org.pkl.lsp.ast.PklObjectProperty
 import org.pkl.lsp.ast.PklProperty
 import org.pkl.lsp.ast.Span
@@ -59,9 +60,11 @@ class MemberAnalyzer(project: Project) : Analyzer(project) {
     when (node) {
       is PklObjectProperty -> {
         checkUnresolvedProperty(node, memberType, base, diagnosticsHolder, context)
+        checkAmendableProperty(node, memberType, base, diagnosticsHolder, context)
       }
       is PklClassProperty -> {
         checkUnresolvedProperty(node, memberType, base, diagnosticsHolder, context)
+        checkAmendableProperty(node, memberType, base, diagnosticsHolder, context)
         checkAbstractMemberWithBody(node, diagnosticsHolder)
       }
       is PklClassMethod -> {
@@ -69,6 +72,28 @@ class MemberAnalyzer(project: Project) : Analyzer(project) {
       }
     }
     return true
+  }
+
+  private fun checkAmendableProperty(
+    property: PklProperty,
+    propertyType: Type,
+    base: PklBaseModule,
+    holder: DiagnosticsHolder,
+    context: PklProject?,
+  ) {
+    val bodies = property.children.filterIsInstance<PklObjectBody>()
+    // A broad type such as Any can still hold an amendable object.
+    if (
+      bodies.isEmpty() ||
+        propertyType.isAmendable(base, context) ||
+        base.objectType.isSubtypeOf(propertyType, base, context)
+    )
+      return
+
+    for (body in bodies) {
+      val brace = body.terminals.find { it.type == TokenType.LBRACE } ?: continue
+      holder.addError(brace, ErrorMessages.create("cannotAmendType", propertyType.render()))
+    }
   }
 
   private fun checkUnresolvedProperty(

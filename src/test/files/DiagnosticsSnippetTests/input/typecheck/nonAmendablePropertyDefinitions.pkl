@@ -1,0 +1,10 @@
+typealias Text = String
+
+scalar: String {}
+
+class A {
+  scalar: Boolean {}
+  alias: Text {}
+  nullable: String? {}
+  union: String|Int {}
+}
