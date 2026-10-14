@@ -1,0 +1,21 @@
+ typealias Text = String
+ 
+ scalar: String {}
+                ^
+| Error: Cannot amend value of type String
+ 
+ class A {
+   scalar: Boolean {}
+                   ^
+| Error: Cannot amend value of type Boolean
+   alias: Text {}
+               ^
+| Error: Cannot amend value of type Text
+   nullable: String? {}
+                     ^
+| Error: Cannot amend value of type String?
+   union: String|Int {}
+                     ^
+| Error: Cannot amend value of type String | Int
+ }
+ 

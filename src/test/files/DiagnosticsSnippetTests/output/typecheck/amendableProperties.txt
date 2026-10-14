@@ -1,0 +1,32 @@
+ class Nested {
+   value: String
+ }
+ 
+ class A {
+   typed: Typed
+   dynamic: Dynamic
+   listing: Listing<String>
+   mapping: Mapping<String, Int>
+   nested: Nested
+   any: Any
+   mixed: String|Dynamic
+ }
+ 
+ a: A = new A {}
+ 
+ b = (a) {
+   typed {}
+   dynamic {}
+   listing {}
+   mapping {}
+   nested {}
+   any {}
+   mixed {}
+ }
+ 
+ dynamicValue = new Dynamic {
+   prop {}
+ }
+ 
+ plain: String = "hello"
+ 

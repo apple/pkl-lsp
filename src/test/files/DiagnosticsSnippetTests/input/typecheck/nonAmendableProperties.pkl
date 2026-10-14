@@ -1,0 +1,19 @@
+class A {
+  string: String
+  integer: Int
+  boolean: Boolean
+  list: List<String>
+  map: Map<String, Int>
+  set: Set<String>
+}
+
+a: A = new A {}
+
+b = (a) {
+  string {}
+  integer {}
+  boolean {}
+  list {}
+  map {}
+  set {}
+}
