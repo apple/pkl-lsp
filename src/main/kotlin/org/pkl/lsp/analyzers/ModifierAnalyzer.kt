@@ -105,7 +105,7 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
     }
 
     // okay to declare abstract class in non-abstract module
-    if (abstractModifier != null && node !is PklClass) {
+    if (abstractModifier != null && node is PklClassMethod) {
       val containingClass =
         node.parentOfTypes(PklModule::class, PklClass::class, /* stop class */ PklObjectBody::class)
           as? PklModifierListOwner
@@ -116,7 +116,7 @@ class ModifierAnalyzer(project: Project) : Analyzer(project) {
           val message =
             if (containingClass is PklModule) "cannotDeclareAbstractInNonAbstractModule"
             else "cannotDeclareAbstractInNonAbstractClass"
-          diagnosticsHolder.addWarning(abstractModifier, ErrorMessages.create(message))
+          diagnosticsHolder.addError(abstractModifier, ErrorMessages.create(message))
         }
       }
     }
