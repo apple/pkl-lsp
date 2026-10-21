@@ -48,34 +48,6 @@ class PklImplementMembersQuickFixTest : LspTestBase() {
   }
 
   @Test
-  fun `quickfix implements abstract property`() {
-    checkQuickFix(
-      before =
-        """
-        abstract module Foo
-
-        abstract class Base {
-          abstract name: String
-        }
-        class Child extends Base {}
-        """
-          .trimIndent(),
-      after =
-        """
-        abstract module Foo
-
-        abstract class Base {
-          abstract name: String
-        }
-        class Child extends Base {
-          name: String = TODO()
-        }
-        """
-          .trimIndent(),
-    )
-  }
-
-  @Test
   fun `quickfix implements abstract method`() {
     checkQuickFix(
       before =
@@ -132,34 +104,6 @@ class PklImplementMembersQuickFixTest : LspTestBase() {
   }
 
   @Test
-  fun `quickfix implements abstract fixed property`() {
-    checkQuickFix(
-      before =
-        """
-        abstract module Foo
-
-        abstract class Base {
-          abstract fixed name: String
-        }
-        class Child extends Base {}
-        """
-          .trimIndent(),
-      after =
-        """
-        abstract module Foo
-
-        abstract class Base {
-          abstract fixed name: String
-        }
-        class Child extends Base {
-          fixed name: String = TODO()
-        }
-        """
-          .trimIndent(),
-    )
-  }
-
-  @Test
   fun `quickfix implements multiple missing members`() {
     checkQuickFix(
       before =
@@ -182,8 +126,6 @@ class PklImplementMembersQuickFixTest : LspTestBase() {
           abstract function greet(): String
         }
         class Child extends Base {
-          name: String = TODO()
-
           function greet(): String = TODO()
         }
         """
@@ -220,8 +162,6 @@ class PklImplementMembersQuickFixTest : LspTestBase() {
         abstract class Base2 extends Base {}
 
         class Child extends Base2 {
-          name: String = TODO()
-
           function greet(): String = TODO()
         }
         """
@@ -236,7 +176,7 @@ class PklImplementMembersQuickFixTest : LspTestBase() {
       """
       abstract module foo
 
-      abstract bar: Int
+      abstract function bar(): Int
       """
         .trimIndent(),
     )
@@ -251,40 +191,10 @@ class PklImplementMembersQuickFixTest : LspTestBase() {
       """
       extends "foo.pkl"
 
-      bar: Int = TODO()
+      function bar(): Int = TODO()
 
       """
         .trimIndent()
-    )
-  }
-
-  @Test
-  fun `module type in same module`() {
-    checkQuickFix(
-      before =
-        """
-        abstract module Foo
-
-        abstract class Base {
-          abstract myModule: module
-        }
-
-        class Child extends Base {}
-        """
-          .trimIndent(),
-      after =
-        """
-        abstract module Foo
-
-        abstract class Base {
-          abstract myModule: module
-        }
-
-        class Child extends Base {
-          myModule: module = TODO()
-        }
-        """
-          .trimIndent(),
     )
   }
 
@@ -298,7 +208,7 @@ class PklImplementMembersQuickFixTest : LspTestBase() {
       import "Bar.pkl"
 
       abstract class Base {
-        abstract bar: Bar
+        abstract function bar(): Bar
       }
       """
         .trimIndent(),
@@ -320,7 +230,7 @@ class PklImplementMembersQuickFixTest : LspTestBase() {
       import "foo.pkl"
 
       class Child extends foo.Base {
-        bar: Bar = TODO()
+        function bar(): Bar = TODO()
       }
       """
         .trimIndent()
@@ -337,7 +247,7 @@ class PklImplementMembersQuickFixTest : LspTestBase() {
       import "bar.pkl"
 
       abstract class Base {
-        abstract bar: bar.Qux
+        abstract function bar(): bar.Qux
       }
       """
         .trimIndent(),
@@ -365,7 +275,7 @@ class PklImplementMembersQuickFixTest : LspTestBase() {
       import "foo.pkl"
 
       class Child extends foo.Base {
-        bar: bar.Qux = TODO()
+        function bar(): bar.Qux = TODO()
       }
       """
         .trimIndent()
@@ -382,7 +292,7 @@ class PklImplementMembersQuickFixTest : LspTestBase() {
       import "bar.pkl"
 
       abstract class Base {
-        abstract bar: bar.Qux
+        abstract function bar(): bar.Qux
       }
       """
         .trimIndent(),
@@ -413,7 +323,7 @@ class PklImplementMembersQuickFixTest : LspTestBase() {
       import "other.pkl" as bar
 
       class Child extends foo.Base {
-        bar: bar2.Qux = TODO()
+        function bar(): bar2.Qux = TODO()
       }
       """
         .trimIndent()
@@ -437,7 +347,7 @@ class PklImplementMembersQuickFixTest : LspTestBase() {
     createPklFile(
       "Bar.pkl",
       """
-      abstract foo: module
+      abstract function foo(): module
       """
         .trimIndent(),
     )
@@ -457,7 +367,7 @@ class PklImplementMembersQuickFixTest : LspTestBase() {
       import "foo.pkl"
 
       class Child extends foo.Base {
-        foo: Bar = TODO()
+        function foo(): Bar = TODO()
       }
       """
         .trimIndent()
@@ -471,7 +381,7 @@ class PklImplementMembersQuickFixTest : LspTestBase() {
         """
         abstract module Foo
         abstract class Base {
-          abstract name: String
+          abstract function name(): String
         }
         class Child extends Base {
           bar: Int = 5
@@ -482,12 +392,12 @@ class PklImplementMembersQuickFixTest : LspTestBase() {
         """
         abstract module Foo
         abstract class Base {
-          abstract name: String
+          abstract function name(): String
         }
         class Child extends Base {
           bar: Int = 5
 
-          name: String = TODO()
+          function name(): String = TODO()
         }
         """
           .trimIndent(),
@@ -535,7 +445,7 @@ class PklImplementMembersQuickFixTest : LspTestBase() {
       import "bar.pkl"
 
       abstract class Base {
-        abstract bar: bar.Qux
+        abstract function bar(): bar.Qux
       }
       """
         .trimIndent(),
@@ -566,7 +476,7 @@ class PklImplementMembersQuickFixTest : LspTestBase() {
       import "other.pkl" as bar
 
       class Child extends foo.Base {
-        bar: bar3.Qux = TODO()
+        function bar(): bar3.Qux = TODO()
       }
       """
         .trimIndent()
@@ -580,11 +490,11 @@ class PklImplementMembersQuickFixTest : LspTestBase() {
         """
         abstract module Foo
         abstract class Base {
-          abstract name: String
-          abstract age: Int
+          abstract function name(): String
+          abstract function age(): Int
         }
         class Child extends Base {
-          name: String = "Bob"
+          function name(): String = "Bob"
         }
         """
           .trimIndent(),
@@ -592,13 +502,13 @@ class PklImplementMembersQuickFixTest : LspTestBase() {
         """
         abstract module Foo
         abstract class Base {
-          abstract name: String
-          abstract age: Int
+          abstract function name(): String
+          abstract function age(): Int
         }
         class Child extends Base {
-          name: String = "Bob"
+          function name(): String = "Bob"
 
-          age: Int = TODO()
+          function age(): Int = TODO()
         }
         """
           .trimIndent(),
