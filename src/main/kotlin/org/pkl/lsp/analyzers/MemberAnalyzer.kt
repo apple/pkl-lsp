@@ -19,7 +19,7 @@ import org.eclipse.lsp4j.DiagnosticSeverity
 import org.pkl.lsp.ErrorMessages
 import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.Project
-import org.pkl.lsp.actions.PklRemoveRemoveNodeQuickFix
+import org.pkl.lsp.actions.PklRemoveNodeQuickFix
 import org.pkl.lsp.ast.PklClassMethod
 import org.pkl.lsp.ast.PklClassProperty
 import org.pkl.lsp.ast.PklExpr
@@ -130,7 +130,7 @@ class MemberAnalyzer(project: Project) : Analyzer(project) {
       abstractModifier.span,
     ) {
       if (node.enclosingModule?.virtualFile?.canModify() == true) {
-        actions += PklRemoveRemoveNodeQuickFix("Remove abstract modifier", abstractModifier)
+        actions += PklRemoveNodeQuickFix("Remove abstract modifier", abstractModifier)
       }
     }
   }

@@ -22,24 +22,21 @@ import org.eclipse.lsp4j.Range
 import org.eclipse.lsp4j.TextEdit
 import org.pkl.lsp.ast.PklNode
 
-class PklRemoveRemoveNodeQuickFix(override val title: String, override val node: PklNode) :
+class PklRemoveNodeQuickFix(override val title: String, override val node: PklNode) :
   PklLocalEditCodeAction(node) {
-  override fun getEdits(): List<TextEdit> {
-    return buildList {
-      add(
-        TextEdit().apply {
-          val startPosition = Position(node.span.beginLine - 1, node.span.beginCol - 1)
-          val nextSibling = node.nextSiblingTotal()
-          val endPosition =
-            if (nextSibling != null)
-              Position(nextSibling.span.beginLine - 1, nextSibling.span.beginCol - 1)
-            else Position(node.span.endLine - 1, node.span.endCol - 1)
-          range = Range(startPosition, endPosition)
-          newText = ""
-        }
-      )
-    }
-  }
+  override fun getEdits(): List<TextEdit> =
+    listOf(
+      TextEdit().apply {
+        val startPosition = Position(node.span.beginLine - 1, node.span.beginCol - 1)
+        val nextSibling = node.nextSiblingTotal()
+        val endPosition =
+          if (nextSibling != null)
+            Position(nextSibling.span.beginLine - 1, nextSibling.span.beginCol - 1)
+          else Position(node.span.endLine - 1, node.span.endCol - 1)
+        range = Range(startPosition, endPosition)
+        newText = ""
+      }
+    )
 
   override val kind: String = CodeActionKind.QuickFix
 

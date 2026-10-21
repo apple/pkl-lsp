@@ -49,9 +49,7 @@ class PklImplementMembersQuickFix(override val node: PklTypeDefOrModule) :
         buildList {
           for (prop in properties) {
             if (node.hasDeclaredProperty(prop.name)) continue
-            if (prop.isAbstract) {
-              add(prop)
-            } else if (prop.isFixedOrConst && !prop.hasDefault(base, context)) {
+            if (prop.isFixedOrConst && !prop.hasDefault(base, context)) {
               add(prop)
             }
           }
