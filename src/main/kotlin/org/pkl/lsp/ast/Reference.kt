@@ -29,10 +29,10 @@ interface PklReferenceQualifiedAccessProxy : PklNode, PklDocCommentOwner {
   val type: PklType
   val classProperties: List<PklClassProperty>
 
-  fun toCompletionItem(): CompletionItem {
+  fun toCompletionItem(receiverType: Type?): CompletionItem {
     return CompletionItem(name).apply {
       kind = CompletionItemKind.Field
-      detail = type.render()
+      detail = type.render(receiverType)
     }
   }
 }

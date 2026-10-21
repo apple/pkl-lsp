@@ -20,6 +20,7 @@ import org.pkl.lsp.PklVisitor
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.resolvers.ResolveVisitors
+import org.pkl.lsp.resolvers.Resolvers
 
 // TODO: Returns upper bounds for some binary expression operands,
 //  but since this isn't communicated to the caller,
@@ -155,13 +156,16 @@ private fun PklExpr?.doInferExprTypeFromContext(
           if (argIndex == -1) return Type.Unknown
 
           val accessExpr = node.parent as PklAccessExpr
+          val receiverType =
+            accessExpr.inferReceiverType(base, bindings, context) ?: return Type.Unknown
           val visitor =
             ResolveVisitors.paramTypesOfFirstMethodNamed(
               accessExpr.memberNameText,
               base,
               resolveTypeParamsInParamTypes,
+              receiverType,
             )
-          val paramTypes = accessExpr.resolve(base, null, bindings, visitor, context)
+          val paramTypes = accessExpr.resolve(base, receiverType, bindings, visitor, context)
           if (paramTypes.isNullOrEmpty()) return Type.Unknown
 
           base.varArgsType.let { varArgsType ->
@@ -394,3 +398,25 @@ private fun PklExpr?.doInferExprTypeFromContext(
   return result
     ?: parent.computeResolvedImportType(base, bindings, context, canInferExprBody = false)
 }
+
+fun PklAccessExpr.inferReceiverType(
+  base: PklBaseModule,
+  bindings: TypeParameterBindings,
+  context: PklProject?,
+): Type? =
+  when (this) {
+    is PklQualifiedAccessExpr -> receiverExpr.computeExprType(base, bindings, context)
+    is PklSuperAccessExpr -> computeThisType(base, bindings, context)
+    is PklUnqualifiedAccessExpr -> {
+      val visitor = ResolveVisitors.firstElementNamed(memberNameText, base, resolveImports = false)
+      val result = resolveAndGetLookupMode(base, null, bindings, visitor, context)
+      when (result.second) {
+        Resolvers.LookupMode.NONE -> null
+        Resolvers.LookupMode.LEXICAL ->
+          result.first?.parent?.computeThisType(base, bindings, context)
+        Resolvers.LookupMode.IMPLICIT_THIS -> computeThisType(base, bindings, context)
+        Resolvers.LookupMode.BASE -> Type.Unknown
+      }
+    }
+    else -> throw AssertionError("Unknown PklAccessExpr subclass ${this::class}")
+  }

@@ -1,0 +1,9 @@
+class A {
+  foo: A
+
+  function foo(bar: A)
+}
+
+a: A
+
+b = a.foo(new { foo = 1 })

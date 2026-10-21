@@ -128,7 +128,7 @@ class GoToDefinitionTest : LspTestBase() {
     assertThat(resolved).isInstanceOf(PklTypedIdentifier::class.java)
     resolved as PklTypedIdentifier
     assertThat(resolved.identifier!!.text).isEqualTo("myParam")
-    assertThat(resolved.typeAnnotation!!.type!!.render()).isEqualTo("String")
+    assertThat(resolved.typeAnnotation!!.type!!.render(null)).isEqualTo("String")
   }
 
   @Test
