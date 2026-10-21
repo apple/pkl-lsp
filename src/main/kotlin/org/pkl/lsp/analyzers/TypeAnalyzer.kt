@@ -35,16 +35,16 @@ import org.pkl.lsp.type.toType
 
 class TypeAnalyzer(project: Project) : Analyzer(project) {
   override fun doAnalyze(node: PklNode, diagnosticsHolder: DiagnosticsHolder): Boolean =
-    when {
-      node is PklDeclaredType -> {
+    when (node) {
+      is PklDeclaredType -> {
         validateDeclaredType(node, diagnosticsHolder)
-        false
+        true // keep going to cover type args
       }
-      node is PklModuleType -> {
+      is PklModuleType -> {
         validateModuleType(node, diagnosticsHolder)
         false
       }
-      node is PklThisType -> {
+      is PklThisType -> {
         validateThisType(node, diagnosticsHolder)
         false
       }

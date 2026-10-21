@@ -3,6 +3,7 @@ typealias Foo = module
 @Baz { valid = true is module }
 class Bar {
   baz: module
+  qux: Listing<module>
 }
 
 class Baz extends Annotation {

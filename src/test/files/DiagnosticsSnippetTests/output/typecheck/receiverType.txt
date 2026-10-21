@@ -1,0 +1,16 @@
+ class A {
+   foo: A
+ 
+   function foo(bar: A)
+                ^^^
+| Hint: Unused parameter
+ }
+ 
+ a: A
+ 
+ b = a.foo(new { foo = 1 })
+                       ^
+| Error: Type mismatch.
+| Required: A
+| Actual: Int
+ 
