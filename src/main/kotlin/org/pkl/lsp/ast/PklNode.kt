@@ -601,6 +601,7 @@ interface PklMethodTypeArguments : PklNode {
 interface PklAccessExpr : PklExpr, PklReference, IdentifierOwner {
   val memberNameText: String
   val isNullSafeAccess: Boolean
+  val methodTypeArguments: PklMethodTypeArguments?
   val argumentList: PklArgumentList?
   val isPropertyAccess: Boolean
     get() = argumentList == null
