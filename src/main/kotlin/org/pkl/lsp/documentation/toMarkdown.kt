@@ -193,6 +193,7 @@ private fun renderTypeAnnotation(
           ResolveVisitors.typeOfFirstElementNamed(
             name,
             null,
+            null,
             node.project.pklBaseModule,
             isNullSafeAccess = false,
             preserveUnboundTypeVars = false,

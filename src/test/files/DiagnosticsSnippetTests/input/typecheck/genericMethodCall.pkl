@@ -1,0 +1,7 @@
+function foo<T>(arg: T): Boolean = arg is String
+
+res1 = foo::<Int>("qux")
+
+function bar<T>(): T = new {}
+
+res2: Mapping = bar::<Listing>()
