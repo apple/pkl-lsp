@@ -80,6 +80,7 @@ object ResolveVisitors {
   fun paramTypesOfFirstMethodNamed(
     expectedName: String,
     base: PklBaseModule,
+    typeArgumentList: PklTypeArgumentList?,
     resolveTypeParamsInParamTypes: Boolean,
     receiverType: Type?,
   ): ResolveVisitor<List<Type>?> =
@@ -95,7 +96,15 @@ object ResolveVisitors {
         when (element) {
           is PklMethod -> {
             val parameters = element.methodHeader.parameterList?.elements ?: return false
-            val effectiveBindings = if (resolveTypeParamsInParamTypes) bindings else mapOf()
+            val effectiveBindings =
+              if (resolveTypeParamsInParamTypes)
+                bindings.enhanceFromTypeArguments(
+                  typeArgumentList,
+                  element.methodHeader.typeParameterList,
+                  base,
+                  context,
+                )
+              else mapOf()
             result =
               parameters.map {
                 it.typeAnnotation
@@ -123,6 +132,7 @@ object ResolveVisitors {
 
   fun typeOfFirstElementNamed(
     elementName: String,
+    typeArgumentList: PklTypeArgumentList?,
     argumentList: PklArgumentList?,
     base: PklBaseModule,
     isNullSafeAccess: Boolean,
@@ -302,24 +312,34 @@ object ResolveVisitors {
           else -> {
             val typeParameterList = method.methodHeader.typeParameterList
             val allBindings =
-              if (typeParameterList == null || typeParameterList.typeParameters.isEmpty()) {
-                bindings
-              } else {
-                // try to infer method type parameters from method arguments
-                val parameters = method.methodHeader.parameterList?.elements
-                val arguments = argumentList?.elements
-                if (parameters == null || arguments == null) bindings
-                else {
-                  val enhancedBindings = bindings.toMutableMap()
-                  val parameterTypes =
-                    parameters.map {
-                      it.type?.toType(base, bindings, context, true, receiverType) ?: Type.Unknown
+              when {
+                typeParameterList == null || typeParameterList.typeParameters.isEmpty() -> bindings
+                typeArgumentList != null ->
+                  bindings.enhanceFromTypeArguments(
+                    typeArgumentList,
+                    typeParameterList,
+                    base,
+                    context,
+                  )
+                else -> {
+                  // try to infer method type parameters from method arguments
+                  val parameters = method.methodHeader.parameterList?.elements
+                  val arguments = argumentList?.elements
+                  if (parameters == null || arguments == null) bindings
+                  else {
+                    val enhancedBindings = bindings.toMutableMap()
+                    val parameterTypes =
+                      parameters.map { param ->
+                        param.type?.toType(base, bindings, context, true, receiverType)
+                          ?: Type.Unknown
+                      }
+                    val argumentTypes =
+                      arguments.map { param -> param.computeExprType(base, bindings, context) }
+                    for (i in 0 until min(parameterTypes.size, argumentTypes.size)) {
+                      inferBindings(parameterTypes[i], argumentTypes, i, enhancedBindings, context)
                     }
-                  val argumentTypes = arguments.map { it.computeExprType(base, bindings, context) }
-                  for (i in 0 until min(parameterTypes.size, argumentTypes.size)) {
-                    inferBindings(parameterTypes[i], argumentTypes, i, enhancedBindings, context)
+                    enhancedBindings
                   }
-                  enhancedBindings
                 }
               }
             method.computeResolvedImportType(
@@ -499,7 +519,7 @@ object ResolveVisitors {
               }
             }
           is PklNavigableElement -> {
-            result.add(element.complete())
+            result.addAll(element.complete())
           }
           is PklExpr -> {}
           is PklReferenceQualifiedAccessProxy -> result.add(element.toCompletionItem(receiverType))
@@ -508,50 +528,71 @@ object ResolveVisitors {
         return true
       }
 
-      private fun PklNavigableElement.complete(): CompletionItem {
+      private fun PklNavigableElement.complete(): Collection<CompletionItem> {
         return when (this) {
-          is PklClassMethod -> toCompletionItem()
-          is PklMethod -> toCompletionItem()
-          is PklClassProperty -> toCompletionItem(receiverType)
-          is PklClass -> toCompletionItem()
-          is PklTypeAlias -> toCompletionItem()
-          is PklObjectProperty -> toCompletionItem(receiverType)
-          is PklTypedIdentifier -> toCompletionItem()
+          is PklMethod -> toCompletionItems()
+          is PklClassProperty -> listOf(toCompletionItem(receiverType))
+          is PklClass -> listOf(toCompletionItem())
+          is PklTypeAlias -> listOf(toCompletionItem())
+          is PklObjectProperty -> listOf(toCompletionItem(receiverType))
+          is PklTypedIdentifier -> listOf(toCompletionItem())
           is PklTypeParameter,
           is PklModule -> throw AssertionError("Unreachable")
         }
       }
 
-      private fun PklMethod.toCompletionItem(): CompletionItem {
-        val item = CompletionItem()
+      private fun <T> parsToString(pars: List<T>, offset: Int = 0, getName: (T) -> String): String =
+        pars
+          .mapIndexed { index, par ->
+            // ktfmt 0.53 doesn't support this yet
+            @Suppress("CanConvertToMultiDollarString") "\${${index + offset + 1}:${getName(par)}}"
+          }
+          .joinToString(", ")
+
+      private fun PklMethod.toCompletionItems(): Collection<CompletionItem> {
+        val typePars = methodHeader.typeParameterList?.typeParameters
         val pars = methodHeader.parameterList?.elements ?: listOf()
-        val strPars =
-          pars
-            .mapIndexed { index, par ->
-              val name = par.identifier?.text ?: "par"
-              // ktfmt 0.53 doesn't support this yet
-              @Suppress("CanConvertToMultiDollarString") "\${${index + 1}:$name}"
-            }
-            .joinToString(", ")
+        val strPars = parsToString(pars) { it.identifier?.text ?: "par" }
 
         val parTypes =
           pars.joinToString(", ") { it.typeAnnotation?.type?.render(receiverType) ?: "unknown" }
         val retType = methodHeader.returnType?.render(receiverType) ?: "unknown"
 
-        item.label = "$name($parTypes)"
-        if (forMemberLink) {
-          item.insertText = "$name()"
-          item.insertTextFormat = InsertTextFormat.Snippet
-        } else {
-          item.insertText = "$name($strPars)"
-          item.insertTextFormat = InsertTextFormat.PlainText
-        }
-        item.kind = CompletionItemKind.Method
-        item.detail = retType
-        if (this is PklClassMethod) {
-          item.documentation = getDoc(this, containingFile.pklProject)
-        }
-        return item
+        val item =
+          CompletionItem().apply {
+            label = "$name($parTypes)"
+            if (forMemberLink) {
+              insertText = "$name()"
+              insertTextFormat = InsertTextFormat.PlainText
+            } else {
+              insertText = "$name($strPars)"
+              insertTextFormat = InsertTextFormat.Snippet
+            }
+            kind = CompletionItemKind.Method
+            detail = retType
+            if (this@toCompletionItems is PklClassMethod) {
+              documentation = getDoc(this@toCompletionItems, containingFile.pklProject)
+            }
+          }
+
+        if (typePars == null || typePars.isEmpty() || forMemberLink) return listOf(item)
+
+        val strTypePars = parsToString(typePars) { it.name }
+        val strParsWithTypePars = parsToString(pars, typePars.size) { it.identifier?.text ?: "par" }
+        val typeParTypes = typePars.joinToString(", ") { it.name }
+        val itemWithTypeArgs =
+          CompletionItem().apply {
+            label = "$name::<$typeParTypes>($parTypes)"
+            insertText = "$name::<$strTypePars>($strParsWithTypePars)"
+            insertTextFormat = InsertTextFormat.Snippet
+            kind = CompletionItemKind.Method
+            detail = retType
+            if (this@toCompletionItems is PklClassMethod) {
+              documentation = getDoc(this@toCompletionItems, containingFile.pklProject)
+            }
+          }
+
+        return listOf(item, itemWithTypeArgs)
       }
 
       private fun PklTypeDef.toCompletionItem(): CompletionItem {
