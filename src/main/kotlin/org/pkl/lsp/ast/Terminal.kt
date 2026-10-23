@@ -105,6 +105,7 @@ fun Node.toTerminal(parent: PklNode): Terminal? {
       "!" -> TokenType.NOT
       "?" -> TokenType.QUESTION
       ":" -> TokenType.COLON
+      "::" -> TokenType.DCOLON
       "->" -> TokenType.ARROW
       "==" -> TokenType.EQUAL
       "!=" -> TokenType.NOT_EQUAL
