@@ -220,4 +220,26 @@ class CompletionFeatureTest : LspTestBase() {
     assert(completions.find { it.label == "output" } == null)
     assert(completions.find { it.label == "name" } != null)
   }
+
+  @Test
+  fun `complete properties inside amended fixed property`() {
+    createPklFile(
+      """
+      class Person { name: String }
+
+      open class Base {
+        fixed person: Person
+      }
+
+      class Child extends Base {
+        fixed person {
+          n<caret>
+        }
+      }
+    """
+        .trimIndent()
+    )
+    val completions = getCompletions()
+    assert(completions.find { it.label == "name = " } != null)
+  }
 }
