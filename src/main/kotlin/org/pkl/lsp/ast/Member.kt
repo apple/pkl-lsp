@@ -55,7 +55,7 @@ class PklClassPropertyImpl(
   override fun isDefinition(context: PklProject?): Boolean =
     when {
       type != null -> true
-      isLocalOrConstOrFixed -> true
+      isLocal -> true
       else -> {
         when (val owner = this.parentOfTypes(PklModule::class, PklClass::class)) {
           is PklModule -> {
