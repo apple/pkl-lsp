@@ -27,6 +27,9 @@ testReports {
   junit {
     "build/test-results/**/*.xml"
   }
+  html {
+    "build/reports/tests/**/*"
+  }
   excludeJobs {
     Regex("deploy-.*")
     "dependency-submission"

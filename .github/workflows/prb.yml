@@ -47,6 +47,13 @@ jobs:
         name: test-results-xml-build
         path: build/test-results/**/*.xml
         if-no-files-found: ignore
+    - name: Upload Test Result HTML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-html-build
+        path: build/reports/tests/**/*
+        if-no-files-found: ignore
   native-macos-aarch64:
     if: (contains(github.event.pull_request.body, '[native]') || contains(github.event.pull_request.body, '[native-macos]') || contains(github.event.pull_request.body, '[native-macos-aarch64]')) && github.repository_owner == 'apple'
     runs-on:
@@ -92,6 +99,13 @@ jobs:
         name: test-results-xml-native-macos-aarch64
         path: build/test-results/**/*.xml
         if-no-files-found: ignore
+    - name: Upload Test Result HTML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-html-native-macos-aarch64
+        path: build/reports/tests/**/*
+        if-no-files-found: ignore
   native-linux-amd64:
     if: contains(github.event.pull_request.body, '[native]') || contains(github.event.pull_request.body, '[native-linux]') || contains(github.event.pull_request.body, '[native-linux-amd64]')
     runs-on: ubuntu-latest
@@ -136,6 +150,13 @@ jobs:
       with:
         name: test-results-xml-native-linux-amd64
         path: build/test-results/**/*.xml
+        if-no-files-found: ignore
+    - name: Upload Test Result HTML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-html-native-linux-amd64
+        path: build/reports/tests/**/*
         if-no-files-found: ignore
     container:
       image: redhat/ubi8:8.10
@@ -184,6 +205,13 @@ jobs:
         name: test-results-xml-native-linux-aarch64
         path: build/test-results/**/*.xml
         if-no-files-found: ignore
+    - name: Upload Test Result HTML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-html-native-linux-aarch64
+        path: build/reports/tests/**/*
+        if-no-files-found: ignore
     container:
       image: redhat/ubi8:8.10
   native-windows-amd64:
@@ -228,6 +256,13 @@ jobs:
       with:
         name: test-results-xml-native-windows-amd64
         path: build/test-results/**/*.xml
+        if-no-files-found: ignore
+    - name: Upload Test Result HTML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-html-native-windows-amd64
+        path: build/reports/tests/**/*
         if-no-files-found: ignore
   verdict:
     if: always()
