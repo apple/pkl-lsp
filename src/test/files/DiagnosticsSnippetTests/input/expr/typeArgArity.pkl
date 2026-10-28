@@ -1,0 +1,8 @@
+
+function foo<A, B, C, D>(val) = val is A || val is B || val is C
+
+res1 = foo::<Int>(1)
+res1a = foo::<Int, Int8>(1)
+res1b = foo::<Int, Int8, Int16>(1)
+
+res2 = foo::<Int, Int8, Int16, Int32, UInt, UInt8>(1)

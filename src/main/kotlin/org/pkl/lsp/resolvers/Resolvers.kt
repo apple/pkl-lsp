@@ -62,12 +62,14 @@ object Resolvers {
     visitor: ResolveVisitor<R>,
     context: PklProject?,
   ): R {
-
-    // search type parameters of enclosing method
-    val method = position.parentOfType<PklClassMethod>()
-    if (method != null) {
+    // search type parameters of enclosing methods
+    var method = position.parentOfType<PklMethod>()
+    // object methods can be nested, walk until no method parent or class method
+    while (method != null) {
       if (!method.methodHeader.typeParameterList.visit(mapOf(), visitor, context))
         return visitor.result
+      if (method is PklClassMethod) break
+      method = method.parentOfType<PklMethod>()
     }
 
     // search type parameters of enclosing class or type alias

@@ -81,6 +81,7 @@ enum class TokenType {
   NOT,
   QUESTION,
   COLON,
+  DCOLON,
   ARROW,
   EQUAL,
   NOT_EQUAL,

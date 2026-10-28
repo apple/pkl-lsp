@@ -172,6 +172,9 @@ class PklUnqualifiedAccessExprImpl(
 ) : AbstractPklNode(project, parent, ctx), PklUnqualifiedAccessExpr {
   override val identifier: Terminal? by lazy { terminals.find { it.type == TokenType.Identifier } }
   override val memberNameText: String by lazy { identifierName!! }
+  override val typeArgumentList: PklTypeArgumentList? by lazy {
+    children.firstInstanceOf<PklTypeArgumentList>()
+  }
   override val argumentList: PklArgumentList? by lazy {
     children.firstInstanceOf<PklArgumentList>()
   }
@@ -284,6 +287,9 @@ class PklSuperAccessExprImpl(
   override val identifier: Terminal? by lazy { terminals.find { it.type == TokenType.Identifier } }
   override val memberNameText: String by lazy { identifierName!! }
   override val isNullSafeAccess: Boolean = false
+  override val typeArgumentList: PklTypeArgumentList? by lazy {
+    children.firstInstanceOf<PklTypeArgumentList>()
+  }
   override val argumentList: PklArgumentList? by lazy {
     children.firstInstanceOf<PklArgumentList>()
   }
@@ -334,6 +340,9 @@ class PklQualifiedAccessExprImpl(
   override val memberNameText: String by lazy { identifierName!! }
   override val isNullSafeAccess: Boolean by lazy {
     terminals.find { it.type == TokenType.QDOT } != null
+  }
+  override val typeArgumentList: PklTypeArgumentList? by lazy {
+    children.firstInstanceOf<PklTypeArgumentList>()
   }
   override val argumentList: PklArgumentList? by lazy {
     children.firstInstanceOf<PklArgumentList>()

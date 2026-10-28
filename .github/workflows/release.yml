@@ -49,6 +49,13 @@ jobs:
       with:
         name: test-results-xml-build-release
         path: build/test-results/**/*.xml
+    - name: Upload Test Result HTML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-html-build-release
+        path: build/reports/tests/**/*
+        if-no-files-found: ignore
   test-macos:
     if: github.repository_owner == 'apple'
     needs:
@@ -83,6 +90,13 @@ jobs:
       with:
         name: test-results-xml-test-macos
         path: build/test-results/**/*.xml
+    - name: Upload Test Result HTML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-html-test-macos
+        path: build/reports/tests/**/*
+        if-no-files-found: ignore
   test-windows:
     needs:
     - build-release
@@ -114,6 +128,13 @@ jobs:
       with:
         name: test-results-xml-test-windows
         path: build/test-results/**/*.xml
+    - name: Upload Test Result HTML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-html-test-windows
+        path: build/reports/tests/**/*
+        if-no-files-found: ignore
   native-macos-aarch64:
     if: github.repository_owner == 'apple'
     runs-on:
@@ -158,6 +179,13 @@ jobs:
       with:
         name: test-results-xml-native-macos-aarch64
         path: build/test-results/**/*.xml
+    - name: Upload Test Result HTML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-html-native-macos-aarch64
+        path: build/reports/tests/**/*
+        if-no-files-found: ignore
   native-linux-amd64:
     runs-on: ubuntu-latest
     steps:
@@ -201,6 +229,13 @@ jobs:
       with:
         name: test-results-xml-native-linux-amd64
         path: build/test-results/**/*.xml
+    - name: Upload Test Result HTML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-html-native-linux-amd64
+        path: build/reports/tests/**/*
+        if-no-files-found: ignore
     container:
       image: redhat/ubi8:8.10
   native-linux-aarch64:
@@ -246,6 +281,13 @@ jobs:
       with:
         name: test-results-xml-native-linux-aarch64
         path: build/test-results/**/*.xml
+    - name: Upload Test Result HTML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-html-native-linux-aarch64
+        path: build/reports/tests/**/*
+        if-no-files-found: ignore
     container:
       image: redhat/ubi8:8.10
   native-windows-amd64:
@@ -289,6 +331,13 @@ jobs:
       with:
         name: test-results-xml-native-windows-amd64
         path: build/test-results/**/*.xml
+    - name: Upload Test Result HTML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-html-native-windows-amd64
+        path: build/reports/tests/**/*
+        if-no-files-found: ignore
   deploy-github-release:
     needs:
     - test-macos
@@ -367,3 +416,10 @@ jobs:
       with:
         comment_mode: 'off'
         files: test-results-xml-*/**/*.xml
+    - name: Upload Test Result HTML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-html-publish-test-results
+        path: build/reports/tests/**/*
+        if-no-files-found: ignore

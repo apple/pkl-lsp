@@ -242,4 +242,19 @@ class CompletionFeatureTest : LspTestBase() {
     val completions = getCompletions()
     assert(completions.find { it.label == "name = " } != null)
   }
+
+  @Test
+  fun `test complete options offer arg-less and arg'd method calls`() {
+    createPklFile(
+      """
+      function x<T>(y: T): String = y.toString()
+
+      res = x<caret>
+      """
+        .trimIndent()
+    )
+    val completions = getCompletions()
+    assert(completions.find { it.label == "x(T)" } != null)
+    assert(completions.find { it.label == "x::<T>(T)" } != null)
+  }
 }

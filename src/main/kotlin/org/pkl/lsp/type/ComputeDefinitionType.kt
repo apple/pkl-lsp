@@ -68,6 +68,7 @@ fun PklNode?.computeResolvedImportType(
                   ResolveVisitors.typeOfFirstElementNamed(
                     name,
                     null,
+                    null,
                     base,
                     false,
                     preserveUnboundTypeVars,
@@ -92,6 +93,7 @@ fun PklNode?.computeResolvedImportType(
         val visitor =
           ResolveVisitors.typeOfFirstElementNamed(
             "this",
+            null,
             null,
             base,
             isNullSafeAccess = false,

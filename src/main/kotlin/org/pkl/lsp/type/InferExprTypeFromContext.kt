@@ -162,6 +162,7 @@ private fun PklExpr?.doInferExprTypeFromContext(
             ResolveVisitors.paramTypesOfFirstMethodNamed(
               accessExpr.memberNameText,
               base,
+              accessExpr.typeArgumentList,
               resolveTypeParamsInParamTypes,
               receiverType,
             )

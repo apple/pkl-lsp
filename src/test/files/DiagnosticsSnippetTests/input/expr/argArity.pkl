@@ -1,0 +1,6 @@
+
+function foo(a, b, c) = a + b + c
+
+res1 = foo(1)
+
+res2 = foo(1, 2, 3, 4, 5)

@@ -52,6 +52,13 @@ jobs:
       with:
         name: test-results-xml-build
         path: build/test-results/**/*.xml
+    - name: Upload Test Result HTML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-html-build
+        path: build/reports/tests/**/*
+        if-no-files-found: ignore
   test-macos:
     if: github.repository_owner == 'apple'
     needs:
@@ -87,6 +94,13 @@ jobs:
       with:
         name: test-results-xml-test-macos
         path: build/test-results/**/*.xml
+    - name: Upload Test Result HTML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-html-test-macos
+        path: build/reports/tests/**/*
+        if-no-files-found: ignore
   test-windows:
     needs:
     - build
@@ -119,6 +133,13 @@ jobs:
       with:
         name: test-results-xml-test-windows
         path: build/test-results/**/*.xml
+    - name: Upload Test Result HTML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-html-test-windows
+        path: build/reports/tests/**/*
+        if-no-files-found: ignore
   publish-test-results:
     if: '!cancelled()'
     needs:
@@ -138,3 +159,10 @@ jobs:
       with:
         comment_mode: 'off'
         files: test-results-xml-*/**/*.xml
+    - name: Upload Test Result HTML
+      if: '!cancelled()'
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      with:
+        name: test-results-html-publish-test-results
+        path: build/reports/tests/**/*
+        if-no-files-found: ignore
