@@ -684,6 +684,20 @@ fun Appendable.renderParameterList(
   return this
 }
 
+fun Appendable.renderTypeParameterList(typeParameterList: PklTypeParameterList): Appendable {
+  append('<')
+
+  var first = true
+  for (typeParam in typeParameterList.typeParameters) {
+    if (first) first = false else append(", ")
+    append(typeParam.name)
+  }
+
+  append('>')
+
+  return this
+}
+
 fun <T> List<T>.withReplaced(idx: Int, elem: T): List<T> =
   toMutableList().apply { this[idx] = elem }
 

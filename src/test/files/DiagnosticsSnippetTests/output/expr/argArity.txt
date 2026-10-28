@@ -1,0 +1,13 @@
+ 
+ function foo(a, b, c) = a + b + c
+ 
+ res1 = foo(1)
+            ^^
+| Error: Missing argument for `b: unknown`
+            ^^
+| Error: Missing argument for `c: unknown`
+ 
+ res2 = foo(1, 2, 3, 4, 5)
+                        ^
+| Error: Too many arguments for method `foo(a: unknown, b: unknown, c: unknown)`
+ 

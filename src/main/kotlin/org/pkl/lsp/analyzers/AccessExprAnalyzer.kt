@@ -58,6 +58,7 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
             is PklMethod -> {
               checkConstAccess(node, target, diagnosticsHolder, lookupMode)
               checkArgumentCount(node, target, base, diagnosticsHolder)
+              checkTypeArgumentCount(node, target, diagnosticsHolder)
             }
             is PklProperty -> {
               checkConstAccess(node, target, diagnosticsHolder, lookupMode)
@@ -83,6 +84,7 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
             is PklMethod -> {
               checkConstQualifiedAccess(node, target, diagnosticsHolder)
               checkArgumentCount(node, target, base, diagnosticsHolder)
+              checkTypeArgumentCount(node, target, diagnosticsHolder)
               when (receiverType) {
                 base.listType -> {
                   when {
@@ -173,7 +175,10 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
             diagnosticsHolder.addUnresolvedAccessDiagnostic(node, thisType, base, context)
           when (target) {
             is PklProperty -> checkConstAccess(node, target, diagnosticsHolder, null)
-            is PklMethod -> checkConstAccess(node, target, diagnosticsHolder, null)
+            is PklMethod -> {
+              checkConstAccess(node, target, diagnosticsHolder, null)
+              checkTypeArgumentCount(node, target, diagnosticsHolder)
+            }
           }
         }
 
@@ -377,6 +382,71 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
         }
         val message = ErrorMessages.create("tooManyArguments", arg)
         holder.addError(args.last(), message)
+      }
+    }
+  }
+
+  private fun <T> buildList(items: List<T>, each: Appendable.(T) -> Unit): String = buildString {
+    when (items.size) {
+      1 -> each(items.single())
+      2 -> {
+        each(items[0])
+        append(" and ")
+        each(items[1])
+      }
+      else -> {
+        for ((idx, item) in items.withIndex()) {
+          if (idx > 0) {
+            append(", ")
+            if (idx == items.size - 1) {
+              append("and ")
+            }
+          }
+          each(item)
+        }
+      }
+    }
+  }
+
+  private fun checkTypeArgumentCount(
+    expr: PklAccessExpr,
+    method: PklMethod,
+    holder: DiagnosticsHolder,
+  ) {
+    val typeArgList = expr.typeArgumentList ?: return
+    val typeArgs = typeArgList.types
+    val typeArgCount = typeArgs.size
+    val typeParamList = method.methodHeader.typeParameterList
+    val typeParams = typeParamList?.typeParameters ?: emptyList()
+    val typeParamCount = typeParams.size
+    when {
+      typeArgCount < typeParamCount -> {
+        val span = typeArgs.lastOrNull()?.span?.endAt(typeArgList.span) ?: typeArgList.span
+        val missingParams = typeParams.drop(typeArgCount)
+        val plural = if (missingParams.size == 1) "" else "s"
+        val message =
+          ErrorMessages.create(
+            "missingTypeArguments",
+            plural,
+            buildList(missingParams) {
+              append('`')
+              append(it.name)
+              append('`')
+            },
+          )
+        holder.addError(typeArgList, message, span = span)
+      }
+      typeArgCount > typeParamCount -> {
+        val arg = buildString {
+          append(method.name)
+          typeParamList?.let {
+            append("::")
+            renderTypeParameterList(it)
+          }
+          renderParameterList(method.methodHeader.parameterList, mapOf())
+        }
+        val message = ErrorMessages.create("tooManyTypeArguments", arg)
+        holder.addError(typeArgs.last(), message, span = typeArgs[typeParamCount].span)
       }
     }
   }

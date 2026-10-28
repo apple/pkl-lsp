@@ -61,7 +61,7 @@ private fun PklNode.doComputeExprType(
         val visitor =
           ResolveVisitors.typeOfFirstElementNamed(
             memberNameText,
-            methodTypeArguments?.typeArgumentList,
+            typeArgumentList,
             argumentList,
             base,
             isNullSafeAccess,
@@ -75,7 +75,7 @@ private fun PklNode.doComputeExprType(
         val visitor =
           ResolveVisitors.typeOfFirstElementNamed(
             memberNameText,
-            methodTypeArguments?.typeArgumentList,
+            typeArgumentList,
             argumentList,
             base,
             isNullSafeAccess,
@@ -89,7 +89,7 @@ private fun PklNode.doComputeExprType(
         val visitor =
           ResolveVisitors.typeOfFirstElementNamed(
             memberNameText,
-            methodTypeArguments?.typeArgumentList,
+            typeArgumentList,
             argumentList,
             base,
             isNullSafeAccess,
