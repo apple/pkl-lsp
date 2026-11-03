@@ -60,8 +60,48 @@ fun main(args: Array<String>) {
       }
       reflectionMetadata.add(metadata)
     }
-    val updatedJson = reachabilityMetadata.plus("reflection" to JsonArray(reflectionMetadata))
-    val jsStr = json.encodeToString(updatedJson)
-    outputFile.writeText(jsStr)
   }
+
+  val jsonRpcAnnotations =
+    listOf(
+      "org.eclipse.lsp4j.jsonrpc.services.JsonRequest",
+      "org.eclipse.lsp4j.jsonrpc.services.JsonNotification",
+    )
+
+  // Collect all jsonrpc-annotated methods in `org.pkl.lsp` (including nested packages and classes).
+  ClassGraph().acceptPackages("org.pkl.lsp").enableAllInfo().scan().use { scanResult ->
+    val classes =
+      jsonRpcAnnotations
+        .flatMap { scanResult.getClassesWithMethodAnnotation(it) }
+        .distinctBy { it.name }
+    for (classInfo in classes) {
+      val methods =
+        classInfo.declaredMethodInfo
+          .filter { method -> jsonRpcAnnotations.any { method.hasAnnotation(it) } }
+          .map { method ->
+            buildJsonObject {
+              put("name", method.name)
+              putJsonArray("parameterTypes") {
+                for (param in method.parameterInfo) {
+                  add(param.typeDescriptor.toString())
+                }
+              }
+            }
+          }
+      reflectionMetadata.add(
+        buildJsonObject {
+          put("type", classInfo.name)
+          put("allPublicConstructors", true)
+          put("allPublicFields", true)
+          put("allDeclaredFields", true)
+          put("allDeclaredConstructors", true)
+          put("methods", JsonArray(methods))
+        }
+      )
+    }
+  }
+
+  val updatedJson = reachabilityMetadata.plus("reflection" to JsonArray(reflectionMetadata))
+  val jsStr = json.encodeToString(updatedJson)
+  outputFile.writeText(jsStr)
 }

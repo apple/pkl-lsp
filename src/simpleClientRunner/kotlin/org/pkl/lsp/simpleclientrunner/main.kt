@@ -24,6 +24,8 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.writeText
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.launch.LSPLauncher
+import org.pkl.lsp.ExtendedClientCapabilities
+import org.pkl.lsp.PklClientOptions
 import org.pkl.lsp.PklLsp
 import org.pkl.lsp.commons.SimpleClient
 
@@ -80,6 +82,15 @@ fun main(args: Array<String>) {
           ClientCapabilities().apply {
             workspace = WorkspaceClientCapabilities().apply { workspaceFolders = true }
           }
+        initializationOptions =
+          PklClientOptions(
+            renderOpenFileCommandInDocs = true,
+            extendedClientCapabilities =
+              ExtendedClientCapabilities(
+                actionableRuntimeNotifications = true,
+                pklConfigureCommand = true,
+              ),
+          )
       }
     )
     .get()
