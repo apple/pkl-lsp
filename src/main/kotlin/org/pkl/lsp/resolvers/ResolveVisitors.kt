@@ -582,8 +582,8 @@ object ResolveVisitors {
         val typeParTypes = typePars.joinToString(", ") { it.name }
         val itemWithTypeArgs =
           CompletionItem().apply {
-            label = "$name::<$typeParTypes>($parTypes)"
-            insertText = "$name::<$strTypePars>($strParsWithTypePars)"
+            label = "$name<$typeParTypes>($parTypes)"
+            insertText = "$name<$strTypePars>($strParsWithTypePars)"
             insertTextFormat = InsertTextFormat.Snippet
             kind = CompletionItemKind.Method
             detail = retType

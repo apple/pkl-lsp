@@ -255,6 +255,6 @@ class CompletionFeatureTest : LspTestBase() {
     )
     val completions = getCompletions()
     assert(completions.find { it.label == "x(T)" } != null)
-    assert(completions.find { it.label == "x::<T>(T)" } != null)
+    assert(completions.find { it.label == "x<T>(T)" } != null)
   }
 }
