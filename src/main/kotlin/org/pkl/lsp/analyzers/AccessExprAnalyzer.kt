@@ -21,6 +21,7 @@ import org.pkl.lsp.ErrorMessages
 import org.pkl.lsp.PklBaseModule
 import org.pkl.lsp.PklVisitor
 import org.pkl.lsp.Project
+import org.pkl.lsp.actions.PklParenthesizeComparisonQuickFix
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.packages.dto.Version.Companion.PKL_VERSION_0_26
@@ -200,6 +201,37 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
     base: PklBaseModule,
     context: PklProject?,
   ) {
+    if (expr.typeArgumentList != null) {
+      val visitor =
+        ResolveVisitors.firstElementNamed(expr.memberNameText, base, resolveImports = false)
+      val resolvedLeftHandSide =
+        when (expr) {
+          is PklQualifiedAccessExpr,
+          is PklSuperAccessExpr ->
+            Resolvers.resolveQualifiedAccess(receiverType, true, base, visitor, context)
+          is PklUnqualifiedAccessExpr ->
+            Resolvers.resolveUnqualifiedAccess(
+              expr,
+              receiverType,
+              true,
+              base,
+              mapOf(),
+              visitor,
+              context,
+            )
+        }
+      if (resolvedLeftHandSide != null) {
+        val message = ErrorMessages.create("unresolvedMethodMaybeComparison", expr.memberNameText)
+        addDiagnostic(expr, message, span = expr.memberAccessSpan) {
+          severity =
+            if (receiverType.isUnresolvedMemberFatal(base, context)) DiagnosticSeverity.Error
+            else DiagnosticSeverity.Warning
+          problemGroup = PklProblemGroups.unresolvedElement
+          actions = listOf(PklParenthesizeComparisonQuickFix(expr))
+        }
+        return
+      }
+    }
     val message = ErrorMessages.create("unresolvedReference", expr.memberNameText)
     addDiagnostic(expr, message, span = expr.identifier!!.span) {
       severity =
@@ -439,10 +471,7 @@ class AccessExprAnalyzer(project: Project) : Analyzer(project) {
       typeArgCount > typeParamCount -> {
         val arg = buildString {
           append(method.name)
-          typeParamList?.let {
-            append("::")
-            renderTypeParameterList(it)
-          }
+          typeParamList?.let { renderTypeParameterList(it) }
           renderParameterList(method.methodHeader.parameterList, mapOf())
         }
         val message = ErrorMessages.create("tooManyTypeArguments", arg)

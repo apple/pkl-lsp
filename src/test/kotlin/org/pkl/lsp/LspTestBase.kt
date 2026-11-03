@@ -33,6 +33,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.io.TempDir
+import org.pkl.lsp.actions.PklCodeAction
 import org.pkl.lsp.analyzers.PklDiagnostic
 import org.pkl.lsp.ast.PklModule
 import org.pkl.lsp.ast.PklNode
@@ -109,6 +110,12 @@ abstract class LspTestBase {
     val diag = getDiagnostics(file)
     assertThat(diag).hasSize(1)
     return diag.single()
+  }
+
+  protected fun getAllCodeActions(file: VirtualFile): List<PklCodeAction> {
+    return fakeProject.diagnosticsManager.getDiagnostics(file.getModule().get()!!).flatMap {
+      it.actions
+    }
   }
 
   protected fun createPklFile(contents: String): Path = createPklFile("main.pkl", contents)

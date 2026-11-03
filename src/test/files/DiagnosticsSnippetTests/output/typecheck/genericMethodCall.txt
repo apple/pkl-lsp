@@ -1,15 +1,15 @@
  function foo<T>(arg: T): Boolean = arg is String
  
- res1 = foo::<Int>("qux")
-                   ^^^^^
+ res1 = foo<Int>("qux")
+                 ^^^^^
 | Error: Type mismatch.
 | Required: Int
 | Actual: "qux"
  
  function bar<T>(): T = new {}
  
- res2: Mapping = bar::<Listing>()
-                 ^^^^^^^^^^^^^^^^
+ res2: Mapping = bar<Listing>()
+                 ^^^^^^^^^^^^^^
 | Error: Type mismatch.
 | Required: Mapping
 | Actual: Listing

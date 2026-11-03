@@ -419,5 +419,4 @@ fun PklAccessExpr.inferReceiverType(
         Resolvers.LookupMode.BASE -> Type.Unknown
       }
     }
-    else -> throw AssertionError("Unknown PklAccessExpr subclass ${this::class}")
   }

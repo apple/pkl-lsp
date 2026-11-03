@@ -884,3 +884,16 @@ fun PklClassProperty.hasDefault(base: PklBaseModule, context: PklProject?): Bool
 fun StringBuilder.appendIdentifier(identifier: String) {
   append(Lexer.maybeQuoteIdentifier(identifier))
 }
+
+val PklAccessExpr.memberAccessSpan: Span
+  get() {
+    val endingTextRange = identifier!!.span
+    return when (this) {
+      is PklUnqualifiedAccessExpr -> endingTextRange
+      is PklQualifiedAccessExpr -> receiverExpr.span.endAt(endingTextRange)
+      is PklSuperAccessExpr -> {
+        val superToken = terminals.find { it.type == TokenType.SUPER }!!.span
+        superToken.endAt(endingTextRange)
+      }
+    }
+  }
