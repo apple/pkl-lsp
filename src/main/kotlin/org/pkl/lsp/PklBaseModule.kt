@@ -270,6 +270,9 @@ class PklBaseModule(project: Project) : Component(project) {
   val stringIsEmptyProperty: PklClassProperty by lazy {
     stringType.ctx.cache(null).properties.getValue("isEmpty")
   }
+  val stringIsNotEmptyProperty: PklClassProperty? by lazy {
+    stringType.ctx.cache(null).properties["isNotEmpty"]
+  }
   val stringIsRegexProperty: PklClassProperty by lazy {
     stringType.ctx.cache(null).properties.getValue("isRegex")
   }
@@ -298,6 +301,9 @@ class PklBaseModule(project: Project) : Component(project) {
   val listIsEmptyProperty: PklClassProperty by lazy {
     listType.ctx.cache(null).properties.getValue("isEmpty")
   }
+  val listIsNotEmptyProperty: PklClassProperty? by lazy {
+    listType.ctx.cache(null).properties["isNotEmpty"]
+  }
   val listFoldMethod: PklClassMethod? by lazy { listType.ctx.cache(null).methods["fold"] }
   val listFoldIndexedMethod: PklClassMethod? by lazy {
     listType.ctx.cache(null).methods["foldIndexed"]
@@ -317,6 +323,9 @@ class PklBaseModule(project: Project) : Component(project) {
   val setIsEmptyProperty: PklClassProperty by lazy {
     setType.ctx.cache(null).properties.getValue("isEmpty")
   }
+  val setIsNotEmptyProperty: PklClassProperty? by lazy {
+    setType.ctx.cache(null).properties["isNotEmpty"]
+  }
   val setLengthProperty: PklClassProperty by lazy {
     setType.ctx.cache(null).properties.getValue("length")
   }
@@ -330,6 +339,9 @@ class PklBaseModule(project: Project) : Component(project) {
   }
   val mapIsEmptyProperty: PklClassProperty by lazy {
     mapType.ctx.cache(null).properties.getValue("isEmpty")
+  }
+  val mapIsNotEmptyProperty: PklClassProperty? by lazy {
+    mapType.ctx.cache(null).properties["isNotEmpty"]
   }
   val mapKeysProperty: PklClassProperty by lazy {
     mapType.ctx.cache(null).properties.getValue("keys")
