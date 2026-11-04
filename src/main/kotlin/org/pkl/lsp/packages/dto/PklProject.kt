@@ -44,6 +44,7 @@ data class PklProject(val metadata: DerivedProjectMetadata, val projectDeps: Pro
     @Serializable
     data class DerivedProjectMetadata(
       @Serializable(with = URISerializer::class) val projectFileUri: URI,
+      val packageName: String?,
       val packageUri: PackageUri?,
       val declaredDependencies: Map<String, PackageUri>,
       val evaluatorSettings: EvaluatorSettings?,
