@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -177,6 +177,7 @@ fun PklExpr?.toConstraintExpr(base: PklBaseModule, context: PklProject?): Constr
             base.stringType.ctx ->
               when (resolved) {
                 base.stringIsEmptyProperty -> StringIsEmpty(receiverExpr)
+                base.stringIsNotEmptyProperty -> StringIsNotEmpty(receiverExpr)
                 base.stringIsRegexProperty -> StringIsRegex(receiverExpr)
                 base.stringLengthProperty -> StringLength(receiverExpr)
                 else -> Error
@@ -184,18 +185,21 @@ fun PklExpr?.toConstraintExpr(base: PklBaseModule, context: PklProject?): Constr
             base.listType.ctx ->
               when (resolved) {
                 base.listIsEmptyProperty -> ListIsEmpty(receiverExpr)
+                base.listIsNotEmptyProperty -> ListIsNotEmpty(receiverExpr)
                 base.listLengthProperty -> ListLength(receiverExpr)
                 else -> Error
               }
             base.setType.ctx ->
               when (resolved) {
                 base.setIsEmptyProperty -> SetIsEmpty(receiverExpr)
+                base.setIsNotEmptyProperty -> SetIsNotEmpty(receiverExpr)
                 base.setLengthProperty -> SetLength(receiverExpr)
                 else -> Error
               }
             base.mapType.ctx ->
               when (resolved) {
                 base.mapIsEmptyProperty -> MapIsEmpty(receiverExpr)
+                base.mapIsNotEmptyProperty -> MapIsNotEmpty(receiverExpr)
                 base.mapLengthProperty -> MapLength(receiverExpr)
                 else -> Error
               }
@@ -1273,6 +1277,18 @@ sealed class ConstraintExpr {
     override fun computeType(base: PklBaseModule, context: PklProject?): Type = base.booleanType
   }
 
+  class StringIsNotEmpty(receiverExpr: ConstraintExpr) : PropertyAccess(receiverExpr) {
+    override val propertyName: String
+      get() = "isNotEmpty"
+
+    override fun evaluate(thisValue: ConstraintValue): ConstraintValue {
+      val receiver = receiverExpr.evaluate(thisValue) as? StringValue ?: return Error
+      return receiver.value.isNotEmpty().toBool()
+    }
+
+    override fun computeType(base: PklBaseModule, context: PklProject?): Type = base.booleanType
+  }
+
   class StringIsRegex(receiverExpr: ConstraintExpr) : PropertyAccess(receiverExpr) {
     override val propertyName: String
       get() = "isRegex"
@@ -1302,6 +1318,18 @@ sealed class ConstraintExpr {
     override fun computeType(base: PklBaseModule, context: PklProject?): Type = base.booleanType
   }
 
+  class ListIsNotEmpty(receiverExpr: ConstraintExpr) : PropertyAccess(receiverExpr) {
+    override val propertyName: String
+      get() = "isNotEmpty"
+
+    override fun evaluate(thisValue: ConstraintValue): ConstraintValue {
+      val receiver = receiverExpr.evaluate(thisValue) as? ListValue ?: return Error
+      return receiver.elements.isNotEmpty().toBool()
+    }
+
+    override fun computeType(base: PklBaseModule, context: PklProject?): Type = base.booleanType
+  }
+
   class SetIsEmpty(receiverExpr: ConstraintExpr) : PropertyAccess(receiverExpr) {
     override val propertyName: String
       get() = "isEmpty"
@@ -1314,6 +1342,18 @@ sealed class ConstraintExpr {
     override fun computeType(base: PklBaseModule, context: PklProject?): Type = base.booleanType
   }
 
+  class SetIsNotEmpty(receiverExpr: ConstraintExpr) : PropertyAccess(receiverExpr) {
+    override val propertyName: String
+      get() = "isNotEmpty"
+
+    override fun evaluate(thisValue: ConstraintValue): ConstraintValue {
+      val receiver = receiverExpr.evaluate(thisValue) as? SetValue ?: return Error
+      return receiver.elements.isNotEmpty().toBool()
+    }
+
+    override fun computeType(base: PklBaseModule, context: PklProject?): Type = base.booleanType
+  }
+
   class MapIsEmpty(receiverExpr: ConstraintExpr) : PropertyAccess(receiverExpr) {
     override val propertyName: String
       get() = "isEmpty"
@@ -1321,6 +1361,18 @@ sealed class ConstraintExpr {
     override fun evaluate(thisValue: ConstraintValue): ConstraintValue {
       val receiver = receiverExpr.evaluate(thisValue) as? MapValue ?: return Error
       return receiver.entries.isEmpty().toBool()
+    }
+
+    override fun computeType(base: PklBaseModule, context: PklProject?): Type = base.booleanType
+  }
+
+  class MapIsNotEmpty(receiverExpr: ConstraintExpr) : PropertyAccess(receiverExpr) {
+    override val propertyName: String
+      get() = "isNotEmpty"
+
+    override fun evaluate(thisValue: ConstraintValue): ConstraintValue {
+      val receiver = receiverExpr.evaluate(thisValue) as? MapValue ?: return Error
+      return receiver.entries.isNotEmpty().toBool()
     }
 
     override fun computeType(base: PklBaseModule, context: PklProject?): Type = base.booleanType
