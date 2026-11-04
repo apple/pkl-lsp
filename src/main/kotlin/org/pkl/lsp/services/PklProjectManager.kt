@@ -56,6 +56,7 @@ class PklProjectManager(project: Project) : Component(project) {
       new JsonRenderer { omitNullProperties = false }
         .renderValue(new Dynamic {
           projectFileUri = module.projectFileUri
+          packageName = module.package?.name
           packageUri = module.package?.uri
           declaredDependencies = module.dependencies.toMap().mapValues((_, value) ->
             if (value is RemoteDependency) value.uri
@@ -376,6 +377,7 @@ class PklProjectManager(project: Project) : Component(project) {
     val metadata =
       DerivedProjectMetadata(
         workspace.resolve(pklProjectState.projectFile).toUri(),
+        pklProjectState.packageName,
         pklProjectState.packageUri,
         pklProjectState.declaredDependencies,
         pklProjectState.evaluatorSettings,
@@ -390,6 +392,7 @@ class PklProjectManager(project: Project) : Component(project) {
   private fun PklProject.toState(workspace: Path): PklProjectState {
     return PklProjectState(
       projectFile = workspace.relativize(projectFile).normalize().toUnixPathString(),
+      packageName = metadata.packageName,
       packageUri = metadata.packageUri,
       declaredDependencies = metadata.declaredDependencies,
       resolvedDependencies = projectDeps?.resolvedDependencies,

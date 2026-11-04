@@ -135,6 +135,7 @@ interface PklReference {
 interface PklQualifiedIdentifier : PklNode {
   val identifiers: List<Terminal>
   val fullName: String
+  val identifierNames: List<String>
 }
 
 interface PklStringConstant : PklNode {

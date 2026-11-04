@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ data class PklWorkspaceState(val schemaVersion: Int, val pklProjects: List<PklPr
 @Serializable
 data class PklProjectState(
   val projectFile: String,
+  val packageName: String?,
   val packageUri: PackageUri?,
   val declaredDependencies: Map<String, PackageUri>,
   val resolvedDependencies: Map<String, ResolvedDependency>?,

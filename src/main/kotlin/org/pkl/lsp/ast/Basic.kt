@@ -42,6 +42,13 @@ class PklQualifiedIdentifierImpl(
   override fun <R> accept(visitor: PklVisitor<R>): R? {
     return visitor.visitQualifiedIdentifier(this)
   }
+
+  override val identifierNames: List<String> by lazy {
+    identifiers.map { node ->
+      val text = node.text
+      if (text.startsWith("`")) text.substring(1, text.length - 1) else text
+    }
+  }
 }
 
 class PklStringConstantImpl(

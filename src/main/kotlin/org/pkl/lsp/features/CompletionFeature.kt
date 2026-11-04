@@ -33,6 +33,7 @@ class CompletionFeature(project: Project) : Component(project) {
       StringLiteralTypeCompletionProvider(project),
       ImplementMethodCompletionProvider(project),
       DocCommentMemberLinkCompletionProvider(project),
+      ModuleNameCompletionProvider(project),
     )
 
   fun onCompletion(
