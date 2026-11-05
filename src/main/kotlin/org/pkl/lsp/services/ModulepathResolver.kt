@@ -39,13 +39,15 @@ class ModulepathResolver(project: Project) : Component(project) {
 
   private fun modulepaths(context: PklProject?): List<Path> {
     return project.cachedValuesManager.getCachedValue("modulepaths(${context?.projectDir})", lock) {
+      val dependencies = listOf(project.pklProjectManager.syncTracker, project.settingsManager)
+      val snapshot = dependencies.map { it.getModificationCount() }
       val modulePathFromPklProject =
         context?.metadata?.evaluatorSettings?.modulePath?.map(context.projectDir::resolve).orEmpty()
       val explicitlyConfiguredPath = project.settingsManager.settings.modulepath
-      val dependencies = listOf(project.pklProjectManager.syncTracker, project.settingsManager)
       CachedValue(
         (modulePathFromPklProject + explicitlyConfiguredPath).map(::normalizeArchivePath),
         dependencies,
+        snapshot,
       )
     } ?: emptyList()
   }
@@ -91,15 +93,14 @@ class ModulepathResolver(project: Project) : Component(project) {
         path.startsWith("/") -> path
         else -> {
           val roots = modulepaths(file.pklProject)
-          val myRelativePath =
-            roots.firstNotNullOf { root ->
-              try {
-                val relativized = root.relativize(file.path)
-                if (relativized.startsWith("..")) null else relativized
-              } catch (_: IllegalArgumentException) {
-                null
-              }
+          val myRelativePath = roots.firstNotNullOf { root ->
+            try {
+              val relativized = root.relativize(file.path)
+              if (relativized.startsWith("..")) null else relativized
+            } catch (_: IllegalArgumentException) {
+              null
             }
+          }
           "/${myRelativePath.resolve(path)}"
         }
       }
