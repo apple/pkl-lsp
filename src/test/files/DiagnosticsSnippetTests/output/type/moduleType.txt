@@ -1,6 +1,6 @@
  typealias Foo = module
                  ^^^^^^
-| Warning: Cannot reference `module` type within a type alias body. This will be an error in a future release.
+| Warning: Cannot reference `module` type within a typealias body. This will be an error in a future release.
  
  @Baz { valid = true is module }
                 ^^^^^^^^^^^^^^

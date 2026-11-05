@@ -1,0 +1,6 @@
+ const function constMethod(bar: this) = 1
+                                 ^^^^
+| Error: Cannot reference `this` type from const method `constMethod`
+                            ^^^
+| Hint: Unused parameter
+ 

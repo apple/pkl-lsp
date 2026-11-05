@@ -27,17 +27,17 @@ class HoverTest : LspTestBase() {
       /// This is the docs for foo!
       class Fo<caret>o {
       }
-    """
+      """
         .trimIndent()
     )
     val hoverText = getHoverText()
     assertThat(hoverText)
       .contains(
         """
-      ```pkl
-      class Foo
-      ```
-    """
+        ```pkl
+        class Foo
+        ```
+        """
           .trimIndent()
       )
     assertThat(hoverText).contains("This is the docs for foo!")
@@ -54,7 +54,7 @@ class HoverTest : LspTestBase() {
 
       @MyAnnotation { na<caret>me = "Bob" }
       value: String
-    """
+      """
         .trimIndent()
     )
     val hoverText = getHoverText()
@@ -70,14 +70,14 @@ class HoverTest : LspTestBase() {
       import "main.pkl"
 
       baz: String
-      
+
       class Foo {
         /// [bar] [baz] [custom *link* text][Foo] [main] [main.Foo] [doFoo()] [main.doFoo()]
         b<caret>ar: String
       }
-      
+
       function doFoo(): String = "foo"
-    """
+      """
         .trimIndent()
     )
     val hoverText = getHoverText()
@@ -97,7 +97,7 @@ class HoverTest : LspTestBase() {
       """
       /// [true] [false] [null]
       myPro<caret>p: Boolean
-    """
+      """
         .trimIndent()
     )
     val hoverText = getHoverText()
@@ -110,10 +110,10 @@ class HoverTest : LspTestBase() {
   fun `compute type for recursive method`() {
     createPklFile(
       """
-        function fi<caret>b(num: UInt) =
-          if (num == 0) 0
-          else if (num <= 2) 1
-          else fib(num - 1) + fib(num - 2)
+      function fi<caret>b(num: UInt) =
+        if (num == 0) 0
+        else if (num <= 2) 1
+        else fib(num - 1) + fib(num - 2)
       """
         .trimIndent()
     )
@@ -125,12 +125,12 @@ class HoverTest : LspTestBase() {
   fun `compute type that depends on recursive method`() {
     createPklFile(
       """
-        function fib(num: UInt) =
-          if (num == 0) 0
-          else if (num <= 2) 1
-          else fib(num - 1) + fib(num - 2)
-          
-        local res<caret> = fib(5)
+      function fib(num: UInt) =
+        if (num == 0) 0
+        else if (num <= 2) 1
+        else fib(num - 1) + fib(num - 2)
+        
+      local res<caret> = fib(5)
       """
         .trimIndent()
     )
@@ -139,15 +139,45 @@ class HoverTest : LspTestBase() {
   }
 
   @Test
+  fun `compute this type for object property`() {
+    createPklFile(
+      """
+      class Person {}
+
+      obj: Person = new {
+        local sel<caret>f: this = new {}
+      }
+      """
+        .trimIndent()
+    )
+    val hoverText = getHoverText()
+    assertThat(hoverText).contains("local self: Person")
+  }
+
+  @Test
+  fun `compute this type for class property`() {
+    createPklFile(
+      """
+      open class Person {
+        sel<caret>f: this
+      }
+      """
+        .trimIndent()
+    )
+    val hoverText = getHoverText()
+    assertThat(hoverText).contains("self: Person")
+  }
+
+  @Test
   fun `compute type for Bytes - for generator index`() {
     createPklFile(
       """
-        foo {
-          for (idx<caret>, byte in Bytes(1, 2, 3)) {
-            byte
-          }
+      foo {
+        for (idx<caret>, byte in Bytes(1, 2, 3)) {
+          byte
         }
-        """
+      }
+      """
         .trimIndent()
     )
     val hoverText = getHoverText()
@@ -158,12 +188,12 @@ class HoverTest : LspTestBase() {
   fun `compute type for Bytes - for generator value`() {
     createPklFile(
       """
-        foo {
-          for (idx, byte<caret> in Bytes(1, 2, 3)) {
-            byte
-          }
+      foo {
+        for (idx, byte<caret> in Bytes(1, 2, 3)) {
+          byte
         }
-        """
+      }
+      """
         .trimIndent()
     )
     val hoverText = getHoverText()
@@ -174,8 +204,8 @@ class HoverTest : LspTestBase() {
   fun `compute type for Bytes - addition`() {
     createPklFile(
       """
-        local foo<caret> = Bytes(1, 2) + Bytes(3, 4)
-        """
+      local foo<caret> = Bytes(1, 2) + Bytes(3, 4)
+      """
         .trimIndent()
     )
     val hoverText = getHoverText()
@@ -186,9 +216,9 @@ class HoverTest : LspTestBase() {
   fun `compute type for Bytes - subscript`() {
     createPklFile(
       """
-        local bytes = Bytes(1, 2, 3)
-        local foo<caret> = bytes[0]
-        """
+      local bytes = Bytes(1, 2, 3)
+      local foo<caret> = bytes[0]
+      """
         .trimIndent()
     )
     val hoverText = getHoverText()
@@ -199,21 +229,21 @@ class HoverTest : LspTestBase() {
   fun `BaseValueRenderer convertPropertyTransformers entry value object body this resolution`() {
     createPklFile(
       """
-        /// this is foo
-        class Foo extends ConvertProperty { 
-          /// this is bar
-          bar: String = "bar"
-          render = (_, _) -> Pair(bar, bar) 
-        }
-        
-        output {
-          renderer {
-            convertPropertyTransformers {
-              [Foo] { b<caret>ar = "baz" }
-            }
+      /// this is foo
+      class Foo extends ConvertProperty { 
+        /// this is bar
+        bar: String = "bar"
+        render = (_, _) -> Pair(bar, bar) 
+      }
+
+      output {
+        renderer {
+          convertPropertyTransformers {
+            [Foo] { b<caret>ar = "baz" }
           }
         }
-        """
+      }
+      """
         .trimIndent()
     )
     val hoverText = getHoverText()
@@ -224,21 +254,21 @@ class HoverTest : LspTestBase() {
   fun `BaseValueRenderer convertPropertyTransformers entry value assigned lambda parameter resolution`() {
     createPklFile(
       """
-        /// this is foo
-        class Foo extends ConvertProperty { 
-          /// this is bar
-          bar: String = "bar"
-          render = (_, _) -> Pair(bar, bar) 
-        }
-        
-        output {
-          renderer {
-            convertPropertyTransformers {
-              [Foo] = (it) -> (i<caret>t) { bar = "qux" }
-            }
+      /// this is foo
+      class Foo extends ConvertProperty { 
+        /// this is bar
+        bar: String = "bar"
+        render = (_, _) -> Pair(bar, bar) 
+      }
+
+      output {
+        renderer {
+          convertPropertyTransformers {
+            [Foo] = (it) -> (i<caret>t) { bar = "qux" }
           }
         }
-        """
+      }
+      """
         .trimIndent()
     )
     val hoverText = getHoverText()
@@ -250,21 +280,21 @@ class HoverTest : LspTestBase() {
   fun `BaseValueRenderer convertPropertyTransformers entry value assigned lambda parameter property resolution`() {
     createPklFile(
       """
-        /// this is foo
-        class Foo extends ConvertProperty { 
-          /// this is bar
-          bar: String = "bar"
-          render = (_, _) -> Pair(bar, bar) 
-        }
-        
-        output {
-          renderer {
-            convertPropertyTransformers {
-              [Foo] = (it) -> (it) { b<caret>ar = "quux" }
-            }
+      /// this is foo
+      class Foo extends ConvertProperty { 
+        /// this is bar
+        bar: String = "bar"
+        render = (_, _) -> Pair(bar, bar) 
+      }
+
+      output {
+        renderer {
+          convertPropertyTransformers {
+            [Foo] = (it) -> (it) { b<caret>ar = "quux" }
           }
         }
-        """
+      }
+      """
         .trimIndent()
     )
     val hoverText = getHoverText()
@@ -275,9 +305,9 @@ class HoverTest : LspTestBase() {
   fun `getClass() method is properly flow-typed`() {
     createPklFile(
       """
-        local foo = 0.getClass()
-        local bar = f<caret>oo
-        """
+      local foo = 0.getClass()
+      local bar = f<caret>oo
+      """
         .trimIndent()
     )
     val hoverText = getHoverText()
@@ -300,7 +330,7 @@ class HoverTest : LspTestBase() {
       r: ref.Reference<Domain, Bird>
 
       res = r.na<caret>me
-    """
+      """
         .trimIndent()
     )
     val hoverText = getHoverText()
@@ -316,7 +346,7 @@ class HoverTest : LspTestBase() {
       class Person<caret> {
         name: String
       }
-    """
+      """
         .trimIndent()
     )
     val hoverText = getHoverText()
@@ -336,7 +366,7 @@ class HoverTest : LspTestBase() {
       class Person<caret> {
         name: String
       }
-    """
+      """
         .trimIndent()
     )
     val hoverText = getHoverText()

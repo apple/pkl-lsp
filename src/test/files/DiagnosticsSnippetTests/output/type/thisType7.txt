@@ -1,0 +1,5 @@
+ // okay inside custom this scope
+ const okay: String(this is this) = "x"
+                    ^^^^^^^^^^^^
+| Warning: Expression is always 'true'
+ 

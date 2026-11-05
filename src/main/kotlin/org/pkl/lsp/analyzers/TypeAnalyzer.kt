@@ -22,14 +22,17 @@ import org.pkl.lsp.ast.PklClass
 import org.pkl.lsp.ast.PklClassExtendsClause
 import org.pkl.lsp.ast.PklConstrainedType
 import org.pkl.lsp.ast.PklDeclaredType
+import org.pkl.lsp.ast.PklForGenerator
 import org.pkl.lsp.ast.PklMemberPredicate
 import org.pkl.lsp.ast.PklMethod
 import org.pkl.lsp.ast.PklModuleType
 import org.pkl.lsp.ast.PklNode
 import org.pkl.lsp.ast.PklObjectBody
+import org.pkl.lsp.ast.PklObjectEntry
 import org.pkl.lsp.ast.PklProperty
 import org.pkl.lsp.ast.PklThisType
 import org.pkl.lsp.ast.PklTypeAlias
+import org.pkl.lsp.ast.PklWhenGenerator
 import org.pkl.lsp.type.Type
 import org.pkl.lsp.type.toType
 
@@ -84,7 +87,7 @@ class TypeAnalyzer(project: Project) : Analyzer(project) {
         }
         // not allowed in typealias bodies
         parent is PklTypeAlias -> {
-          diagLocation = "within a type alias body"
+          diagLocation = "within a typealias body"
           break
         }
         // not allowed in annotation bodies
@@ -113,26 +116,49 @@ class TypeAnalyzer(project: Project) : Analyzer(project) {
   }
 
   private fun validateThisType(node: PklThisType, diagnosticsHolder: DiagnosticsHolder) {
+    var diagLocation: String? = null
     var prev: PklNode = node
     var parent = node.parent
+    var skipNextObjectBody = false
     while (parent != null) {
-      when {
+      when (parent) {
+        is PklForGenerator,
+        is PklWhenGenerator -> {
+          skipNextObjectBody = true
+        }
+        is PklObjectEntry if prev == parent.keyExpr -> {
+          skipNextObjectBody = true
+        }
         // always allowed in object bodies
-        parent is PklObjectBody -> break
+        is PklObjectBody ->
+          if (skipNextObjectBody) {
+            skipNextObjectBody = false
+          } else {
+            break
+          }
         // always allowed in custom this scopes
-        parent is PklConstrainedType && parent.exprs.contains(prev) -> break
-        parent is PklMemberPredicate && parent.conditionExpr == prev -> break
-        // not allowed in type alias bodies
-        parent is PklTypeAlias -> {
-          diagnosticsHolder.addError(
-            node,
-            ErrorMessages.create("invalidSelfTypeUsage", "this", "within a type alias body"),
-          )
+        is PklConstrainedType if parent.exprs.contains(prev) -> break
+        is PklMemberPredicate if parent.conditionExpr == prev -> break
+        // not allowed in typealias bodies
+        is PklTypeAlias -> {
+          diagLocation = "from a typealias body"
           break
         }
+        // don't break for these: an enclosing object body might still allow it
+        // not allowed in const properties
+        is PklProperty if parent.isConst -> diagLocation = "from const property `${parent.name}`"
+        // not allowed in const methods
+        is PklMethod if parent.isConst -> diagLocation = "from const method `${parent.name}`"
       }
       prev = parent
       parent = parent.parent
+    }
+
+    if (diagLocation != null) {
+      diagnosticsHolder.addError(
+        node,
+        ErrorMessages.create("invalidSelfTypeUsage", "this", diagLocation),
+      )
     }
   }
 }

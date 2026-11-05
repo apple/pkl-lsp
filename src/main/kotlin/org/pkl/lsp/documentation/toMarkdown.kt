@@ -23,6 +23,7 @@ import org.pkl.lsp.resolvers.Resolvers
 import org.pkl.lsp.type.Type
 import org.pkl.lsp.type.computeExprType
 import org.pkl.lsp.type.computeResolvedImportType
+import org.pkl.lsp.type.computeThisType
 import org.pkl.lsp.type.inferReceiverType
 
 fun PklNode.toMarkdown(originalNode: PklNode?, context: PklProject?): String {
@@ -218,7 +219,9 @@ private fun renderTypeAnnotation(
       }
       type != null -> {
         append(": ")
-        append(type.doRenderMarkdown(originalNode, context))
+        // render `this` as the type of the enclosing class, module, or object
+        val thisType = node.computeThisType(node.project.pklBaseModule, mapOf(), context)
+        append(type.render(thisType.takeIf { it != Type.Unknown }))
       }
       else -> {
         val computedType =
