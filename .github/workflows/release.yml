@@ -135,217 +135,10 @@ jobs:
         name: test-results-html-test-windows
         path: build/reports/tests/**/*
         if-no-files-found: ignore
-  native-macos-aarch64:
-    if: github.repository_owner == 'apple'
-    runs-on:
-    - self-hosted
-    - macos
-    steps:
-    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-      with:
-        persist-credentials: false
-        fetch-depth: 0
-    - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
-      with:
-        java-version: '25'
-        distribution: temurin
-        cache: gradle
-    - name: Set DEBUG_ARGS env var
-      env:
-        RUNNER_DEBUG: ${{ runner.debug }}
-      shell: bash
-      run: |-
-        if [[ "$RUNNER_DEBUG" -eq 1 ]]; then
-          echo "DEBUG_ARGS=--info --stacktrace" >> $GITHUB_ENV
-        fi
-    - name: Build native executable
-      shell: bash
-      run: ./gradlew $DEBUG_ARGS buildNative
-    - name: Upload native executable
-      if: '!cancelled()'
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
-      with:
-        name: build-native-macos-aarch64
-        path: build*/executable/*
-    - name: Upload compiled classes list
-      if: '!cancelled()'
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
-      with:
-        name: compiled-classes-macos-aarch64
-        path: build/compiled-classes/*
-    - name: Upload Test Result XML
-      if: '!cancelled()'
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
-      with:
-        name: test-results-xml-native-macos-aarch64
-        path: build/test-results/**/*.xml
-    - name: Upload Test Result HTML
-      if: '!cancelled()'
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
-      with:
-        name: test-results-html-native-macos-aarch64
-        path: build/reports/tests/**/*
-        if-no-files-found: ignore
-  native-linux-amd64:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-      with:
-        persist-credentials: false
-        fetch-depth: 0
-    - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
-      with:
-        java-version: '25'
-        distribution: temurin
-        cache: gradle
-    - name: Install deps
-      run: dnf install -y git binutils gcc glibc-devel zlib-devel libstdc++-static glibc-langpack-en xz
-    - name: Set DEBUG_ARGS env var
-      env:
-        RUNNER_DEBUG: ${{ runner.debug }}
-      shell: bash
-      run: |-
-        if [[ "$RUNNER_DEBUG" -eq 1 ]]; then
-          echo "DEBUG_ARGS=--info --stacktrace" >> $GITHUB_ENV
-        fi
-    - name: Build native executable
-      shell: bash
-      run: ./gradlew $DEBUG_ARGS buildNative
-    - name: Upload native executable
-      if: '!cancelled()'
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
-      with:
-        name: build-native-linux-amd64
-        path: build*/executable/*
-    - name: Upload compiled classes list
-      if: '!cancelled()'
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
-      with:
-        name: compiled-classes-linux-amd64
-        path: build/compiled-classes/*
-    - name: Upload Test Result XML
-      if: '!cancelled()'
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
-      with:
-        name: test-results-xml-native-linux-amd64
-        path: build/test-results/**/*.xml
-    - name: Upload Test Result HTML
-      if: '!cancelled()'
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
-      with:
-        name: test-results-html-native-linux-amd64
-        path: build/reports/tests/**/*
-        if-no-files-found: ignore
-    container:
-      image: redhat/ubi8:8.10
-  native-linux-aarch64:
-    runs-on: ubuntu-24.04-arm
-    steps:
-    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-      with:
-        persist-credentials: false
-        fetch-depth: 0
-    - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
-      with:
-        java-version: '25'
-        distribution: temurin
-        cache: gradle
-    - name: Install deps
-      run: dnf install -y git binutils gcc glibc-devel zlib-devel libstdc++-static glibc-langpack-en xz
-    - name: Set DEBUG_ARGS env var
-      env:
-        RUNNER_DEBUG: ${{ runner.debug }}
-      shell: bash
-      run: |-
-        if [[ "$RUNNER_DEBUG" -eq 1 ]]; then
-          echo "DEBUG_ARGS=--info --stacktrace" >> $GITHUB_ENV
-        fi
-    - name: Build native executable
-      shell: bash
-      run: ./gradlew $DEBUG_ARGS buildNative
-    - name: Upload native executable
-      if: '!cancelled()'
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
-      with:
-        name: build-native-linux-aarch64
-        path: build*/executable/*
-    - name: Upload compiled classes list
-      if: '!cancelled()'
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
-      with:
-        name: compiled-classes-linux-aarch64
-        path: build/compiled-classes/*
-    - name: Upload Test Result XML
-      if: '!cancelled()'
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
-      with:
-        name: test-results-xml-native-linux-aarch64
-        path: build/test-results/**/*.xml
-    - name: Upload Test Result HTML
-      if: '!cancelled()'
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
-      with:
-        name: test-results-html-native-linux-aarch64
-        path: build/reports/tests/**/*
-        if-no-files-found: ignore
-    container:
-      image: redhat/ubi8:8.10
-  native-windows-amd64:
-    runs-on: windows-latest
-    steps:
-    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-      with:
-        persist-credentials: false
-        fetch-depth: 0
-    - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
-      with:
-        java-version: '25'
-        distribution: temurin
-        cache: gradle
-    - name: Set DEBUG_ARGS env var
-      env:
-        RUNNER_DEBUG: ${{ runner.debug }}
-      shell: bash
-      run: |-
-        if [[ "$RUNNER_DEBUG" -eq 1 ]]; then
-          echo "DEBUG_ARGS=--info --stacktrace" >> $GITHUB_ENV
-        fi
-    - name: Build native executable
-      shell: bash
-      run: ./gradlew $DEBUG_ARGS buildNative
-    - name: Upload native executable
-      if: '!cancelled()'
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
-      with:
-        name: build-native-windows-amd64
-        path: build*/executable/*
-    - name: Upload compiled classes list
-      if: '!cancelled()'
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
-      with:
-        name: compiled-classes-windows-amd64
-        path: build/compiled-classes/*
-    - name: Upload Test Result XML
-      if: '!cancelled()'
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
-      with:
-        name: test-results-xml-native-windows-amd64
-        path: build/test-results/**/*.xml
-    - name: Upload Test Result HTML
-      if: '!cancelled()'
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
-      with:
-        name: test-results-html-native-windows-amd64
-        path: build/reports/tests/**/*
-        if-no-files-found: ignore
   deploy-github-release:
     needs:
     - test-macos
     - test-windows
-    - native-macos-aarch64
-    - native-linux-amd64
-    - native-linux-aarch64
-    - native-windows-amd64
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -363,11 +156,17 @@ jobs:
         # exclude build_artifacts.txt from publish
         rm -f */build/executable/*.build_artifacts.txt
         find */build/executable/* -type d | xargs rm -rf
+        # exclude thin jar from publish
+        rm -f build/libs/*-base.jar
         gh release create "${VERSION}" \
+          --draft \
           --title "${VERSION}" \
           --verify-tag \
           --notes "Release notes: https://pkl-lang.org/lsp/current/CHANGELOG.html#release-${VERSION}" \
-          build/libs/* build/executable/*
+          # fat jar
+          build/libs/* \
+          # java executable
+          build/executable/pkl-lsp
   deploy-maven-release:
     needs:
     - deploy-github-release
@@ -399,10 +198,6 @@ jobs:
     - build-release
     - test-macos
     - test-windows
-    - native-macos-aarch64
-    - native-linux-amd64
-    - native-linux-aarch64
-    - native-windows-amd64
     permissions:
       checks: write
     runs-on: ubuntu-latest
