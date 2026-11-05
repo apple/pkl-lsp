@@ -119,7 +119,6 @@ local function verifyJobs(requiresJob: String): Mapping<String, Workflow.Job> = 
       (catalog.`actions/download-artifact@v6`) {
         with {
           name = "pkl-lsp-build-artifacts"
-          path = "build/libs/"
         }
       }
       new {
@@ -164,7 +163,6 @@ local baseMavenDeploy: Workflow.Job = new {
     (catalog.`actions/download-artifact@v6`) {
       with {
         name = buildArtifactsName
-        path = "build/libs/"
       }
     }
   }

@@ -76,7 +76,6 @@ jobs:
     - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
       with:
         name: pkl-lsp-build-artifacts
-        path: build/libs/
     - name: Set DEBUG_ARGS env var
       env:
         RUNNER_DEBUG: ${{ runner.debug }}
@@ -115,7 +114,6 @@ jobs:
     - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
       with:
         name: pkl-lsp-build-artifacts
-        path: build/libs/
     - name: Set DEBUG_ARGS env var
       env:
         RUNNER_DEBUG: ${{ runner.debug }}
@@ -155,7 +153,6 @@ jobs:
     - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
       with:
         name: pkl-lsp-build-artifacts
-        path: build/libs/
     - name: Publish snapshot release
       env:
         ORG_GRADLE_PROJECT_signingKeyId: ${{ secrets.ORG_GRADLE_PROJECT_SIGNINGKEYID }}
