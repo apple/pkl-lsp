@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,11 @@ package org.pkl.lsp.util
 import org.pkl.lsp.Component
 import org.pkl.lsp.Project
 
-data class CachedValue<T>(val value: T, val dependencies: List<ModificationTracker>) {
+data class CachedValue<T>(
+  val value: T,
+  val dependencies: List<ModificationTracker>,
+  val snapshot: List<Long>? = null,
+) {
   constructor(value: T) : this(value, listOf())
 
   constructor(
@@ -50,7 +54,8 @@ class CachedValuesManager(project: Project) : Component(project), CachedValueDat
   }
 
   private fun storeCachedValue(holder: CachedValueDataHolder, key: String, value: CachedValue<*>) {
-    holder.cachedValues[key] = value.dependencies.map { it.getModificationCount() } to value
+    holder.cachedValues[key] =
+      (value.snapshot ?: value.dependencies.map { it.getModificationCount() }) to value
   }
 
   private fun CachedValue<*>.isUpToDate(lastModificationCounts: List<Long>): Boolean {

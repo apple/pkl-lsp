@@ -23,6 +23,7 @@ import java.nio.file.InvalidPathException
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.concurrent.Volatile
 import kotlin.io.path.isExecutable
 import kotlinx.serialization.Serializable
 import org.eclipse.lsp4j.*
@@ -40,7 +41,9 @@ data class WorkspaceSettings(
 )
 
 class SettingsManager(project: Project) : Component(project), ModificationTracker {
-  var settings: WorkspaceSettings = WorkspaceSettings()
+  // volatile because it's written to directly by tests
+  @Volatile var settings: WorkspaceSettings = WorkspaceSettings()
+
   private lateinit var initialized: CompletableFuture<*>
   private val updateCount = AtomicInteger(0)
 
