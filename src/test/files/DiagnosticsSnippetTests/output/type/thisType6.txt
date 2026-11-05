@@ -1,0 +1,4 @@
+ const lambda = (elem: this) -> elem
+                       ^^^^
+| Error: Cannot reference `this` type from const property `lambda`
+ 

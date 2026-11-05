@@ -1,0 +1,9 @@
+ qux = "qux"
+ 
+ // `this` breaks the const scope via the generator key expression
+ const eagerScope = new {
+   [let (myself: this = this) myself.qux] = 5
+                 ^^^^
+| Error: Cannot reference `this` type from const property `eagerScope`
+ }
+ 

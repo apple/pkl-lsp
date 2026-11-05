@@ -1,0 +1,2 @@
+// okay inside custom this scope
+const okay: String(this is this) = "x"

@@ -1,0 +1,1 @@
+const function constMethod(bar: this) = 1

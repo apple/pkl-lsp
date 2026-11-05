@@ -1,0 +1,4 @@
+ const constProp: this
+                  ^^^^
+| Error: Cannot reference `this` type from const property `constProp`
+ 
