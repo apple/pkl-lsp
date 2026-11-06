@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,14 @@ import kotlin.io.path.createParentDirectories
 import kotlin.io.path.exists
 import kotlin.io.path.toPath
 import org.pkl.lsp.Release
-import org.pkl.lsp.homeDir
 import org.pkl.lsp.util.OS
+import org.pkl.lsp.util.SystemDirs
 
 data class NativeLibrary(val name: String, val version: String) {
   companion object {
-    private val nativeLibsDir by lazy { homeDir.resolve(".pkl/editor-support/native-libs") }
+    private val nativeLibsDir by lazy {
+      SystemDirs.pklDataDir.resolve("editor-support/native-libs")
+    }
   }
 
   private val systemLibraryName = System.mapLibraryName(name)

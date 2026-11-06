@@ -35,6 +35,7 @@ import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.packages.dto.PklProject.Companion.DerivedProjectMetadata
 import org.pkl.lsp.packages.dto.RemoteDependency
 import org.pkl.lsp.util.SimpleModificationTracker
+import org.pkl.lsp.util.SystemDirs
 
 val projectTopic = Topic<ProjectEvent>("ProjectEvent")
 
@@ -132,7 +133,7 @@ class PklProjectManager(project: Project) : Component(project) {
           val pklProject = PklProject(metadata, resolvedDeps)
           pklProjects[key] = pklProject
           lastPklProjectSyncState[key] = projectFile.getModificationCount()
-          doDownloadDependencies(pklProject, pklCacheDir)
+          doDownloadDependencies(pklProject, SystemDirs.pklCacheDir)
         }
         persistState()
         project.languageClient.showMessage(

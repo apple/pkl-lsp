@@ -29,6 +29,7 @@ import org.pkl.lsp.packages.dto.PackageUri
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.packages.toDependency
 import org.pkl.lsp.util.CachedValue
+import org.pkl.lsp.util.SystemDirs
 
 data class PackageLibraryRoots(
   val zipFile: VirtualFile,
@@ -53,20 +54,23 @@ class PackageManager(project: Project) : Component(project) {
     project.cachedValuesManager.getCachedValue("library-roots-${dependency.packageUri}", lock) {
       logger.info("Getting library roots for ${dependency.packageUri}")
       val metadataFile =
-        dependency.packageUri.relativeMetadataFiles.firstNotNullOfOrNull {
-          pklCacheDir.resolve(it).toVirtualFile()
+        dependency.packageUri.relativeMetadataFiles.firstNotNullOfOrNull { file ->
+          SystemDirs.pklCacheDir.resolve(file).toVirtualFile()
+            ?: SystemDirs.legacyPklCacheDir.resolve(file).toVirtualFile()
         }
           ?: run {
-            val paths = dependency.packageUri.relativeMetadataFiles.map(pklCacheDir::resolve)
+            val paths =
+              dependency.packageUri.relativeMetadataFiles.map(SystemDirs.pklCacheDir::resolve)
             logger.info("Missing metadata file at paths ${paths.joinToString(", ") { "`$it`" }}")
             return@getCachedValue null
           }
       val zipFile =
-        dependency.packageUri.relativeZipFiles.firstNotNullOfOrNull {
-          pklCacheDir.resolve(it).toVirtualFile()
+        dependency.packageUri.relativeZipFiles.firstNotNullOfOrNull { file ->
+          SystemDirs.pklCacheDir.resolve(file).toVirtualFile()
+            ?: SystemDirs.legacyPklCacheDir.resolve(file).toVirtualFile()
         }
           ?: run {
-            val paths = dependency.packageUri.relativeZipFiles.map(pklCacheDir::resolve)
+            val paths = dependency.packageUri.relativeZipFiles.map(SystemDirs.pklCacheDir::resolve)
             logger.info("Missing zip file at paths ${paths.joinToString(", ") { "`$it`" }}")
             return@getCachedValue null
           }
@@ -116,7 +120,7 @@ class PackageManager(project: Project) : Component(project) {
 
   fun downloadPackage(packageUri: PackageUri): CompletableFuture<Unit> {
     return project.pklCli
-      .downloadPackage(listOf(packageUri), pklCacheDir)
+      .downloadPackage(listOf(packageUri), SystemDirs.pklCacheDir)
       .thenApply {
         project.messageBus.emit(packageTopic, PackageEvent.PackageDownloaded(packageUri))
       }

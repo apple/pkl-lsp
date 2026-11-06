@@ -37,6 +37,7 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.pkl.lsp.ast.PklDocCommentOwner
 import org.pkl.lsp.ast.Span
 import org.pkl.lsp.packages.dto.PklProject
+import org.pkl.lsp.util.SystemDirs
 
 private const val SIGNIFICAND_MASK = 0x000fffffffffffffL
 
@@ -208,13 +209,14 @@ data class Package1CacheDir(override val file: Path) : CacheDir {
 val homeDir: Path
   get() = Path.of(System.getProperty("user.home") ?: throw AssertionError("Cannot find home dir"))
 
-val pklCacheDir: Path = homeDir.resolve(".pkl/cache")
+val packagesCacheDir: CacheDir
+  get() = Package2CacheDir(SystemDirs.pklCacheDir.resolve("package-2"))
 
-val packages2CacheDir: CacheDir
-  get() = Package2CacheDir(pklCacheDir.resolve("package-2"))
+val legacyPackages2CacheDir: CacheDir
+  get() = Package2CacheDir(SystemDirs.legacyPklCacheDir.resolve("package-2"))
 
-val packages1CacheDir: CacheDir
-  get() = Package1CacheDir(pklCacheDir.resolve("package-1"))
+val legacyPackages1CacheDir: CacheDir
+  get() = Package1CacheDir(SystemDirs.legacyPklCacheDir.resolve("package-1"))
 
 fun String.decapitalized() = replaceFirstChar { it.lowercase(Locale.getDefault()) }
 
