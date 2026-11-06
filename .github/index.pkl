@@ -93,7 +93,7 @@ local function buildJob(isRelease: Boolean): Workflow.Job = new {
         ./gradlew \(args.join(" ")) check shadowJar verifyDistribution
         """
     }
-    (catalog.`actions/upload-artifact@v5`) {
+    (catalog.`actions/upload-artifact@v7`) {
       name = "Upload build artifacts"
       `if` = "!cancelled()"
       with {
@@ -116,7 +116,7 @@ local function verifyJobs(requiresJob: String): Mapping<String, Workflow.Job> = 
           cache = if (requiresJob.contains("release")) null else "gradle"
         }
       }
-      (catalog.`actions/download-artifact@v6`) {
+      (catalog.`actions/download-artifact@v8`) {
         with {
           name = "pkl-lsp-build-artifacts"
         }
@@ -160,7 +160,7 @@ local baseMavenDeploy: Workflow.Job = new {
   steps {
     (catalog.`actions/checkout@v6`) {}
     baseSetupJava
-    (catalog.`actions/download-artifact@v6`) {
+    (catalog.`actions/download-artifact@v8`) {
       with {
         name = buildArtifactsName
       }
@@ -234,7 +234,7 @@ local function nativeBuildJob(os: String, arch: String, isRelease: Boolean): Wor
       }
       run = "./gradlew \(gradleArgs.join(" ")) buildNative"
     }
-    (catalog.`actions/upload-artifact@v5`) {
+    (catalog.`actions/upload-artifact@v7`) {
       name = "Upload native executable"
       `if` = "!cancelled()"
       with {
@@ -244,7 +244,7 @@ local function nativeBuildJob(os: String, arch: String, isRelease: Boolean): Wor
         path = "build*/executable/*"
       }
     }
-    (catalog.`actions/upload-artifact@v5`) {
+    (catalog.`actions/upload-artifact@v7`) {
       name = "Upload compiled classes list"
       `if` = "!cancelled()"
       with {
@@ -360,9 +360,15 @@ release {
         contents = "write"
       }
       steps {
-        (catalog.`actions/download-artifact@v6`) {
+        (catalog.`actions/download-artifact@v8`) {
           with {
             pattern = "build-**"
+            `merge-multiple` = true
+          }
+        }
+        (catalog.`actions/download-artifact@v8`) {
+          with {
+            name = buildArtifactsName
             `merge-multiple` = true
           }
         }
@@ -386,9 +392,7 @@ release {
               --title "${VERSION}" \
               --verify-tag \
               --notes "Release notes: https://pkl-lang.org/lsp/current/CHANGELOG.html#release-${VERSION}" \
-              # fat jar
               build/libs/* \
-              # java executable
               build/executable/pkl-lsp
             """#
         }
