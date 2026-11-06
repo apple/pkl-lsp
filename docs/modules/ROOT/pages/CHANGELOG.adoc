@@ -30,6 +30,7 @@
 Thank you to all of our contributors!
 
 * https://github.com/bioball[@bioball]
+* https://github.com/florinungur[@florinungur]
 * https://github.com/HT154[@HT154]
 * https://github.com/mimischi[@mimischi]
 * https://github.com/pngdeity[@pngdeity]
