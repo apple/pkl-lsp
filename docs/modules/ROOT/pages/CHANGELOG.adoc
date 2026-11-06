@@ -1,5 +1,40 @@
 = Changelog
 
+[[release-0.9.0]]
+== 0.9.0 (2026-11-06)
+
+=== Additions
+
+* Add support for `this` as a type (https://github.com/apple/pkl-lsp/pull/221[#221], https://github.com/apple/pkl-lsp/pull/268[#268]).
+* Add `.gitignore` to `.pkl-lsp` when creating directory by default (https://github.com/apple/pkl-lsp/pull/242[#242]).
+* Add support for expanded generic methods (https://github.com/apple/pkl-lsp/pull/245[#245], https://github.com/apple/pkl-lsp/pull/264[#264]).
+* Add completions for module names (https://github.com/apple/pkl-lsp/pull/265[#265]).
+* Add support for checking `String`/`List`/`Set`/`Map.isNotEmpty` constraints (https://github.com/apple/pkl-lsp/pull/266[#266]).
+* Add support for new XDG style paths (https://github.com/apple/pkl-lsp/pull/273[#273]).
+
+=== Changes
+
+* Improve handling of doc comment reference links (https://github.com/apple/pkl-lsp/pull/230[#230]).
+* Update diagnostics for abstract elements (https://github.com/apple/pkl-lsp/pull/247[#247]).
+* Update fallback stdlib to Pkl 0.33.0 (https://github.com/apple/pkl-lsp/pull/269[#269]).
+* Change `editor-support` directory from `~/.pkl/editor-support` to `~/.local/share/pkl/editor-support`, or configurable with `$XDG_DATA_HOME` (https://github.com/apple/pkl-lsp/pull/273[#273]).
+
+=== Fixes
+
+* Fix incorrect `scopeUri` value when fetching configuration (https://github.com/apple/pkl-lsp/pull/243[#243]).
+* Fix resolution of properties within annotation bodies (https://github.com/apple/pkl-lsp/pull/256[#256]).
+* Fix resolution of amended fixed properties (https://github.com/apple/pkl-lsp/pull/261[#261]).
+
+=== Contributors ❤️
+
+Thank you to all of our contributors!
+
+* https://github.com/bioball[@bioball]
+* https://github.com/HT154[@HT154]
+* https://github.com/mimischi[@mimischi]
+* https://github.com/pngdeity[@pngdeity]
+* https://github.com/stackoverflow[@stackoverflow]
+
 [[release-0.8.0]]
 == 0.8.0 (2026-07-08)
 
