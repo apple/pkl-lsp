@@ -30,7 +30,7 @@ class GoToDefinitionTest : LspTestBase() {
       prop = 42
 
       myProp = prop<caret>
-    """
+      """
         .trimIndent()
     )
     val resolved = goToDefinition().single()
@@ -50,7 +50,7 @@ class GoToDefinitionTest : LspTestBase() {
       value: MyClass = new {
         name<caret> = "Bob"
       }
-    """
+      """
         .trimIndent()
     )
     val resolved = goToDefinition().single()
@@ -70,7 +70,7 @@ class GoToDefinitionTest : LspTestBase() {
 
       @MyAnnot<caret>ation { name = "Bob" }
       value: String
-    """
+      """
         .trimIndent()
     )
     val resolved = goToDefinition().single()
@@ -89,7 +89,7 @@ class GoToDefinitionTest : LspTestBase() {
 
       @MyAnnotation { na<caret>me = "Bob" }
       value: String
-    """
+      """
         .trimIndent()
     )
     val resolved = goToDefinition().single()
@@ -106,7 +106,7 @@ class GoToDefinitionTest : LspTestBase() {
       function foo() = 42
 
       result = fo<caret>o()
-    """
+      """
         .trimIndent()
     )
     val resolved = goToDefinition().single()
@@ -121,7 +121,7 @@ class GoToDefinitionTest : LspTestBase() {
       """
       function foo(myParam: String) =
         myParam<caret> + 5
-    """
+      """
         .trimIndent()
     )
     val resolved = goToDefinition().single()
@@ -135,9 +135,9 @@ class GoToDefinitionTest : LspTestBase() {
   fun `resolve class definition`() {
     createPklFile(
       """
-        class Person
+      class Person
 
-        person: Person<caret>
+      person: Person<caret>
       """
         .trimIndent()
     )
@@ -151,7 +151,7 @@ class GoToDefinitionTest : LspTestBase() {
   fun `resolve base module type`() {
     createPklFile(
       """
-        prop: String<caret>
+      prop: String<caret>
       """
         .trimIndent()
     )
@@ -168,7 +168,7 @@ class GoToDefinitionTest : LspTestBase() {
       "lib.pkl",
       """
       foo = 1
-    """
+      """
         .trimIndent(),
     )
     createPklFile(
@@ -176,7 +176,7 @@ class GoToDefinitionTest : LspTestBase() {
       import "lib.pkl"
 
       result = lib.foo<caret>
-    """
+      """
         .trimIndent()
     )
     val resolved = goToDefinition().single()
@@ -192,7 +192,7 @@ class GoToDefinitionTest : LspTestBase() {
     createPklFile(
       """
       import "lib<caret>.pkl"
-    """
+      """
         .trimIndent()
     )
     val resolved = goToDefinition().single()
@@ -211,7 +211,7 @@ class GoToDefinitionTest : LspTestBase() {
         bar = "foo level"
         when (ba<caret>r == 5) { true }
       }
-    """
+      """
         .trimIndent()
     )
     val resolved = goToDefinition().single()
@@ -227,7 +227,7 @@ class GoToDefinitionTest : LspTestBase() {
     createPklFile(
       """
       result = import*("*.pkl<caret>")
-    """
+      """
         .trimIndent()
     )
     val resolved = goToDefinition()
@@ -241,17 +241,17 @@ class GoToDefinitionTest : LspTestBase() {
   fun `resolve local property type`() {
     createPklFile(
       """
-        class Person {
-            name: String
-        }
+      class Person {
+          name: String
+      }
 
-        foo {
-            ["bar"] {
-                local r: Person = new {
-                    name<caret> = "Bob"
-                }
-            }
-        }
+      foo {
+          ["bar"] {
+              local r: Person = new {
+                  name<caret> = "Bob"
+              }
+          }
+      }
       """
         .trimIndent()
     )
@@ -263,15 +263,15 @@ class GoToDefinitionTest : LspTestBase() {
 
   @Test
   fun `resolve modulepath import`(@TempDir tempDir: Path) {
-    fakeProject.settingsManager.update { it.copy(modulepath = listOf(tempDir)) }
     val file = tempDir.resolve("target.pkl")
     createPklFile(file, "")
     createPklFile(
       """
       import "modulepath:/target<caret>.pkl"
-    """
+      """
         .trimIndent()
     )
+    fakeProject.settingsManager.update { it.copy(modulepath = listOf(tempDir)) }
     val resolved = goToDefinition()
     assertThat(resolved).hasSize(1)
     assertThat(resolved[0]).isInstanceOf(PklModule::class.java)
@@ -286,15 +286,15 @@ class GoToDefinitionTest : LspTestBase() {
     val module1 = modulePath1.resolve("target.pkl")
     val module2 = modulePath2.resolve("target.pkl")
 
-    fakeProject.settingsManager.update { it.copy(modulepath = listOf(modulePath1, modulePath2)) }
     createPklFile(module1, "")
     createPklFile(module2, "")
     createPklFile(
       """
       import "modulepath:/target<caret>.pkl"
-    """
+      """
         .trimIndent()
     )
+    fakeProject.settingsManager.update { it.copy(modulepath = listOf(modulePath1, modulePath2)) }
     val resolved = goToDefinition()
     assertThat(resolved).hasSize(1)
     assertThat(resolved[0]).isInstanceOf(PklModule::class.java)
@@ -305,7 +305,6 @@ class GoToDefinitionTest : LspTestBase() {
 
   @Test
   fun `resolve field in modulepath`(@TempDir tempDir: Path) {
-    fakeProject.settingsManager.update { it.copy(modulepath = listOf(tempDir)) }
     val targetModulePath = tempDir.resolve("Target.pkl")
 
     createPklFile(
@@ -314,7 +313,7 @@ class GoToDefinitionTest : LspTestBase() {
       module Target
 
       field: String
-    """
+      """
         .trimIndent(),
     )
     createPklFile(
@@ -324,9 +323,10 @@ class GoToDefinitionTest : LspTestBase() {
       target: Target = new {
         field<caret> = "field"
       }
-    """
+      """
         .trimIndent()
     )
+    fakeProject.settingsManager.update { it.copy(modulepath = listOf(tempDir)) }
     val resolved = goToDefinition()
     assertThat(resolved).hasSize(1)
     assertThat(resolved[0]).isInstanceOf(PklClassProperty::class.java)
@@ -338,7 +338,6 @@ class GoToDefinitionTest : LspTestBase() {
 
   @Test
   fun `resolve relative field in modulepath`(@TempDir tempDir: Path) {
-    fakeProject.settingsManager.update { it.copy(modulepath = listOf(tempDir)) }
     val targetModulePath = tempDir.resolve("Target.pkl")
     createPklFile(
       targetModulePath,
@@ -346,7 +345,7 @@ class GoToDefinitionTest : LspTestBase() {
       module Target
 
       field: String
-    """
+      """
         .trimIndent(),
     )
     createPklFile(
@@ -357,7 +356,7 @@ class GoToDefinitionTest : LspTestBase() {
       import "Target.pkl"
 
       target: Target
-    """
+      """
         .trimIndent(),
     )
     createPklFile(
@@ -369,9 +368,10 @@ class GoToDefinitionTest : LspTestBase() {
           field<caret> = "field"
         }
       }
-    """
+      """
         .trimIndent()
     )
+    fakeProject.settingsManager.update { it.copy(modulepath = listOf(tempDir)) }
     val resolved = goToDefinition()
     assertThat(resolved).hasSize(1)
     assertThat(resolved[0]).isInstanceOf(PklClassProperty::class.java)
@@ -382,12 +382,9 @@ class GoToDefinitionTest : LspTestBase() {
 
   @Test
   fun `resolve modulepath field in modulepath`(@TempDir tempDir: Path) {
-
-    fakeProject.settingsManager.update { it.copy(modulepath = listOf(tempDir)) }
     val modulepath1 = tempDir.resolve("nested")
     val modulepath2 = tempDir.resolve("lib")
 
-    fakeProject.settingsManager.update { it.copy(modulepath = listOf(modulepath1, modulepath2)) }
     val target = modulepath1.resolve("Target.pkl")
 
     createPklFile(
@@ -396,7 +393,7 @@ class GoToDefinitionTest : LspTestBase() {
       module Target
 
       field: String
-    """
+      """
         .trimIndent(),
     )
     createPklFile(
@@ -407,7 +404,7 @@ class GoToDefinitionTest : LspTestBase() {
       import "modulepath:/Target.pkl"
 
       target: Target
-    """
+      """
         .trimIndent(),
     )
     createPklFile(
@@ -419,9 +416,10 @@ class GoToDefinitionTest : LspTestBase() {
           field<caret> = "field"
         }
       }
-    """
+      """
         .trimIndent()
     )
+    fakeProject.settingsManager.update { it.copy(modulepath = listOf(modulepath1, modulepath2)) }
     val resolved = goToDefinition()
     assertThat(resolved).hasSize(1)
     assertThat(resolved[0]).isInstanceOf(PklClassProperty::class.java)
@@ -433,14 +431,14 @@ class GoToDefinitionTest : LspTestBase() {
 
   @Test
   fun `resolve modulepath archive import inside archive`(@TempDir tempDir: Path) {
-    fakeProject.settingsManager.update { it.copy(modulepath = listOf(tempDir.resolve("lib.jar"))) }
     createArchive(tempDir.resolve("lib.jar"), mapOf("dir/target.pkl" to ""))
     createPklFile(
       """
       import "modulepath:/dir/target<caret>.pkl"
-    """
+      """
         .trimIndent()
     )
+    fakeProject.settingsManager.update { it.copy(modulepath = listOf(tempDir.resolve("lib.jar"))) }
     val resolved = goToDefinition()
     assertThat(resolved).hasSize(1)
     assertThat(resolved[0]).isInstanceOf(PklModule::class.java)
@@ -452,12 +450,6 @@ class GoToDefinitionTest : LspTestBase() {
   fun `relative resolution across modulepath elements prefers earlier directory`(
     @TempDir tempDir: Path
   ) {
-    fakeProject.settingsManager.update {
-      it.copy(
-        modulepath =
-          listOf(tempDir.resolve("x/y"), tempDir.resolve("x/z"), tempDir.resolve("x/z.zip"))
-      )
-    }
     createArchive(tempDir.resolve("x/z.zip"), mapOf("Bar.pkl" to "baz = 1"))
     createPklFile(tempDir.resolve("x/z/Bar.pkl"), "baz = 0")
     createPklFile(
@@ -466,7 +458,7 @@ class GoToDefinitionTest : LspTestBase() {
       import "Bar.pkl"
 
       bar: Bar
-    """
+      """
         .trimIndent(),
     )
     createPklFile(
@@ -479,9 +471,15 @@ class GoToDefinitionTest : LspTestBase() {
           baz<caret> = 2
         }
       }
-    """
+      """
         .trimIndent(),
     )
+    fakeProject.settingsManager.update {
+      it.copy(
+        modulepath =
+          listOf(tempDir.resolve("x/y"), tempDir.resolve("x/z"), tempDir.resolve("x/z.zip"))
+      )
+    }
     val resolved = goToDefinition().single()
     assertThat(resolved).isInstanceOf(PklClassProperty::class.java)
     val uri = resolved.enclosingModule!!.uri
@@ -492,12 +490,6 @@ class GoToDefinitionTest : LspTestBase() {
   fun `relative resolution across modulepath elements prefers earlier archive`(
     @TempDir tempDir: Path
   ) {
-    fakeProject.settingsManager.update {
-      it.copy(
-        modulepath =
-          listOf(tempDir.resolve("x/y"), tempDir.resolve("x/z.zip"), tempDir.resolve("x/z"))
-      )
-    }
     createArchive(tempDir.resolve("x/z.zip"), mapOf("Bar.pkl" to "baz = 1"))
     createPklFile(tempDir.resolve("x/z/Bar.pkl"), "baz = 0")
     createPklFile(
@@ -506,7 +498,7 @@ class GoToDefinitionTest : LspTestBase() {
       import "./Bar.pkl"
 
       bar: Bar
-    """
+      """
         .trimIndent(),
     )
     createPklFile(
@@ -519,9 +511,15 @@ class GoToDefinitionTest : LspTestBase() {
           baz<caret> = 2
         }
       }
-    """
+      """
         .trimIndent(),
     )
+    fakeProject.settingsManager.update {
+      it.copy(
+        modulepath =
+          listOf(tempDir.resolve("x/y"), tempDir.resolve("x/z.zip"), tempDir.resolve("x/z"))
+      )
+    }
     val resolved = goToDefinition().single()
     assertThat(resolved).isInstanceOf(PklClassProperty::class.java)
     val uri = resolved.enclosingModule!!.uri
@@ -532,9 +530,6 @@ class GoToDefinitionTest : LspTestBase() {
 
   @Test
   fun `relative import from non-modulepath source does not resolve into modulepath`() {
-    fakeProject.settingsManager.update {
-      it.copy(modulepath = listOf(testProjectDir.resolve("lib")))
-    }
     createPklFile("lib/target.pkl", "value = 1")
     createPklFile(
       """
@@ -542,6 +537,9 @@ class GoToDefinitionTest : LspTestBase() {
       """
         .trimIndent()
     )
+    fakeProject.settingsManager.update {
+      it.copy(modulepath = listOf(testProjectDir.resolve("lib")))
+    }
     val resolved = goToDefinition()
     assertThat(resolved).isEmpty()
   }
@@ -583,7 +581,7 @@ class GoToDefinitionTest : LspTestBase() {
     createPklFile(
       """
       import "module.pkl"
-      
+
       res = `module`<caret>
       """
         .trimIndent()
@@ -600,9 +598,9 @@ class GoToDefinitionTest : LspTestBase() {
     createPklFile(
       """
       foo = 1
-      
+
       res = `foo`<caret>
-    """
+      """
         .trimIndent()
     )
 
@@ -615,9 +613,9 @@ class GoToDefinitionTest : LspTestBase() {
     createPklFile(
       """
       `foo` = 1
-      
+
       res = foo<caret>
-    """
+      """
         .trimIndent()
     )
 
@@ -640,7 +638,7 @@ class GoToDefinitionTest : LspTestBase() {
       r: ref.Reference<Domain, Bird>
 
       res = r.na<caret>me
-    """
+      """
         .trimIndent()
     )
     val resolved = goToDefinition().single()
@@ -656,9 +654,9 @@ class GoToDefinitionTest : LspTestBase() {
       """
       /// This is [prop2<caret>]
       prop1: String
-      
+
       prop2: String
-    """
+      """
         .trimIndent()
     )
     val resolved = goToDefinition().single()
@@ -673,11 +671,11 @@ class GoToDefinitionTest : LspTestBase() {
       """
       /// This is [Person.name<caret>]
       prop1: String
-      
+
       class Person {
         name: String
       }
-    """
+      """
         .trimIndent()
     )
     val resolved = goToDefinition().single()
@@ -692,11 +690,11 @@ class GoToDefinitionTest : LspTestBase() {
       """
       /// This is [Person<caret>.name]
       prop1: String
-      
+
       class Person {
         name: String
       }
-    """
+      """
         .trimIndent()
     )
     val resolved = goToDefinition().single()
@@ -713,7 +711,7 @@ class GoToDefinitionTest : LspTestBase() {
 
       /// This is [this<caret>]
       prop1: String
-    """
+      """
         .trimIndent()
     )
     val resolved = goToDefinition().single()
@@ -726,7 +724,7 @@ class GoToDefinitionTest : LspTestBase() {
       """
       /// This is [this<caret>]
       class MyClass
-    """
+      """
         .trimIndent()
     )
     val resolved = goToDefinition().single()
@@ -741,7 +739,7 @@ class GoToDefinitionTest : LspTestBase() {
 
       /// This is like [module<caret>]
       class MyClass
-    """
+      """
         .trimIndent()
     )
     val resolved = goToDefinition().single()
@@ -756,7 +754,7 @@ class GoToDefinitionTest : LspTestBase() {
 
       /// This is like [module.MyClass<caret>]
       class MyClass
-    """
+      """
         .trimIndent()
     )
     val resolved = goToDefinition().single()
@@ -779,7 +777,7 @@ class GoToDefinitionTest : LspTestBase() {
         /// The name inside MyClass
         name: String
       }
-    """
+      """
         .trimIndent()
     )
     val resolved = goToDefinition().single()
