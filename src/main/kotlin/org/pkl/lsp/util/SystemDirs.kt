@@ -55,7 +55,7 @@ object SystemDirs {
   private val defaultCacheDir: Path
     get() = homeDir.resolve(".cache/pkl")
 
-  // XDG spec says: ignore env var if the path is absolute.
+  // XDG spec says: ignore env var if the path is not absolute.
   // we'll do the same with LOCALAPPDATA.
   private val String.asAbsolutePath: Path?
     get() {
