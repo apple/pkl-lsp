@@ -382,9 +382,6 @@ release {
           run =
             // language=bash
             #"""
-            # exclude build_artifacts.txt from publish
-            rm -f */build/executable/*.build_artifacts.txt
-            find */build/executable/* -type d | xargs rm -rf
             # exclude thin jar from publish
             rm -f build/libs/*-base.jar
             gh release create "${VERSION}" \
@@ -392,8 +389,7 @@ release {
               --title "${VERSION}" \
               --verify-tag \
               --notes "Release notes: https://pkl-lang.org/lsp/current/CHANGELOG.html#release-${VERSION}" \
-              build/libs/* \
-              build/executable/pkl-lsp
+              build/libs/*
             """#
         }
       }
