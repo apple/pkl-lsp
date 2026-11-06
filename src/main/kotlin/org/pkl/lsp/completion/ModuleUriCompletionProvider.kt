@@ -278,11 +278,20 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
     val basePath = path.substringBeforeLast('/')
     val packageName = path.substringAfterLast('/')
     val packages = buildSet {
-      packages1CacheDir.resolve(basePath)?.listDirectoryEntries()?.map { it.name }?.let(::addAll)
-      packages2CacheDir
+      packagesCacheDir
         .resolve(basePath)
         ?.listDirectoryEntries()
         ?.map { decodePath(it.name) }
+        ?.let(::addAll)
+      legacyPackages2CacheDir
+        .resolve(basePath)
+        ?.listDirectoryEntries()
+        ?.map { decodePath(it.name) }
+        ?.let(::addAll)
+      legacyPackages1CacheDir
+        .resolve(basePath)
+        ?.listDirectoryEntries()
+        ?.map { it.name }
         ?.let(::addAll)
     }
     for (pkg in packages) {
@@ -301,8 +310,9 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
 
   private fun completePackageBaseUris(collector: MutableList<CompletionItem>) {
     val packages = buildSet {
-      addAll(collectPackages(packages1CacheDir.file))
-      addAll(collectPackages(packages2CacheDir.file).map(::decodePath))
+      addAll(collectPackages(packagesCacheDir.file).map(::decodePath))
+      addAll(collectPackages(legacyPackages2CacheDir.file).map(::decodePath))
+      addAll(collectPackages(legacyPackages1CacheDir.file))
     }
     if (packages.isEmpty()) return
     for (pkg in packages) {
@@ -387,11 +397,10 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
                     this.range =
                       targetUriNode.span.toRange().apply {
                         start.character += targetUri.length - childMatch.length
-                        end =
-                          start.apply {
-                            if (completionText.endsWith(componentRemainder))
-                              character += componentRemainder.length
-                          }
+                        end = start.apply {
+                          if (completionText.endsWith(componentRemainder))
+                            character += componentRemainder.length
+                        }
                       }
                   }
                 )
