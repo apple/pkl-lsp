@@ -39,7 +39,7 @@ jobs:
     - run: ./gradlew $DEBUG_ARGS -DreleaseBuild=true check shadowJar verifyDistribution
     - name: Upload build artifacts
       if: '!cancelled()'
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: pkl-lsp-build-artifacts
         path: build*/libs/
@@ -71,7 +71,7 @@ jobs:
       with:
         java-version: '25'
         distribution: temurin
-    - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
       with:
         name: pkl-lsp-build-artifacts
     - name: Set DEBUG_ARGS env var
@@ -108,7 +108,7 @@ jobs:
       with:
         java-version: '25'
         distribution: temurin
-    - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
       with:
         name: pkl-lsp-build-artifacts
     - name: Set DEBUG_ARGS env var
@@ -141,9 +141,13 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
       with:
         pattern: build-**
+        merge-multiple: true
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+      with:
+        name: pkl-lsp-build-artifacts
         merge-multiple: true
     - name: Publish release to GitHub
       env:
@@ -161,9 +165,7 @@ jobs:
           --title "${VERSION}" \
           --verify-tag \
           --notes "Release notes: https://pkl-lang.org/lsp/current/CHANGELOG.html#release-${VERSION}" \
-          # fat jar
           build/libs/* \
-          # java executable
           build/executable/pkl-lsp
   deploy-maven-release:
     needs:
@@ -178,7 +180,7 @@ jobs:
       with:
         java-version: '25'
         distribution: temurin
-    - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
       with:
         name: pkl-lsp-build-artifacts
     - name: Publish to Maven Central
