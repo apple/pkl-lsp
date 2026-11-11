@@ -649,6 +649,34 @@ class GoToDefinitionTest : LspTestBase() {
   }
 
   @Test
+  fun `resolve reference subscript through typealias`() {
+    createPklFile(
+      """
+      import "pkl:ref"
+
+      typealias MyReference<T> = ref.Reference<Domain, T>
+
+      class Domain extends ref.Domain
+
+      class Bird {
+        /// The name of the bird
+        name: String
+      }
+
+      r: MyReference<Listing<Bird>>
+
+      res = r[0].na<caret>me
+      """
+        .trimIndent()
+    )
+    val resolved = goToDefinition().single()
+    assertThat(resolved).isInstanceOf(PklClassProperty::class.java)
+    resolved as PklClassProperty
+    assertThat(resolved.name).isEqualTo("name")
+    assertThat(resolved.parentOfTypes(PklClass::class)!!.name).isEqualTo("Bird")
+  }
+
+  @Test
   fun `resolve unqualified member link`() {
     createPklFile(
       """

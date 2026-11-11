@@ -410,9 +410,9 @@ private fun doComputeSubscriptExprType(
   base: PklBaseModule,
   context: PklProject?,
 ) =
-  when (receiverType) {
+  when (val unaliased = receiverType.unaliased(base, context)) {
     is Type.StringLiteral -> base.stringType
-    is Type.Reference -> receiverType.valueTypeForSubscriptKeyType(getKeyType(), base, context)
+    is Type.Reference -> unaliased.valueTypeForSubscriptKeyType(getKeyType(), base, context)
     else -> {
       val receiverClassType = receiverType.toClassType(base, context)
       when {
