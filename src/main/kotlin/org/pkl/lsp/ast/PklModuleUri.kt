@@ -16,6 +16,7 @@
 package org.pkl.lsp.ast
 
 import io.github.treesitter.jtreesitter.Node
+import java.net.URI
 import java.nio.file.Path
 import org.pkl.lsp.*
 import org.pkl.lsp.LspUtil.firstInstanceOf
@@ -78,7 +79,7 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
       context: PklProject?,
     ): GlobResolver.GlobResult? =
       element.project.cachedValuesManager.getCachedValue(
-        "PklModuleUri.resolveGlob($targetUriString, $moduleUriString, ${element.containingFile.path}, ${context?.projectDir})",
+        "PklModuleUri.resolveGlob($targetUriString, $moduleUriString, ${element.containingFile.uri}, ${context?.projectDir})",
         lock,
       ) {
         val result =
@@ -86,6 +87,7 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
             ?: return@getCachedValue null
         val dependencies = buildList {
           add(element.project.pklFileTracker)
+          add(element.project.externalReaderService.modificationTracker)
           if (context != null) {
             add(element.project.pklProjectManager.syncTracker)
           }
@@ -133,6 +135,17 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
         null -> {
           when {
             sourceFile is HttpsFile -> sourceFile.resolve(targetUriStr)?.getModule()?.get()
+            // resolved against the URI that the source module was read from, through its reader
+            sourceFile is ExternalReaderFile ->
+              when {
+                  // (only hierarchical readers have parents to search; for others this finds
+                  // nothing)
+                  targetUriStr.startsWith(".../") ->
+                    findTripleDotPathOnFileSystem(sourceFile, targetUriStr)
+                  else -> sourceFile.resolve(targetUriStr)
+                }
+                ?.getModule()
+                ?.get()
             // dependency notation
             targetUriStr.startsWith("@") -> {
               val root = getDependencyRoot(project, targetUriStr, enclosingModule, context)
@@ -151,8 +164,12 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
             else -> null
           }
         }
-        // unsupported scheme
-        else -> null
+        // possibly a scheme that's handled by an external reader
+        else ->
+          project.externalReaderService
+            .resolve(targetUri, sourceFile.pklProject ?: context)
+            ?.getModule()
+            ?.get()
       }
     }
 
@@ -223,7 +240,55 @@ class PklModuleUriImpl(project: Project, override val parent: PklNode, override 
           GlobResolver.resolveAbsoluteGlob(packageRoot, targetPath, isPartialUri, listChildren)
         }
 
-        else -> null
+        else ->
+          resolveExternalGlob(
+            project,
+            effectiveScheme,
+            targetUri,
+            targetUriString,
+            isPartialUri,
+            sourceFile,
+            sourceFile.pklProject ?: context,
+          )
+      }
+    }
+
+    /** Resolves a glob against an external reader, which is the one that handles [scheme]. */
+    private fun resolveExternalGlob(
+      project: Project,
+      scheme: String,
+      targetUri: URI,
+      targetUriString: String,
+      isPartialUri: Boolean,
+      sourceFile: VirtualFile,
+      context: PklProject?,
+    ): GlobResolver.GlobResult? {
+      val service = project.externalReaderService
+      val spec = service.spec(scheme, context) ?: return null
+      if (!spec.isGlobbable) return null
+      val listChildren = { it: VirtualFile -> it.children ?: emptyList() }
+      return when {
+        !spec.hasHierarchicalUris -> {
+          // a flat namespace; the pattern applies to the whole scheme-specific part
+          val pattern =
+            if (targetUri.scheme == null) targetUriString else targetUri.schemeSpecificPart
+          GlobResolver.resolveFlatGlob(pattern, service.listOpaqueModules(scheme, context))
+        }
+        targetUri.scheme != null -> {
+          val path = targetUri.path ?: return null
+          val root =
+            service.resolve(URI(scheme, targetUri.authority, "/", null), context) ?: return null
+          GlobResolver.resolveAbsoluteGlob(root, path, isPartialUri, listChildren)
+        }
+        // relative to the module that was read by the reader
+        targetUriString.startsWith('/') -> {
+          val root = sourceFile.resolve("/") ?: return null
+          GlobResolver.resolveAbsoluteGlob(root, targetUriString, isPartialUri, listChildren)
+        }
+        else -> {
+          val dir = sourceFile.parent() ?: return null
+          GlobResolver.resolveRelativeGlob(dir, targetUriString, isPartialUri, listChildren)
+        }
       }
     }
 

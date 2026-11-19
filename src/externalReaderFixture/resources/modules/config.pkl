@@ -1,0 +1,5 @@
+import "animals/dog.pkl"
+import* "animals/*.pkl" as allAnimals
+
+favorite = dog
+count = allAnimals.length

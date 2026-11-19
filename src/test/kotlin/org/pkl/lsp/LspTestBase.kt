@@ -276,8 +276,13 @@ abstract class LspTestBase {
   }
 
   private fun resolveToRealUri(uri: String): URI =
-    if (uri.startsWith("file:/") && !uri.startsWith("file:///")) Path.of(URI(uri)).toUri()
-    else fakeProject.virtualFileManager.get(URI(uri))!!.uri
+    when {
+      uri.startsWith("file:/") && !uri.startsWith("file:///") -> Path.of(URI(uri)).toUri()
+      // the URI of an external reader file names the project that declares the reader, so it
+      // can't be replaced by the file's own URI
+      uri.startsWith("pkl-lsp://external_reader/") -> URI(uri)
+      else -> fakeProject.virtualFileManager.get(URI(uri))!!.uri
+    }
 
   private fun Path.toTextDocument(effectiveContents: String): TextDocumentItem =
     TextDocumentItem(toUri().toString(), "pkl", 0, effectiveContents)

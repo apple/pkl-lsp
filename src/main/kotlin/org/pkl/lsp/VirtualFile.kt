@@ -27,6 +27,7 @@ import org.pkl.lsp.packages.PackageDependency
 import org.pkl.lsp.packages.dto.PackageMetadata
 import org.pkl.lsp.packages.dto.PklProject
 import org.pkl.lsp.services.PklProjectManager.Companion.PKL_PROJECT_FILENAME
+import org.pkl.lsp.services.externalreader.ReaderState
 import org.pkl.lsp.util.CachedValue
 import org.pkl.lsp.util.CachedValueDataHolder
 import org.pkl.lsp.util.CachedValueDataHolderBase
@@ -38,7 +39,8 @@ enum class Origin {
   HTTPS,
   PACKAGE,
   JAR,
-  MODULEPATH;
+  MODULEPATH,
+  EXTERNAL_READER;
 
   companion object {
     fun fromString(origin: String): Origin? {
@@ -84,6 +86,7 @@ interface VirtualFile : ModificationTracker, CachedValueDataHolder {
   /** Returns the children of this directory, or `null` if this is not a directory. */
   val children: List<VirtualFile>?
 
+  /** The string contents of this file. Will not be called if [isDirectory]. */
   var contents: String
 
   fun parent(): VirtualFile?
@@ -381,4 +384,85 @@ class EphemeralFile(private val text: String, override val project: Project) : B
   override fun canModify(): Boolean = false
 
   override fun relativize(other: VirtualFile): String? = null
+}
+
+/** Query parameter of `pkl-lsp:` URIs holding the `PklProject` file that declares the reader. */
+const val PROJECT_QUERY_PARAM = "project"
+
+/**
+ * A module (or directory) provided by an external reader. Contents are fetched from the reader
+ * process on demand and held in memory.
+ */
+class ExternalReaderFile(
+  override val uri: URI,
+  override val project: Project,
+  override val isDirectory: Boolean,
+  private val state: ReaderState,
+) : BaseFile() {
+  @Volatile private var fetchedContents: String? = null
+
+  // Reading talks to the reader process, so only do it once. If it throws, the next call retries.
+  override fun doReadContents(): String =
+    fetchedContents ?: state.resolveContents(uri).also { fetchedContents = it }
+
+  override val path: Path
+    get() = throw OperationNotSupportedException()
+
+  /** The last path segment (including the extension), without a trailing `/` for directories. */
+  override val name: String
+    get() =
+      (uri.path ?: uri.schemeSpecificPart).trimEnd('/').substringAfterLast('/').ifEmpty {
+        uri.toString()
+      }
+
+  override val pklAuthority: String = Origin.EXTERNAL_READER.name.lowercase()
+
+  override val pklProjectDir: VirtualFile? = null
+
+  /** The project that declares the reader that this file was read from. */
+  override val pklProject: PklProject?
+    get() = state.context
+
+  override val `package`: PackageDependency? = null
+
+  override val children: List<VirtualFile>?
+    get() {
+      if (!isDirectory || !state.isHierarchical()) return null
+      return state.listChildren(uri)
+    }
+
+  override fun parent(): VirtualFile? {
+    if (!state.isHierarchical()) return null
+    val path = uri.path ?: return null
+    // `/` is the root; there's nothing above it.
+    if (path.isEmpty() || path == "/") return null
+    val parentUri = if (path.endsWith("/")) uri.resolve("..") else uri.resolve(".")
+    if (parentUri == uri) return null
+    return state.resolve(parentUri)
+  }
+
+  override fun resolve(path: String): VirtualFile? {
+    if (!state.isHierarchical()) return null
+    val base = if (isDirectory) uri else uri.resolve(".")
+    val target =
+      try {
+        base.resolve(path)
+      } catch (_: IllegalArgumentException) {
+        return null
+      }
+    // only stay within the same scheme (relative paths can't change the scheme, but absolute ones
+    // can)
+    if (target.scheme != uri.scheme) return null
+    return state.resolve(target.normalize())
+  }
+
+  override fun relativize(other: VirtualFile): String? {
+    if (other !is ExternalReaderFile || !state.isHierarchical()) return null
+    val base = if (isDirectory) uri else uri.resolve(".")
+    val relative = base.relativize(other.uri)
+    // `URI.relativize` returns the argument unchanged if it's not underneath [base].
+    return if (relative.isAbsolute || relative == other.uri) null else relative.toString()
+  }
+
+  override fun canModify(): Boolean = false
 }

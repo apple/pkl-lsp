@@ -38,6 +38,7 @@ fun PklNode?.computeExprType(
         val result = doComputeExprType(base, bindings, context)
         val dependencies = buildList {
           add(project.pklFileTracker)
+          add(project.externalReaderService.modificationTracker)
           if (context != null) {
             add(project.pklProjectManager.syncTracker)
           }

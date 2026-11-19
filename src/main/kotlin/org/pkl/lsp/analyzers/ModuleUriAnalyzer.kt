@@ -77,6 +77,11 @@ class ModuleUriAnalyzer(project: Project) : Analyzer(project) {
     if (checkScheme(element, scheme, holder)) {
       return
     }
+    val readerSpec = element.project.externalReaderService.spec(scheme, context)
+    if (readerSpec != null && !readerSpec.isGlobbable) {
+      holder.addWarning(element.stringConstant, "Scheme $scheme is not globbable")
+      return
+    }
     if (uriText.startsWith("...")) {
       holder.addWarning(element.stringConstant, ErrorMessages.create("cannotGlobTripleDots"))
       return

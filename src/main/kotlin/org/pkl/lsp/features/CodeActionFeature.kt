@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,8 +38,9 @@ class CodeActionFeature(project: Project) : Component(project) {
             .map { it.data }
             .filterIsInstance<JsonPrimitive>()
             .map { it.asString }
-        project.diagnosticsManager
-          .getDiagnostics(module)
+        val diagnosticsManager = project.diagnosticsManager
+        (diagnosticsManager.getDiagnostics(module) +
+            diagnosticsManager.getExternalReaderDiagnostics(uri))
           .filter { ids.contains(it.id) }
           .flatMap { diagnostic ->
             diagnostic.actions.map { Either.forRight(it.toMessage(diagnostic)) }

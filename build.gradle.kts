@@ -90,6 +90,41 @@ val simpleClientRunner: SourceSet =
     runtimeClasspath += sourceSets.main.get().runtimeClasspath
   }
 
+val externalReaderFixture: SourceSet =
+  sourceSets.create("externalReaderFixture") {
+    compileClasspath += sourceSets.main.get().output
+    compileClasspath += sourceSets.main.get().compileClasspath
+
+    runtimeClasspath += sourceSets.main.get().output
+    runtimeClasspath += sourceSets.main.get().runtimeClasspath
+  }
+
+val externalReaderFixtureArgfile = layout.buildDirectory.file("externalReaderFixture/java.argfile")
+
+val buildExternalReaderFixture =
+  tasks.register("buildExternalReaderFixture") {
+    group = "build"
+    description = "Builds the external reader fixture, and writes the java argfile that runs it."
+    dependsOn(externalReaderFixture.classesTaskName)
+    inputs.files(externalReaderFixture.runtimeClasspath)
+    outputs.file(externalReaderFixtureArgfile)
+    doLast {
+      // Argfile syntax: arguments are separated by whitespace; quoted values can contain spaces,
+      // and use `\` as the escape character.
+      fun quote(value: String) = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+      val argfile = externalReaderFixtureArgfile.get().asFile
+      argfile.parentFile.mkdirs()
+      argfile.writeText(
+        listOf(
+            "-cp",
+            quote(externalReaderFixture.runtimeClasspath.asPath),
+            "org.pkl.lsp.externalreader.fixture.ExternalReaderFixtureKt",
+          )
+          .joinToString("\n", postfix = "\n")
+      )
+    }
+  }
+
 val reflectionMetadataGenerator: SourceSet =
   sourceSets.create("reflectionMetadataGenerator") {
     compileClasspath += sourceSets.main.get().output
@@ -259,7 +294,10 @@ tasks.withType<Test>().configureEach { jvmArgs("--enable-native-access=ALL-UNNAM
 
 tasks.test {
   dependsOn(configurePklCliExecutable)
+  dependsOn(buildExternalReaderFixture)
   systemProperties["pklExecutable"] = pklCli.singleFile.absolutePath
+  systemProperties["externalReaderFixtureArgfile"] =
+    externalReaderFixtureArgfile.get().asFile.absolutePath
   useJUnitPlatform {
     includeEngines(
       "junit-jupiter",

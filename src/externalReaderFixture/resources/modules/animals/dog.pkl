@@ -1,0 +1,5 @@
+open module fixture.animals.dog
+
+name: String = "Dog"
+
+sound: String = "woof"

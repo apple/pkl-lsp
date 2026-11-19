@@ -476,6 +476,17 @@ val VirtualFile.lspUri
     return when (this) {
       is StdlibFile -> URI("pkl-lsp://stdlib/${name}.pkl")
       is FsFile -> uri
+      is ExternalReaderFile -> {
+        // Different projects may have different readers for the same scheme, so the declaring
+        // project is part of the file's identity.
+        val base = "pkl-lsp://$pklAuthority/${URLEncoder.encode(uri.toString(), Charsets.UTF_8)}"
+        val projectFileUri = pklProject?.metadata?.projectFileUri
+        if (projectFileUri == null) URI(base)
+        else
+          URI(
+            "$base?$PROJECT_QUERY_PARAM=${URLEncoder.encode(projectFileUri.toString(), Charsets.UTF_8)}"
+          )
+      }
       else -> {
         val uri = uri.toString()
         URI("pkl-lsp://${pklAuthority}/${URLEncoder.encode(uri, Charsets.UTF_8)}")

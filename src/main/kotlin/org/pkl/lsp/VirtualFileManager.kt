@@ -18,8 +18,15 @@ package org.pkl.lsp
 import java.net.URI
 import java.nio.file.*
 import java.util.concurrent.ConcurrentHashMap
+import org.pkl.lsp.packages.dto.PklProject
+import org.pkl.lsp.services.PklExternalReaderService
 
 class VirtualFileManager(project: Project) : Component(project) {
+  private companion object {
+    val BUILT_IN_SCHEMES = setOf("file", "jar", "https", "pkl")
+  }
+
+  /** Doesn't include files managed by [PklExternalReaderService]. */
   private val files: MutableMap<URI, BaseFile> = ConcurrentHashMap()
 
   fun get(path: Path): VirtualFile? {
@@ -27,13 +34,48 @@ class VirtualFileManager(project: Project) : Component(project) {
     return if (!Files.exists(p)) null else get(p.toUri(), p)
   }
 
-  fun get(uri: URI, path: Path? = null): VirtualFile? {
+  /**
+   * Gets the file for [uri].
+   *
+   * [context] is the project that the lookup is made from. It only matters for schemes that are
+   * served by external readers, because different projects may declare different readers for the
+   * same scheme. Such files are not cached here; [PklExternalReaderService] manages them.
+   *
+   * If [uri] is the `pkl-lsp:` URI of an external reader file, the project that it names takes the
+   * place of [context].
+   */
+  fun get(uri: URI, path: Path? = null, context: PklProject? = null): VirtualFile? {
+    val effectiveContext =
+      when {
+        !isExternalReaderLspUri(uri) -> context
+        // declared by the workspace settings
+        uri.query == null -> null
+        else -> lookUpProject(uri) ?: return null
+      }
     val effectiveUri = uri.normalize().effectiveUri ?: return null
     val existing = files[effectiveUri]
     if (existing != null) {
       return existing
     }
+    if (effectiveUri.scheme !in BUILT_IN_SCHEMES) {
+      return project.externalReaderService.resolve(effectiveUri, effectiveContext)
+    }
     return create(effectiveUri, path?.normalize())
+  }
+
+  private fun isExternalReaderLspUri(uri: URI) =
+    uri.scheme == "pkl-lsp" && uri.authority == Origin.EXTERNAL_READER.name.lowercase()
+
+  /**
+   * The project named by an external reader file's `pkl-lsp:` URI (see [lspUri]).
+   *
+   * Returns `null` if the project can't be found.
+   */
+  private fun lookUpProject(lspUri: URI): PklProject? {
+    val projectFileUri =
+      lspUri.query?.removePrefix("$PROJECT_QUERY_PARAM=")?.let(::parseUriOrNull) ?: return null
+    val projectFile = get(projectFileUri) ?: return null
+    return project.pklProjectManager.getPklProject(projectFile)
   }
 
   fun getFsFile(path: Path): FsFile? = get(path) as? FsFile

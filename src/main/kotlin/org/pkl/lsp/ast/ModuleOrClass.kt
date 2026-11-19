@@ -62,7 +62,15 @@ class PklModuleImpl(override val ctx: Node, override val virtualFile: VirtualFil
   override fun supermodule(context: PklProject?): PklModule? =
     project.cachedValuesManager.getCachedValue(this, "supermodule", lock) {
       val resolved = extendsAmendsUri?.resolve(context)
-      CachedValue(resolved, listOfNotNull(this.containingFile, resolved?.containingFile))
+      CachedValue(
+        resolved,
+        listOfNotNull(
+          this.containingFile,
+          resolved?.containingFile,
+          // the import may resolve through an external reader
+          project.externalReaderService.modificationTracker,
+        ),
+      )
     }
 
   override fun cache(context: PklProject?): ModuleMemberCache =
@@ -72,7 +80,12 @@ class PklModuleImpl(override val ctx: Node, override val virtualFile: VirtualFil
       lock,
     ) {
       val cache = ModuleMemberCache.create(this, context)
-      CachedValue(cache, cache.dependencies + project.pklProjectManager.syncTracker)
+      CachedValue(
+        cache,
+        cache.dependencies +
+          project.pklProjectManager.syncTracker +
+          project.externalReaderService.modificationTracker,
+      )
     }!!
 
   override val modifiers: List<Terminal>? by lazy { header?.moduleClause?.modifiers }

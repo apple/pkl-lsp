@@ -143,6 +143,7 @@ val URI.effectiveUri: URI?
       Origin.STDLIB -> URI("pkl:${path.replace(".pkl", "")}")
       Origin.HTTPS,
       Origin.JAR -> URI.create(path)
+      Origin.EXTERNAL_READER -> URI.create(path)
       else -> null
     }
   }
