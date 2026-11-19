@@ -289,7 +289,8 @@ class PklProjectManager(project: Project) : Component(project) {
               val relativePath = folderRoot.relativize(dir).toString()
               if (
                 excludedDirs.any { pattern ->
-                  matchesPattern(relativePath, pattern) || matchesPattern(dir.absolutePathString(), pattern)
+                  matchesPattern(relativePath, pattern) ||
+                    matchesPattern(dir.absolutePathString(), pattern)
                 }
               ) {
                 return FileVisitResult.SKIP_SUBTREE
