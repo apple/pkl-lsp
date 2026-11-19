@@ -19,6 +19,10 @@ spotless = "8.8.0"
 treeSitterRepo = "v0.26.8" # git tag name
 treeSitterPklRepo = "v0.22.0" # git tag name
 
+# dependencies of pkl-messaging (delete me after pkl-messaging is published as its own artifact)
+errorProne = "2.50.0"
+msgpack = "0.9.12"
+
 # Only need checksums for distributions that we might run builds on.
 # used for cross-compiling tree-sitter libs
 # Use `../scripts/update_zig.sh <version>` to update these
@@ -54,6 +58,10 @@ kotlinxSerializationJson = { group = "org.jetbrains.kotlinx", name = "kotlinx-se
 lsp4j = { group = "org.eclipse.lsp4j", name = "org.eclipse.lsp4j", version.ref = "lsp4j" }
 pklFormatter = { group = "org.pkl-lang", name = "pkl-formatter", version.ref = "pkl" }
 pklStdlib = { group = "org.pkl-lang", name = "pkl-stdlib", version.ref = "pkl" }
+
+# dependencies of pkl-messaging (delete me after pkl-messaging is published as its own artifact)
+errorProneAnnotations = { group = "com.google.errorprone", name = "error_prone_annotations", version.ref = "errorProne" }
+msgpack = { group = "org.msgpack", name = "msgpack-core", version.ref = "msgpack" }
 
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

@@ -117,6 +117,11 @@ dependencies {
   testImplementation(libs.assertJ)
   testImplementation(libs.junitJupiter)
   testImplementation(libs.junitEngine)
+
+  // dependencies of pkl-messaging (delete me after pkl-messaging is published as its own artifact)
+  implementation(libs.msgpack)
+  compileOnly(libs.errorProneAnnotations)
+
   pklStdlibFiles(libs.pklStdlib)
   // comes from the downloaded artifact in GitHub Actions
   stagedShadowJar(tasks.shadowJar.get().outputs.files)
@@ -221,8 +226,9 @@ val generateLsp4jReflectionMetadata =
 
     classpath = reflectionMetadataGenerator.runtimeClasspath
     mainClass = "org.pkl.lsp.reflectionmetadatagenerator.Main"
-    val outputFile =
-      reachabilityMetadataDir.map { it.file("META-INF/native-image/reachability-metadata.json") }
+    val outputFile = reachabilityMetadataDir.map {
+      it.file("META-INF/native-image/reachability-metadata.json")
+    }
     outputs.file(outputFile)
     argumentProviders.add(
       CommandLineArgumentProvider {
@@ -641,7 +647,7 @@ private val licenseHeader =
    * See the License for the specific language governing permissions and
    * limitations under the License.
    */
-"""
+  """
     .trimIndent()
 
 val originalRemoteName = System.getenv("PKL_ORIGINAL_REMOTE_NAME") ?: "origin"
