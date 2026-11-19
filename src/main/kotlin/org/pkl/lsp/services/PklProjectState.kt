@@ -52,4 +52,5 @@ data class PklProjectState(
   val declaredDependencies: Map<String, PackageUri>,
   val resolvedDependencies: Map<String, ResolvedDependency>?,
   val evaluatorSettings: PklProject.Companion.EvaluatorSettings?,
+  val resolvedEvaluatorSettings: PklProject.Companion.EvaluatorSettings? = null,
 )

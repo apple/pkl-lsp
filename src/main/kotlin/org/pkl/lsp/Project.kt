@@ -59,6 +59,8 @@ class Project(private val server: PklLspServer) {
 
   val modulepathResolver: ModulepathResolver by lazy { ModulepathResolver(this) }
 
+  val externalReaderService: PklExternalReaderService by lazy { PklExternalReaderService(this) }
+
   fun initialize(): CompletableFuture<*> {
     return CompletableFuture.allOf(*myComponents.map { it.initialize() }.toTypedArray())
   }

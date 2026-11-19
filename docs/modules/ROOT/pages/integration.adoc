@@ -71,6 +71,11 @@ The language server uses "Pkl" for its scope URI.
 | String Array
 |Workspace-relative directories to resolve `modulepath:` URIs against.
 |`[]`
+
+|`pkl.externalModuleReaders`
+|Object
+|External module readers, keyed by URI scheme. Each value is an object with `executable` (String), and optional `arguments` (String Array) and `workingDir` (String). Readers declared in a `PklProject` take precedence. Relative paths are resolved against the workspace roots, in order; executables without a path separator are looked up on the `PATH`.
+|`{}`
 |===
 
 == Additional message types

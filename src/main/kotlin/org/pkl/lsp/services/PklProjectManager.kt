@@ -41,6 +41,9 @@ val projectTopic = Topic<ProjectEvent>("ProjectEvent")
 
 sealed interface ProjectEvent {
   data object ProjectsSynced : ProjectEvent
+
+  /** The external readers changed, so what was resolved through them (or failed to) is stale. */
+  data object ExternalReadersChanged : ProjectEvent
 }
 
 class PklProjectManager(project: Project) : Component(project) {
@@ -64,6 +67,11 @@ class PklProjectManager(project: Project) : Component(project) {
             else value.package.uri
           )
           evaluatorSettings = module.evaluatorSettings
+          resolvedEvaluatorSettings =
+            if (module.hasProperty("resolvedEvaluatorSettings"))
+              module.resolvedEvaluatorSettings
+            else
+              null
         })
       """
   }
@@ -279,7 +287,12 @@ class PklProjectManager(project: Project) : Component(project) {
           object : SimpleFileVisitor<Path>() {
             override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
               val relativePath = folderRoot.relativize(dir).toString()
-              if (excludedDirs.any { pattern -> matchesPattern(relativePath, pattern) }) {
+              if (
+                excludedDirs.any { pattern ->
+                  matchesPattern(relativePath, pattern) ||
+                    matchesPattern(dir.absolutePathString(), pattern)
+                }
+              ) {
                 return FileVisitResult.SKIP_SUBTREE
               }
               return FileVisitResult.CONTINUE
@@ -382,6 +395,7 @@ class PklProjectManager(project: Project) : Component(project) {
         pklProjectState.packageUri,
         pklProjectState.declaredDependencies,
         pklProjectState.evaluatorSettings,
+        pklProjectState.resolvedEvaluatorSettings,
       )
     val projectDeps =
       if (pklProjectState.resolvedDependencies?.isNotEmpty() == true)
@@ -398,6 +412,7 @@ class PklProjectManager(project: Project) : Component(project) {
       declaredDependencies = metadata.declaredDependencies,
       resolvedDependencies = projectDeps?.resolvedDependencies,
       evaluatorSettings = metadata.evaluatorSettings,
+      resolvedEvaluatorSettings = metadata.resolvedEvaluatorSettings,
     )
   }
 

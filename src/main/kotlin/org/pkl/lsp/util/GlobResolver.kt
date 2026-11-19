@@ -19,6 +19,7 @@ import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.regex.Pattern
 import kotlin.collections.ArrayList
+import org.pkl.lsp.ExternalReaderFile
 import org.pkl.lsp.VirtualFile
 
 object GlobResolver {
@@ -252,7 +253,10 @@ object GlobResolver {
         baseFile,
         listChildren,
         { file ->
-          val path = baseFile.path.relativize(file.path).toString()
+          val path =
+            if (baseFile is ExternalReaderFile)
+              baseFile.relativize(file)?.trimEnd('/') ?: return@gatherAllChildren false
+            else baseFile.path.relativize(file.path).toString()
           val matches = pattern.matcher(path).matches()
           if (isPartial) matches && file.isDirectory else matches
         },
@@ -335,6 +339,13 @@ object GlobResolver {
       }
     }
     return false
+  }
+
+  /** Matches [globPattern] against the names of [files], which have no directory structure. */
+  fun resolveFlatGlob(globPattern: String, files: List<VirtualFile>): GlobResult {
+    val pattern = toRegexPattern(globPattern) ?: return GlobResult(emptyList(), false)
+    val matches = files.filter { pattern.matcher(it.name).matches() }
+    return GlobResult(matches.take(MAX_GLOB_ELEMENTS), matches.size > MAX_GLOB_ELEMENTS)
   }
 
   fun resolveRelativeGlob(

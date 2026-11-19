@@ -90,6 +90,41 @@ val simpleClientRunner: SourceSet =
     runtimeClasspath += sourceSets.main.get().runtimeClasspath
   }
 
+val externalReaderFixture: SourceSet =
+  sourceSets.create("externalReaderFixture") {
+    compileClasspath += sourceSets.main.get().output
+    compileClasspath += sourceSets.main.get().compileClasspath
+
+    runtimeClasspath += sourceSets.main.get().output
+    runtimeClasspath += sourceSets.main.get().runtimeClasspath
+  }
+
+val externalReaderFixtureArgfile = layout.buildDirectory.file("externalReaderFixture/java.argfile")
+
+val buildExternalReaderFixture =
+  tasks.register("buildExternalReaderFixture") {
+    group = "build"
+    description = "Builds the external reader fixture, and writes the java argfile that runs it."
+    dependsOn(externalReaderFixture.classesTaskName)
+    inputs.files(externalReaderFixture.runtimeClasspath)
+    outputs.file(externalReaderFixtureArgfile)
+    doLast {
+      // Argfile syntax: arguments are separated by whitespace; quoted values can contain spaces,
+      // and use `\` as the escape character.
+      fun quote(value: String) = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+      val argfile = externalReaderFixtureArgfile.get().asFile
+      argfile.parentFile.mkdirs()
+      argfile.writeText(
+        listOf(
+            "-cp",
+            quote(externalReaderFixture.runtimeClasspath.asPath),
+            "org.pkl.lsp.externalreader.fixture.ExternalReaderFixtureKt",
+          )
+          .joinToString("\n", postfix = "\n")
+      )
+    }
+  }
+
 val reflectionMetadataGenerator: SourceSet =
   sourceSets.create("reflectionMetadataGenerator") {
     compileClasspath += sourceSets.main.get().output
@@ -117,6 +152,11 @@ dependencies {
   testImplementation(libs.assertJ)
   testImplementation(libs.junitJupiter)
   testImplementation(libs.junitEngine)
+
+  // dependencies of pkl-messaging (delete me after pkl-messaging is published as its own artifact)
+  implementation(libs.msgpack)
+  compileOnly(libs.errorProneAnnotations)
+
   pklStdlibFiles(libs.pklStdlib)
   // comes from the downloaded artifact in GitHub Actions
   stagedShadowJar(tasks.shadowJar.get().outputs.files)
@@ -221,8 +261,9 @@ val generateLsp4jReflectionMetadata =
 
     classpath = reflectionMetadataGenerator.runtimeClasspath
     mainClass = "org.pkl.lsp.reflectionmetadatagenerator.Main"
-    val outputFile =
-      reachabilityMetadataDir.map { it.file("META-INF/native-image/reachability-metadata.json") }
+    val outputFile = reachabilityMetadataDir.map {
+      it.file("META-INF/native-image/reachability-metadata.json")
+    }
     outputs.file(outputFile)
     argumentProviders.add(
       CommandLineArgumentProvider {
@@ -253,7 +294,10 @@ tasks.withType<Test>().configureEach { jvmArgs("--enable-native-access=ALL-UNNAM
 
 tasks.test {
   dependsOn(configurePklCliExecutable)
+  dependsOn(buildExternalReaderFixture)
   systemProperties["pklExecutable"] = pklCli.singleFile.absolutePath
+  systemProperties["externalReaderFixtureArgfile"] =
+    externalReaderFixtureArgfile.get().asFile.absolutePath
   useJUnitPlatform {
     includeEngines(
       "junit-jupiter",
@@ -641,7 +685,7 @@ private val licenseHeader =
    * See the License for the specific language governing permissions and
    * limitations under the License.
    */
-"""
+  """
     .trimIndent()
 
 val originalRemoteName = System.getenv("PKL_ORIGINAL_REMOTE_NAME") ?: "origin"

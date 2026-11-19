@@ -17,6 +17,7 @@ package org.pkl.lsp.completion
 
 import com.google.gson.JsonSyntaxException
 import java.net.URI
+import java.net.URISyntaxException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
@@ -29,6 +30,7 @@ import org.pkl.lsp.LspUtil.toRange
 import org.pkl.lsp.ast.*
 import org.pkl.lsp.documentation.toMarkdown
 import org.pkl.lsp.packages.dto.PackageAssetUri
+import org.pkl.lsp.packages.dto.PklProject
 
 class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: Boolean) :
   Component(project), CompletionProvider {
@@ -252,9 +254,147 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
       !targetUri.contains(':') -> {
         if (!targetUri.contains('/')) {
           collector.addAll(if (isGlobImport) GLOBBABLE_SCHEME_ELEMENTS else SCHEME_ELEMENTS)
+          if (!packageUriOnly) {
+            collectExternalSchemes(sourceModule, isGlobImport, collector)
+          }
         }
         completeRelativeUri(targetUri, sourceModule, isGlobImport, collector, stringChars)
       }
+
+      !packageUriOnly -> {
+        val scheme = targetUri.substringBefore(':')
+        val context = sourceModule.virtualFile.pklProject
+        val service = project.externalReaderService
+        if (!service.handlesScheme(scheme, context)) return
+        val spec = service.readerSpecs(context)[scheme] ?: return
+        if (spec.hasHierarchicalUris) {
+          completeExternalHierarchicalUri(targetUri, context, isGlobImport, collector, stringChars)
+        } else {
+          completeExternalOpaqueUri(scheme, targetUri, context, collector, stringChars)
+        }
+      }
+    }
+  }
+
+  /** Offers the schemes of external readers. */
+  private fun collectExternalSchemes(
+    sourceModule: PklModule,
+    isGlobImport: Boolean,
+    collector: MutableList<CompletionItem>,
+  ) {
+    val specs = project.externalReaderService.readerSpecs(sourceModule.virtualFile.pklProject)
+    for ((scheme, spec) in specs) {
+      if (isGlobImport && !spec.isGlobbable) continue
+      collector.add(CompletionItem(if (spec.hasHierarchicalUris) "$scheme:/" else "$scheme:"))
+    }
+  }
+
+  /** Completes `scheme:/path/to/` URIs of a reader with hierarchical URIs. */
+  private fun completeExternalHierarchicalUri(
+    targetUri: String,
+    context: PklProject?,
+    isGlobImport: Boolean,
+    collector: MutableList<CompletionItem>,
+    stringCharsNode: PklNode,
+  ) {
+    if (!targetUri.contains('/')) return
+    val dirUri =
+      try {
+        URI(targetUri.substringBeforeLast('/') + "/")
+      } catch (_: URISyntaxException) {
+        return
+      }
+    val children = project.externalReaderService.listChildren(dirUri, context)
+    addExternalChildren(
+      children,
+      targetUri.substringAfterLast('/'),
+      isGlobImport,
+      collector,
+      stringCharsNode,
+      targetUri,
+    )
+  }
+
+  /**
+   * Completes URIs of a reader with non-hierarchical URIs (e.g. `mylib:foo.bar`). Like `pkl:`, the
+   * reader lists *every* module it has.
+   */
+  private fun completeExternalOpaqueUri(
+    scheme: String,
+    targetUri: String,
+    context: PklProject?,
+    collector: MutableList<CompletionItem>,
+    stringCharsNode: PklNode,
+  ) {
+    val typed = targetUri.substring(scheme.length + 1)
+    for (module in project.externalReaderService.listOpaqueModules(scheme, context)) {
+      val name = module.uri.schemeSpecificPart
+      if (!name.lowercase().startsWith(typed.lowercase())) continue
+      collector.add(
+        CompletionItem().apply {
+          kind = CompletionItemKind.Module
+          label = name
+          textEdit =
+            Either.forLeft(
+              TextEdit().apply {
+                newText = name
+                range = replacementRange(stringCharsNode, targetUri, typed, name)
+              }
+            )
+        }
+      )
+    }
+  }
+
+  private fun addExternalChildren(
+    children: List<VirtualFile>,
+    childMatch: String,
+    isGlobImport: Boolean,
+    collector: MutableList<CompletionItem>,
+    stringCharsNode: PklNode,
+    targetUri: String,
+  ) {
+    for (child in children) {
+      val name = child.name
+      if (name.startsWith('.') || !name.lowercase().startsWith(childMatch.lowercase())) continue
+      val isDirectory = child.isDirectory
+      var completionText = if (isDirectory) "$name/" else name
+      if (isGlobImport) {
+        completionText = completionText.replace(Regex("([*\\\\{\\[])"), "\\\\\\\\$1")
+      }
+      completionText = URI(null, null, completionText, null).rawPath
+      collector.add(
+        CompletionItem().apply {
+          kind = if (isDirectory) CompletionItemKind.Folder else CompletionItemKind.Module
+          label = if (isDirectory) "$name/" else name
+          textEdit =
+            Either.forLeft(
+              TextEdit().apply {
+                newText = completionText
+                range = replacementRange(stringCharsNode, targetUri, childMatch, completionText)
+              }
+            )
+        }
+      )
+    }
+  }
+
+  /**
+   * The range to replace with [completionText]: the last [typed] characters before the caret, plus
+   * the rest of the path component after the caret if it's what's being completed.
+   */
+  private fun replacementRange(
+    stringCharsNode: PklNode,
+    targetUri: String,
+    typed: String,
+    completionText: String,
+  ): Range {
+    val targetUriNode = stringCharsNode.children[1]
+    val componentRemainder = targetUriNode.text.removePrefix(targetUri).substringBefore('/')
+    return targetUriNode.span.toRange().apply {
+      start.character += targetUri.length - typed.length
+      end = Position(start.line, start.character + typed.length)
+      if (completionText.endsWith(componentRemainder)) end.character += componentRemainder.length
     }
   }
 
@@ -448,6 +588,8 @@ class ModuleUriCompletionProvider(project: Project, private val packageUriOnly: 
     stringCharsNode: PklNode,
   ) {
     val sourceFile = sourceModule.virtualFile
+    // modules from external readers are read-only, so there's nothing to complete in them
+    if (sourceFile is ExternalReaderFile) return
     val sourceDir = sourceFile.parent() ?: return
     val sourceRoot =
       if (sourceFile.isOnModulePath) {

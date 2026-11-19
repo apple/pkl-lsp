@@ -48,12 +48,23 @@ data class PklProject(val metadata: DerivedProjectMetadata, val projectDeps: Pro
       val packageUri: PackageUri?,
       val declaredDependencies: Map<String, PackageUri>,
       val evaluatorSettings: EvaluatorSettings?,
+      /** Evaluator settings with in-language resolved values (Pkl 0.32+). */
+      val resolvedEvaluatorSettings: EvaluatorSettings? = null,
+    )
+
+    @Serializable
+    data class ExternalReader(
+      val executable: String,
+      val arguments: List<String>? = null,
+      val workingDir: String? = null,
     )
 
     @Serializable
     data class EvaluatorSettings(
       val moduleCacheDir: String? = null,
       val modulePath: List<String>? = null,
+      val externalModuleReaders: Map<String, ExternalReader>? = null,
+      val externalResourceReaders: Map<String, ExternalReader>? = null,
     )
 
     @Serializable

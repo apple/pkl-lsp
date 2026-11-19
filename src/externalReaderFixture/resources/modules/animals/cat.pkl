@@ -1,0 +1,4 @@
+module fixture.animals.cat
+
+name: String = "Cat"
+sound: String = "meow"

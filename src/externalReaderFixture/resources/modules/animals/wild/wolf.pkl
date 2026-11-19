@@ -1,0 +1,4 @@
+extends "../dog.pkl"
+
+name = "Wolf"
+sound = "howl"

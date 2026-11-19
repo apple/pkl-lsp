@@ -33,11 +33,19 @@ import org.pkl.lsp.messages.ActionableNotification
 import org.pkl.lsp.util.ModificationTracker
 
 @Serializable
+data class ExternalReader(
+  val executable: String,
+  val arguments: List<String>? = null,
+  val workingDir: String? = null,
+)
+
+@Serializable
 data class WorkspaceSettings(
   val pklCliPath: Path? = null,
   val grammarVersion: GrammarVersion? = null,
   val modulepath: List<Path> = emptyList(),
   val excludedDirectories: List<String> = emptyList(),
+  val externalModuleReaders: Map<String, ExternalReader> = emptyMap(),
 )
 
 class SettingsManager(project: Project) : Component(project), ModificationTracker {
@@ -48,6 +56,10 @@ class SettingsManager(project: Project) : Component(project), ModificationTracke
   private val updateCount = AtomicInteger(0)
 
   private val workspaceFolders: MutableSet<Path> = mutableSetOf()
+
+  /** The workspace folders, in the order that they were added. */
+  val workspaceRoots: List<Path>
+    get() = synchronized(workspaceFolders) { workspaceFolders.toList() }
 
   fun initialize(folders: List<Path>?) {
     project.messageBus.subscribe(textDocumentTopic, ::handleTextDocumentEvent)
@@ -61,6 +73,7 @@ class SettingsManager(project: Project) : Component(project), ModificationTracke
   fun update(updater: (WorkspaceSettings) -> WorkspaceSettings) {
     settings = updater(settings)
     updateCount.incrementAndGet()
+    project.externalReaderService.onSettingsChanged()
   }
 
   override fun initialize(): CompletableFuture<*> = loadSettings().also { initialized = it }
@@ -142,6 +155,40 @@ class SettingsManager(project: Project) : Component(project), ModificationTracke
     }
   }
 
+  private fun resolveExternalModuleReaders(value: JsonElement): Map<String, ExternalReader> {
+    if (value.isJsonNull) return emptyMap()
+    if (!value.isJsonObject) {
+      logger.warn(
+        "Got non-object value for configuration: pkl.externalModuleReaders. Value: $value"
+      )
+      return emptyMap()
+    }
+    return buildMap {
+      for ((scheme, reader) in value.asJsonObject.entrySet()) {
+        if (!reader.isJsonObject) {
+          logger.warn("Got non-object value for pkl.externalModuleReaders.$scheme: $reader")
+          continue
+        }
+        val obj = reader.asJsonObject
+        val executable = obj.get("executable")?.let { decodeString(it, "$scheme.executable") }
+        if (executable == null) {
+          logger.warn("Missing executable for pkl.externalModuleReaders.$scheme")
+          continue
+        }
+        val arguments =
+          obj
+            .get("arguments")
+            ?.takeIf { it.isJsonArray }
+            ?.asJsonArray
+            ?.mapNotNull {
+              decodeString(it, "pkl.externalModuleReaders.$scheme.arguments[]")
+            }
+        val workingDir = obj.get("workingDir")?.let { decodeString(it, "$scheme.workingDir") }
+        put(scheme, ExternalReader(executable, arguments, workingDir))
+      }
+    }
+  }
+
   private fun loadSettings(): CompletableFuture<Unit> {
     logger.log("Fetching configuration")
     val params =
@@ -151,18 +198,21 @@ class SettingsManager(project: Project) : Component(project), ModificationTracke
           ConfigurationItem().apply { section = "pkl.formatter.grammarVersion" },
           ConfigurationItem().apply { section = "pkl.modulepath" },
           ConfigurationItem().apply { section = "pkl.projects.excludedDirectories" },
+          ConfigurationItem().apply { section = "pkl.externalModuleReaders" },
         )
       )
     return project.languageClient
       .configuration(params)
-      .thenApply { (cliPath, grammarVersion, modulepath, excludedDirectories) ->
+      .thenApply { (cliPath, grammarVersion, modulepath, excludedDirectories, externalModuleReaders)
+        ->
         logger.log(
           buildString {
             append("Got configuration: ")
             append("cliPath = $cliPath, ")
             append("grammarVersion = $grammarVersion, ")
             append("modulepath = $modulepath, ")
-            append("excludedDirectories = $excludedDirectories")
+            append("excludedDirectories = $excludedDirectories, ")
+            append("externalModuleReaders = $externalModuleReaders")
           }
         )
         update { settings ->
@@ -171,6 +221,8 @@ class SettingsManager(project: Project) : Component(project), ModificationTracke
             grammarVersion = resolveGrammarVersion(grammarVersion as JsonElement),
             modulepath = resolveModulepath(modulepath as JsonElement),
             excludedDirectories = resolveExcludedDirectories(excludedDirectories as JsonElement),
+            externalModuleReaders =
+              resolveExternalModuleReaders(externalModuleReaders as JsonElement),
           )
         }
       }
