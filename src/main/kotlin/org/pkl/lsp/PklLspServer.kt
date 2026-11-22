@@ -25,6 +25,7 @@ import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.*
+import org.pkl.lsp.features.EnterHandlerFeature
 import org.pkl.lsp.features.SemanticTokenFeature
 import org.pkl.lsp.packages.dto.PackageUri
 
@@ -36,6 +37,7 @@ class PklLspServer(val verbose: Boolean) : LanguageServer {
 
   private val workspaceService: PklWorkspaceService by lazy { PklWorkspaceService(project) }
   private val textService: PklTextDocumentService by lazy { PklTextDocumentService(project) }
+  private val enterHandlerFeature: EnterHandlerFeature by lazy { EnterHandlerFeature(project) }
 
   private var workspaceFolders: List<WorkspaceFolder>? = null
   lateinit var pklClientOptions: PklClientOptions
@@ -78,6 +80,7 @@ class PklLspServer(val verbose: Boolean) : LanguageServer {
             setRange(false)
             setFull(true)
           }
+        capabilities.experimental = PklServerCapabilities(onEnter = true)
       }
     return CompletableFuture.supplyAsync { res }
   }
@@ -145,8 +148,24 @@ class PklLspServer(val verbose: Boolean) : LanguageServer {
 
   @Suppress("unused")
   @JsonRequest(value = "pkl/syncProjects")
-  fun syncProjects(@Suppress("UNUSED_PARAMETER") ignored: Any?): CompletableFuture<Unit> {
+  fun syncProjects(ignored: Any?): CompletableFuture<Unit> {
     return project.pklProjectManager.syncProjects(true)
+  }
+
+  /**
+   * The base LSP doesn't have a way for a language server to provide enter handling, so we need to
+   * add our own.
+   *
+   * rust-analyzer does the same type of thing; see
+   * https://android.googlesource.com/toolchain/rustc/+/HEAD/src/tools/rust-analyzer/docs/dev/lsp-extensions.md#on-enter
+   *
+   * Request to be added to the LSP in
+   * https://github.com/microsoft/language-server-protocol/issues/1001.
+   */
+  @Suppress("unused")
+  @JsonRequest(value = "pkl/onEnter")
+  fun onEnter(params: TextDocumentPositionParams): CompletableFuture<Array<TextEdit>?> {
+    return enterHandlerFeature.onEnter(params)
   }
 
   private fun decodeClientOptions(options: Any?): PklClientOptions? {
