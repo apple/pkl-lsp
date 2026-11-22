@@ -92,9 +92,22 @@ class PklDocCommentImpl(project: Project, parent: PklNode, override val ctx: Nod
 
   override val contents: String
     get() {
-      val doc = text.trim()
-      return doc.lines().joinToString("\n") {
-        it.substring(if (it.length > 3 && it[3].isWhitespace()) 4 else 3)
+      return buildString {
+        var isFirst = true
+        for (line in text.lines()) {
+          if (line.isBlank()) continue
+          if (isFirst) {
+            isFirst = false
+          } else {
+            append('\n')
+          }
+          val trimmed = line.trimStart()
+          if (!trimmed.startsWith("///")) {
+            continue
+          }
+          val trimLength = if (trimmed.length > 3 && trimmed[3].isWhitespace()) 4 else 3
+          append(trimmed.substring(trimLength))
+        }
       }
     }
 
@@ -103,11 +116,7 @@ class PklDocCommentImpl(project: Project, parent: PklNode, override val ctx: Nod
       var myContents = contents
       // replace these spans starting from the end so we don't need to track how replacements affect
       // offsets
-      for (link in
-        memberLinks.sortedWith(
-          Comparator.comparing<PklDocCommentMemberLink, Int> { -it.span.beginCol }
-            .thenComparing { -it.span.beginLine }
-        )) {
+      for (link in memberLinks.sortedByDescending { it.offsetWithinContents }) {
         val replacement =
           when (
             val resolved = DocCommentResolvers.resolveLink(project, link.reference, parent!!, true)
@@ -119,6 +128,7 @@ class PklDocCommentImpl(project: Project, parent: PklNode, override val ctx: Nod
                 append(")")
               }
             }
+
             else -> {
               "`${link.reference}`"
             }
@@ -197,36 +207,32 @@ class PklDocCommentImpl(project: Project, parent: PklNode, override val ctx: Nod
       } ?: emptyList()
     }
 
-  // `refNode`'s offsets are relative to `contents`, which strips the leading `///` (and a
-  // following space, if any) from every line of `text`. Walk `text` to find the real
-  // line/column of that range, mirroring the same prefix-stripping `contents` does so the
-  // offsets stay in sync.
+  // `refNode`'s offsets are relative to `contents`, which strips leading indentation and the `///`
+  // (and a following space, if any) from every line of `text`, and turns lines that don't start
+  // with `///` into empty lines. Walk `text` mirroring that logic to find the real line/column of
+  // the range.
   private fun getSpan(refNode: BasedSequence): Span {
-    val doc = text.trim()
-    var line = span.beginLine
-    var col = span.beginCol
-    for (i in 0 until text.length - text.trimStart().length) {
-      if (text[i] == '\n') {
-        line++
-        col = 1
-      } else {
-        col++
-      }
-    }
-
     val startOffset = refNode.startOffset
     val endOffset = refNode.endOffset
+    var line = span.beginLine
+    // `text` starts at the first `///`, so the first line is offset by this node's start column.
+    var col = span.beginCol
     var contentsOffset = 0
-    for (rawLine in doc.lines()) {
-      val prefixLength = if (rawLine.length > 3 && rawLine[3].isWhitespace()) 4 else 3
-      val strippedLength = rawLine.length - prefixLength
-      val startInLine = startOffset - contentsOffset
-      if (startInLine in 0..strippedLength) {
-        val startCol = col + prefixLength + startInLine
-        val endCol = col + prefixLength + (endOffset - contentsOffset)
-        return Span(line, startCol, line, endCol)
+    for (rawLine in text.lines()) {
+      val trimmed = rawLine.trimStart()
+      if (trimmed.startsWith("///")) {
+        val indent = rawLine.length - trimmed.length
+        val prefixLength = if (trimmed.length > 3 && trimmed[3].isWhitespace()) 4 else 3
+        val strippedLength = trimmed.length - prefixLength
+        val startInLine = startOffset - contentsOffset
+        if (startInLine in 0..strippedLength) {
+          val startCol = col + indent + prefixLength + startInLine
+          val endCol = col + indent + prefixLength + (endOffset - contentsOffset)
+          return Span(line, startCol, line, endCol)
+        }
+        contentsOffset += strippedLength
       }
-      contentsOffset += strippedLength + 1
+      contentsOffset += 1 // newline
       line++
       col = 1
     }
